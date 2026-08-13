@@ -1,0 +1,180 @@
+/* Tutoring Connect — catalog: themes, fonts, layouts, modules, presets */
+(function (w) {
+  const THEMES = [
+    { id: 'lumen', name: 'Lumen Teal & Copper', primary: '#134e4a', accent: '#d97706', bg: '#f7f4ef' },
+    { id: 'ink', name: 'Scholar Ink', primary: '#1e3a5f', accent: '#c2410c', bg: '#f8fafc' },
+    { id: 'forest', name: 'Forest Desk', primary: '#14532d', accent: '#ca8a04', bg: '#f7fee7' },
+    { id: 'navy', name: 'Midnight Studio', primary: '#0f172a', accent: '#38bdf8', bg: '#f8fafc' },
+    { id: 'wine', name: 'Wine & Cream', primary: '#7f1d1d', accent: '#d4a017', bg: '#fff7ed' },
+    { id: 'violet', name: 'Seminar Violet', primary: '#4c1d95', accent: '#f59e0b', bg: '#faf5ff' },
+    { id: 'ocean', name: 'Ocean Hour', primary: '#0e7490', accent: '#ea580c', bg: '#ecfeff' },
+    { id: 'slate', name: 'Slate Studio', primary: '#334155', accent: '#14b8a6', bg: '#f8fafc' }
+  ];
+  const FONTS = [
+    { id: 'dm', name: 'DM Sans + Source Serif', css: 'DM+Sans:wght@400;500;600;700;800|Source+Serif+4:wght@500;700;800', family: 'DM Sans', serif: 'Source Serif 4' },
+    { id: 'manrope', name: 'Manrope + Fraunces', css: 'Manrope:wght@400;600;700;800|Fraunces:wght@600;800', family: 'Manrope', serif: 'Fraunces' },
+    { id: 'plus', name: 'Plus Jakarta + Newsreader', css: 'Plus+Jakarta+Sans:wght@400;600;700;800|Newsreader:wght@600;800', family: 'Plus Jakarta Sans', serif: 'Newsreader' },
+    { id: 'inter', name: 'Inter + Libre Baskerville', css: 'Inter:wght@400;600;700;800|Libre+Baskerville:wght@700', family: 'Inter', serif: 'Libre Baskerville' }
+  ];
+  const LAYOUTS = [
+    { id: 'sidebar', name: 'Studio Sidebar', desc: 'Best for analytics-heavy daily use' },
+    { id: 'topnav', name: 'Top Nav', desc: 'Wide calendar and report views' },
+    { id: 'compact', name: 'Compact', desc: 'Phone-first independent tutors' }
+  ];
+
+  const MODULES = [
+    { id: 'engagements', name: 'Engagements (1:1 & Groups)', group: 'Core', file: 'engagements.html', desc: 'The atomic unit. Each one-on-one student or group is a fully independent teaching engagement with its own curriculum, hours, goals, fees and analytics. Nothing leaks between engagements.', flag: 'core' },
+    { id: 'learners', name: 'Learners', group: 'Core', file: 'learners.html', desc: 'Learner records: identity, timezone, exam board, learning style, accommodations, guardian, Drive photo. A learner may sit in one or many engagements independently.', flag: 'core' },
+    { id: 'groups', name: 'Groups', group: 'Core', file: 'groups.html', desc: 'Named group engagements (2–12 learners). Shared sessions, individual mastery and scores. Group insights never overwrite personal insight.', flag: 'core' },
+    { id: 'parents', name: 'Parents & Families', group: 'Core', file: 'parents.html', desc: 'Parent registry and parent–learner mapping. A parent only ever sees their own children. Siblings remain independent engagements.', flag: 'core' },
+    { id: 'tutors', name: 'Tutors & Assistants', group: 'Core', file: 'tutors.html', desc: 'Solo or multi-tutor practice. Availability, subjects, hourly cost, timezone, specialisms.', flag: 'core' },
+    { id: 'subjects', name: 'Subjects & Exam Boards', group: 'Core', file: 'subjects.html', desc: 'Maths, English, Physics, SAT, WAEC, IGCSE, IELTS… Each subject can carry a board, level and default methodology.', flag: 'core' },
+    { id: 'inquiries', name: 'Inquiries / CRM', group: 'Growth', file: 'inquiries.html', desc: 'Parent-requested tutoring pipeline: new → contacted → trial booked → converted / lost. Source, subject, preferred mode.', flag: 'pop' },
+    { id: 'waitlist', name: 'Waitlist', group: 'Growth', file: 'waitlist.html', desc: 'Hold demand when a slot or group is full. Promote into an engagement with one click.', flag: 'new' },
+    { id: 'trials', name: 'Trial Lessons', group: 'Growth', file: 'trials.html', desc: 'Free or paid diagnostic trial. Captures baseline score and fit notes before a package is sold.', flag: 'pop' },
+    { id: 'onboarding', name: 'Onboarding Checklists', group: 'Growth', file: 'onboarding.html', desc: 'Consent, goals interview, diagnostic, first package, first session — tracked per engagement.', flag: 'new' },
+    { id: 'calendar', name: 'Calendar', group: 'Sessions', file: 'calendar.html', desc: 'Timezone-aware calendar for 1:1 and group sessions. Conflict detection on tutor and learner.', flag: 'core' },
+    { id: 'sessions', name: 'Sessions', group: 'Sessions', file: 'sessions.html', desc: 'Every lesson: start/end, mode (online/in-person/hybrid), meeting link, whiteboard, attendance, hours deducted.', flag: 'core' },
+    { id: 'availability', name: 'Availability', group: 'Sessions', file: 'availability.html', desc: 'Weekly tutor availability in the tutor’s timezone. Used by self-booking and conflict checks.', flag: 'core' },
+    { id: 'bookings', name: 'Self-Booking', group: 'Sessions', file: 'bookings.html', desc: 'Parents book from open slots inside cancellation-policy rules. No Calendly fee.', flag: 'pop' },
+    { id: 'attendance', name: 'Attendance', group: 'Sessions', file: 'attendance.html', desc: 'Present / late / absent / excused per learner, even inside a group. Feeds at-risk rules.', flag: 'core' },
+    { id: 'makeups', name: 'Make-up Sessions', group: 'Sessions', file: 'makeups.html', desc: 'Policy-aware make-ups. Hours can be restored or consumed depending on who cancelled.', flag: 'new' },
+    { id: 'cancellations', name: 'Cancellations', group: 'Sessions', file: 'cancellations.html', desc: 'Who cancelled, notice hours, fee applied, hours returned. Transparent for parents.', flag: 'new' },
+    { id: 'session_notes', name: 'Session Notes', group: 'Sessions', file: 'session-notes.html', desc: 'Per-session, optionally per-learner notes. Shareable to the parent portal. Drive recording link.', flag: 'core' },
+    { id: 'meetings', name: 'Meeting Links', group: 'Sessions', file: 'meetings.html', desc: 'Jitsi (free), Google Meet or Zoom links stored per session or as a standing room. No paid classroom required.', flag: 'core' },
+    { id: 'whiteboard', name: 'Whiteboard Rooms', group: 'Sessions', file: 'whiteboard.html', desc: 'Free Excalidraw / Google Jamboard / FigJam links per engagement. Opens in a new tab.', flag: 'new' },
+    { id: 'diagnostics', name: 'Diagnostics', group: 'Learning', file: 'diagnostics.html', desc: 'Baseline tests at the start of an engagement. Locks the value-added starting point.', flag: 'core' },
+    { id: 'goals', name: 'Goals & Learning Plans', group: 'Learning', file: 'goals.html', desc: 'SMART goals and a living plan per engagement and per learner. Review dates, owners, status.', flag: 'core' },
+    { id: 'mastery', name: 'Topic Mastery', group: 'Learning', file: 'mastery.html', desc: 'Topic-by-topic heatmap (0–100) per learner. Independent even when the learner sits in a group.', flag: 'core' },
+    { id: 'methodologies', name: 'Methodologies', group: 'Learning', file: 'methodologies.html', desc: 'Your teaching methods library (spaced retrieval, worked examples, CRA, exam-technique drills…). Attach one to each engagement.', flag: 'core' },
+    { id: 'curriculum', name: 'Curriculum Maps', group: 'Learning', file: 'curriculum.html', desc: 'Independent scheme of work per engagement — not a shared school class list. Tick coverage weekly.', flag: 'core' },
+    { id: 'lesson_plans', name: 'Lesson Plans', group: 'Learning', file: 'lesson-plans.html', desc: 'Objectives, resources, checks for understanding. Linked to a session and a methodology.', flag: 'new' },
+    { id: 'assignments', name: 'Homework', group: 'Learning', file: 'assignments.html', desc: 'Set, collect (Drive link), mark, and score. Completion rate feeds insights.', flag: 'pop' },
+    { id: 'practice', name: 'Practice Tests / CBT', group: 'Learning', file: 'practice.html', desc: 'Timed practice with 12 question types. Server-side scoring via SQL. No AI API. Maps into mastery and reports.', flag: 'pop' },
+    { id: 'cbt_exam', name: 'Take Practice Test', group: 'Learning', file: 'cbt-exam.html', desc: 'Learner runtime: code entry, timer, navigator. Open or rostered.', flag: 'core' },
+    { id: 'cbt_prompts', name: 'Question Bank Prompts', group: 'Learning', file: 'cbt-prompts.html', desc: 'Copy-paste prompts for any free external chat to emit CSV questions. The platform never calls a paid AI.', flag: 'new' },
+    { id: 'progress_reports', name: 'Progress Reports', group: 'Learning', file: 'progress-reports.html', desc: 'Parent-ready branded reports: hours, attendance, mastery, value-added, next steps, methodology used.', flag: 'core' },
+    { id: 'insights', name: 'Insights Lab', group: 'Analytics', file: 'insights.html', desc: 'The differentiator. Graphs and methodologies for one learner, one group, or the whole practice. Rule-based, not AI.', flag: 'core' },
+    { id: 'learner_360', name: 'Learner 360', group: 'Analytics', file: 'learner-360.html', desc: 'One page: identity, engagements, hours, scores over time, mastery heatmap, at-risk flags, notes, invoices.', flag: 'core' },
+    { id: 'group_insights', name: 'Group Insights', group: 'Analytics', file: 'group-insights.html', desc: 'Shared-session analytics plus a fairness view: who is being left behind inside the group.', flag: 'new' },
+    { id: 'atrisk', name: 'At-Risk Board', group: 'Analytics', file: 'at-risk.html', desc: 'Rule engine: falling scores, low attendance, missing homework, idle 14+ days, hours < 2. No AI.', flag: 'core' },
+    { id: 'exam_targets', name: 'Exam Targets', group: 'Analytics', file: 'exam-targets.html', desc: 'Target exam, date, board, predicted vs target grade. Countdown on the learner dashboard.', flag: 'new' },
+    { id: 'predictions', name: 'Predicted Grades', group: 'Analytics', file: 'predictions.html', desc: 'Transparent linear projection from the last N scores toward the exam date. Formula is shown to parents.', flag: 'new' },
+    { id: 'value_added', name: 'Value-Added', group: 'Analytics', file: 'value-added.html', desc: 'Current average minus diagnostic baseline. The number parents actually buy.', flag: 'core' },
+    { id: 'learning_styles', name: 'Learning Styles', group: 'Learning', file: 'learning-styles.html', desc: 'Observed notes (visual, verbal, worked-example first…). Not a quiz religion — a working memory for the tutor.', flag: 'new' },
+    { id: 'accommodations', name: 'Accommodations / SEN', group: 'Learning', file: 'accommodations.html', desc: 'Extra time, reader, rest breaks, large print. Printed onto practice tests and reports.', flag: 'ent' },
+    { id: 'resources', name: 'Resource Library', group: 'Learning', file: 'resources.html', desc: 'Drive / YouTube / PDF links scoped to an engagement or shared. No file uploads into the free database.', flag: 'core' },
+    { id: 'flashcards', name: 'Spaced Practice', group: 'Learning', file: 'flashcards.html', desc: 'SM-2 spaced repetition (classic free algorithm). Cards belong to a learner, not a group.', flag: 'new' },
+    { id: 'certificates', name: 'Certificates', group: 'Learning', file: 'certificates.html', desc: 'Printable milestone certificates with a verification code.', flag: 'core' },
+    { id: 'portfolio', name: 'Learner Portfolio', group: 'Learning', file: 'portfolio.html', desc: 'Best work, recordings, marked scripts — Drive links curated for applications.', flag: 'new' },
+    { id: 'packages', name: 'Hour Banks / Packages', group: 'Finance', file: 'packages.html', desc: 'Prepaid hours or lesson packs (TutorCruncher/Tutorbase parity). Each engagement has its own bank.', flag: 'core' },
+    { id: 'invoices', name: 'Invoices', group: 'Finance', file: 'invoices.html', desc: 'Generate from sessions or from packages. Printable. Multi-currency.', flag: 'core' },
+    { id: 'payments', name: 'Payments', group: 'Finance', file: 'payments.html', desc: 'Record bank transfer / cash / Paystack / Flutterwave / Stripe checkout links. No forced processor fee to us.', flag: 'core' },
+    { id: 'payment_history', name: 'Payment History', group: 'Finance', file: 'payment-history.html', desc: 'Family-safe history and printable receipts.', flag: 'core' },
+    { id: 'fees', name: 'Fee Catalogue', group: 'Finance', file: 'fees.html', desc: 'Rate cards: 1:1 vs group, subject premiums, weekend rates, trial fees.', flag: 'core' },
+    { id: 'scholarships', name: 'Scholarships & Discounts', group: 'Finance', file: 'scholarships.html', desc: 'Sibling discount, hardship, referral credit — applied per engagement.', flag: 'ent' },
+    { id: 'products', name: 'Books & Materials', group: 'Finance', file: 'products.html', desc: 'Past papers, workbooks, kits sold alongside tutoring.', flag: 'new' },
+    { id: 'payroll', name: 'Tutor Payroll', group: 'Finance', file: 'payroll.html', desc: 'Hours × rate, bonuses, deductions. Solo tutors can ignore this.', flag: 'ent' },
+    { id: 'finance', name: 'Practice Finance', group: 'Finance', file: 'finance.html', desc: 'Income / expense ledger and simple P&L. Free-tier safe.', flag: 'ent' },
+    { id: 'referrals', name: 'Referrals', group: 'Growth', file: 'referrals.html', desc: 'Track who referred whom and the credit granted.', flag: 'new' },
+    { id: 'announcements', name: 'Announcements', group: 'Comms', file: 'announcements.html', desc: 'Practice-wide or engagement-scoped notices.', flag: 'core' },
+    { id: 'messages', name: 'Messaging (WA / Email / SMS)', group: 'Comms', file: 'messages.html', desc: 'Free device-native WhatsApp, email BCC and SMS links. No Twilio bill.', flag: 'core' },
+    { id: 'inbox', name: 'In-App Inbox', group: 'Comms', file: 'inbox.html', desc: 'Private tutor ↔ parent ↔ learner threads with read state.', flag: 'core' },
+    { id: 'complaints', name: 'Complaints', group: 'Comms', file: 'complaints.html', desc: 'Submit → route → resolve. Evidence as Drive links.', flag: 'core' },
+    { id: 'surveys', name: 'Surveys & CSAT', group: 'Comms', file: 'surveys.html', desc: 'After-trial and termly parent pulse. Feeds retention insight.', flag: 'new' },
+    { id: 'parent_meetings', name: 'Parent Conferences', group: 'Comms', file: 'parent-meetings.html', desc: 'Book a review slot, attach the latest 360 and report.', flag: 'new' },
+    { id: 'reviews', name: 'Reviews & Testimonials', group: 'Growth', file: 'reviews.html', desc: 'Collect and optionally publish reviews on the public site (SEO).', flag: 'new' },
+    { id: 'notifications', name: 'Notification Centre', group: 'Comms', file: 'notifications.html', desc: 'In-app bell + browser push after PWA install.', flag: 'core' },
+    { id: 'broadcasts', name: 'Result Broadcasts', group: 'Comms', file: 'broadcasts.html', desc: 'One-click share of a score or report via free channels.', flag: 'pop' },
+    { id: 'gallery', name: 'Gallery', group: 'Media', file: 'gallery.html', desc: 'Drive photos and YouTube recaps. No base64 in the database.', flag: 'core' },
+    { id: 'birthdays', name: 'Birthdays', group: 'Media', file: 'birthdays.html', desc: 'Upcoming learner and tutor birthdays.', flag: 'core' },
+    { id: 'directory', name: 'Directory', group: 'Media', file: 'directory.html', desc: 'Searchable people directory, role-filtered.', flag: 'core' },
+    { id: 'helpdesk', name: 'Help Desk', group: 'Ops', file: 'helpdesk.html', desc: 'IT / scheduling / billing tickets.', flag: 'new' },
+    { id: 'documents', name: 'Contracts & Consent', group: 'Ops', file: 'documents.html', desc: 'Service agreement, safeguarding consent, recording consent — Drive links + status.', flag: 'ent' },
+    { id: 'policies', name: 'Policies', group: 'Ops', file: 'policies.html', desc: 'Cancellation, refund, safeguarding, late policy. Shown on parent portal.', flag: 'core' },
+    { id: 'idcards', name: 'Learner Cards', group: 'Media', file: 'idcards.html', desc: 'Printable branded cards with QR for in-person check-in.', flag: 'core' },
+    { id: 'flyer', name: 'Marketing Flyer', group: 'Growth', file: 'flyer.html', desc: 'Printable admissions flyer. Free lead-gen.', flag: 'pop' },
+    { id: 'events', name: 'Workshops & Events', group: 'Sessions', file: 'events.html', desc: 'One-off workshops, bootcamps, exam clinics. Optional public RSVP.', flag: 'new' },
+    { id: 'polls', name: 'Polls', group: 'Comms', file: 'polls.html', desc: 'Schedule votes, topic votes, anonymous parent polls.', flag: 'core' },
+    { id: 'library', name: 'Digital Library', group: 'Learning', file: 'library.html', desc: 'Catalogued reading / past-paper links with optional comprehension score.', flag: 'core' },
+    { id: 'lms', name: 'Mini LMS', group: 'Learning', file: 'lms.html', desc: 'Courses, lessons, completion — scoped to an engagement.', flag: 'ent' },
+    { id: 'gamification', name: 'Streaks & Badges', group: 'Learning', file: 'gamification.html', desc: 'Homework streaks, mastery badges. Transparent point log.', flag: 'new' },
+    { id: 'rubrics', name: 'Rubrics', group: 'Learning', file: 'rubrics.html', desc: 'Criteria and scale for essays and projects.', flag: 'ent' },
+    { id: 'transcripts', name: 'Transcripts', group: 'Learning', file: 'transcripts.html', desc: 'Cumulative record across independent engagements.', flag: 'ent' },
+    { id: 'safeguarding', name: 'Safeguarding Log', group: 'Ops', file: 'safeguarding.html', desc: 'Confidential incidents. Admin/tutor only. Never in the parent nav.', flag: 'ent' },
+    { id: 'compliance', name: 'Compliance', group: 'Ops', file: 'compliance.html', desc: 'DBS/background checks, insurance, data-protection tasks.', flag: 'ent' },
+    { id: 'substitutions', name: 'Cover Tutors', group: 'Ops', file: 'substitutions.html', desc: 'Assign cover when a tutor is away. Hours still belong to the engagement.', flag: 'new' },
+    { id: 'rooms', name: 'Rooms / Locations', group: 'Ops', file: 'rooms.html', desc: 'In-person rooms or virtual standing rooms. Conflict check.', flag: 'new' },
+    { id: 'timezones', name: 'Timezone Desk', group: 'Ops', file: 'timezones.html', desc: 'International tutoring: convert a slot across learner, parent and tutor zones.', flag: 'core' },
+    { id: 'analytics', name: 'Practice Analytics', group: 'Analytics', file: 'analytics.html', desc: 'Studio-wide KPIs: utilisation, revenue, conversion, value-added distribution, retention.', flag: 'ent' },
+    { id: 'admin_data', name: 'Admin Data Console', group: 'Platform', file: 'admin-data.html', desc: 'Backup, restore, CSV export, table browser. SHA-256 sealed JSON archive.', flag: 'ent' },
+    { id: 'storage', name: 'Storage Manager', group: 'Platform', file: 'storage.html', desc: 'Watch the free 500 MB. Archive then purge old logs.', flag: 'ent' },
+    { id: 'activity_log', name: 'Activity Log', group: 'Platform', file: 'activity-log.html', desc: 'Who created, edited, deleted, signed in.', flag: 'ent' },
+    { id: 'approvals', name: 'Approvals', group: 'Platform', file: 'approvals.html', desc: 'Approve parent/learner/tutor self-signups.', flag: 'ent' },
+    { id: 'settings', name: 'Settings', group: 'Platform', file: 'settings.html', desc: 'Brand, signatures, 2FA, language, accessibility, cancellation policy, default timezone/currency.', flag: 'ent' },
+    { id: 'status_manager', name: 'Role & Status', group: 'Platform', file: 'status-manager.html', desc: 'Change role/status with an audit row.', flag: 'ent' },
+    { id: 'platform_health', name: 'Platform Health', group: 'Platform', file: 'platform-health.html', desc: 'Keep-alive heartbeat, DB size, Drive backup, license, idle lock.', flag: 'ent' },
+    { id: 'license', name: 'Site License', group: 'Platform', file: 'license.html', desc: 'Lifetime or subscription lock. Same idea as School Connect, adapted.', flag: 'ent' },
+    { id: 'feature_guide', name: 'Feature Guide', group: 'Platform', file: 'feature-guide.html', desc: 'In-app explanation of every module.', flag: 'core' },
+    { id: 'exam_links', name: 'Exam registration links', group: 'Growth', file: 'exam-links.html', desc: 'Shareable links for WAEC, NECO, UTME, IGCSE, IELTS, SAT and more. Passport as Drive link only.', flag: 'core' },
+    { id: 'exam_register', name: 'Public exam form', group: 'Growth', file: 'exam-register.html', desc: 'Candidate form opened by an exam link. Local and international boards.', flag: 'core' },
+    { id: 'stream', name: 'Class stream', group: 'Comms', file: 'stream.html', desc: 'Google Classroom-style feed: announcements, questions, materials. Link previews only.', flag: 'new' },
+    { id: 'classwork', name: 'Classwork', group: 'Learning', file: 'classwork.html', desc: 'Work organised by topic. Assignments, quizzes, materials, comment-only return, skills tags.', flag: 'new' },
+    { id: 'hmg_ecosystem', name: 'HMG Ecosystem', group: 'HMG Concepts', file: 'hmg-ecosystem.html', desc: 'HMG Concepts, Technologies, Academy, Media, Gospel. Visible on every generated studio.', flag: 'ent' },
+    { id: 'hmg_products', name: 'HMG Digital Products', group: 'HMG Concepts', file: 'hmg-products.html', desc: 'Product catalogue and contact paths for the ecosystem.', flag: 'ent' },
+    { id: 'apply', name: 'Public Inquiry Form', group: 'Growth', file: 'apply.html', desc: 'Public page parents use to request tutoring. Also opens shareable application links (?code=).', flag: 'core' },
+    { id: 'application_links', name: 'Application Links', group: 'Growth', file: 'application-links.html', desc: 'Generate robust, expiring, limited-use application URLs for a subject, 1:1 or group. Each code has its own form copy and use counter.', flag: 'core' },
+    { id: 'bookings_cycles', name: 'Cycle Bookings', group: 'Sessions', file: 'bookings.html', desc: 'A full booking is 4 cycles of 7 days. Times per cycle × 4 = total classes. Hourly rate × duration × classes = invoice. Visible to tutor, parent and learner.', flag: 'core' },
+    { id: 'session_complete', name: 'Complete a class', group: 'Sessions', file: 'session-complete.html', desc: 'Tutor marks a class done, writes what was taught, ticks SOW topics. Feedback lands on parent and learner dashboards and feeds insights.', flag: 'core' },
+    { id: 'sow', name: 'Scheme of Work', group: 'Learning', file: 'sow.html', desc: 'At the start of a term enter every subject topic. Follow coverage, evaluate each learner on each topic, push scores into the scoresheet.', flag: 'core' },
+    { id: 'quizzes', name: 'Quizzes (Self / Review / Graded)', group: 'Learning', file: 'practice.html', desc: 'Three quiz kinds. Self = iterative practice. Review = diagnose after class. Graded = exhaustive paper that auto-pushes to the scoresheet.', flag: 'core' },
+    { id: 'cbt_multi', name: 'Multi-subject CBT', group: 'Learning', file: 'cbt-multi.html', desc: 'One sitting, subject tabs (UTME-style). Shared timer, per-subject breakdown, same anti-cheat.', flag: 'pop' },
+    { id: 'cbt_review', name: 'Quiz review + PDF', group: 'Learning', file: 'cbt-review.html', desc: 'After a quiz the learner sees every item, their answer, the key and the explanation, then saves a study PDF.', flag: 'core' },
+    { id: 'scoresheet', name: 'Scoresheet', group: 'Analytics', file: 'scoresheet.html', desc: 'Single ledger of graded quizzes, SOW evaluations and homework. Visible to the linked parent and the learner.', flag: 'core' },
+    { id: 'reading', name: 'Reading assignments', group: 'Learning', file: 'reading.html', desc: 'Pre-class reading and video links tied to the next SOW topic. Learners tick items as they finish.', flag: 'core' },
+    { id: 'forum', name: 'Group forum', group: 'Comms', file: 'forum.html', desc: 'Discussion threads scoped to a group engagement. Tutor or learner can open a thread; everyone in that group can reply.', flag: 'new' },
+    { id: 'voting', name: 'Voting & polls', group: 'Comms', file: 'voting.html', desc: 'Anonymous or named studio polls with live tally. Multi-channel notify when a poll opens. Free, no AI.', flag: 'core' },
+    { id: 'profile', name: 'My profile', group: 'Platform', file: 'profile.html', desc: 'Name, phone, timezone, Drive photo, password. Family-safe.', flag: 'core' },
+    { id: 'leave', name: 'Tutor leave', group: 'Ops', file: 'leave.html', desc: 'Tutors request leave. Only an administrator can approve or reject.', flag: 'new' },
+    { id: 'eresources', name: 'E-resources / notes', group: 'Learning', file: 'eresources.html', desc: 'Study materials as Drive or web links, organised by subject and engagement.', flag: 'core' },
+    { id: 'reminders', name: 'Reminders + .ics calendar', group: 'Sessions', file: 'reminders.html', desc: 'WhatsApp/email/SMS class reminders and a standard .ics download for Google, Outlook and Apple Calendar. No paid Calendar API.', flag: 'core' },
+    { id: 'study_log', name: 'Study log / timer', group: 'Learning', file: 'study-log.html', desc: 'Learner start/stop timer per subject. Minutes on task, not just class time. TutorBird study-log parity.', flag: 'new' },
+    { id: 'makeup_credits', name: 'Makeup credit bank', group: 'Sessions', file: 'makeup-credits.html', desc: 'When the studio cancels, the family earns a credit on that engagement. Spent on a makeup. Never smeared across siblings.', flag: 'new' },
+    { id: 'public_book', name: 'Public self-booking', group: 'Growth', file: 'public-book.html', desc: 'Parents pick an open slot from tutor availability. No Calendly fee. Lands as an inquiry you confirm into a 4-cycle booking.', flag: 'pop' }
+  ];
+
+  const PRESETS = {
+    solo: {
+      name: 'Solo virtual tutor',
+      modules: ['engagements','learners','parents','subjects','inquiries','trials','calendar','sessions','availability','bookings','attendance','session_notes','meetings','diagnostics','goals','mastery','methodologies','curriculum','assignments','practice','progress_reports','insights','learner_360','atrisk','value_added','resources','packages','invoices','payments','announcements','messages','inbox','notifications','policies','timezones','settings','feature_guide','apply']
+    },
+    studio: {
+      name: 'Small studio (a few tutors)',
+      modules: MODULES.map(m => m.id).filter(id => !['safeguarding'].includes(id))
+    },
+    exam: {
+      name: 'Exam-prep specialist',
+      modules: ['engagements','learners','parents','subjects','inquiries','trials','calendar','sessions','attendance','session_notes','diagnostics','goals','mastery','methodologies','curriculum','assignments','practice','cbt_exam','cbt_prompts','progress_reports','insights','learner_360','exam_targets','predictions','value_added','flashcards','packages','invoices','payments','inbox','timezones','analytics','apply']
+    },
+    enterprise: { name: 'Everything', modules: MODULES.map(m => m.id) }
+  };
+  PRESETS.secondary = { name: 'Exam-prep (alias)', modules: PRESETS.exam.modules.slice() };
+
+  const CHATBOT_KB = [
+    { m: ['engagement', '1:1', 'one-on-one', 'group', 'independent'], r: 'An **Engagement** is one independent teaching contract — either one learner (1:1) or a named group. Each has its own curriculum, hour bank, goals, fees and analytics. Siblings and groups never share data unless you link them.', p: 'engagements.html' },
+    { m: ['insight', 'graph', 'analytics', 'performance'], r: 'Open **Insights Lab** or **Learner 360**. Charts are computed in the browser from your sessions, scores and mastery — no AI API. At-risk flags use transparent rules (attendance, score slope, idle days, hours left).', p: 'insights.html' },
+    { m: ['hour', 'package', 'bank', 'prepaid'], r: '**Hour Banks** hold prepaid hours on the engagement. Completing a session deducts minutes. Cancellations can restore hours based on your policy.', p: 'packages.html' },
+    { m: ['timezone', 'international'], r: 'Every learner, parent and tutor has a timezone. The calendar stores UTC and displays local time. Use **Timezone Desk** to convert a slot.', p: 'timezones.html' },
+    { m: ['deploy', 'supabase', 'host'], r: 'Create a free Supabase project, run database/complete-schema.sql once, paste the URL and anon key into assets/js/config.js, host the folder on Vercel/Netlify/GitHub Pages. See DEPLOYMENT-GUIDE.md.' },
+    { m: ['ai', 'chatgpt', 'api'], r: 'Tutoring Connect does **not** call any paid AI API. Question-bank prompts are copy-paste text for a tool you already use. Grading, predictions and at-risk flags are formulas you can read.' },
+    { m: ['cycle', 'booking', '4 cycle', 'eight class'], r: 'A full booking is **4 cycles of 7 days**. Times per cycle × 4 = classes. 2 per cycle = 8 classes; 1 per cycle = 4. Amount = hourly rate × hours. Open Cycle bookings.', p: 'bookings.html' },
+    { m: ['self quiz', 'review quiz', 'graded'], r: '**Self-Quiz** is private practice (off the scoresheet). **Review-Quiz** diagnoses after class. **Graded-Quiz** is official and auto-pushes to the scoresheet. Sit with your student ID on Take quiz.', p: 'practice.html' },
+    { m: ['drive', 'backup'], r: 'Admin Data → Google Drive card. Follow docs/GOOGLE-DRIVE-SYNC-GUIDE.md. Archives are SHA-256 sealed.', p: 'admin-data.html' },
+    { m: ['pause', 'keepalive', 'heartbeat'], r: 'Open Platform Health and press the heartbeat button. Full 10-layer setup is in SUPABASE_FREE_TIER_PROTECTION.md.', p: 'platform-health.html' }
+  ];
+
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function slugify(s) { return String(s || 'studio').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 48) || 'studio'; }
+
+  w.TC = { THEMES, FONTS, LAYOUTS, MODULES, PRESETS, CHATBOT_KB, esc, slugify };
+})(window);
