@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /about.html
+Allow: /apply.html
+Allow: /feature-guide.html
+Allow: /hmg-ecosystem.html
+Allow: /hmg-products.html
+Allow: /exam-register.html
+Disallow: /admin-data.html
+Disallow: /safeguarding.html
+Sitemap: sitemap.xml
