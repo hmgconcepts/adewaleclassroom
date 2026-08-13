@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sign in • ADEWALE CLASSROOM</title>
+<meta name="description" content="Sign in to ADEWALE CLASSROOM — official tutoring portal.">
+<meta name="theme-color" content="#134e4a">
+<meta name="author" content="HMG Technologies · HMG Concepts">
+<link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;800&display=swap" rel="stylesheet">
+<meta property="og:title" content="Sign in • ADEWALE CLASSROOM">
+<meta property="og:description" content="Sign in to ADEWALE CLASSROOM — official tutoring portal.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="assets/css/style.css">
+<style>
+.help-card{background:linear-gradient(135deg,#ecfdf5,#fff7ed);border:1px solid #d1fae5;border-radius:16px;padding:16px 18px;margin-bottom:16px}
+.help-card p{margin:.4rem 0 0;color:#334155;line-height:1.55}
+.workflow{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
+.workflow span{background:#fff;border:1px solid #e2e8f0;border-radius:999px;padding:4px 10px;font-size:.78rem;font-weight:700}
+.related{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.pwa-install-banner{display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:9990;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 16px 40px rgba(15,23,42,.18);padding:12px 14px;gap:12px;align-items:center}
+.pwa-install-banner.show{display:flex}
+.toast-container{position:fixed;right:16px;top:16px;z-index:10001;display:flex;flex-direction:column;gap:8px}
+.toast{background:#0f172a;color:#fff;border-radius:12px;padding:10px 14px;max-width:360px}
+.toast-success{background:#166534}.toast-danger{background:#991b1b}.toast-warning{background:#92400e}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:10000;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.show{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:720px;width:100%;max-height:90vh;overflow:auto}
+.modal-header,.modal-footer{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.modal-body{padding:18px}
+.notif-dropdown.show{display:block!important}
+
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/catalog.js"></script>
+<script src="assets/js/license.js"></script>
+<script src="assets/js/media.js"></script>
+<script src="assets/js/brand.js"></script>
+<script src="assets/js/notifications.js"></script>
+<script src="assets/js/pwa-install.js"></script>
+<script src="assets/js/site-help.js"></script>
+<script src="assets/js/assistant-kb.js"></script>
+<script src="assets/js/ics.js"></script>
+<script src="assets/js/chatbot.js"></script>
+<script src="assets/js/ai-assistant.js"></script>
+<script src="assets/js/security-guard.js"></script>
+<script src="assets/js/voting.js"></script>
+<script src="assets/js/enterprise.js"></script>
+<script src="assets/js/crud.js"></script>
+<script src="assets/js/insights.js"></script>
+<script src="assets/js/cbt.js"></script>
+<script src="assets/js/proctor.js"></script>
+<script src="assets/js/bookings-engine.js"></script>
+<script src="assets/js/analytics.js"></script>
+<script src="assets/js/super.js"></script>
+<script src="assets/js/app.js"></script>
+</head>
+<body>
+<header class="public-nav" style="display:flex;justify-content:space-between;align-items:center;padding:16px 24px">
+  <a href="index.html" class="app-brand" style="border:0;padding:0"><img data-logo src="assets/img/logo.svg" width="36" alt=""><strong data-practice-name>ADEWALE CLASSROOM</strong></a>
+  <nav><a href="about.html">About</a> · <a href="apply.html">Apply</a> · <a href="install.html">Install</a></nav>
+</header>
+<main class="container" style="max-width:480px;padding:48px 16px">
+  <h1 class="serif">Studio sign in</h1>
+  <p class="muted" data-practice-motto></p>
+  <div style="display:flex;gap:8px;margin:16px 0">
+    <button class="btn btn-primary" type="button" data-auth-tab="signin">Sign in</button>
+    <button class="btn btn-ghost" type="button" data-auth-tab="signup">Request access</button>
+  </div>
+  <form id="form-signin" class="card" data-auth-panel="in">
+    <div class="form-group"><label>Email, name or student ID (TC-0001)</label><input class="form-input" name="email" required autocomplete="username"></div>
+    <div class="form-group"><label>Password</label><input class="form-input" type="password" name="password" required autocomplete="current-password"></div>
+    <button class="btn btn-primary" type="submit">Sign in</button>
+    <p class="help"><a href="forgot-password.html">Forgot password?</a></p>
+  </form>
+  <form id="form-signup" class="card" data-auth-panel="up" hidden>
+    <div class="form-group"><label>Full name</label><input class="form-input" name="full_name" required></div>
+    <div class="form-group"><label>Email</label><input class="form-input" type="email" name="email" required></div>
+    <div class="form-group"><label>Phone</label><input class="form-input" name="phone"></div>
+    <div class="form-group"><label>I am a</label>
+      <select class="form-select" name="role">
+        <option value="parent">Parent</option>
+        <option value="student">Learner</option>
+        <option value="tutor">Tutor</option>
+        <option value="admin">Studio admin</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Password (min 8)</label><input class="form-input" type="password" name="password" minlength="8" required></div>
+    <button class="btn btn-primary" type="submit">Request access</button>
+    <p class="help">An admin approves you before sign-in works. That keeps family data closed.</p>
+  </form>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/catalog.js"></script>
+<script src="assets/js/security-guard.js"></script>
+<script src="assets/js/pwa-install.js"></script>
+<script src="assets/js/app.js"></script>
+</body></html>

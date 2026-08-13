@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cycle bookings • ADEWALE CLASSROOM</title>
+<meta name="description" content="Full booking = 4 cycles × 7 days.">
+<meta name="theme-color" content="#134e4a">
+<meta name="author" content="HMG Technologies · HMG Concepts">
+<link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;800&display=swap" rel="stylesheet">
+<meta property="og:title" content="Cycle bookings • ADEWALE CLASSROOM">
+<meta property="og:description" content="Full booking = 4 cycles × 7 days.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="assets/css/style.css">
+<style>
+.help-card{background:linear-gradient(135deg,#ecfdf5,#fff7ed);border:1px solid #d1fae5;border-radius:16px;padding:16px 18px;margin-bottom:16px}
+.help-card p{margin:.4rem 0 0;color:#334155;line-height:1.55}
+.workflow{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
+.workflow span{background:#fff;border:1px solid #e2e8f0;border-radius:999px;padding:4px 10px;font-size:.78rem;font-weight:700}
+.related{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.pwa-install-banner{display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:9990;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 16px 40px rgba(15,23,42,.18);padding:12px 14px;gap:12px;align-items:center}
+.pwa-install-banner.show{display:flex}
+.toast-container{position:fixed;right:16px;top:16px;z-index:10001;display:flex;flex-direction:column;gap:8px}
+.toast{background:#0f172a;color:#fff;border-radius:12px;padding:10px 14px;max-width:360px}
+.toast-success{background:#166534}.toast-danger{background:#991b1b}.toast-warning{background:#92400e}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:10000;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.show{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:720px;width:100%;max-height:90vh;overflow:auto}
+.modal-header,.modal-footer{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.modal-body{padding:18px}
+.notif-dropdown.show{display:block!important}
+
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/catalog.js"></script>
+<script src="assets/js/license.js"></script>
+<script src="assets/js/media.js"></script>
+<script src="assets/js/brand.js"></script>
+<script src="assets/js/notifications.js"></script>
+<script src="assets/js/pwa-install.js"></script>
+<script src="assets/js/site-help.js"></script>
+<script src="assets/js/assistant-kb.js"></script>
+<script src="assets/js/ics.js"></script>
+<script src="assets/js/chatbot.js"></script>
+<script src="assets/js/ai-assistant.js"></script>
+<script src="assets/js/security-guard.js"></script>
+<script src="assets/js/voting.js"></script>
+<script src="assets/js/enterprise.js"></script>
+<script src="assets/js/crud.js"></script>
+<script src="assets/js/insights.js"></script>
+<script src="assets/js/cbt.js"></script>
+<script src="assets/js/proctor.js"></script>
+<script src="assets/js/bookings-engine.js"></script>
+<script src="assets/js/analytics.js"></script>
+<script src="assets/js/super.js"></script>
+<script src="assets/js/app.js"></script>
+</head>
+<body>
+<div class="app-layout" data-require-role="any" id="app-layout">
+  <aside class="app-sidebar" id="app-sidebar">
+    <div class="app-brand"><img data-logo src="assets/img/logo.svg" alt=""><div><strong data-practice-name>ADEWALE CLASSROOM</strong><span class="muted">Tutoring Connect</span></div></div>
+    <nav class="app-nav">
+      <a href="dashboard.html" data-module-id="dashboard" data-module="dashboard" data-role-allow="any"><span class="app-nav-icon">⌂</span><span>Dashboard</span></a>
+      <a href="engagements.html" data-module-id="engagements" data-module="engagements" data-role-allow="admin tutor staff"><span class="app-nav-icon">◈</span><span>Engagements</span></a>
+      <a href="learners.html" data-module-id="learners" data-module="learners" data-role-allow="any"><span class="app-nav-icon">◎</span><span>Learners</span></a>
+      <a href="groups.html" data-module-id="groups" data-module="groups" data-role-allow="admin tutor staff"><span class="app-nav-icon">👥</span><span>Groups</span></a>
+      <a href="parents.html" data-module-id="parents" data-module="parents" data-role-allow="admin tutor staff"><span class="app-nav-icon">👪</span><span>Parents</span></a>
+      <a href="tutors.html" data-module-id="tutors" data-module="tutors" data-role-allow="admin"><span class="app-nav-icon">👨‍🏫</span><span>Tutors</span></a>
+      <a href="subjects.html" data-module-id="subjects" data-module="subjects" data-role-allow="admin tutor staff"><span class="app-nav-icon">📖</span><span>Subjects</span></a>
+      <a href="inquiries.html" data-module-id="inquiries" data-module="inquiries" data-role-allow="admin tutor staff"><span class="app-nav-icon">✉</span><span>Inquiries</span></a>
+      <a href="calendar.html" data-module-id="calendar" data-module="calendar" data-role-allow="any"><span class="app-nav-icon">▦</span><span>Calendar</span></a>
+      <a href="bookings.html" data-module-id="bookings" data-module="bookings" data-role-allow="any" class="active"><span class="app-nav-icon">📅</span><span>Cycle bookings</span></a>
+      <a href="sessions.html" data-module-id="sessions" data-module="sessions" data-role-allow="any"><span class="app-nav-icon">🗓️</span><span>Sessions</span></a>
+      <a href="session-complete.html" data-module-id="session_complete" data-module="session_complete" data-role-allow="admin tutor staff"><span class="app-nav-icon">✅</span><span>Complete a class</span></a>
+      <a href="attendance.html" data-module-id="attendance" data-module="attendance" data-role-allow="any"><span class="app-nav-icon">📋</span><span>Attendance</span></a>
+      <a href="sow.html" data-module-id="sow" data-module="sow" data-role-allow="admin tutor staff"><span class="app-nav-icon">📑</span><span>Scheme of work</span></a>
+      <a href="practice.html" data-module-id="practice" data-module="practice" data-role-allow="admin tutor staff"><span class="app-nav-icon">📝</span><span>Quizzes</span></a>
+      <a href="cbt-exam.html" data-module-id="cbt_exam" data-module="cbt_exam" data-role-allow="any"><span class="app-nav-icon">🖊</span><span>Take quiz</span></a>
+      <a href="reading.html" data-module-id="reading" data-module="reading" data-role-allow="any"><span class="app-nav-icon">📚</span><span>Reading</span></a>
+      <a href="scoresheet.html" data-module-id="scoresheet" data-module="scoresheet" data-role-allow="any"><span class="app-nav-icon">📒</span><span>Scoresheet</span></a>
+      <a href="stream.html" data-module-id="stream" data-module="stream" data-role-allow="any"><span class="app-nav-icon">📡</span><span>Stream</span></a>
+      <a href="classwork.html" data-module-id="classwork" data-module="classwork" data-role-allow="any"><span class="app-nav-icon">📂</span><span>Classwork</span></a>
+      <a href="forum.html" data-module-id="forum" data-module="forum" data-role-allow="any"><span class="app-nav-icon">💬</span><span>Group forum</span></a>
+      <a href="insights.html" data-module-id="insights" data-module="insights" data-role-allow="any"><span class="app-nav-icon">▣</span><span>Insights Lab</span></a>
+      <a href="learner-360.html" data-module-id="learner_360" data-module="learner_360" data-role-allow="any"><span class="app-nav-icon">◎</span><span>Learner 360</span></a>
+      <a href="analytics.html" data-module-id="analytics" data-module="analytics" data-role-allow="admin"><span class="app-nav-icon">📊</span><span>Analytics</span></a>
+      <a href="packages.html" data-module-id="packages" data-module="packages" data-role-allow="any"><span class="app-nav-icon">◷</span><span>Hour banks</span></a>
+      <a href="invoices.html" data-module-id="invoices" data-module="invoices" data-role-allow="any"><span class="app-nav-icon">🧾</span><span>Invoices</span></a>
+      <a href="inbox.html" data-module-id="inbox" data-module="inbox" data-role-allow="any"><span class="app-nav-icon">📥</span><span>Inbox</span></a>
+      <a href="announcements.html" data-module-id="announcements" data-module="announcements" data-role-allow="any"><span class="app-nav-icon">📢</span><span>Announcements</span></a>
+      <a href="notifications.html" data-module-id="notifications" data-module="notifications" data-role-allow="any"><span class="app-nav-icon">🔔</span><span>Notifications</span></a>
+      <a href="voting.html" data-module-id="voting" data-module="voting" data-role-allow="any"><span class="app-nav-icon">🗳️</span><span>Voting</span></a>
+      <a href="apply.html" data-module-id="apply" data-module="apply" data-role-allow="any"><span class="app-nav-icon">📝</span><span>Apply</span></a>
+      <a href="exam-links.html" data-module-id="exam_links" data-module="exam_links" data-role-allow="admin tutor staff"><span class="app-nav-icon">🎫</span><span>Exam links</span></a>
+      <a href="settings.html" data-module-id="settings" data-module="settings" data-role-allow="admin"><span class="app-nav-icon">⚙️</span><span>Settings</span></a>
+      <a href="admin-data.html" data-module-id="admin_data" data-module="admin_data" data-role-allow="admin"><span class="app-nav-icon">🗃️</span><span>Admin data</span></a>
+      <a href="platform-health.html" data-module-id="platform_health" data-module="platform_health" data-role-allow="admin"><span class="app-nav-icon">🛡️</span><span>Health</span></a>
+      <a href="feature-guide.html" data-module-id="feature_guide" data-module="feature_guide" data-role-allow="any"><span class="app-nav-icon">📘</span><span>Feature guide</span></a>
+      <a href="hmg-ecosystem.html" data-module-id="hmg_ecosystem" data-module="hmg_ecosystem" data-role-allow="any"><span class="app-nav-icon">🌐</span><span>HMG Ecosystem</span></a>
+    </nav>
+  </aside>
+  <div class="app-main">
+    <header class="app-topbar">
+      <button class="mobile-toggle" type="button" aria-label="Menu">☰</button>
+      <h1 class="app-page-title">Cycle bookings</h1>
+      <div class="user-chip"><strong id="user-display-name" data-user-name></strong>
+        <span id="user-display-role" data-user-role></span>
+        <button class="btn btn-sm btn-ghost" id="btn-dark" type="button">Theme</button>
+        <button class="btn btn-sm btn-ghost" type="button" data-signout onclick="App.signOut()">Sign out</button></div>
+    </header>
+    <main class="app-content">
+      <section class="help-card">
+        <strong>Full booking = 4 cycles × 7 days</strong>
+        <p>A <b>cycle</b> is 7 days. A <b>full booking</b> is 4 cycles (28 days). 2 times per cycle = <b>8 classes</b>. 1 time per cycle = <b>4 classes</b>. Amount = hourly rate × (minutes/60) × classes. The same numbers appear on the tutor, parent and learner dashboards with date, time and duration.</p>
+        <div class="workflow"><span>1. Pick learner + engagement</span><span>2. Choose times per cycle (1 = 4 classes, 2 = 8)</span><span>3. Set duration and hourly rate</span><span>4. Save — SQL expands 4 cycles</span><span>5. Tutor, parent and learner all see date / time / duration</span></div>
+        <div class="related"><a class="btn btn-outline btn-sm" href="session-complete.html">Mark a class done</a><a class="btn btn-outline btn-sm" href="invoices.html">Raise the invoice</a><a class="btn btn-outline btn-sm" href="calendar.html">See the timetable</a><a class="btn btn-outline btn-sm" href="packages.html">Debit the hour bank</a></div>
+      </section>
+      <div class="card">
+        <div class="grid grid-2">
+          <div class="form-group"><label>Learner</label><select class="form-select" id="learner_id"></select></div>
+          <div class="form-group"><label>Engagement</label><select class="form-select" id="engagement_id"></select></div>
+          <div class="form-group"><label>Start of cycle 1</label><input class="form-input" id="started_on" type="date"></div>
+          <div class="form-group"><label>Times per cycle</label>
+            <select class="form-select" id="tpc"><option value="1">1 class / cycle → 4 classes</option><option value="2" selected>2 classes / cycle → 8 classes</option><option value="3">3 classes / cycle → 12 classes</option></select>
+          </div>
+          <div class="form-group"><label>Duration (minutes)</label><input class="form-input" id="dur" type="number" value="60"></div>
+          <div class="form-group"><label>Hourly rate</label><input class="form-input" id="rate" type="number" value="8000"></div>
+          <div class="form-group"><label>First weekday (0=Sun … 6=Sat)</label><input class="form-input" id="wd" type="number" value="6"></div>
+          <div class="form-group"><label>First time</label><input class="form-input" id="tm" type="time" value="16:00"></div>
+          <div class="form-group"><label>Second weekday (if 2×)</label><input class="form-input" id="wd2" type="number" value="3"></div>
+          <div class="form-group"><label>Second time</label><input class="form-input" id="tm2" type="time" value="16:00"></div>
+        </div>
+        <div id="quote"></div>
+        <button class="btn btn-primary" type="button" id="save">Create booking &amp; generate 4-cycle timetable</button>
+      </div>
+      <h3 style="margin-top:18px">Upcoming classes</h3>
+      <div id="upcoming"></div>
+    </main>
+  </div>
+</div>
+<div id="toast-container" class="toast-container"></div>
+<script>
+
+async function fillRefs(){
+  if(!window.sb) return;
+  const l=await sb.from('learners').select('id,full_name,student_no').order('full_name').limit(400);
+  const e=await sb.from('engagements').select('id,name,hourly_rate').order('name').limit(400);
+  const lp=document.getElementById('learner_id'), ep=document.getElementById('engagement_id');
+  if(lp) lp.innerHTML='<option value=""></option>'+(l.data||[]).map(x=>`<option value="${x.id}">${TC.esc(x.full_name)} ${x.student_no?('· '+x.student_no):''}</option>`).join('');
+  if(ep) ep.innerHTML='<option value=""></option>'+(e.data||[]).map(x=>`<option value="${x.id}" data-rate="${x.hourly_rate||''}">${TC.esc(x.name)}</option>`).join('');
+  const q=new URLSearchParams(location.search);
+  if(q.get('learner')&&lp) lp.value=q.get('learner');
+  if(ep) ep.onchange=()=>{ const o=ep.selectedOptions[0]; if(o&&o.dataset.rate) document.getElementById('rate').value=o.dataset.rate; paintQ(); };
+}
+function q(){ return Bookings.quote({ timesPerCycle: document.getElementById('tpc').value, cycleCount: 4, durationMin: document.getElementById('dur').value, hourlyRate: document.getElementById('rate').value }); }
+function paintQ(){ if(window.Bookings) Bookings.renderBreakdown(document.getElementById('quote'), q(), (window.PRACTICE&&PRACTICE.currency)||'₦'); }
+['tpc','dur','rate'].forEach(id => { const el=document.getElementById(id); if(el) el.onchange = paintQ; });
+document.addEventListener('DOMContentLoaded', () => { paintQ(); fillRefs(); loadUp(); });
+document.getElementById('save').onclick = async () => {
+  const row = {
+    learner_id: document.getElementById('learner_id').value || null,
+    engagement_id: document.getElementById('engagement_id').value || null,
+    started_on: document.getElementById('started_on').value,
+    times_per_cycle: Number(document.getElementById('tpc').value),
+    cycle_count: 4,
+    duration_minutes: Number(document.getElementById('dur').value),
+    hourly_rate: Number(document.getElementById('rate').value),
+    weekday: Number(document.getElementById('wd').value),
+    slot_time: document.getElementById('tm').value,
+    weekday_2: Number(document.getElementById('wd2').value),
+    slot_time_2: document.getElementById('tm2').value,
+    currency: (window.PRACTICE&&PRACTICE.currency)||'₦',
+    status: 'active'
+  };
+  if (!row.started_on) { toast('Pick the start of cycle 1', 'warning'); return; }
+  if (!window.sb) { toast('Preview quote only. Connect Supabase to generate the 4-cycle timetable.', 'warning'); return; }
+  const { error } = await window.sb.from('booking_blocks').insert(row);
+  if (error) toast(error.message, 'danger'); else { toast('Booking created. Classes expanded for 4 cycles.', 'success'); loadUp(); }
+};
+async function loadUp() {
+  if (!window.sb) return;
+  const { data } = await window.sb.from('booking_classes').select('*').order('scheduled_at').limit(40);
+  document.getElementById('upcoming').innerHTML = (data||[]).map(c => `<div class="card" style="margin-bottom:8px">
+    <b>Cycle ${c.cycle_no} · class ${c.seq_in_cycle}</b>
+    <div>${new Date(c.scheduled_at).toLocaleString()} · ${c.duration_minutes} min · <span class="badge">${c.status}</span></div>
+    ${c.tutor_feedback ? `<p>${TC.esc(c.tutor_feedback)}</p>` : ''}
+  </div>`).join('') || '<p class="muted">No classes yet.</p>';
+}
+
+</script>
+</body>
+</html>

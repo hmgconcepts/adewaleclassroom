@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Multi-subject CBT • ADEWALE CLASSROOM</title>
+<meta name="description" content="UTME-style sitting. Shared timer. Per-subject and overall scores. Registered papers use student ID only. Each subject pushes its own scoresheet row.">
+<meta name="theme-color" content="#134e4a">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="assets/css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/catalog.js"></script>
+<script src="assets/js/license.js"></script>
+<script src="assets/js/cbt.js"></script>
+<script src="assets/js/proctor.js"></script>
+<script src="assets/js/assistant-kb.js"></script>
+<script src="assets/js/pwa-install.js"></script>
+<script src="assets/js/site-help.js"></script>
+<script src="assets/js/chatbot.js"></script>
+<script src="assets/js/app.js"></script>
+</head>
+<body data-cbt-exam="1">
+<main class="container" style="max-width:920px;padding:28px 16px 80px">
+  <h1 class="serif">Multi-subject CBT</h1>
+  <section class="help-card">
+    <strong>One sitting · subject tabs · two score layers</strong>
+    <p>Same identity rules as Take quiz: <b>Registered</b> = student ID only (official name auto-filled). <b>Open</b> = guests or registered learners. When the paper is Graded, the trigger writes <b>one scoresheet row per subject</b> plus an overall row — so Maths does not smear into English.</p>
+  </section>
+  <p><a class="btn btn-outline" href="cbt-exam.html">Single-paper Take quiz</a>
+     <a class="btn btn-ghost" href="practice.html">Create a paper</a></p>
+  <div id="gate" class="card">
+    <div class="form-group"><label>Quiz code</label><input class="form-input" id="code"></div>
+    <div class="form-group"><label>Student ID (required if Registered)</label><input class="form-input" id="sid" placeholder="TC-0001"></div>
+    <div class="form-group"><label>Name (auto from ID on Registered papers)</label><input class="form-input" id="dname"></div>
+    <p id="hint" class="muted"></p>
+    <button class="btn btn-primary" type="button" id="go">Open paper</button>
+  </div>
+  <div id="exam" hidden></div>
+  <div id="review" hidden></div>
+</main>
+<script>
+CBT.init(window.sb);
+const q=new URLSearchParams(location.search);
+if(q.get('code')) document.getElementById('code').value=q.get('code');
+const cached=localStorage.getItem('tc-student-no'); if(cached) document.getElementById('sid').value=cached;
+document.getElementById('go').onclick=()=>{ location.href='cbt-exam.html?code='+encodeURIComponent(document.getElementById('code').value.trim()); };
+</script>
+</body>
+</html>

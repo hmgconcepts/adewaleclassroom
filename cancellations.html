@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cancellations • ADEWALE CLASSROOM</title>
+<meta name="description" content="Who cancelled, notice hours, fee applied, hours returned. Transparent for parents.">
+<meta name="theme-color" content="#134e4a">
+<meta name="author" content="HMG Technologies · HMG Concepts">
+<link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;800&display=swap" rel="stylesheet">
+<meta property="og:title" content="Cancellations • ADEWALE CLASSROOM">
+<meta property="og:description" content="Who cancelled, notice hours, fee applied, hours returned. Transparent for parents.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="assets/css/style.css">
+<style>
+.help-card{background:linear-gradient(135deg,#ecfdf5,#fff7ed);border:1px solid #d1fae5;border-radius:16px;padding:16px 18px;margin-bottom:16px}
+.help-card p{margin:.4rem 0 0;color:#334155;line-height:1.55}
+.workflow{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
+.workflow span{background:#fff;border:1px solid #e2e8f0;border-radius:999px;padding:4px 10px;font-size:.78rem;font-weight:700}
+.related{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.pwa-install-banner{display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:9990;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 16px 40px rgba(15,23,42,.18);padding:12px 14px;gap:12px;align-items:center}
+.pwa-install-banner.show{display:flex}
+.toast-container{position:fixed;right:16px;top:16px;z-index:10001;display:flex;flex-direction:column;gap:8px}
+.toast{background:#0f172a;color:#fff;border-radius:12px;padding:10px 14px;max-width:360px}
+.toast-success{background:#166534}.toast-danger{background:#991b1b}.toast-warning{background:#92400e}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:10000;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.show{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:720px;width:100%;max-height:90vh;overflow:auto}
+.modal-header,.modal-footer{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.modal-body{padding:18px}
+.notif-dropdown.show{display:block!important}
+
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/catalog.js"></script>
+<script src="assets/js/license.js"></script>
+<script src="assets/js/media.js"></script>
+<script src="assets/js/brand.js"></script>
+<script src="assets/js/notifications.js"></script>
+<script src="assets/js/pwa-install.js"></script>
+<script src="assets/js/site-help.js"></script>
+<script src="assets/js/assistant-kb.js"></script>
+<script src="assets/js/ics.js"></script>
+<script src="assets/js/chatbot.js"></script>
+<script src="assets/js/ai-assistant.js"></script>
+<script src="assets/js/security-guard.js"></script>
+<script src="assets/js/voting.js"></script>
+<script src="assets/js/enterprise.js"></script>
+<script src="assets/js/crud.js"></script>
+<script src="assets/js/insights.js"></script>
+<script src="assets/js/cbt.js"></script>
+<script src="assets/js/proctor.js"></script>
+<script src="assets/js/bookings-engine.js"></script>
+<script src="assets/js/analytics.js"></script>
+<script src="assets/js/super.js"></script>
+<script src="assets/js/app.js"></script>
+</head>
+<body>
+<div class="app-layout" data-require-role="any" id="app-layout">
+  <aside class="app-sidebar" id="app-sidebar">
+    <div class="app-brand"><img data-logo src="assets/img/logo.svg" alt=""><div><strong data-practice-name>ADEWALE CLASSROOM</strong><span class="muted">Tutoring Connect</span></div></div>
+    <nav class="app-nav">
+      <a href="dashboard.html" data-module-id="dashboard" data-module="dashboard" data-role-allow="any"><span class="app-nav-icon">⌂</span><span>Dashboard</span></a>
+      <a href="engagements.html" data-module-id="engagements" data-module="engagements" data-role-allow="admin tutor staff"><span class="app-nav-icon">◈</span><span>Engagements</span></a>
+      <a href="learners.html" data-module-id="learners" data-module="learners" data-role-allow="any"><span class="app-nav-icon">◎</span><span>Learners</span></a>
+      <a href="groups.html" data-module-id="groups" data-module="groups" data-role-allow="admin tutor staff"><span class="app-nav-icon">👥</span><span>Groups</span></a>
+      <a href="parents.html" data-module-id="parents" data-module="parents" data-role-allow="admin tutor staff"><span class="app-nav-icon">👪</span><span>Parents</span></a>
+      <a href="tutors.html" data-module-id="tutors" data-module="tutors" data-role-allow="admin"><span class="app-nav-icon">👨‍🏫</span><span>Tutors</span></a>
+      <a href="subjects.html" data-module-id="subjects" data-module="subjects" data-role-allow="admin tutor staff"><span class="app-nav-icon">📖</span><span>Subjects</span></a>
+      <a href="inquiries.html" data-module-id="inquiries" data-module="inquiries" data-role-allow="admin tutor staff"><span class="app-nav-icon">✉</span><span>Inquiries</span></a>
+      <a href="calendar.html" data-module-id="calendar" data-module="calendar" data-role-allow="any"><span class="app-nav-icon">▦</span><span>Calendar</span></a>
+      <a href="bookings.html" data-module-id="bookings" data-module="bookings" data-role-allow="any"><span class="app-nav-icon">📅</span><span>Cycle bookings</span></a>
+      <a href="sessions.html" data-module-id="sessions" data-module="sessions" data-role-allow="any"><span class="app-nav-icon">🗓️</span><span>Sessions</span></a>
+      <a href="session-complete.html" data-module-id="session_complete" data-module="session_complete" data-role-allow="admin tutor staff"><span class="app-nav-icon">✅</span><span>Complete a class</span></a>
+      <a href="attendance.html" data-module-id="attendance" data-module="attendance" data-role-allow="any"><span class="app-nav-icon">📋</span><span>Attendance</span></a>
+      <a href="sow.html" data-module-id="sow" data-module="sow" data-role-allow="admin tutor staff"><span class="app-nav-icon">📑</span><span>Scheme of work</span></a>
+      <a href="practice.html" data-module-id="practice" data-module="practice" data-role-allow="admin tutor staff"><span class="app-nav-icon">📝</span><span>Quizzes</span></a>
+      <a href="cbt-exam.html" data-module-id="cbt_exam" data-module="cbt_exam" data-role-allow="any"><span class="app-nav-icon">🖊</span><span>Take quiz</span></a>
+      <a href="reading.html" data-module-id="reading" data-module="reading" data-role-allow="any"><span class="app-nav-icon">📚</span><span>Reading</span></a>
+      <a href="scoresheet.html" data-module-id="scoresheet" data-module="scoresheet" data-role-allow="any"><span class="app-nav-icon">📒</span><span>Scoresheet</span></a>
+      <a href="stream.html" data-module-id="stream" data-module="stream" data-role-allow="any"><span class="app-nav-icon">📡</span><span>Stream</span></a>
+      <a href="classwork.html" data-module-id="classwork" data-module="classwork" data-role-allow="any"><span class="app-nav-icon">📂</span><span>Classwork</span></a>
+      <a href="forum.html" data-module-id="forum" data-module="forum" data-role-allow="any"><span class="app-nav-icon">💬</span><span>Group forum</span></a>
+      <a href="insights.html" data-module-id="insights" data-module="insights" data-role-allow="any"><span class="app-nav-icon">▣</span><span>Insights Lab</span></a>
+      <a href="learner-360.html" data-module-id="learner_360" data-module="learner_360" data-role-allow="any"><span class="app-nav-icon">◎</span><span>Learner 360</span></a>
+      <a href="analytics.html" data-module-id="analytics" data-module="analytics" data-role-allow="admin"><span class="app-nav-icon">📊</span><span>Analytics</span></a>
+      <a href="packages.html" data-module-id="packages" data-module="packages" data-role-allow="any"><span class="app-nav-icon">◷</span><span>Hour banks</span></a>
+      <a href="invoices.html" data-module-id="invoices" data-module="invoices" data-role-allow="any"><span class="app-nav-icon">🧾</span><span>Invoices</span></a>
+      <a href="inbox.html" data-module-id="inbox" data-module="inbox" data-role-allow="any"><span class="app-nav-icon">📥</span><span>Inbox</span></a>
+      <a href="announcements.html" data-module-id="announcements" data-module="announcements" data-role-allow="any"><span class="app-nav-icon">📢</span><span>Announcements</span></a>
+      <a href="notifications.html" data-module-id="notifications" data-module="notifications" data-role-allow="any"><span class="app-nav-icon">🔔</span><span>Notifications</span></a>
+      <a href="voting.html" data-module-id="voting" data-module="voting" data-role-allow="any"><span class="app-nav-icon">🗳️</span><span>Voting</span></a>
+      <a href="apply.html" data-module-id="apply" data-module="apply" data-role-allow="any"><span class="app-nav-icon">📝</span><span>Apply</span></a>
+      <a href="exam-links.html" data-module-id="exam_links" data-module="exam_links" data-role-allow="admin tutor staff"><span class="app-nav-icon">🎫</span><span>Exam links</span></a>
+      <a href="settings.html" data-module-id="settings" data-module="settings" data-role-allow="admin"><span class="app-nav-icon">⚙️</span><span>Settings</span></a>
+      <a href="admin-data.html" data-module-id="admin_data" data-module="admin_data" data-role-allow="admin"><span class="app-nav-icon">🗃️</span><span>Admin data</span></a>
+      <a href="platform-health.html" data-module-id="platform_health" data-module="platform_health" data-role-allow="admin"><span class="app-nav-icon">🛡️</span><span>Health</span></a>
+      <a href="feature-guide.html" data-module-id="feature_guide" data-module="feature_guide" data-role-allow="any"><span class="app-nav-icon">📘</span><span>Feature guide</span></a>
+      <a href="hmg-ecosystem.html" data-module-id="hmg_ecosystem" data-module="hmg_ecosystem" data-role-allow="any"><span class="app-nav-icon">🌐</span><span>HMG Ecosystem</span></a>
+    </nav>
+  </aside>
+  <div class="app-main">
+    <header class="app-topbar">
+      <button class="mobile-toggle" type="button" aria-label="Menu">☰</button>
+      <h1 class="app-page-title">Cancellations</h1>
+      <div class="user-chip"><strong id="user-display-name" data-user-name></strong>
+        <span id="user-display-role" data-user-role></span>
+        <button class="btn btn-sm btn-ghost" id="btn-dark" type="button">Theme</button>
+        <button class="btn btn-sm btn-ghost" type="button" data-signout onclick="App.signOut()">Sign out</button></div>
+    </header>
+    <main class="app-content">
+      <section class="help-card">
+        <strong>Cancellations</strong>
+        <p>Who cancelled, notice hours, fee applied, hours returned. Transparent for parents.</p>
+        
+        
+      </section>
+      <div id="crud-root"></div>
+      <script>document.addEventListener('DOMContentLoaded',()=>{ if(window.CRUD) CRUD.renderList('cancellations'); });</script>
+    </main>
+  </div>
+</div>
+<div id="toast-container" class="toast-container"></div>
+<script>
+
+</script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Take quiz • ADEWALE CLASSROOM</title>
+<meta name="description" content="Sit a quiz. Registered papers need your student ID only — your official name loads automatically. Open papers allow guests. Installable PWA.">
+<meta name="theme-color" content="#134e4a">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+<link rel="apple-touch-icon" href="assets/img/logo.png">
+<link rel="stylesheet" href="assets/css/style.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Source+Serif+4:wght@700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/catalog.js"></script>
+<script src="assets/js/license.js"></script>
+<script src="assets/js/cbt.js"></script>
+<script src="assets/js/proctor.js"></script>
+<script src="assets/js/assistant-kb.js"></script>
+<script src="assets/js/media.js"></script>
+<script src="assets/js/brand.js"></script>
+<script src="assets/js/pwa-install.js"></script>
+<script src="assets/js/site-help.js"></script>
+<script src="assets/js/chatbot.js"></script>
+<script src="assets/js/app.js"></script>
+</head>
+<body data-cbt-exam="1">
+<main class="container" style="max-width:880px;padding:28px 16px 80px">
+  <p class="muted"><a href="index.html" data-practice-name>ADEWALE CLASSROOM</a> · <a href="install.html">Install app</a></p>
+  <h1 class="serif">Take a quiz</h1>
+  <section class="help-card">
+    <strong>Two modes — the paper decides who you are</strong>
+    <p><b>Registered:</b> only enrolled learners. Enter your <b>student ID</b> (TC-0001). Your official name is loaded and shown — you do not type it to identify yourself (that prevents spelling errors). <b>Open / anonymous:</b> anyone may sit. Registered learners can still enter their ID so the score lands on their scoresheet; guests type a display name only.</p>
+  </section>
+  <div id="gate" class="card">
+    <div class="form-group"><label>Quiz code</label><input class="form-input" id="code" autocomplete="off" placeholder="ADC-MATH-01"></div>
+    <p id="mode-hint" class="muted">Enter the code first. The paper will say whether it is Registered or Open.</p>
+    <div class="form-group" id="sid-wrap"><label>Student ID</label><input class="form-input" id="sid" placeholder="TC-0001" autocomplete="username"></div>
+    <div class="form-group" id="name-wrap"><label>Name (shown on your script)</label><input class="form-input" id="dname" placeholder="Loaded from your student ID, or type a guest name on Open papers"></div>
+    <p id="who" class="muted"></p>
+    <button class="btn btn-primary" type="button" id="lookup">Look up paper &amp; identity</button>
+    <button class="btn btn-accent" type="button" id="start" disabled>Start quiz</button>
+  </div>
+  <div id="exam" hidden></div>
+  <div id="review" hidden></div>
+</main>
+<script>
+const state = { learner: null, exam: null, questions: [], started: 0, identity_mode: 'open' };
+CBT.init(window.sb);
+
+(function autofill(){
+  const q = new URLSearchParams(location.search);
+  if (q.get('code')) document.getElementById('code').value = q.get('code');
+  const cached = (window.TC_PROFILE && (TC_PROFILE.student_no || '')) || localStorage.getItem('tc-student-no') || '';
+  if (cached) document.getElementById('sid').value = cached;
+  if (window.TC_PROFILE && TC_PROFILE.full_name) document.getElementById('dname').value = TC_PROFILE.full_name;
+})();
+
+document.getElementById('lookup').onclick = async () => {
+  const code = document.getElementById('code').value.trim();
+  const sid = document.getElementById('sid').value.trim();
+  const hint = document.getElementById('mode-hint');
+  const who = document.getElementById('who');
+  document.getElementById('start').disabled = true;
+  state.learner = null; state.exam = null;
+
+  if (!window.sb) {
+    hint.textContent = 'Preview mode (no database). Treating this as an Open paper.';
+    state.identity_mode = 'open';
+    state.exam = { title: 'Preview quiz', quiz_kind: 'self', exam_mode: 'open', duration_min: 20,
+      anti_cheat: { tab_focus: true, block_copy: true },
+      questions: [
+        { question: '2 + 2 = ?', type: 'numeric', answer: '4', mark: 1, subject: 'Numeracy', explanation: 'Addition of whole numbers.' },
+        { question: 'The mean is always a data value.', type: 'true_false', answer: 'False', mark: 1, subject: 'Statistics', explanation: 'The mean need not appear in the set.' }
+      ]};
+    if (sid) {
+      try { state.learner = await CBT.lookupStudent(sid); } catch(_) {}
+    }
+    if (state.learner && state.learner.id) {
+      document.getElementById('dname').value = state.learner.full_name || '';
+      document.getElementById('dname').readOnly = true;
+      who.textContent = state.learner.full_name + ' · ' + state.learner.student_no;
+    } else {
+      document.getElementById('dname').readOnly = false;
+    }
+    document.getElementById('start').disabled = false;
+    return;
+  }
+
+  const { data, error } = await window.sb.rpc('tc_cbt_get_exam', { p_code: code, p_student_no: sid });
+  if (error) { toast(error.message, 'danger'); return; }
+  const pack = data || {};
+  if (!pack.ok) { toast(pack.message || 'Cannot open this paper.', 'danger'); hint.textContent = pack.message || ''; return; }
+
+  state.exam = pack;
+  state.identity_mode = pack.identity_mode || pack.exam_mode || 'open';
+  const cand = pack.candidate;
+  if (cand && cand.id) {
+    state.learner = cand;
+    document.getElementById('dname').value = cand.full_name || '';
+    document.getElementById('dname').readOnly = state.identity_mode === 'registered';
+    who.textContent = cand.full_name + ' · ' + cand.student_no + (cand.year_group ? ' · ' + cand.year_group : '');
+    try { localStorage.setItem('tc-student-no', cand.student_no || sid); } catch(_) {}
+  } else {
+    document.getElementById('dname').readOnly = false;
+    who.textContent = state.identity_mode === 'open'
+      ? 'Open paper. Type a display name if you are a guest, or enter a student ID to attach the score to your scoresheet.'
+      : '';
+  }
+  hint.innerHTML = state.identity_mode === 'registered'
+    ? '<b>Registered paper.</b> Only enrolled learners. Name is official and read-only.'
+    : '<b>Open paper.</b> Guests and registered learners may sit.';
+  if (state.identity_mode === 'registered' && !(cand && cand.id)) {
+    toast('Enter a valid student ID for this registered paper.', 'warning');
+    return;
+  }
+  document.getElementById('start').disabled = false;
+};
+
+document.getElementById('start').onclick = async () => {
+  if (!state.exam) { toast('Look up the paper first.', 'warning'); return; }
+  if (state.identity_mode === 'registered' && !(state.learner && state.learner.id)) {
+    toast('Registered paper — student ID required.', 'danger'); return;
+  }
+  const exam = state.exam;
+  state.questions = (exam.questions || []).map((q,i) => CBT.normalizeQuestion(q, i));
+  if (!state.questions.length) { toast('This quiz has no questions yet.', 'warning'); return; }
+  Proctor.startGuards(exam.anti_cheat || { tab_focus: true, block_copy: true }, () => {});
+  document.getElementById('gate').hidden = true;
+  const root = document.getElementById('exam');
+  root.hidden = false;
+  const mins = Number(exam.duration_min || 30);
+  state.started = Date.now();
+  const bySub = CBT.groupBySubject(state.questions);
+  const tabs = Object.keys(bySub).length > 1
+    ? '<div id="sub-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">' +
+      Object.keys(bySub).map((s,i) => '<button type="button" class="btn btn-sm '+(i===0?'btn-primary':'btn-outline')+'" data-sub="'+TC.esc(s)+'">'+TC.esc(s)+'</button>').join('') + '</div>'
+    : '';
+  root.innerHTML = `<div class="card" style="position:sticky;top:8px;z-index:5;display:flex;justify-content:space-between"><strong>${TC.esc(exam.title)}</strong><span id="timer">${mins}:00</span></div>
+    <p class="muted">${TC.esc(exam.quiz_kind || 'quiz')} · ${TC.esc(state.identity_mode)} · ${state.questions.length} items</p>
+    ${tabs}
+    <div id="qbox">${state.questions.map((q,i) => CBT.renderQuestion(q,i)).join('')}</div>
+    <button class="btn btn-primary" type="button" id="submit">Submit</button>`;
+  if (Object.keys(bySub).length > 1) {
+    const show = (sub) => {
+      document.querySelectorAll('#qbox .cbt-q').forEach((el, i) => {
+        const q = state.questions[i];
+        el.style.display = (!sub || (q.subject || 'General') === sub) ? '' : 'none';
+      });
+      document.querySelectorAll('#sub-tabs button').forEach(b => {
+        b.className = 'btn btn-sm ' + (b.dataset.sub === sub ? 'btn-primary' : 'btn-outline');
+      });
+    };
+    document.getElementById('sub-tabs').onclick = (e) => {
+      const b = e.target.closest('[data-sub]'); if (b) show(b.dataset.sub);
+    };
+    show(Object.keys(bySub)[0]);
+  }
+  const tick = () => {
+    const left = mins * 60 - Math.floor((Date.now() - state.started)/1000);
+    if (left <= 0) { document.getElementById('submit').click(); return; }
+    document.getElementById('timer').textContent = Math.floor(left/60) + ':' + String(left%60).padStart(2,'0');
+    state._t = setTimeout(tick, 1000);
+  };
+  tick();
+  document.getElementById('submit').onclick = finish;
+};
+
+async function finish() {
+  clearTimeout(state._t);
+  Proctor.stop();
+  const answers = CBT.collectAnswers(document.getElementById('qbox'));
+  const result = CBT.grade(state.questions, answers);
+  const displayName = document.getElementById('dname').value.trim() || (state.learner && state.learner.full_name) || 'Guest';
+  const meta = {
+    title: state.exam.title,
+    student_no: state.learner && state.learner.student_no,
+    full_name: displayName,
+    quiz_kind: state.exam.quiz_kind,
+    identity_mode: state.identity_mode
+  };
+  if (window.sb && state.exam.id) {
+    await window.sb.from('cbt_results').insert({
+      exam_id: state.exam.id,
+      learner_id: state.learner && state.learner.id,
+      student_no: meta.student_no,
+      candidate_name: displayName,
+      score: result.got, max_score: result.max,
+      quiz_kind: state.exam.quiz_kind,
+      answers, review: result.detail, subject_scores: result.subject_scores,
+      violations: Proctor.violations, detail: result
+    });
+  }
+  document.getElementById('exam').hidden = true;
+  const rev = document.getElementById('review');
+  rev.hidden = false;
+  const show = state.exam.show_review !== false;
+  rev.innerHTML = (show ? CBT.reviewHTML(result, meta) : `<div class="card"><h2>Submitted</h2><p>Your tutor will release the review.</p></div>`) +
+    `<p style="margin-top:12px"><button class="btn btn-accent" type="button" onclick="CBT.printReview()">Save / print PDF</button>
+     <a class="btn btn-ghost" href="scoresheet.html">Open scoresheet</a></p>`;
+  if (state.exam.quiz_kind === 'graded') {
+    toast('Graded result saved. Overall + each subject pushed to the scoresheet.', 'success');
+  }
+}
+</script>
+</body>
+</html>
