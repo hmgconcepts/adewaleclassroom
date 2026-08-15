@@ -1,0 +1,27 @@
+name: Weekly database backup
+on:
+  schedule:
+    - cron: '0 2 * * 0'
+  workflow_dispatch: {}
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Dump database
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -e
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "Add SUPABASE_DB_URL to enable weekly SQL dumps (private repo recommended)."
+            exit 0
+          fi
+          sudo apt-get -y install postgresql-client >/dev/null
+          pg_dump "$SUPABASE_DB_URL" --no-owner --format=plain --file="backup-$(date +%F).sql"
+          git config user.name backup-bot
+          git config user.email bot@studio
+          ls -1t backup-*.sql 2>/dev/null | tail -n +9 | xargs -r rm --
+          git add -A
+          git diff --cached --quiet || git commit -m "Backup $(date +%F)"
+          git push || true
