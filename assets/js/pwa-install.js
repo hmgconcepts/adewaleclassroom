@@ -8,7 +8,10 @@ const PWAInstall = {
   deferredPrompt: null,
   installed: false,
   dismissedAt: null,
-  showIntervalDays: 2,
+  // Re-prompt cadence: after dismissing, wait this long before gently asking
+  // again. The platform should CONSTANTLY invite install without nagging.
+  showIntervalHours: 24,
+  _snoozed: false,
 
   init() {
     // Listen for the browser's beforeinstallprompt event
@@ -16,7 +19,7 @@ const PWAInstall = {
       e.preventDefault();
       this.deferredPrompt = e;
       // Wait a beat so the page is interactive
-      setTimeout(() => this.maybeShowBanner(), 4000);
+      setTimeout(() => this.maybeShowBanner(), 3000);
     });
 
     // Listen for successful install
@@ -25,7 +28,7 @@ const PWAInstall = {
       this.deferredPrompt = null;
       localStorage.setItem('tc_pwa_installed', '1');
       this.hideBanner();
-      toast('🎉 App installed! Look for "Tutoring Connect" on your home screen.', 'success', 6000);
+      toast('🎉 App installed! Look for "' + ((window.PRACTICE && PRACTICE.name) || 'Tutoring Connect') + '" on your home screen.', 'success', 6000);
     });
 
     // Already installed (from previous session)?
@@ -39,8 +42,12 @@ const PWAInstall = {
       this.installed = true;
     }
 
-    // Show in-app "install" hint even when already installed (helps teachers show parents)
-    setTimeout(() => this.maybeShowBanner(), 6000);
+    // First gentle invite shortly after load...
+    setTimeout(() => this.maybeShowBanner(), 4000);
+    // ...then re-check on tab return and periodically so the invitation is
+    // always present until the user installs (requirement #3).
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) this.maybeShowBanner(); });
+    setInterval(() => this.maybeShowBanner(), this.showIntervalHours * 60 * 60 * 1000);
 
     this.bindUI();
   },
@@ -59,8 +66,13 @@ const PWAInstall = {
 
   maybeShowBanner() {
     if (this.installed) return;
+    if (this._snoozed) return;
     const banner = document.getElementById('pwa-install-banner');
     if (!banner) return;
+    // Respect a recent dismissal so we don't nag on every single page load.
+    const dismissedAt = Number(localStorage.getItem('tc_pwa_dismissed_at') || 0);
+    const waitMs = this.showIntervalHours * 60 * 60 * 1000;
+    if (dismissedAt && (Date.now() - dismissedAt) < waitMs) return;
     if (this.deferredPrompt) {
       // Chrome/Edge/Android
       banner.classList.add('show');

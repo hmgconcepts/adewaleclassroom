@@ -310,5 +310,134 @@ const Voting = {
   }
 };
 
-window.Voting = Voting;
-if (typeof window.VT !== 'undefined' && VT.refresh) VT.refresh();
+/* ====================================================================
+   VT — voting UI controller.
+   The Voting object above is the data/engine layer; VT renders the poll
+   list into #voting-root and wires data-vote-action buttons to it.
+   (Previously VT was referenced in bindUI()/onVoteInserted() but never
+   defined, so the voting page rendered nothing and buttons were dead.)
+   ==================================================================== */
+const VT = {
+  rootId: 'voting-root',
+  sb: null,
+  selected: {}, // pollId -> [candidateId,...]
+
+  init(sb) {
+    this.sb = sb || (window.Voting && Voting.sb) || window.sb || null;
+    try { if (window.Voting) { Voting.sb = this.sb; Voting.bindUI(); Voting.startRealtimeListener(); } } catch (_) {}
+    this.refresh();
+  },
+
+  async refresh() {
+    const root = document.getElementById(this.rootId);
+    if (!root) return;
+    root.innerHTML = '<p class="muted">Loading polls…</p>';
+    try {
+      const polls = await Voting.listPolls({});
+      if (!polls || !polls.length) {
+        root.innerHTML = '<div class="card"><p class="muted">No polls yet.</p></div>';
+        return;
+      }
+      const isAdmin = window.App && App.isOwnerRole && App.isOwnerRole(App.currentRole || App.role);
+      root.innerHTML = polls.map(p => this.pollCard(p, isAdmin)).join('');
+      // Load live tallies for open/closed polls
+      polls.forEach(p => this.refreshResults(p.id));
+    } catch (e) {
+      root.innerHTML = '<div class="card" style="border-color:#fecaca;background:#fff7f7"><p>Could not load polls: ' + (e && e.message || e) + '</p></div>';
+    }
+  },
+
+  parseCandidates(p) {
+    let c = p.candidates || [];
+    if (typeof c === 'string') { try { c = JSON.parse(c); } catch (_) { c = []; } }
+    return Array.isArray(c) ? c : [];
+  },
+
+  pollCard(p, isAdmin) {
+    const candidates = this.parseCandidates(p);
+    const closed = String(p.status) === 'closed';
+    const multi = p.type === 'multiple_choice' || p.allow_multiple;
+    const controls = closed ? '' : candidates.map(c => {
+      const input = multi
+        ? '<input type="checkbox" data-candidate="' + c.id + '"' + (this.selected[p.id] && this.selected[p.id].includes(c.id) ? ' checked' : '') + '>'
+        : '<input type="radio" name="poll-' + p.id + '" data-candidate="' + c.id + '">';
+      return '<label style="display:flex;gap:8px;align-items:center;padding:6px 0">' + input + '<span><b>' + TC.esc(c.name || '') + '</b>' + (c.info ? ' <span class="muted">' + TC.esc(c.info) + '</span>' : '') + '</span></label>';
+    }).join('');
+    const adminBar = isAdmin ? '<div style="margin-top:8px"><button class="btn btn-sm btn-outline" data-vote-action="close" data-poll="' + p.id + '">' + (closed ? 'Closed' : 'Close poll') + '</button></div>' : '';
+    const voteBar = closed ? '<p class="badge" style="background:#64748b">Closed</p>'
+      : '<button class="btn btn-primary btn-sm" data-vote-action="cast" data-poll="' + p.id + '">Cast vote</button>';
+    return '<article class="card" style="margin-bottom:16px" data-poll-card="' + p.id + '">'
+      + '<h3 style="margin-top:0">' + TC.esc(p.title || 'Poll') + '</h3>'
+      + (p.description ? '<p class="muted">' + TC.esc(p.description) + '</p>' : '')
+      + '<div class="vote-candidates">' + controls + '</div>'
+      + '<div data-results="' + p.id + '" style="margin-top:10px"></div>'
+      + '<div style="display:flex;gap:8px;align-items:center;margin-top:10px">' + voteBar
+      + ' <button class="btn btn-sm btn-ghost" data-vote-action="refresh" data-poll="' + p.id + '">↻ Results</button></div>'
+      + adminBar + '</article>';
+  },
+
+  collectSelection(pollId, multi) {
+    const card = document.querySelector('[data-poll-card="' + pollId + '"]');
+    if (!card) return [];
+    return [...card.querySelectorAll('[data-candidate]:checked')].map(el => el.dataset.candidate);
+  },
+
+  async vote(pollId) {
+    const polls = await Voting.listPolls({});
+    const poll = (polls || []).find(x => String(x.id) === String(pollId));
+    const multi = poll && (poll.type === 'multiple_choice' || poll.allow_multiple);
+    const ids = this.collectSelection(pollId, multi);
+    if (!ids.length) { toast('Pick an option first.', 'warning'); return; }
+    const r = await Voting.vote(pollId, ids);
+    if (r && r.error) { toast(r.error, 'danger'); return; }
+    toast('✅ Vote recorded', 'success');
+    this.refreshResults(pollId);
+  },
+
+  async create() {
+    // Lightweight creator: prompt for title + comma-separated options.
+    const title = prompt('Poll title');
+    if (!title) return;
+    const opts = (prompt('Options, separated by commas') || '').split(',').map(s => s.trim()).filter(Boolean);
+    if (opts.length < 2) { toast('Enter at least two options.', 'warning'); return; }
+    const candidates = opts.map((name, i) => ({ id: 'c' + (i + 1) + '_' + Date.now(), name, info: '' }));
+    const r = await Voting.createPoll({ title, candidates, type: 'single_choice', audience: 'all' });
+    if (r && r.error) { toast(r.error, 'danger'); return; }
+    toast('Poll created', 'success');
+    this.refresh();
+  },
+
+  async toggleClose(pollId) {
+    if (!confirm('Close this poll?')) return;
+    const r = await Voting.closePoll(pollId);
+    if (r && r.error) { toast(r.error, 'danger'); return; }
+    toast('Poll closed', 'success');
+    this.refresh();
+  },
+
+  async refreshResults(pollId) {
+    const box = document.querySelector('[data-results="' + pollId + '"]');
+    if (!box) return;
+    try {
+      const res = await Voting.getResults(pollId);
+      if (!res) return;
+      box.innerHTML = res.candidates.map(c => {
+        const pct = c.percent || 0;
+        return '<div style="margin:4px 0"><div style="display:flex;justify-content:space-between;font-size:.85rem"><span>' + TC.esc(c.name || '') + '</span><span>' + (c.votes || 0) + ' · ' + pct + '%</span></div>'
+          + '<div style="background:#e2e8f0;border-radius:6px;height:8px;overflow:hidden"><div style="background:var(--primary,#134e4a);height:100%;width:' + pct + '%"></div></div></div>';
+      }).join('') + '<div class="muted" style="font-size:.78rem;margin-top:4px">' + res.totalVotes + ' vote(s)</div>';
+    } catch (_) {}
+  },
+
+  /* Alias used by app.js loadPageData / voting.html */
+  renderPollList() { return this.refresh(); }
+};
+
+window.VT = VT;
+window.VotingUI = VT; // alias expected by app.js / voting.html
+
+// Self-init when the voting page is loaded directly.
+(function () {
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => VT.init());
+  else VT.init();
+})();

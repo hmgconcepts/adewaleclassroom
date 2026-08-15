@@ -587,7 +587,7 @@ const CRUD = {
   },
 
   async openForm(moduleId, row) {
-    const schema = this.SCHEMA[moduleId];
+    const schema = this.def(moduleId) || this.SCHEMA[moduleId];
     let host = document.getElementById('crud-modal');
     if (!host) {
       host = document.createElement('div');
@@ -633,7 +633,7 @@ const CRUD = {
 
   async remove(moduleId, id) {
     if (!confirm('Delete this row?')) return;
-    const schema = this.SCHEMA[moduleId];
+    const schema = this.def(moduleId) || this.SCHEMA[moduleId];
     if (!this.sb) return;
     if (window.SCDelete) {
       const r = await SCDelete.byId(this.sb, schema.table, id);

@@ -443,6 +443,910 @@
       how: ['Tap Install on the banner.', 'iPhone must use Safari.'],
       next: [['notifications.html', 'Enable push'], ['offline.html', 'Offline page']]
     },
+    'availability': {
+      title: 'Tutor availability',
+      who: 'Admin/tutor.',
+      why: 'Self-booking and conflict checks need a weekly availability table in the tutor’s own timezone.',
+      what: 'Repeating weekly slots. Public self-booking reads open slots; Calendar warns on clashes.',
+      how: ['Add the days/times you teach each week.', 'Parents can only request slots inside these windows.', 'Adjust before each cycle.'],
+      next: [['bookings.html', 'Self-booking'], ['public-book.html', 'Public booking page']]
+    },
+    'makeups': {
+      title: 'Make-up sessions',
+      who: 'Admin/tutor.',
+      why: 'Policy-aware rescheduling protects both the family and the studio.',
+      what: 'Records the original session, the reason, who cancelled, and whether hours were restored or a makeup credit was earned.',
+      how: ['Open the missed class.', 'Choose who cancelled and the notice given.', 'The system suggests the credit action.', 'Schedule the makeup.'],
+      next: [['makeup-credits.html', 'Credit bank'], ['cancellations.html', 'Cancellations']]
+    },
+    'cancellations': {
+      title: 'Cancellations',
+      who: 'Admin/tutor. Parents see their own.',
+      why: 'Transparent cancellation history prevents billing disputes.',
+      what: 'Who cancelled, notice hours, fee applied, hours returned, linked makeup.',
+      how: ['Record the cancellation against the class.', 'Set the notice window in Settings.', 'Fees appear on the next invoice.'],
+      next: [['makeups.html', 'Make-ups'], ['invoices.html', 'Invoice']]
+    },
+    'session-notes': {
+      title: 'Session notes',
+      who: 'Tutor writes; admin and linked parent/learner read.',
+      why: 'A per-class narrative feeds progress reports and the parent portal.',
+      what: 'Note per session and optionally per learner, with a Drive recording link.',
+      how: ['Open the class.', 'Write what was taught and next steps.', 'Tick "share with parent" to surface it on the dashboard.'],
+      next: [['session-complete.html', 'Complete a class'], ['progress-reports.html', 'Reports']]
+    },
+    'session-complete': {
+      title: 'Complete a class',
+      who: 'Tutor.',
+      why: 'Marking a class done is what deducts hours, ticks SOW topics and pushes feedback to families.',
+      what: 'Status, hours used, topics covered, feedback, attendance.',
+      how: ['Open the class.', 'Mark each learner present/late/absent.', 'Tick the SOW topics taught.', 'Write feedback and save.'],
+      next: [['sow.html', 'Scheme of work'], ['attendance.html', 'Attendance']]
+    },
+    'meetings': {
+      title: 'Meeting links',
+      who: 'Admin/tutor.',
+      why: 'A standing room per engagement means the same Jitsi/Meet/Zoom link every class — no paid classroom iframe.',
+      what: 'Per-session or standing meeting URL plus a whiteboard URL.',
+      how: ['Paste a free Jitsi/Meet link.', 'Optionally paste an Excalidraw whiteboard.', 'Families click through from the dashboard.'],
+      next: [['whiteboard.html', 'Whiteboard rooms'], ['sessions.html', 'Sessions']]
+    },
+    'whiteboard': {
+      title: 'Whiteboard rooms',
+      who: 'Tutor/learner during class.',
+      why: 'Free Excalidraw / Jamboard / FigJam links replace a paid whiteboard subscription.',
+      what: 'Named board links per engagement, opened in a new tab.',
+      how: ['Paste the shared board URL.', 'Learners open it from the class reminder.', 'Save the link once.'],
+      next: [['meetings.html', 'Meeting links']]
+    },
+    'rooms': {
+      title: 'Rooms / locations',
+      who: 'Admin/tutor.',
+      why: 'For hybrid studios that also teach in person, rooms avoid double-booking.',
+      what: 'Room name, capacity, address or video link.',
+      how: ['Add each room.', 'Assign it on sessions.', 'Calendar flags clashes.'],
+      next: [['sessions.html', 'Sessions'], ['calendar.html', 'Calendar']]
+    },
+    'timezones': {
+      title: 'Timezone desk',
+      who: 'Everyone.',
+      why: 'A Lagos tutor teaching a London family must see both clocks before booking.',
+      what: 'Converter between the studio timezone and any learner/parent timezone.',
+      how: ['Pick the two timezones.', 'Choose a time. The equivalent is shown instantly.', 'Use it when arranging a class.'],
+      next: [['availability.html', 'Availability'], ['bookings.html', 'Bookings']]
+    },
+    'diagnostics': {
+      title: 'Diagnostic baseline',
+      who: 'Admin/tutor.',
+      why: 'The baseline is the start point for every value-added calculation.',
+      what: 'Initial assessment score per learner, captured at trial or onboarding.',
+      how: ['Sit a short diagnostic.', 'Enter the percentage.', 'It locks the value-added starting point.'],
+      next: [['trials.html', 'Trials'], ['value-added.html', 'Value-added']]
+    },
+    'goals': {
+      title: 'Goals & learning plans',
+      who: 'Tutor (shared with the family).',
+      why: 'SMART goals turn "improve maths" into reviewable targets.',
+      what: 'Goal, owner, target date, status, review notes — per engagement and per learner.',
+      how: ['Add a goal.', 'Set the review date.', 'Update status each cycle.'],
+      next: [['progress-reports.html', 'Reports'], ['learner-360.html', '360 view']]
+    },
+    'mastery': {
+      title: 'Topic mastery',
+      who: 'Tutor; learner/parent see progress.',
+      why: 'A heatmap shows exactly which topics are green, amber or red.',
+      what: 'Per-topic score 0–100, independent even inside a group.',
+      how: ['Add topics from the SOW.', 'Score after each topic.', 'Red cells drive the next lessons.'],
+      next: [['sow.html', 'Scheme of work'], ['at-risk.html', 'At-risk']]
+    },
+    'methodologies': {
+      title: 'Methodologies library',
+      who: 'Tutor.',
+      why: 'Consistent teaching methods (spaced retrieval, worked examples, CRA…) can be attached to engagements and suggested by at-risk rules.',
+      what: 'Named method, description, when to use it.',
+      how: ['Add your methods.', 'Attach one to an engagement.', 'Insights recommends a method per at-risk flag.'],
+      next: [['engagements.html', 'Engagements'], ['insights.html', 'Insights']]
+    },
+    'curriculum': {
+      title: 'Curriculum maps',
+      who: 'Admin/tutor.',
+      why: 'An independent map per engagement means two siblings never share a sequence by accident.',
+      what: 'Topics, sequence and coverage status per engagement.',
+      how: ['Pick the engagement.', 'Add or import topics.', 'Tick coverage weekly.'],
+      next: [['sow.html', 'Scheme of work'], ['lesson-plans.html', 'Lesson plans']]
+    },
+    'lesson-plans': {
+      title: 'Lesson plans',
+      who: 'Tutor.',
+      why: 'Objectives, resources and checks for understanding keep each class focused.',
+      what: 'Plan linked to a session and a methodology, with resources as links.',
+      how: ['Create the plan.', 'Link it to the session.', 'Reflect after class.'],
+      next: [['sessions.html', 'Sessions'], ['methodologies.html', 'Methods']]
+    },
+    'assignments': {
+      title: 'Homework / assignments',
+      who: 'Tutor sets; learner submits; parent sees status.',
+      why: 'Completion percentage feeds the at-risk rules.',
+      what: 'Title, due date, Drive submission link, status (set/submitted/marked), score.',
+      how: ['Set the work with a Drive return link.', 'Learner submits.', 'Mark and the score flows to mastery.'],
+      next: [['mastery.html', 'Mastery'], ['at-risk.html', 'At-risk']]
+    },
+    'practice': {
+      title: 'Quizzes / CBT manager',
+      who: 'Tutor builds; learner sits.',
+      why: 'Self, Review and Graded papers with 32 question types — no paid CBT platform.',
+      what: 'Quiz builder, CSV import, kind, access mode, timer, anti-cheat.',
+      how: ['Paste CSV from question prompts.', 'Pick Self/Review/Graded and Open/Registered.', 'Share the code.', 'Graded auto-pushes to the scoresheet.'],
+      next: [['cbt-exam.html', 'Take quiz'], ['cbt-prompts.html', 'Question prompts']]
+    },
+    'cbt-prompts': {
+      title: 'Question bank prompts',
+      who: 'Tutor.',
+      why: 'Copy-paste prompts produce CSV questions in any free chat — the platform never pays for AI.',
+      what: 'Packs for Simple/Intermediate/Advanced/Self/Review/Graded/Reading.',
+      how: ['Choose the pack.', 'Copy the prompt.', 'Paste the returned CSV into Quizzes.'],
+      next: [['practice.html', 'CBT manager'], ['cbt-exam.html', 'Take quiz']]
+    },
+    'cbt-multi': {
+      title: 'Multi-subject CBT',
+      who: 'Learner.',
+      why: 'UTME-style one sitting with subject tabs and a shared timer.',
+      what: 'Subject tabs, per-subject breakdown, same anti-cheat as a single paper.',
+      how: ['Enter the code and student ID.', 'Move between tabs.', 'Submit once.'],
+      next: [['cbt-exam.html', 'Single quiz'], ['scoresheet.html', 'Scoresheet']]
+    },
+    'cbt-review': {
+      title: 'Quiz review + PDF',
+      who: 'Learner.',
+      why: 'After each quiz the learner sees their answer, the key and the explanation, then saves a study PDF.',
+      what: 'Item-by-item review with score and per-subject breakdown; print to PDF.',
+      how: ['Finish a quiz.', 'Read every explanation.', 'Use Print → Save as PDF.'],
+      next: [['cbt-exam.html', 'Take quiz'], ['scoresheet.html', 'Scoresheet']]
+    },
+    'progress-reports': {
+      title: 'Progress reports',
+      who: 'Tutor writes; parent reads.',
+      why: 'Parent-ready branded reports: hours, attendance, mastery, value-added and next steps.',
+      what: 'Generated report with methodology used and next steps; printable.',
+      how: ['Pick the learner and engagement.', 'Review the auto-filled numbers.', 'Add narrative and print.'],
+      next: [['learner-360.html', '360 view'], ['insights.html', 'Insights']]
+    },
+    'learner-360': {
+      title: 'Learner 360',
+      who: 'Tutor/admin; parent sees their child.',
+      why: 'One page for identity, engagements, hours, scores, mastery, flags, notes and invoices.',
+      what: 'Consolidated profile with charts and at-risk flags.',
+      how: ['Open a learner.', 'Switch engagements.', 'Drill into scores or flags.'],
+      next: [['insights.html', 'Insights'], ['progress-reports.html', 'Reports']]
+    },
+    'group-insights': {
+      title: 'Group insights (fairness)',
+      who: 'Tutor/admin.',
+      why: 'A group average can hide a child who is falling behind; this view shows each member.',
+      what: 'Per-member scores, attendance and mastery within a group engagement.',
+      how: ['Open the group.', 'Sort by lowest score.', 'Plan intervention.'],
+      next: [['groups.html', 'Groups'], ['at-risk.html', 'At-risk']]
+    },
+    'at-risk': {
+      title: 'At-risk board',
+      who: 'Tutor/admin.',
+      why: 'Six transparent rules catch learners before they fail: attendance <80%, idle ≥14d, hours <2, homework <60%, three declining scores, >40% topics under 50%.',
+      what: 'Flagged learners with the rule that fired and a suggested methodology.',
+      how: ['Open the board.', 'Click a flag.', 'Follow the suggested action.'],
+      next: [['insights.html', 'Insights'], ['methodologies.html', 'Methods']]
+    },
+    'exam-targets': {
+      title: 'Exam targets',
+      who: 'Tutor/learner.',
+      why: 'A target exam, date and board drives a countdown and predicted-vs-target grade on the dashboard.',
+      what: 'Exam, board, target grade, target date per learner.',
+      how: ['Set the exam and date.', 'Track predicted grade against target.', 'Countdown shows on the dashboard.'],
+      next: [['predictions.html', 'Predictions'], ['exam-links.html', 'Exam registration']]
+    },
+    'predictions': {
+      title: 'Predicted grades',
+      who: 'Tutor/parent.',
+      why: 'An ordinary-least-squares projection from the last N scores, shown transparently — no black-box AI.',
+      what: 'Predicted %, slope, and the formula used.',
+      how: ['Open a learner.', 'Read the projection.', 'Adjust teaching if the slope is negative.'],
+      next: [['exam-targets.html', 'Targets'], ['insights.html', 'Insights']]
+    },
+    'value-added': {
+      title: 'Value-added',
+      who: 'Tutor/admin.',
+      why: 'Current average minus diagnostic baseline is the number parents actually buy.',
+      what: 'Delta per learner and per engagement, over time.',
+      how: ['Run a diagnostic first.', 'Teach.', 'Watch the delta rise.'],
+      next: [['diagnostics.html', 'Diagnostics'], ['progress-reports.html', 'Reports']]
+    },
+    'analytics': {
+      title: 'Practice analytics',
+      who: 'Owner/admin.',
+      why: 'Studio KPIs: utilisation, conversion, revenue, value-added distribution, retention.',
+      what: 'Charts (Chart.js with SVG fallback) across the whole practice.',
+      how: ['Open Analytics.', 'Filter by date or engagement.', 'Export figures for planning.'],
+      next: [['insights.html', 'Insights'], ['finance.html', 'Finance']]
+    },
+    'resources': {
+      title: 'Resource library',
+      who: 'Tutor curates; everyone reads.',
+      why: 'Catalogued links to articles, videos and past papers — never uploads into the 500 MB DB.',
+      what: 'Link, subject, engagement, type, optional comprehension score.',
+      how: ['Paste a Drive/YouTube/https link.', 'Tag subject and engagement.', 'Learners open it from Reading.'],
+      next: [['reading.html', 'Reading'], ['library.html', 'Digital library']]
+    },
+    'library': {
+      title: 'Digital library',
+      who: 'Tutor curates; learners browse.',
+      why: 'A searchable catalogue of reading and past-paper links.',
+      what: 'Catalogue entry with link, subject, level.',
+      how: ['Add a link.', 'Search by subject.', 'Open in a new tab.'],
+      next: [['eresources.html', 'E-resources'], ['resources.html', 'Resources']]
+    },
+    'lms': {
+      title: 'Mini LMS',
+      who: 'Tutor builds; learner completes.',
+      why: 'Lightweight courses and lessons scoped to an engagement, with completion ticks.',
+      what: 'Course → lessons (links), completion tracking.',
+      how: ['Create a course.', 'Add lesson links.', 'Learners tick completion.'],
+      next: [['classwork.html', 'Classwork'], ['stream.html', 'Stream']]
+    },
+    'eresources': {
+      title: 'E-resources / notes',
+      who: 'Tutor; learners.',
+      why: 'Study notes as Drive or web links, organised by subject and engagement.',
+      what: 'Link, subject, engagement, description.',
+      how: ['Paste a link.', 'Tag it.', 'Share with the engagement.'],
+      next: [['library.html', 'Library'], ['resources.html', 'Resources']]
+    },
+    'flashcards': {
+      title: 'Flashcards (spaced practice)',
+      who: 'Learner.',
+      why: 'SM-2 style spaced retrieval improves retention without a paid app.',
+      what: 'Decks of cards; rating schedules the next review.',
+      how: ['Open a deck.', 'Rate each card.', 'Cards return at increasing intervals.'],
+      next: [['practice.html', 'Quizzes'], ['study-log.html', 'Study log']]
+    },
+    'certificates': {
+      title: 'Certificates',
+      who: 'Admin/tutor issues; learner downloads.',
+      why: 'Branded completion certificates reward milestones and are printable.',
+      what: 'Certificate template, learner, engagement, date.',
+      how: ['Issue after a target is met.', 'Learner downloads/prints.'],
+      next: [['progress-reports.html', 'Reports']]
+    },
+    'portfolio': {
+      title: 'Learner portfolio',
+      who: 'Learner/tutor; parent views.',
+      why: 'A showcase of best work, all as links.',
+      what: 'Curated items with title, link and reflection.',
+      how: ['Add standout work.', 'Reflect on progress.', 'Share with parents.'],
+      next: [['progress-reports.html', 'Reports']]
+    },
+    'packages': {
+      title: 'Hour banks / packages',
+      who: 'Admin.',
+      why: 'Prepaid hours are the financial unit. Completing a class deducts from the bank.',
+      what: 'Hours prepaid, price, engagement; trigger writes hour_ledger.',
+      how: ['Sell a package.', 'Teach classes.', 'Watch hours_used rise.'],
+      next: [['invoices.html', 'Invoices'], ['sessions.html', 'Sessions']]
+    },
+    'invoices': {
+      title: 'Invoices',
+      who: 'Admin; parent pays.',
+      why: 'Invoices from cycle bookings or packages, multi-currency, printable.',
+      what: 'Line items, amount, status, due date.',
+      how: ['Generate from a booking or package.', 'Send the invoice.', 'Record payment.'],
+      next: [['payments.html', 'Payments'], ['bookings.html', 'Bookings']]
+    },
+    'payments': {
+      title: 'Payments',
+      who: 'Admin records; parent sees.',
+      why: 'Bank/cash/Paystack/Flutterwave/Stripe links — no forced processor.',
+      what: 'Payment against an invoice, method, reference.',
+      how: ['Record the payment.', 'Attach a processor link.', 'Parent sees the receipt.'],
+      next: [['invoices.html', 'Invoices'], ['payment-history.html', 'History']]
+    },
+    'payment-history': {
+      title: 'Payment history',
+      who: 'Parent; admin.',
+      why: 'A family sees every invoice and payment in one place.',
+      what: 'Ledger of invoices and payments for linked learners.',
+      how: ['Open the page.', 'Filter by date.', 'Download a receipt.'],
+      next: [['invoices.html', 'Invoices']]
+    },
+    'fees': {
+      title: 'Fee catalogue',
+      who: 'Admin.',
+      why: 'Standard hourly rates and package prices speed up invoicing.',
+      what: 'Named fee, amount, currency, scope.',
+      how: ['Add your standard fees.', 'Pick them when invoicing.'],
+      next: [['packages.html', 'Packages'], ['invoices.html', 'Invoices']]
+    },
+    'finance': {
+      title: 'Finance',
+      who: 'Owner/admin.',
+      why: 'Double-entry-style ledger plus revenue and outstanding figures.',
+      what: 'finance_entries plus invoice/payment roll-ups.',
+      how: ['Record income and costs.', 'Review the monthly roll-up.'],
+      next: [['payroll.html', 'Payroll'], ['analytics.html', 'Analytics']]
+    },
+    'payroll': {
+      title: 'Tutor payroll',
+      who: 'Owner/admin.',
+      why: 'For staff tutors, hours taught × pay rate gives an estimated payroll.',
+      what: 'Sessions × hourly_cost per tutor.',
+      how: ['Set tutor pay rates.', 'Mark classes done.', 'Review the payroll report.'],
+      next: [['tutors.html', 'Tutors'], ['finance.html', 'Finance']]
+    },
+    'scholarships': {
+      title: 'Scholarships & discounts',
+      who: 'Admin.',
+      why: 'Track discounts and scholarships per engagement without losing revenue visibility.',
+      what: 'Discount code/name, percent or amount, recipient.',
+      how: ['Add a scholarship.', 'Apply it on an invoice.'],
+      next: [['fees.html', 'Fees'], ['invoices.html', 'Invoices']]
+    },
+    'announcements': {
+      title: 'Announcements',
+      who: 'Admin/tutor post; families read.',
+      why: 'Studio-wide or per-engagement notices in the bell and feed.',
+      what: 'Title, body, audience, optional scheduled date.',
+      how: ['Write the notice.', 'Pick the audience.', 'Publish or schedule.'],
+      next: [['notifications.html', 'Notifications'], ['stream.html', 'Stream']]
+    },
+    'messages': {
+      title: 'Messages',
+      who: 'All roles.',
+      why: 'Free device-native messaging via wa.me, mailto and sms: — no Twilio bill.',
+      what: 'Compose window that opens the device app with the text pre-filled.',
+      how: ['Write the message.', 'Pick WhatsApp/Email/SMS.', 'Your device sends it.'],
+      next: [['inbox.html', 'Inbox'], ['notifications.html', 'Notifications']]
+    },
+    'inbox': {
+      title: 'Inbox',
+      who: 'All roles.',
+      why: 'In-app tutor ↔ parent ↔ learner threads, with a bell for new items.',
+      what: 'Threads scoped to an engagement, with read state.',
+      how: ['Open a thread.', 'Reply.', 'The bell clears when read.'],
+      next: [['messages.html', 'Messages'], ['notifications.html', 'Notifications']]
+    },
+    'complaints': {
+      title: 'Complaints',
+      who: 'Parent/learner raises; admin resolves.',
+      why: 'A formal, auditable complaint record builds trust.',
+      what: 'Subject, body, status (open/in_progress/resolved).',
+      how: ['Raise a complaint.', 'Admin responds.', 'Resolve and close.'],
+      next: [['helpdesk.html', 'Help desk'], ['approvals.html', 'Approvals']]
+    },
+    'surveys': {
+      title: 'Surveys',
+      who: 'Admin sends; families respond.',
+      why: 'After-trial and end-of-term pulse surveys feed retention insight.',
+      what: 'Question set, audience, open/closed, responses.',
+      how: ['Create a survey.', 'Share it.', 'Review responses.'],
+      next: [['voting.html', 'Polls'], ['analytics.html', 'Analytics']]
+    },
+    'polls': {
+      title: 'Simple polls',
+      who: 'Admin/tutor asks; families vote.',
+      why: 'Quick single-question polls alongside the richer Voting module.',
+      what: 'Question, options, tally.',
+      how: ['Ask a question.', 'Share.', 'Watch the tally.'],
+      next: [['voting.html', 'Voting'], ['surveys.html', 'Surveys']]
+    },
+    'voting': {
+      title: 'Voting & polls',
+      who: 'Tutors create; parents/learners vote.',
+      why: 'Anonymous or named polls with live real-time tally — no paid polling tool.',
+      what: 'Poll, candidates, single/multi/ranked, audience, open/closed.',
+      how: ['Create a poll.', 'Share the link.', 'Watch results live.'],
+      next: [['announcements.html', 'Announcements'], ['surveys.html', 'Surveys']]
+    },
+    'forum': {
+      title: 'Group forum',
+      who: 'Group members only.',
+      why: 'Discussion threads scoped to a group engagement; 1:1 contracts have no forum.',
+      what: 'Threads and posts within a group.',
+      how: ['Open the group.', 'Start a thread.', 'Reply.'],
+      next: [['groups.html', 'Groups'], ['stream.html', 'Stream']]
+    },
+    'parent-meetings': {
+      title: 'Parent conferences',
+      who: 'Admin schedules; parents book.',
+      why: 'Structured parent–teacher conferences with slots.',
+      what: 'Meeting slots, bookings, agenda.',
+      how: ['Open slots.', 'Parents book.', 'Hold the meeting online or in person.'],
+      next: [['meetings.html', 'Meeting links'], ['calendar.html', 'Calendar']]
+    },
+    'reviews': {
+      title: 'Reviews / testimonials',
+      who: 'Parents leave; admin publishes.',
+      why: 'Public reviews on the landing page build trust.',
+      what: 'Rating, quote, author, published flag.',
+      how: ['Request a review.', 'Approve for the public page.'],
+      next: [['referrals.html', 'Referrals'], ['about.html', 'About']]
+    },
+    'broadcasts': {
+      title: 'Result broadcasts',
+      who: 'Admin/tutor.',
+      why: 'Send graded results to parents in one action across multiple channels.',
+      what: 'Bulk message with results summary, via wa.me/mailto/sms.',
+      how: ['Pick the engagement/quiz.', 'Compose the summary.', 'Broadcast.'],
+      next: [['scoresheet.html', 'Scoresheet'], ['announcements.html', 'Announcements']]
+    },
+    'gallery': {
+      title: 'Gallery',
+      who: 'Tutor curates; families view.',
+      why: 'Celebrate classes and achievements with image/video links.',
+      what: 'Drive/YouTube/https links, never uploads.',
+      how: ['Paste a link.', 'Add a caption.', 'It appears in the gallery.'],
+      next: [['events.html', 'Events'], ['announcements.html', 'Announcements']]
+    },
+    'birthdays': {
+      title: 'Birthdays',
+      who: 'Everyone.',
+      why: 'A small personal touch — upcoming learner birthdays on the dashboard.',
+      what: 'Derived from learner profiles.',
+      how: ['Add birth dates on learner records.', 'See upcoming cards.'],
+      next: [['learners.html', 'Learners']]
+    },
+    'directory': {
+      title: 'Directory',
+      who: 'Signed-in users (family-safe).',
+      why: 'A searchable studio directory of tutors and staff contact details.',
+      what: 'Name, role, contact links.',
+      how: ['Search by name.', 'Click to message.'],
+      next: [['tutors.html', 'Tutors'], ['inbox.html', 'Inbox']]
+    },
+    'helpdesk': {
+      title: 'Help desk tickets',
+      who: 'Families raise; admin resolves.',
+      why: 'Track technical and pastoral issues to closure.',
+      what: 'Ticket, subject, status, messages.',
+      how: ['Open a ticket.', 'Admin responds.', 'Close when done.'],
+      next: [['complaints.html', 'Complaints'], ['platform-health.html', 'Health']]
+    },
+    'documents': {
+      title: 'Documents',
+      who: 'Admin shares; families read.',
+      why: 'Policies, consent forms and handouts as Drive links.',
+      what: 'Document link, category, audience.',
+      how: ['Upload to Drive.', 'Paste the link here.', 'Families open it.'],
+      next: [['policies.html', 'Policies'], ['admin-data.html', 'Admin data']]
+    },
+    'policies': {
+      title: 'Policies',
+      who: 'Public/families.',
+      why: 'Safeguarding, privacy and cancellation policies in one place.',
+      what: 'Policy links and text.',
+      how: ['Read the policies.', 'Contact the studio with questions.'],
+      next: [['safeguarding.html', 'Safeguarding'], ['documents.html', 'Documents']]
+    },
+    'idcards': {
+      title: 'Learner ID cards',
+      who: 'Admin/tutor.',
+      why: 'Printable cards showing the student ID (TC-0001) used to sit quizzes.',
+      what: 'Branded card with name, ID, photo link.',
+      how: ['Open a learner.', 'Print the card.', 'Hand it to the learner.'],
+      next: [['learners.html', 'Learners'], ['cbt-exam.html', 'Take quiz']]
+    },
+    'events': {
+      title: 'Events & workshops',
+      who: 'Admin/tutor; families RSVP.',
+      why: 'Workshops, open days and exam clinics.',
+      what: 'Event, date, location/link, RSVP count.',
+      how: ['Create an event.', 'Share it.', 'Track RSVPs.'],
+      next: [['calendar.html', 'Calendar'], ['announcements.html', 'Announcements']]
+    },
+    'apply': {
+      title: 'Apply / request a place',
+      who: 'Public parents.',
+      why: 'The public entry point for new families, with optional coded links.',
+      what: 'Parent + learner + subject form → inquiries or applications.',
+      how: ['Open apply.html (or ?code=…).', 'Fill the form.', 'The studio follows up.'],
+      next: [['application-links.html', 'Coded links'], ['inquiries.html', 'Inquiries']]
+    },
+    'inquiries': {
+      title: 'Inquiries / CRM',
+      who: 'Admin/tutor.',
+      why: 'The sales pipeline from first contact to converted engagement.',
+      what: 'new → contacted → trial_booked → converted/lost.',
+      how: ['Read new inquiries daily.', 'WhatsApp the parent.', 'Convert after a trial.'],
+      next: [['trials.html', 'Trials'], ['engagements.html', 'Engagements']]
+    },
+    'waitlist': {
+      title: 'Waitlist',
+      who: 'Admin/tutor.',
+      why: 'Hold demand when a slot or group is full.',
+      what: 'Learner, subject, status waiting/offered/placed/withdrawn.',
+      how: ['Add when full.', 'Offer when a seat frees.', 'Place them.'],
+      next: [['inquiries.html', 'Inquiries']]
+    },
+    'trials': {
+      title: 'Trials',
+      who: 'Admin/tutor.',
+      why: 'A diagnostic trial locks the baseline before a package is sold.',
+      what: 'Learner, scheduled time, baseline %, fit notes, status.',
+      how: ['Book from an inquiry.', 'Sit the diagnostic.', 'Convert.'],
+      next: [['diagnostics.html', 'Diagnostics'], ['engagements.html', 'Engagements']]
+    },
+    'onboarding': {
+      title: 'Onboarding checklists',
+      who: 'Admin/tutor.',
+      why: 'Consent, goals interview, diagnostic, first package, first session — tracked per engagement.',
+      what: 'Checklist items with owners and status.',
+      how: ['Work the list top to bottom.', 'Tick each step.', 'Nothing is missed.'],
+      next: [['engagements.html', 'Engagements'], ['trials.html', 'Trials']]
+    },
+    'referrals': {
+      title: 'Referrals',
+      who: 'Families refer; admin tracks.',
+      why: 'Word-of-mouth growth with optional rewards.',
+      what: 'Referrer, referred family, status, reward.',
+      how: ['Share the referral link.', 'Track sign-ups.', 'Reward referrers.'],
+      next: [['reviews.html', 'Reviews'], ['inquiries.html', 'Inquiries']]
+    },
+    'approvals': {
+      title: 'Approvals',
+      who: 'Owner/admin.',
+      why: 'New accounts start pending; approving only people you recognise keeps family data closed.',
+      what: 'Pending profiles with approve/reject.',
+      how: ['Open Approvals.', 'Verify the person.', 'Approve or reject.'],
+      next: [['login.html', 'Login'], ['profiles', 'Profiles']]
+    },
+    'settings': {
+      title: 'Settings',
+      who: 'Owner/admin.',
+      why: 'Studio brand, timezone, currency, cancellation hours and security defaults.',
+      what: 'practice_settings plus 2FA, dark mode, accessibility.',
+      how: ['Edit fields.', 'Save.', 'Every page rehydrates.'],
+      next: [['platform-health.html', 'Health'], ['profile.html', 'Profile']]
+    },
+    'admin-data': {
+      title: 'Admin data',
+      who: 'Owner.',
+      why: 'You own the data — export, sealed archive, Drive backup and table browser.',
+      what: 'JSON export/restore, SHA-256 sealed archives, Google Drive sync.',
+      how: ['Export regularly.', 'Connect Drive optionally.', 'Restore when needed.'],
+      next: [['storage.html', 'Storage'], ['platform-health.html', 'Health']]
+    },
+    'platform-health': {
+      title: 'Platform health',
+      who: 'Owner.',
+      why: 'Proves the 10-layer keep-alive is writing and the free project is not about to pause.',
+      what: 'Heartbeat, ping count, DB size, lockdown toggle, login audit.',
+      how: ['Press 💓 before a holiday.', 'Confirm last_source updates.', 'Lockdown only in an incident.'],
+      next: [['admin-data.html', 'Backups'], ['license.html', 'License']]
+    },
+    'storage': {
+      title: 'Storage manager',
+      who: 'Owner.',
+      why: 'Guardian of the free 500 MB: archive then purge old logs.',
+      what: 'Table sizes, archive action, purge old activity.',
+      how: ['Review sizes.', 'Archive before purging.', 'Keep under the limit.'],
+      next: [['admin-data.html', 'Backups'], ['platform-health.html', 'Health']]
+    },
+    'activity-log': {
+      title: 'Activity log',
+      who: 'Owner/admin.',
+      why: 'An audit trail of who created, edited, deleted or signed in.',
+      what: 'Actor, action, entity, timestamp, details.',
+      how: ['Filter by actor or action.', 'Investigate incidents.'],
+      next: [['platform-health.html', 'Health'], ['safeguarding.html', 'Safeguarding']]
+    },
+    'safeguarding': {
+      title: 'Safeguarding log',
+      who: 'Admin/tutor (never shown to families).',
+      why: 'Confidential incident records kept separately from ordinary activity.',
+      what: 'Incident, people involved, action, date, confidential notes.',
+      how: ['Record facts only.', 'Link to complaints if needed.', 'Keep access tight.'],
+      next: [['complaints.html', 'Complaints'], ['compliance.html', 'Compliance']]
+    },
+    'compliance': {
+      title: 'Compliance',
+      who: 'Owner/admin.',
+      why: 'Consent, data-processing and policy compliance records.',
+      what: 'Consent status, policy versions, data requests.',
+      how: ['Track consent.', 'Record data requests.', 'Keep policies current.'],
+      next: [['policies.html', 'Policies'], ['safeguarding.html', 'Safeguarding']]
+    },
+    'license': {
+      title: 'Site license',
+      who: 'Owner.',
+      why: 'Lifetime (default) or subscription lock with grace period and renewal path.',
+      what: 'Model, status, expiry, grace, renew URL.',
+      how: ['Lifetime needs no action.', 'Subscription shows a reminder then a lock after grace.'],
+      next: [['settings.html', 'Settings'], ['platform-health.html', 'Health']]
+    },
+    'status-manager': {
+      title: 'Status manager',
+      who: 'Owner/admin.',
+      why: 'Bulk-set learner/engagement statuses (active/paused/churned).',
+      what: 'Status updates across records.',
+      how: ['Select records.', 'Change status.', 'Save.'],
+      next: [['learners.html', 'Learners'], ['engagements.html', 'Engagements']]
+    },
+    'learning-styles': {
+      title: 'Learning styles & notes',
+      who: 'Tutor.',
+      why: 'Observed learning preferences and accommodations per learner.',
+      what: 'Free-text notes and SEN/accommodation flags.',
+      how: ['Observe and record.', 'Use the notes when planning.'],
+      next: [['accommodations.html', 'Accommodations'], ['learners.html', 'Learners']]
+    },
+    'accommodations': {
+      title: 'Accommodations / SEN',
+      who: 'Tutor.',
+      why: 'Extra time, quiet room, larger text — recorded so every quiz respects them.',
+      what: 'Accommodation text per learner, surfaced to the tutor.',
+      how: ['Record needs.', 'Apply them in assessments.'],
+      next: [['learning-styles.html', 'Learning notes'], ['cbt-exam.html', 'Take quiz']]
+    },
+    'transcripts': {
+      title: 'Transcripts',
+      who: 'Admin/tutor; learner/parent.',
+      why: 'An official record of hours, topics and grades for applications.',
+      what: 'Generated transcript, printable.',
+      how: ['Pick the learner.', 'Generate.', 'Print to PDF.'],
+      next: [['certificates.html', 'Certificates'], ['progress-reports.html', 'Reports']]
+    },
+    'rubrics': {
+      title: 'Rubrics',
+      who: 'Tutor.',
+      why: 'Consistent grading criteria across essays and performances.',
+      what: 'Criteria, levels, descriptors.',
+      how: ['Build a rubric.', 'Attach it to an assignment.', 'Grade against it.'],
+      next: [['assignments.html', 'Assignments'], ['mastery.html', 'Mastery']]
+    },
+    'gamification': {
+      title: 'Streaks & badges',
+      who: 'Learners.',
+      why: 'Light motivation: streaks and badges for consistent study.',
+      what: 'Streak counter and earned badges.',
+      how: ['Study daily to keep a streak.', 'Earn badges.'],
+      next: [['flashcards.html', 'Flashcards'], ['study-log.html', 'Study log']]
+    },
+    'leave': {
+      title: 'Tutor leave',
+      who: 'Tutors request; admin approves.',
+      why: 'Cover and rescheduling need a leave record.',
+      what: 'Date range, reason, status.',
+      how: ['Request leave.', 'Admin approves.', 'Classes are reassigned.'],
+      next: [['substitutions.html', 'Cover tutors'], ['availability.html', 'Availability']]
+    },
+    'substitutions': {
+      title: 'Cover tutors',
+      who: 'Admin.',
+      why: 'When a tutor is on leave, assign cover without losing the class.',
+      what: 'Original tutor, cover tutor, date range.',
+      how: ['Pick the absent tutor.', 'Assign cover.', 'Notify the family.'],
+      next: [['leave.html', 'Leave'], ['tutors.html', 'Tutors']]
+    },
+    'reminders': {
+      title: 'Reminders + ICS',
+      who: 'Tutor/admin; parents download.',
+      why: 'Class reminders through free channels plus a .ics for Google/Outlook/Apple.',
+      what: 'Upcoming classes, one-click compose, .ics download.',
+      how: ['Open Reminders.', 'Send via WhatsApp/Email/SMS.', 'Download the calendar file.'],
+      next: [['bookings.html', 'Bookings'], ['calendar.html', 'Calendar']]
+    },
+    'study-log': {
+      title: 'Study log / timer',
+      who: 'Learner.',
+      why: 'Minutes on task, not just class time, feed diligence insights.',
+      what: 'Timer per subject/topic, saved minutes and notes.',
+      how: ['Pick a topic.', 'Start the timer.', 'Stop and save.'],
+      next: [['flashcards.html', 'Flashcards'], ['learner-360.html', '360']]
+    },
+    'makeup-credits': {
+      title: 'Makeup credit bank',
+      who: 'Admin/tutor; parent reads balance.',
+      why: 'When the studio cancels, the family earns a credit, never silently losing hours.',
+      what: 'Per-engagement ledger of + and − credits.',
+      how: ['Add credit when you cancel.', 'Subtract when a makeup is held.'],
+      next: [['makeups.html', 'Make-ups'], ['cancellations.html', 'Cancellations']]
+    },
+    'public-book': {
+      title: 'Public self-booking',
+      who: 'Parents (no login).',
+      why: 'Open slots bookable like Calendly, with no Calendly fee.',
+      what: 'Availability grid, contact form, lands as an inquiry.',
+      how: ['Publish the page.', 'Parent picks a slot.', 'Confirm into a cycle.'],
+      next: [['availability.html', 'Availability'], ['bookings.html', 'Bookings']]
+    },
+    'stream': {
+      title: 'Class stream',
+      who: 'Tutors post; engagement members read.',
+      why: 'A Google Classroom-style feed of announcements, questions and materials.',
+      what: 'Posts in reverse-chronological order, link previews only.',
+      how: ['Post to the stream.', 'Learners comment.', 'Pin important items.'],
+      next: [['classwork.html', 'Classwork'], ['forum.html', 'Forum']]
+    },
+    'classwork': {
+      title: 'Classwork',
+      who: 'Tutor organises; learners submit.',
+      why: 'Work organised by topic: assignments, quizzes, materials, comment-only return.',
+      what: 'Topic-organised work, skills tags, submissions.',
+      how: ['Create a topic.', 'Add work.', 'Review submissions.'],
+      next: [['stream.html', 'Stream'], ['assignments.html', 'Assignments']]
+    },
+    'reading': {
+      title: 'Reading assignments',
+      who: 'Tutor assigns; learner ticks.',
+      why: 'Pre-class reading/video links tied to the next SOW topic create the read → quiz → class loop.',
+      what: 'Links, due tick, completion.',
+      how: ['Assign links.', 'Learners read/watch.', 'Tick complete, then Self-Quiz.'],
+      next: [['resources.html', 'Resources'], ['practice.html', 'Quizzes']]
+    },
+    'sow': {
+      title: 'Scheme of Work',
+      who: 'Tutor.',
+      why: 'Termly topics, coverage and per-learner evaluation push scores to the mastery heatmap.',
+      what: 'Terms, topics, coverage, evaluations.',
+      how: ['Enter topics at term start.', 'Tick coverage weekly.', 'Evaluate each learner.'],
+      next: [['curriculum.html', 'Curriculum'], ['mastery.html', 'Mastery']]
+    },
+    'scoresheet': {
+      title: 'Scoresheet',
+      who: 'Tutor/admin; linked parent/learner read.',
+      why: 'One ledger of graded quizzes, SOW evaluations and homework.',
+      what: 'Score, max, percent, subject, date, source.',
+      how: ['Graded quizzes arrive automatically.', 'Add manual rows.', 'Filter by subject.'],
+      next: [['cbt-exam.html', 'Take quiz'], ['progress-reports.html', 'Reports']]
+    },
+    'cbt-exam': {
+      title: 'Take quiz',
+      who: 'Learner.',
+      why: 'The runtime: code entry, student ID, timer, navigator, anti-cheat, review and PDF.',
+      what: 'Runs Open or Registered papers; 32 question types.',
+      how: ['Enter the code.', 'Enter student ID (TC-0001).', 'Answer, submit, review, save PDF.'],
+      next: [['practice.html', 'CBT manager'], ['cbt-review.html', 'Review + PDF']]
+    },
+    'cbt-multi': {
+      title: 'Multi-subject quiz',
+      who: 'Learner.',
+      why: 'UTME-style one sitting with subject tabs and a shared timer.',
+      what: 'Tabbed multi-subject paper.',
+      how: ['Enter code + ID.', 'Move across tabs.', 'Submit once.'],
+      next: [['cbt-exam.html', 'Single quiz'], ['scoresheet.html', 'Scoresheet']]
+    },
+    'cbt-review': {
+      title: 'Quiz review',
+      who: 'Learner.',
+      why: 'Item-by-item answers, keys and explanations, printable to PDF.',
+      what: 'Review screen with per-subject breakdown.',
+      how: ['After submitting, read explanations.', 'Print → Save as PDF.'],
+      next: [['cbt-exam.html', 'Take quiz'], ['scoresheet.html', 'Scoresheet']]
+    },
+    'insights': {
+      title: 'Insights Lab',
+      who: 'Tutor/admin.',
+      why: 'Readable formulas — value-added, OLS prediction, six at-risk rules, methodology suggestions.',
+      what: 'Charts and flags per learner, group or practice.',
+      how: ['Pick a learner.', 'Read the chart and flags.', 'Apply the suggested method.'],
+      next: [['at-risk.html', 'At-risk'], ['learner-360.html', '360']]
+    },
+    'sessions': {
+      title: 'Sessions',
+      who: 'Tutor/admin; families see their own.',
+      why: 'Every lesson with start/end, mode, meeting link, whiteboard and hours deducted when done.',
+      what: 'Session rows linked to engagements.',
+      how: ['Schedule a session.', 'Add a meeting link.', 'Mark done to deduct hours.'],
+      next: [['calendar.html', 'Calendar'], ['session-complete.html', 'Complete']]
+    },
+    'attendance': {
+      title: 'Attendance',
+      who: 'Tutor marks; families read.',
+      why: 'Present/late/absent/excused per learner feeds the 80% at-risk rule.',
+      what: 'Attendance marks per session per learner.',
+      how: ['Open the session.', 'Mark each learner.', 'Save.'],
+      next: [['sessions.html', 'Sessions'], ['at-risk.html', 'At-risk']]
+    },
+    'calendar': {
+      title: 'Calendar',
+      who: 'All roles (family-safe).',
+      why: 'Timezone-aware view of sessions and cycle classes.',
+      what: 'Upcoming sessions and booking_classes.',
+      how: ['Browse the month.', 'Click a class for details.', 'Export .ics from Reminders.'],
+      next: [['reminders.html', 'Reminders'], ['bookings.html', 'Bookings']]
+    },
+    'bookings': {
+      title: 'Cycle bookings',
+      who: 'Admin/tutor create; families read.',
+      why: '4 cycles × 7 days, times/cycle × 4 = classes, amount = rate × hours.',
+      what: 'Booking blocks expanded by a trigger into every class.',
+      how: ['Pick learner and engagement.', 'Set cycle start, times, duration and rate.', 'Save — the timetable writes itself.'],
+      next: [['sessions.html', 'Sessions'], ['invoices.html', 'Invoices']]
+    },
+    'contact': {
+      title: 'Contact',
+      who: 'Public.',
+      why: 'A simple contact route for the studio (WhatsApp/email).',
+      what: 'Contact details and links.',
+      how: ['Use the WhatsApp or email link.', 'The studio responds.'],
+      next: [['about.html', 'About'], ['apply.html', 'Apply']]
+    },
+    'forgot-password': {
+      title: 'Forgot password',
+      who: 'Anyone with an account.',
+      why: 'Supabase password reset via email.',
+      what: 'Email field → reset link.',
+      how: ['Enter your email.', 'Click the reset link.', 'Set a new password.'],
+      next: [['login.html', 'Sign in']]
+    },
+    'change-password': {
+      title: 'Change password',
+      who: 'Signed-in users.',
+      why: 'Update a known password.',
+      what: 'Current + new password fields.',
+      how: ['Enter current and new.', 'Save.'],
+      next: [['profile.html', 'Profile'], ['settings.html', 'Settings']]
+    },
+    'offline': {
+      title: 'Offline',
+      who: 'Anyone.',
+      why: 'The page shown when there is no connection (PWA shell).',
+      what: 'Friendly offline message.',
+      how: ['Reconnect to continue.'],
+      next: [['install.html', 'Install']]
+    },
+    'notifications': {
+      title: 'Notification centre',
+      who: 'All roles.',
+      why: 'Bell, push after PWA install, and multi-channel compose in one place.',
+      what: 'In-app notifications, push subscription, recent items.',
+      how: ['Allow notifications.', 'Read items.', 'Mark all read.'],
+      next: [['inbox.html', 'Inbox'], ['install.html', 'Install']]
+    },
+    'hmg-products': {
+      title: 'HMG Digital Products',
+      who: 'Public. SEO page.',
+      why: 'Catalogue of the wider HMG Concepts product family.',
+      what: 'Product cards with contact paths.',
+      how: ['Browse products.', 'Reach out via WhatsApp.'],
+      next: [['hmg-ecosystem.html', 'Ecosystem'], ['developer.html', 'Developer']]
+    },
+    'developer': {
+      title: 'Developer / founder',
+      who: 'Public. SEO page.',
+      why: 'Credits and links for Adewale Samson Adeagbo and HMG Technologies.',
+      what: 'Founder bio and ecosystem links.',
+      how: ['Read the story.', 'Connect with the founder.'],
+      next: [['hmg-ecosystem.html', 'Ecosystem']]
+    },
+    'flyer': {
+      title: 'Marketing flyer',
+      who: 'Admin.',
+      why: 'A printable one-page flyer to share on WhatsApp and socials.',
+      what: 'Branded flyer with studio details and a QR-ready apply link.',
+      how: ['Open the flyer.', 'Print or save as PDF.', 'Share it.'],
+      next: [['about.html', 'About'], ['apply.html', 'Apply']]
+    },
+    'site-index': {
+      title: 'Site index',
+      who: 'Public/search engines.',
+      why: 'A simple A–Z of public pages for discoverability.',
+      what: 'Link list of public pages.',
+      how: ['Browse or search.'],
+      next: [['feature-guide.html', 'Feature guide']]
+    },
+    'products': {
+      title: 'Books & materials',
+      who: 'Parents/learners browse; admin manages.',
+      why: 'Studios often sell past papers, workbooks and kits alongside tutoring.',
+      what: 'Catalogue of materials with price and a buy link (wa.me or a payment link).',
+      how: ['Browse the catalogue.', 'Enquire or pay via the link shown.', 'Admin adds items from the CRUD.'],
+      next: [['fees.html', 'Fees'], ['resources.html', 'Resources']]
+    },
+    'index': {
+      title: 'Home',
+      who: 'Public.',
+      why: 'The landing page explains the studio and routes visitors to sign-in or apply.',
+      what: 'Hero, feature cards, sign-in and apply CTAs, HMG attribution, SEO metadata and JSON-LD.',
+      how: ['Use Sign in if you have an account.', 'Use Apply to request a place.', 'Install the app from the banner.'],
+      next: [['login.html', 'Sign in'], ['apply.html', 'Apply'], ['about.html', 'About']]
+    },
     default: {
       title: 'This page',
       who: 'Depends on the module.',

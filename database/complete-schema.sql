@@ -17,48 +17,61 @@
 -- Product of HMG Technologies / HMG Concepts. Founder Adewale Samson Adeagbo.
 -- =============================================================================
 
+-- =============================================================================
+-- EXTENSIONS
+-- =============================================================================
 create extension if not exists pgcrypto;
 
+-- =============================================================================
+-- ROLE HELPER FUNCTIONS (plpgsql so table references are resolved at call time,
+-- not at function-creation time. This fixes "relation public.profiles does not
+-- exist" on a fresh database where these functions previously ran before any
+-- tables existed).
+-- =============================================================================
 create or replace function public.tc_set_updated_at()
 returns trigger language plpgsql as $$
 begin new.updated_at = now(); return new; end $$;
 
 create or replace function public.is_admin()
-returns boolean language sql stable security definer as $$
-  select exists (
+returns boolean language plpgsql stable security definer as $$
+begin
+  return exists (
     select 1 from public.profiles p
     where p.id = auth.uid()
       and p.role in ('admin','owner','director','lead_tutor','super_admin')
       and p.status in ('approved','active')
   );
-$$;
+end $$;
 
 create or replace function public.is_tutor()
-returns boolean language sql stable security definer as $$
-  select exists (
+returns boolean language plpgsql stable security definer as $$
+begin
+  return exists (
     select 1 from public.profiles p
     where p.id = auth.uid()
       and p.role in ('admin','owner','director','lead_tutor','super_admin','tutor','staff')
       and p.status in ('approved','active')
   );
-$$;
+end $$;
 
 create or replace function public.is_parent_of(p_learner uuid)
-returns boolean language sql stable security definer as $$
-  select exists (
+returns boolean language plpgsql stable security definer as $$
+begin
+  return exists (
     select 1 from public.parent_learner pl
     join public.parents par on par.id = pl.parent_id
     where pl.learner_id = p_learner and par.user_id = auth.uid()
   );
-$$;
+end $$;
 
 create or replace function public.is_self_learner(p_learner uuid)
-returns boolean language sql stable security definer as $$
-  select exists (
+returns boolean language plpgsql stable security definer as $$
+begin
+  return exists (
     select 1 from public.learners l
     where l.id = p_learner and l.user_id = auth.uid()
   );
-$$;
+end $$;
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -1400,3 +1413,198 @@ drop policy if exists archives_admin on storage.objects;
 create policy archives_admin on storage.objects for all to authenticated
   using (bucket_id = 'archives') with check (bucket_id = 'archives');
 select 'Storage offload buckets ready ✅' as status;
+
+
+-- =============================================================================
+-- V7 — Enterprise parity tables referenced by assets/js/enterprise.js and
+--      the optional bring-your-own-key AI assistant (ai-assistant.js).
+--      These were previously only present in the School Connect schema, which
+--      caused runtime "relation does not exist" errors when the timetable
+--      generator, QR check-in, diary, menu planner, incidents/finance, 2FA
+--      prefs, or AI assistant were opened in a Tutoring Connect studio.
+-- =============================================================================
+
+-- Timetable generator -------------------------------------------------------
+create table if not exists public.timetable_requirements (
+  id uuid primary key default gen_random_uuid(),
+  class text not null,
+  subject text not null,
+  teacher text,
+  periods_per_week int default 1,
+  available_days jsonb,
+  is_part_time boolean default false,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  unique (class, subject)
+);
+
+create table if not exists public.timetable (
+  id uuid primary key default gen_random_uuid(),
+  class text not null,
+  session text,
+  term text,
+  day text not null,
+  period int not null,
+  subject text,
+  teacher text,
+  room text,
+  created_at timestamptz default now()
+);
+
+-- QR / code self check-in ---------------------------------------------------
+create table if not exists public.attendance_checkins (
+  id uuid primary key default gen_random_uuid(),
+  student_id_ref text,
+  student_name text,
+  class text,
+  method text default 'qr',
+  device text,
+  created_at timestamptz default now()
+);
+
+-- Student diary / homework log ---------------------------------------------
+create table if not exists public.student_diary (
+  id uuid primary key default gen_random_uuid(),
+  student_id uuid,
+  student_name text,
+  class text,
+  subject text,
+  entry_type text default 'homework',
+  title text,
+  body text,
+  acknowledged boolean default false,
+  date timestamptz default now(),
+  created_at timestamptz default now()
+);
+
+-- Menu / meal planner -------------------------------------------------------
+create table if not exists public.menu_planner (
+  id uuid primary key default gen_random_uuid(),
+  week_start date not null,
+  day text not null,
+  meal text not null,
+  description text,
+  allergens text,
+  created_at timestamptz default now()
+);
+
+-- Generic module records (incidents, etc.) ----------------------------------
+create table if not exists public.module_records (
+  id uuid primary key default gen_random_uuid(),
+  module text not null,
+  title text,
+  body text,
+  status text default 'open',
+  data jsonb,
+  created_at timestamptz default now()
+);
+
+-- Finance: fee payments + double-entry style ledger -------------------------
+create table if not exists public.fee_payments (
+  id uuid primary key default gen_random_uuid(),
+  learner_id uuid references public.learners(id) on delete set null,
+  engagement_id uuid references public.engagements(id) on delete set null,
+  amount numeric default 0,
+  method text,
+  reference text,
+  paid_on date default current_date,
+  note text,
+  created_at timestamptz default now()
+);
+
+create table if not exists public.finance_entries (
+  id uuid primary key default gen_random_uuid(),
+  entry_date date default current_date,
+  account text,
+  description text,
+  amount numeric default 0,
+  direction text default 'in',
+  reference text,
+  created_at timestamptz default now()
+);
+
+-- Per-user security preferences (2FA email OTP toggle) ----------------------
+create table if not exists public.security_prefs (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  two_factor boolean default false,
+  updated_at timestamptz default now()
+);
+
+-- Optional bring-your-own-key AI assistant configuration --------------------
+create table if not exists public.sc_ai_settings (
+  id int primary key default 1,
+  enabled boolean default false,
+  base_url text,
+  api_key text,
+  model text default 'gpt-4o-mini',
+  updated_at timestamptz default now()
+);
+
+-- updated_at triggers -------------------------------------------------------
+drop trigger if exists trg_timetable_requirements_updated on public.timetable_requirements;
+create trigger trg_timetable_requirements_updated before update on public.timetable_requirements
+  for each row execute function public.tc_set_updated_at();
+
+-- RLS -----------------------------------------------------------------------
+alter table public.timetable_requirements enable row level security;
+alter table public.timetable enable row level security;
+alter table public.attendance_checkins enable row level security;
+alter table public.student_diary enable row level security;
+alter table public.menu_planner enable row level security;
+alter table public.module_records enable row level security;
+alter table public.fee_payments enable row level security;
+alter table public.finance_entries enable row level security;
+alter table public.security_prefs enable row level security;
+alter table public.sc_ai_settings enable row level security;
+
+-- Tutors/staff manage operational tables; learners/parents are restricted.
+drop policy if exists enterprise_staff_all on public.timetable_requirements;
+create policy enterprise_staff_all on public.timetable_requirements for all to authenticated
+  using (public.is_tutor()) with check (public.is_tutor());
+drop policy if exists enterprise_staff_all on public.timetable;
+create policy enterprise_staff_all on public.timetable for all to authenticated
+  using (public.is_tutor()) with check (public.is_tutor());
+drop policy if exists enterprise_staff_all on public.attendance_checkins;
+create policy enterprise_staff_all on public.attendance_checkins for all to authenticated
+  using (public.is_tutor()) with check (public.is_tutor());
+drop policy if exists enterprise_staff_all on public.student_diary;
+create policy enterprise_staff_all on public.student_diary for all to authenticated
+  using (public.is_tutor()) with check (public.is_tutor());
+drop policy if exists enterprise_staff_all on public.menu_planner;
+create policy enterprise_staff_all on public.menu_planner for all to authenticated
+  using (public.is_tutor()) with check (public.is_tutor());
+drop policy if exists enterprise_staff_all on public.module_records;
+create policy enterprise_staff_all on public.module_records for all to authenticated
+  using (public.is_tutor()) with check (public.is_tutor());
+
+-- Finance: owners only.
+drop policy if exists finance_owner_all on public.fee_payments;
+create policy finance_owner_all on public.fee_payments for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+drop policy if exists finance_owner_all on public.finance_entries;
+create policy finance_owner_all on public.finance_entries for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+-- A user may read/write only their own security prefs.
+drop policy if exists security_prefs_self on public.security_prefs;
+create policy security_prefs_self on public.security_prefs for all to authenticated
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- AI settings: any authenticated staff may read (so the helper knows whether
+-- to appear); only admins may update (so the key is not exposed to families).
+drop policy if exists ai_settings_read on public.sc_ai_settings;
+create policy ai_settings_read on public.sc_ai_settings for select to authenticated
+  using (public.is_tutor());
+drop policy if exists ai_settings_admin_write on public.sc_ai_settings;
+create policy ai_settings_admin_write on public.sc_ai_settings for all to authenticated
+  using (public.is_admin()) with check (public.is_admin());
+
+grant select, insert, update, delete on
+  public.timetable_requirements, public.timetable, public.attendance_checkins,
+  public.student_diary, public.menu_planner, public.module_records
+  to authenticated;
+grant select, insert, update, delete on public.fee_payments, public.finance_entries to authenticated;
+grant select, insert, update, delete on public.security_prefs to authenticated;
+grant select on public.sc_ai_settings to authenticated;
+
+select 'Tutoring Connect V7 enterprise + AI tables installed ✅' as status;

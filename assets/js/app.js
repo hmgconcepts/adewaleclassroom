@@ -4,10 +4,13 @@
    tutoring studios. Free stack. No AI API. No file uploads.
    ==================================================================== */
 
+// Pages that may be viewed WITHOUT signing in.
+// Anything not in this list requires an authenticated role; anonymous visitors
+// are redirected to login.html. Keep this list tight — it is the privacy gate.
 const PUBLIC_PAGES = [
-  'login','index','about','contact','apply','register','signup',
-  'cbt-exam','exam-register','offline','install','feature-guide',
-  'hmg-ecosystem','hmg-products','developer',''
+  'login','index','about','contact','apply','register','signup','forgot-password',
+  'exam-register','public-book','offline','install','feature-guide',
+  'hmg-ecosystem','hmg-products','developer','flyer',''
 ];
 
 (function () {
@@ -90,6 +93,13 @@ const App = {
       this.bootShared();
       return;
     }
+    // CBT exam runtime is intentionally public: a learner enters a quiz code +
+    // student ID (TC-0001) rather than a portal password. It is NOT an open
+    // page — the exam code gates access — so allow it through without a role.
+    if (page === 'cbt-exam' || page === 'cbt-multi' || page === 'cbt-review') {
+      this.bootShared();
+      return;
+    }
     this.applyRoleVisibility();
     this.loadPracticeSettings();
   },
@@ -153,10 +163,21 @@ const App = {
   hydrateBrandAssets() {
     try {
       const p = window.PRACTICE || {};
-      document.documentElement.style.setProperty('--primary', (p.theme && p.theme.primary) || '#134e4a');
-      document.documentElement.style.setProperty('--accent', (p.theme && p.theme.accent) || '#d97706');
-      document.documentElement.style.setProperty('--tc-primary', (p.theme && p.theme.primary) || '#134e4a');
-      document.documentElement.style.setProperty('--tc-accent', (p.theme && p.theme.accent) || '#d97706');
+      const primary = (p.theme && p.theme.primary) || '#134e4a';
+      const accent = (p.theme && p.theme.accent) || '#d97706';
+      const root = document.documentElement.style;
+      root.setProperty('--primary', primary);
+      root.setProperty('--accent', accent);
+      root.setProperty('--tc-primary', primary);
+      root.setProperty('--tc-accent', accent);
+      // Premium themes may ship extra shades; surface them to the CSS.
+      if (p.theme) {
+        if (p.theme.primaryLight) root.setProperty('--tc-primary-light', p.theme.primaryLight);
+        if (p.theme.accentLight) root.setProperty('--tc-accent-light', p.theme.accentLight);
+        if (p.theme.bg) { root.setProperty('--surface-soft', p.theme.bg); root.setProperty('--tc-ivory', p.theme.bg); }
+      }
+      // Derive a readable dark variant for gradients/active states.
+      root.setProperty('--tc-primary-dark', (p.theme && p.theme.primaryDark) || primary);
       const logo = p.logoUrl || ('assets/img/logo.' + (p.logoExt || 'svg'));
       document.querySelectorAll('.app-brand img, .pwa-install-icon, .nav-logo img, img[data-logo], img[data-practice-logo]').forEach(img => {
         if (!img) return;
@@ -247,17 +268,35 @@ const App = {
     }
 
     if (!currentSb) {
-      const effectiveRole = cached ? (cached.role || 'admin') : 'admin';
-      App.currentRole = effectiveRole;
-      App.role = effectiveRole;
-      App.currentProfile = cached || { full_name: 'Local preview', role: effectiveRole, status: 'approved' };
-      App.profile = App.currentProfile;
-      window.TC_PROFILE = App.currentProfile;
-      App.applyRoleDashboard(effectiveRole, App.currentProfile);
-      App.applyRoleNav(effectiveRole);
-      App.loadPageData();
-      this.bootShared();
+      // Database not configured. Anonymous visitors must NEVER receive admin.
+      // Only an explicit opt-in demo flag (set in config.js or via URL) grants
+      // a preview role; everyone else is treated as a guest and bounced to
+      // login on protected pages.
+      const demoOn = (window.PRACTICE && window.PRACTICE.demo && window.PRACTICE.demo.enabled)
+        || /[?&]demo=1/.test(location.search)
+        || sessionStorage.getItem('tc-demo') === '1';
+      if (demoOn) {
+        sessionStorage.setItem('tc-demo', '1');
+        const effectiveRole = cached ? (cached.role || 'tutor') : 'tutor';
+        App.currentRole = effectiveRole;
+        App.role = effectiveRole;
+        App.currentProfile = cached || { full_name: 'Studio preview', role: effectiveRole, status: 'approved' };
+        App.profile = App.currentProfile;
+        window.TC_PROFILE = App.currentProfile;
+        App.applyRoleDashboard(effectiveRole, App.currentProfile);
+        App.applyRoleNav(effectiveRole);
+        App.loadPageData();
+        this.bootShared();
+        this.showDashboardLoading(false);
+        return;
+      }
+      // No DB and no demo → guest. On a protected page this sends the visitor
+      // to login (which explains how to connect Supabase). On public pages the
+      // caller already returned before reaching here.
+      App.currentRole = 'guest';
+      App.role = 'guest';
       this.showDashboardLoading(false);
+      location.href = 'login.html?reason=noconfig';
       return;
     }
 

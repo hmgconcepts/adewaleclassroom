@@ -12,8 +12,9 @@ const Bookings = {
   },
   explain(q, currency) {
     const c = currency || (window.PRACTICE && window.PRACTICE.currency) || '₦';
+    const days = (Number(q.cycles) || 4) * 7;
     return [
-      `A full booking is ${q.cycles} cycles.`,
+      `A full booking is ${q.cycles} cycle(s) (${days} days).`,
       `Each cycle is 7 days.`,
       `This family booked ${q.times} class(es) in every cycle.`,
       `Total classes = ${q.times} × ${q.cycles} = ${q.classes}.`,

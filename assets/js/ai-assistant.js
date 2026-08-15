@@ -58,7 +58,7 @@
     var body = {
       model: c.model || 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: opts.system || ('You are a helpful assistant for teachers and studio administrators at ' + ((window.PRACTICE && SCHOOL.name) || 'a school') + '. Be concise, practical and appropriate for a school context. Never invent student data.') },
+        { role: 'system', content: opts.system || ('You are a helpful assistant for teachers and studio administrators at ' + ((window.PRACTICE && window.PRACTICE.name) || 'a tutoring studio') + '. Be concise, practical and appropriate for a tutoring context. Never invent student data.') },
         { role: 'user', content: String(prompt || '') }
       ],
       temperature: opts.temperature == null ? 0.7 : +opts.temperature,

@@ -1,6 +1,13 @@
 /* Tutoring Connect — catalog: themes, fonts, layouts, modules, presets */
 (function (w) {
+  // ===========================================================================
+  // 50 PROFESSIONAL THEMES
+  // Each has a primary (brand), accent (CTA/highlights) and a soft background.
+  // Palettes are deliberately mature, high-contrast and print-friendly — suited
+  // to tutoring studios serving Nigerian and international families.
+  // ===========================================================================
   const THEMES = [
+    { id: 'adewale', name: 'Adewale Emerald & Gold', primary: '#0f3d3e', accent: '#b8860b', primaryLight: '#14615f', accentLight: '#d4af37', bg: '#f6f1e7' },
     { id: 'lumen', name: 'Lumen Teal & Copper', primary: '#134e4a', accent: '#d97706', bg: '#f7f4ef' },
     { id: 'ink', name: 'Scholar Ink', primary: '#1e3a5f', accent: '#c2410c', bg: '#f8fafc' },
     { id: 'forest', name: 'Forest Desk', primary: '#14532d', accent: '#ca8a04', bg: '#f7fee7' },
@@ -8,18 +15,134 @@
     { id: 'wine', name: 'Wine & Cream', primary: '#7f1d1d', accent: '#d4a017', bg: '#fff7ed' },
     { id: 'violet', name: 'Seminar Violet', primary: '#4c1d95', accent: '#f59e0b', bg: '#faf5ff' },
     { id: 'ocean', name: 'Ocean Hour', primary: '#0e7490', accent: '#ea580c', bg: '#ecfeff' },
-    { id: 'slate', name: 'Slate Studio', primary: '#334155', accent: '#14b8a6', bg: '#f8fafc' }
+    { id: 'slate', name: 'Slate Studio', primary: '#334155', accent: '#14b8a6', bg: '#f8fafc' },
+    { id: 'emerald', name: 'Emerald Academy', primary: '#065f46', accent: '#b45309', bg: '#ecfdf5' },
+    { id: 'royal', name: 'Royal Azure', primary: '#1e3a8a', accent: '#f59e0b', bg: '#eff6ff' },
+    { id: 'crimson', name: 'Crimson College', primary: '#991b1b', accent: '#0f766e', bg: '#fef2f2' },
+    { id: 'graphite', name: 'Graphite Pro', primary: '#111827', accent: '#2563eb', bg: '#f9fafb' },
+    { id: 'sage', name: 'Sage & Sand', primary: '#3f6212', accent: '#a16207', bg: '#f7fee7' },
+    { id: 'coral', name: 'Coral Study', primary: '#9f1239', accent: '#0e7490', bg: '#fff1f2' },
+    { id: 'indigo', name: 'Indigo Institute', primary: '#3730a3', accent: '#0891b2', bg: '#eef2ff' },
+    { id: 'bronze', name: 'Bronze Scholarly', primary: '#78350f', accent: '#15803d', bg: '#fffbeb' },
+    { id: 'teal', name: 'Teal Compass', primary: '#115e59', accent: '#c026d3', bg: '#f0fdfa' },
+    { id: 'plum', name: 'Plum Seminar', primary: '#581c87', accent: '#0ea5e9', bg: '#faf5ff' },
+    { id: 'charcoal', name: 'Charcoal Edge', primary: '#1c1917', accent: '#eab308', bg: '#fafaf9' },
+    { id: 'azure', name: 'Azure Learning', primary: '#1d4ed8', accent: '#ea580c', bg: '#eff6ff' },
+    { id: 'moss', name: 'Moss & Gold', primary: '#365314', accent: '#ca8a04', bg: '#f7fee7' },
+    { id: 'burgundy', name: 'Burgundy Elite', primary: '#7f1d1d', accent: '#0369a1', bg: '#fef2f2' },
+    { id: 'jade', name: 'Jade Scholar', primary: '#064e3b', accent: '#d97706', bg: '#ecfdf5' },
+    { id: 'steel', name: 'Steel Executive', primary: '#1e293b', accent: '#0d9488', bg: '#f1f5f9' },
+    { id: 'amber', name: 'Amber Academy', primary: '#92400e', accent: '#1d4ed8', bg: '#fffbeb' },
+    { id: 'magenta', name: 'Magenta Modern', primary: '#831843', accent: '#0891b2', bg: '#fdf2f8' },
+    { id: 'pine', name: 'Pine Evening', primary: '#14532d', accent: '#f97316', bg: '#f0fdf4' },
+    { id: 'cobalt', name: 'Cobalt Classroom', primary: '#1e40af', accent: '#facc15', bg: '#eff6ff' },
+    { id: 'terracotta', name: 'Terracotta Desk', primary: '#9a3412', accent: '#15803d', bg: '#fff7ed' },
+    { id: 'lavender', name: 'Lavender Learning', primary: '#5b21b6', accent: '#0d9488', bg: '#f5f3ff' },
+    { id: 'copper', name: 'Copper Kettle', primary: '#92400e', accent: '#0f766e', bg: '#fef3c7' },
+    { id: 'noir', name: 'Noir Premium', primary: '#0a0a0a', accent: '#eab308', bg: '#f5f5f5' },
+    { id: 'sky', name: 'Skyline Tutors', primary: '#075985', accent: '#dc2626', bg: '#f0f9ff' },
+    { id: 'olive', name: 'Olive Grove', primary: '#3f6212', accent: '#b91c1c', bg: '#f7fee7' },
+    { id: 'rose', name: 'Rose Collegiate', primary: '#881337', accent: '#0369a1', bg: '#fff1f2' },
+    { id: 'deepsea', name: 'Deep Sea Dive', primary: '#083344', accent: '#f59e0b', bg: '#ecfeff' },
+    { id: 'mustard', name: 'Mustard House', primary: '#713f12', accent: '#15803d', bg: '#fefce8' },
+    { id: 'cerulean', name: 'Cerulean Pro', primary: '#0c4a6e', accent: '#ea580c', bg: '#f0f9ff' },
+    { id: 'forestgreen', name: 'Evergreen Tutorial', primary: '#166534', accent: '#a16207', bg: '#f0fdf4' },
+    { id: 'mulberry', name: 'Mulberry Mode', primary: '#701a75', accent: '#0891b2', bg: '#fdf4ff' },
+    { id: 'sandstone', name: 'Sandstone Suite', primary: '#7c2d12', accent: '#1d4ed8', bg: '#fef3c7' },
+    { id: 'peacock', name: 'Peacock Plume', primary: '#134e4a', accent: '#7c3aed', bg: '#f0fdfa' },
+    { id: 'maroon', name: 'Maroon Mentors', primary: '#7f1d1d', accent: '#0ea5e9', bg: '#fef2f2' },
+    { id: 'gold', name: 'Gold Standard', primary: '#713f12', accent: '#166534', bg: '#fefce8' },
+    { id: 'glacier', name: 'Glacier Blue', primary: '#164e63', accent: '#db2777', bg: '#ecfeff' },
+    { id: 'ivory', name: 'Ivory Institute', primary: '#44403c', accent: '#b45309', bg: '#fafaf9' },
+    { id: 'regal', name: 'Regal Purple', primary: '#4c1d95', accent: '#fbbf24', bg: '#f5f3ff' },
+    { id: 'atlas', name: 'Atlas Global', primary: '#0f172a', accent: '#059669', bg: '#f8fafc' },
+    { id: 'sunrise', name: 'Sunrise Studio', primary: '#9a3412', accent: '#1d4ed8', bg: '#fff7ed' },
+    { id: 'horizon', name: 'Horizon Teal', primary: '#134e4a', accent: '#be123c', bg: '#f0fdfa' }
   ];
+
+  // ===========================================================================
+  // 50 PROFESSIONAL FONT PAIRS
+  // Sans for UI/body + a complementary serif (or second sans) for headings.
+  // All are free Google Fonts so generated studios have zero font cost.
+  // ===========================================================================
   const FONTS = [
     { id: 'dm', name: 'DM Sans + Source Serif', css: 'DM+Sans:wght@400;500;600;700;800|Source+Serif+4:wght@500;700;800', family: 'DM Sans', serif: 'Source Serif 4' },
     { id: 'manrope', name: 'Manrope + Fraunces', css: 'Manrope:wght@400;600;700;800|Fraunces:wght@600;800', family: 'Manrope', serif: 'Fraunces' },
     { id: 'plus', name: 'Plus Jakarta + Newsreader', css: 'Plus+Jakarta+Sans:wght@400;600;700;800|Newsreader:wght@600;800', family: 'Plus Jakarta Sans', serif: 'Newsreader' },
-    { id: 'inter', name: 'Inter + Libre Baskerville', css: 'Inter:wght@400;600;700;800|Libre+Baskerville:wght@700', family: 'Inter', serif: 'Libre Baskerville' }
+    { id: 'inter', name: 'Inter + Libre Baskerville', css: 'Inter:wght@400;600;700;800|Libre+Baskerville:wght@700', family: 'Inter', serif: 'Libre Baskerville' },
+    { id: 'poppins', name: 'Poppins + Playfair Display', css: 'Poppins:wght@400;500;600;700;800|Playfair+Display:wght@600;700;800', family: 'Poppins', serif: 'Playfair Display' },
+    { id: 'montserrat', name: 'Montserrat + Merriweather', css: 'Montserrat:wght@400;500;600;700;800|Merriweather:wght@400;700;900', family: 'Montserrat', serif: 'Merriweather' },
+    { id: 'roboto', name: 'Roboto + Roboto Slab', css: 'Roboto:wght@400;500;700;900|Roboto+Slab:wght@500;700;900', family: 'Roboto', serif: 'Roboto Slab' },
+    { id: 'opensans', name: 'Open Sans + Lora', css: 'Open+Sans:wght@400;600;700;800|Lora:wght@500;700', family: 'Open Sans', serif: 'Lora' },
+    { id: 'worksans', name: 'Work Sans + Lora', css: 'Work+Sans:wght@400;500;600;700;800|Lora:wght@500;700', family: 'Work Sans', serif: 'Lora' },
+    { id: 'nunito', name: 'Nunito + Nunito Sans', css: 'Nunito:wght@400;600;700;800|Nunito+Sans:wght@400;600;700;800', family: 'Nunito', serif: 'Nunito Sans' },
+    { id: 'rubik', name: 'Rubik + Spectral', css: 'Rubik:wght@400;500;600;700;800|Spectral:wght@500;700;800', family: 'Rubik', serif: 'Spectral' },
+    { id: 'lexend', name: 'Lexend + Lora', css: 'Lexend:wght@400;500;600;700;800|Lora:wght@500;700', family: 'Lexend', serif: 'Lora' },
+    { id: 'sora', name: 'Sora + Sora Serif', css: 'Sora:wght@400;600;700;800|Spectral:wght@500;700;800', family: 'Sora', serif: 'Spectral' },
+    { id: 'outfit', name: 'Outfit + Cardo', css: 'Outfit:wght@400;500;600;700;800|Cardo:wght@400;700', family: 'Outfit', serif: 'Cardo' },
+    { id: 'spacegrotesk', name: 'Space Grotesk + Space Grotesk', css: 'Space+Grotesk:wght@400;500;600;700', family: 'Space Grotesk', serif: 'Space Grotesk' },
+    { id: 'figtree', name: 'Figtree + PT Serif', css: 'Figtree:wght@400;500;600;700;800|PT+Serif:wght@400;700', family: 'Figtree', serif: 'PT Serif' },
+    { id: 'karla', name: 'Karla + Vollkorn', css: 'Karla:wght@400;500;600;700;800|Vollkorn:wght@500;700;800', family: 'Karla', serif: 'Vollkorn' },
+    { id: 'mulish', name: 'Mulish + Crimson Pro', css: 'Mulish:wght@400;600;700;800|Crimson+Pro:wght@500;700;800', family: 'Mulish', serif: 'Crimson Pro' },
+    { id: 'barlow', name: 'Barlow + Barlow Condensed', css: 'Barlow:wght@400;500;600;700;800|Barlow+Condensed:wght@500;700', family: 'Barlow', serif: 'Barlow Condensed' },
+    { id: 'jost', name: 'Jost + Cormorant Garamond', css: 'Jost:wght@400;500;600;700|Cormorant+Garamond:wght@500;700', family: 'Jost', serif: 'Cormorant Garamond' },
+    { id: 'questrial', name: 'Questrial + Yeseva One', css: 'Questrial|Yeseva+One', family: 'Questrial', serif: 'Yeseva One' },
+    { id: 'arimo', name: 'Arimo + Tinos', css: 'Arimo:wght@400;600;700|Tinos:wght@400;700', family: 'Arimo', serif: 'Tinos' },
+    { id: 'lato', name: 'Lato + Lora', css: 'Lato:wght@400;700;900|Lora:wght@500;700', family: 'Lato', serif: 'Lora' },
+    { id: 'raleway', name: 'Raleway + Raleway Dots', css: 'Raleway:wght@400;500;600;700;800', family: 'Raleway', serif: 'Raleway' },
+    { id: 'sourcesans', name: 'Source Sans 3 + Source Serif 4', css: 'Source+Sans+3:wght@400;600;700;800|Source+Serif+4:wght@500;700;800', family: 'Source Sans 3', serif: 'Source Serif 4' },
+    { id: 'hind', name: 'Hind + Halant', css: 'Hind:wght@400;500;600;700|Halant:wght@500;700', family: 'Hind', serif: 'Halant' },
+    { id: 'kumbh', name: 'Kumbh Sans + Frank Ruhl Libre', css: 'Kumbh+Sans:wght@400;600;700;800|Frank+Ruhl+Libre:wght@500;700;900', family: 'Kumbh Sans', serif: 'Frank Ruhl Libre' },
+    { id: 'sen', name: 'Sen + Marcellus', css: 'Sen:wght@400;700;800|Marcellus', family: 'Sen', serif: 'Marcellus' },
+    { id: 'spectral', name: 'Spectral SC + Spectral', css: 'Spectral:wght@400;600;700;800|Spectral+SC:wght@400;600;700', family: 'Spectral', serif: 'Spectral SC' },
+    { id: 'encode', name: 'Encode Sans + Encode Sans Condensed', css: 'Encode+Sans:wght@400;500;600;700;800|Encode+Sans+Condensed:wght@500;700', family: 'Encode Sans', serif: 'Encode Sans Condensed' },
+    { id: 'chivo', name: 'Chivo + Old Standard TT', css: 'Chivo:wght@400;700;900|Old+Standard+TT:wght@400;700', family: 'Chivo', serif: 'Old Standard TT' },
+    { id: 'archivo', name: 'Archivo + Archivo Narrow', css: 'Archivo:wght@400;500;600;700;800|Archivo+Narrow:wght@500;700', family: 'Archivo', serif: 'Archivo Narrow' },
+    { id: 'cabin', name: 'Cabin + Cabin Condensed', css: 'Cabin:wght@400;500;600;700|Cabin+Condensed:wght@500;700', family: 'Cabin', serif: 'Cabin Condensed' },
+    { id: 'overpass', name: 'Overpass + Overpass Mono', css: 'Overpass:wght@400;600;700;800|Overpass+Mono:wght@400;600', family: 'Overpass', serif: 'Overpass Mono' },
+    { id: 'quicksand', name: 'Quicksand + Comfortaa', css: 'Quicksand:wght@400;500;600;700|Comfortaa:wght@500;700', family: 'Quicksand', serif: 'Comfortaa' },
+    { id: 'dmserif', name: 'DM Sans + DM Serif Display', css: 'DM+Sans:wght@400;500;600;700|DM+Serif+Display', family: 'DM Sans', serif: 'DM Serif Display' },
+    { id: 'oswald', name: 'Oswald + Crimson Text', css: 'Oswald:wght@400;500;600;700|Crimson+Text:wght@400;700', family: 'Oswald', serif: 'Crimson Text' },
+    { id: 'heebo', name: 'Heebo + Frank Ruhl Libre', css: 'Heebo:wght@400;500;700;800|Frank+Ruhl+Libre:wght@500;700;900', family: 'Heebo', serif: 'Frank Ruhl Libre' },
+    { id: 'ptserif', name: 'PT Sans + PT Serif', css: 'PT+Sans:wght@400;700|PT+Serif:wght@400;700', family: 'PT Sans', serif: 'PT Serif' },
+    { id: 'bitter', name: 'Bitter + Vollkorn', css: 'Bitter:wght@400;600;700;800|Vollkorn:wght@500;700;800', family: 'Bitter', serif: 'Vollkorn' },
+    { id: 'cantata', name: 'Cantata One + Hahmlet', css: 'Cantata+One|Hahmlet:wght@400;600;700;800', family: 'Hahmlet', serif: 'Cantata One' },
+    { id: 'noto', name: 'Noto Sans + Noto Serif', css: 'Noto+Sans:wght@400;500;600;700;800|Noto+Serif:wght@400;600;700;800', family: 'Noto Sans', serif: 'Noto Serif' },
+    { id: 'exo', name: 'Exo 2 + Exo 2', css: 'Exo+2:wght@400;500;600;700;800', family: 'Exo 2', serif: 'Exo 2' },
+    { id: 'zilla', name: 'Zilla Slab + Zilla Slab Highlight', css: 'Zilla+Slab:wght@400;500;600;700|Zilla+Slab+Highlight:wght@400;700', family: 'Zilla Slab', serif: 'Zilla Slab' },
+    { id: 'ibm', name: 'IBM Plex Sans + IBM Plex Serif', css: 'IBM+Plex+Sans:wght@400;500;600;700|IBM+Plex+Serif:wght@400;600;700', family: 'IBM Plex Sans', serif: 'IBM Plex Serif' },
+    { id: 'readex', name: 'Readex Pro + Literata', css: 'Readex+Pro:wght@400;500;600;700|Literata:wght@400;600;700;800', family: 'Readex Pro', serif: 'Literata' },
+    { id: 'andika', name: 'Andika + Andika', css: 'Andika:wght@400;700', family: 'Andika', serif: 'Andika' },
+    { id: 'asap', name: 'Asap + Asap Condensed', css: 'Asap:wght@400;500;600;700|Asap+Condensed:wght@500;700', family: 'Asap', serif: 'Asap Condensed' },
+    { id: 'mukta', name: 'Mukta + Tiro Devanagari', css: 'Mukta:wght@400;500;600;700;800|Tiro+Devanagari+Hindi', family: 'Mukta', serif: 'Tiro Devanagari' },
+    { id: 'alegreya', name: 'Alegreya Sans + Alegreya', css: 'Alegreya+Sans:wght@400;500;700;800|Alegreya:wght@500;700;800;900', family: 'Alegreya Sans', serif: 'Alegreya' }
   ];
+
+  // ===========================================================================
+  // 20 PROFESSIONAL LAYOUTS
+  // Each layout adds a body class so CSS can rearrange the app shell.
+  // ===========================================================================
   const LAYOUTS = [
-    { id: 'sidebar', name: 'Studio Sidebar', desc: 'Best for analytics-heavy daily use' },
-    { id: 'topnav', name: 'Top Nav', desc: 'Wide calendar and report views' },
-    { id: 'compact', name: 'Compact', desc: 'Phone-first independent tutors' }
+    { id: 'sidebar', name: 'Studio Sidebar', desc: 'Persistent left rail — best for analytics-heavy daily use.' },
+    { id: 'topnav', name: 'Top Nav Bar', desc: 'Horizontal menu — ideal for wide calendar and report views.' },
+    { id: 'compact', name: 'Compact Phone-First', desc: 'Collapsible drawer, large touch targets, mobile-first.' },
+    { id: 'dual', name: 'Dual Sidebar', desc: 'Primary rail + contextual sub-rail for deep modules.' },
+    { id: 'magazine', name: 'Magazine Dashboard', desc: 'Card-grid landing with section headlines and stat tiles.' },
+    { id: 'minimal', name: 'Minimal Focus', desc: 'Maximum content width, hidden chrome, distraction-free.' },
+    { id: 'dock', name: 'Bottom Dock', desc: 'Mobile-style bottom tab bar — thumb-friendly for tablets.' },
+    { id: 'split', name: 'Split Workspace', desc: 'Resizable list + detail panes for CRM and inbox work.' },
+    { id: 'command', name: 'Command Centre', desc: 'Collapsed icons rail that expands on hover, Ctrl/K-first.' },
+    { id: 'boxed', name: 'Boxed Desktop', desc: 'Centered max-width container with a soft background frame.' },
+    { id: 'fluid', name: 'Fluid Wide', desc: 'Full-bleed layout for large monitors and data tables.' },
+    { id: 'kanban', name: 'Kanban Board', desc: 'Column-based workflow view for pipelines and tasks.' },
+    { id: 'timeline', name: 'Timeline Rail', desc: 'Vertical activity timeline beside content — great for logs.' },
+    { id: 'academy', name: 'Academy Portal', desc: 'Hero banner + module tiles — friendly for parents/learners.' },
+    { id: 'executive', name: 'Executive Suite', desc: 'KPI strip up top, two-column report body for owners.' },
+    { id: 'classroom', name: 'Classroom Grid', desc: 'Tiled cards for sessions, resources and classwork.' },
+    { id: 'sidebarwidetop', name: 'Sidebar + Wide Top', desc: 'Left rail plus a contextual top strip with quick actions.' },
+    { id: 'focuswriter', name: 'Focus Writer', desc: 'Reading-width column for notes, reports and lesson plans.' },
+    { id: 'hub', name: 'Hub Spokes', desc: 'Central dashboard hub that fans out into every module.' },
+    { id: 'legacy', name: 'Classic Portal', desc: 'Familiar two-tone layout for users migrating from older LMS.' }
   ];
 
   const MODULES = [
