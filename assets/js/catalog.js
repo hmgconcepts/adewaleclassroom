@@ -7,6 +7,7 @@
   // to tutoring studios serving Nigerian and international families.
   // ===========================================================================
   const THEMES = [
+    { id: 'sky', name: 'Adewale Sky Blue & White', primary: '#0284c7', accent: '#0ea5e9', primaryLight: '#0ea5e9', accentLight: '#38bdf8', primaryDark: '#075985', bg: '#f0f9ff' },
     { id: 'adewale', name: 'Adewale Emerald & Gold', primary: '#0f3d3e', accent: '#b8860b', primaryLight: '#14615f', accentLight: '#d4af37', bg: '#f6f1e7' },
     { id: 'lumen', name: 'Lumen Teal & Copper', primary: '#134e4a', accent: '#d97706', bg: '#f7f4ef' },
     { id: 'ink', name: 'Scholar Ink', primary: '#1e3a5f', accent: '#c2410c', bg: '#f8fafc' },
