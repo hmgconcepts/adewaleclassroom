@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>/</loc></url>
-  <url><loc>/about.html</loc></url>
-  <url><loc>/apply.html</loc></url>
-  <url><loc>/feature-guide.html</loc></url>
-  <url><loc>/login.html</loc></url>
-  <url><loc>/hmg-ecosystem.html</loc></url>
-  <url><loc>/hmg-products.html</loc></url>
-  <url><loc>/developer.html</loc></url>
-  <url><loc>/exam-register.html</loc></url>
+  <url><loc>https://tutoringconnect.vercel.app/</loc><changefreq>weekly</changefreq></url>
+  <url><loc>https://tutoringconnect.vercel.app/about.html</loc><changefreq>monthly</changefreq></url>
+  <url><loc>https://tutoringconnect.vercel.app/feature-guide.html</loc><changefreq>monthly</changefreq></url>
+  <url><loc>https://tutoringconnect.vercel.app/hmg-ecosystem.html</loc><changefreq>monthly</changefreq></url>
+  <url><loc>https://tutoringconnect.vercel.app/hmg-products.html</loc><changefreq>monthly</changefreq></url>
+  <url><loc>https://tutoringconnect.vercel.app/developer.html</loc><changefreq>monthly</changefreq></url>
+  <url><loc>https://tutoringconnect.vercel.app/builder.html</loc><changefreq>monthly</changefreq></url>
 </urlset>

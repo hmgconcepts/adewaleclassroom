@@ -1,19 +1,43 @@
-// Tutoring Connect — Service Worker (V5 cumulative release, generator v8)
-// Bump this literal on every runtime release so previously cached CBT/report code is purged.
-const CACHE = 'sc-builder-v9.5-20260812-54';
+// Tutoring Connect — Service Worker (offline shell + push)
+// Bump CACHE on every runtime release so previously cached code is purged.
+//
+// IMPORTANT: this file ships in BOTH the generator package AND every generated
+// client ZIP, so the CORE list must only reference files that exist in the
+// CLIENT build (builder.html / generator.js / wizard.js are generator-only and
+// must NOT be precached here). Each URL is cached individually so one missing
+// file never aborts the whole precache (cache.addAll is atomic).
+const CACHE = 'tc-shell-v10-20260815';
+
+// Files guaranteed to exist in every generated client studio.
 const CORE = [
-  './', './index.html', './builder.html', './voting.html', './notifications.html',
-  './install.html', './ecosystem.html', './about.html', './guide.html', './offline.html',
+  './',
+  './index.html',
+  './login.html',
+  './dashboard.html',
+  './offline.html',
+  './about.html',
+  './install.html',
+  './feature-guide.html',
+  './hmg-ecosystem.html',
+  './manifest.json',
   './assets/css/style.css',
-  './assets/js/config.js', './assets/js/catalog.js',
-  './assets/js/notifications.js', './assets/js/voting.js', './assets/js/pwa-install.js',
-  './assets/js/super.js', './assets/js/wizard.js', './assets/js/generator.js', './assets/js/templates.js', './assets/js/site-help.js',
-  './assets/img/logo.svg', './assets/img/favicon.svg', './manifest.json'
+  './assets/img/logo.svg',
+  './assets/img/logo.png'
 ];
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(CORE).catch(err => console.warn('[SW] precache failed', err.message))).then(() => self.skipWaiting())
+    caches.open(CACHE).then(async cache => {
+      // Cache each file individually; a 404 on one must not fail the rest.
+      await Promise.all(CORE.map(async url => {
+        try {
+          const res = await fetch(url, { cache: 'no-cache' });
+          if (res && res.ok) await cache.put(url, res);
+        } catch (err) {
+          // offline at install time or file absent — non-fatal
+        }
+      }));
+    }).then(() => self.skipWaiting())
   );
 });
 
@@ -27,7 +51,9 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
-  if (url.origin !== location.origin && !e.request.url.includes('fonts.googleapis')) return;
+  if (url.origin !== location.origin && !url.hostname.includes('fonts.g')) return;
+  // Never cache the Supabase/API traffic.
+  if (url.pathname.startsWith('/rest/') || url.pathname.startsWith('/auth/') || url.pathname.startsWith('/api/')) return;
 
   if (e.request.mode === 'navigate') {
     e.respondWith((async () => {
@@ -54,7 +80,7 @@ self.addEventListener('fetch', e => {
   e.respondWith(
     caches.match(e.request).then(cached => {
       const fetchAndUpdate = fetch(e.request).then(res => {
-        if (res.ok && e.request.url.startsWith(self.location.origin)) {
+        if (res && res.ok && e.request.url.startsWith(self.location.origin)) {
           const copy = res.clone();
           caches.open(CACHE).then(c => c.put(e.request, copy));
         }
@@ -74,7 +100,7 @@ self.addEventListener('push', e => {
     icon: 'assets/img/logo.svg',
     badge: 'assets/img/logo.svg',
     data: { url: data.url },
-    tag: data.tag || ('sc-' + Date.now()),
+    tag: data.tag || ('tc-' + Date.now()),
     requireInteraction: false,
     vibrate: [200, 100, 200]
   }));
