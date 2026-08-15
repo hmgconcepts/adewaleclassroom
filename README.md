@@ -42,14 +42,6 @@ People · Growth (apply + coded links) · Sessions (calendar, 4-cycle bookings, 
 
 Full catalogue: `feature-guide.html` and `FEATURE-CATALOG.md`.
 
-## Live references (understudied, not copied blindly)
-
-- School Connect generator: https://hmgschoolconnect.vercel.app/
-- God of Seed Academy: https://gosaportal.vercel.app/
-- HMG Concepts: https://hmgconcepts.pages.dev/
-- HMG Technologies: https://hmgtechnologies.pages.dev/
-- Founder: https://cssadewale.pages.dev/
-
 ## License
 
 Lifetime (default) or subscription lock — same idea as School Connect. Client owns the data; export is always available.

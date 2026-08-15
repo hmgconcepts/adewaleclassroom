@@ -17,7 +17,7 @@
 | `pg_cron` job `tc-keep-alive` | **Layer 4** — internal DB scheduler fires every 2 days automatically (skipped gracefully where pg_cron is unavailable) |
 
 **Layer 1 — Site-visit heartbeat (automatic, nothing to configure)**
-`assets/js/app.js` on every page calls `tc_keep_alive('site-visit')` at most **once per device per 24 hours**. As long as *anyone* (a teacher, a parent, even you) opens the site once a week, the project never pauses. This is fully automated the moment the site is deployed.
+`assets/js/app.js` on every page calls `tc_keep_alive('site-visit')` at most **once per device per 6 hours** (and again when the tab regains focus / every 6 hours while open). As long as *anyone* (a teacher, a parent, even you) opens the site once a week, the project never pauses. This is fully automated the moment the site is deployed.
 
 Because school traffic can stop during long holidays, add the independent external layers below. **Total setup time: under 15 minutes, once, at handover. After that everything is automatic.**
 
