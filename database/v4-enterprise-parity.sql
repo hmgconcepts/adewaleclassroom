@@ -147,13 +147,9 @@ begin
 end $$;
 grant execute on function public.notif_mark_read(uuid) to authenticated;
 
-create or replace function public.lookup_login_email(p_identifier text)
-returns text language sql stable security definer as $$
-  select public.lookup_login_email(p_identifier);
-$$;
-
--- alias already exists as p_ident; provide p_identifier wrapper without recursion
-drop function if exists public.lookup_login_email(p_identifier text);
+-- V4 lookup: also match learners by student_no. DROP first because
+-- CREATE OR REPLACE cannot rename an IN parameter (p_ident -> p_identifier).
+drop function if exists public.lookup_login_email(text);
 create or replace function public.lookup_login_email(p_identifier text)
 returns text language sql stable security definer set search_path = public as $$
   select coalesce(

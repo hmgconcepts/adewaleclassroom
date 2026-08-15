@@ -520,7 +520,7 @@ create policy announcements_read on public.announcements for select using (true)
 grant usage on schema public to anon, authenticated;
 grant select, insert, update, delete on all tables in schema public to authenticated;
 grant select, insert on public.inquiries to anon;
-grant execute on function public.tc_keep_alive() to anon, authenticated;
+grant execute on function public.tc_keep_alive(text) to anon, authenticated;
 grant execute on function public.lookup_login_email(text) to anon, authenticated;
 
 insert into public.practice_settings(id, name, motto) values (1, 'Lumen Tutoring Studio', 'Independent progress. Visible to parents.')
@@ -1126,13 +1126,10 @@ begin
 end $$;
 grant execute on function public.notif_mark_read(uuid) to authenticated;
 
-create or replace function public.lookup_login_email(p_identifier text)
-returns text language sql stable security definer as $$
-  select public.lookup_login_email(p_identifier);
-$$;
-
--- alias already exists as p_ident; provide p_identifier wrapper without recursion
-drop function if exists public.lookup_login_email(p_identifier text);
+-- V4 lookup: also match learners by student_no. Replace the V2 function
+-- (must DROP first because CREATE OR REPLACE cannot rename an IN parameter,
+-- and we want one clean definition).
+drop function if exists public.lookup_login_email(text);
 create or replace function public.lookup_login_email(p_identifier text)
 returns text language sql stable security definer set search_path = public as $$
   select coalesce(
