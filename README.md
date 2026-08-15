@@ -36,6 +36,30 @@ Client studio: see **[DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md)** section A.
 
 Generator: open `index.html` → `builder.html` → generate a client ZIP.
 
+## Promote the first admin (run after deploying)
+
+After running `database/complete-schema.sql`, the first person who clicks **Request access** on `login.html` is created with `role = 'parent'` and `status = 'pending'`. To make that account the studio owner, open the Supabase **SQL Editor** and run:
+
+```sql
+-- 1. Find the account you just registered (by the email you used)
+select id, email, full_name, role, status from public.profiles order by created_at desc;
+
+-- 2. Promote it to owner/admin (paste the id from step 1)
+update public.profiles
+   set role   = 'admin',      -- or 'owner'
+       status = 'approved'
+ where id = 'THE-USER-UUID-FROM-STEP-1';
+
+-- 3. Create the single studio-settings row if it does not exist yet.
+insert into public.practice_settings(id, name, motto, timezone, currency)
+values (1, 'ADEWALE CLASSROOM',
+        'Independent progress. Visible to parents.',
+        'Africa/Lagos', '₦')
+on conflict (id) do nothing;
+```
+
+Then sign out and back in. The promoted account now sees every module, the Access Manager, Platform Health and the Admin Data pages. Valid roles are `admin`, `owner`, `director`, `lead_tutor`, `super_admin`, `tutor`, `staff`, `parent`, `student`/`learner`; valid statuses are `pending` and `approved`.
+
 ## Modules (high level)
 
 People · Growth (apply + coded links) · Sessions (calendar, 4-cycle bookings, complete-a-class) · Learning (SOW, reading, 17+15 CBT, stream, classwork, LMS, library) · Insights (360, value-added, OLS, 6 at-risk rules) · Finance (hour banks, invoices) · Comms (inbox, bell, voting, forum on groups only) · Exam registration (WAEC → GRE) · Platform (health, Drive, license, access manager).
