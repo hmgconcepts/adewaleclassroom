@@ -140,7 +140,8 @@ document.addEventListener('DOMContentLoaded', () => {
   Insights.svgLine(document.getElementById('line'), demo.scores);
   const flags = Insights.flags(demo);
   document.getElementById('flags').innerHTML = flags.map(f => '<span class="badge badge-'+(f.level==='bad'?'bad':'warn')+'">'+TC.esc(f.text)+'</span>').join(' ') || '<span class="muted">No flags on the sample.</span>';
-  document.getElementById('meth').textContent = Insights.methodology ? Insights.methodology(demo) : 'value_added = current_avg - baseline\\nprediction = OLS(last N scores) projected to exam date\\nat-risk = 6 transparent rules in insights.js';
+  const advice = (Insights.methodologyFor ? Insights.methodologyFor(flags) : []).map(a => '• ' + a.code + ': ' + a.advice).join('\n');
+  document.getElementById('meth').textContent = 'value_added = current_avg - baseline\nprediction = OLS(last N scores) projected to exam date\nat-risk = 6 transparent rules in insights.js\n\n' + (advice || 'No at-risk flags on the sample learner.');
 });
 
 </script>

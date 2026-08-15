@@ -122,12 +122,19 @@ Admin Data → Drive card. Client ID from Google Cloud (GIS, scopes `drive.file`
 ## B. Use the generator (HMG staff only)
 
 1. Unzip `tutoring-connect-generator.zip`.
-2. Serve the folder (any static server). Open `index.html` — you should see **Open Authorized Builder**, not “Sign in to portal”.
-3. `builder.html` → 6 steps: studio name, logo **URL**, theme, font, layout, modules, optional keys.
-4. Generate. The downloaded ZIP is a **client** site (`site-index.html` becomes `index.html`). It does **not** contain the builder.
+2. Serve the folder (any static server, e.g. `python3 -m http.server 8080`). Open `index.html` — you should see **Open Authorized Builder**, not “Sign in to portal”.
+3. Open `builder.html` and walk the 6 steps:
+   - **Studio** — name, short name, student-ID prefix, motto, timezone (`Africa/Lagos` default), currency (`₦` default), phone, email, logo **URL** (Drive or https — never an upload), site URL, social links, and license model.
+   - **Branding** — pick from **50 professional themes**, **50 Google-font pairs**, and an optional custom palette.
+   - **Layout** — choose from **20 layouts** (sidebar, topnav, compact, academy, magazine, executive, kanban, etc.).
+   - **Structure** — subjects/exam boards (comma-separated).
+   - **Modules** — tick every module the studio needs (120+ available). Presets: Solo, Studio, Exam-prep, Everything.
+   - **Generate** — optionally paste Supabase URL + anon key now (or later in `assets/js/config.js`), choose **Traditional** (static) or **Modern** (static + Next.js wrapper), then click **Generate & Download ZIP**.
+4. The downloaded ZIP is a **client** site: `site-index.html` becomes `index.html`, `config.js`/`manifest.json`/`robots.txt`/`sitemap.xml` are stamped with the studio's brand, and the builder/generator/wizard files are **excluded** so HMG internals never ship to parents.
 5. Hand that ZIP to the studio and follow section A.
 
-Quote (HMG internal): base **₦35,000** + **₦4,500**/module + optional add-ons. WhatsApp the estimate from the last step.
+### Modern (Next.js) output
+Choosing **Modern** adds a `modern/` folder to the ZIP: a Next.js 14 wrapper that serves the static portal from `public/` and includes a serverless `/api/keepalive` route. To use it: copy the root portal files into `modern/public/`, run `npm install`, then `npm run dev` / `npm run build`. Deploy `modern/` to Vercel. The database and config stay identical to the traditional build.
 
 ---
 
@@ -144,12 +151,34 @@ Siblings and groups **do not** share scores. Group forum exists only on **group*
 
 ---
 
-## D. What “done” looks like
+## D. SEO and discoverability
 
-- Parent opens the live URL and sees **ADEWALE CLASSROOM** (or their studio name) and **Sign in to portal**.
+Every generated client site is built to be indexed by Google, Bing and other search engines:
+
+1. `robots.txt` allows the public pages (`/`, `/about.html`, `/apply.html`, `/contact.html`, `/feature-guide.html`, `/exam-register.html`, `/public-book.html`, HMG pages) and disallows private ones (`/dashboard.html`, `/admin-data.html`, `/settings.html`, `/finance.html`, etc.).
+2. `sitemap.xml` lists every public URL with absolute paths, last-modified dates and priorities.
+3. Each public page has `<title>`, meta description, canonical URL, Open Graph and Twitter Card tags, plus JSON-LD `EducationalOrganization` / `SoftwareApplication` structured data that points at **both** the client studio and HMG Technologies / HMG Concepts.
+4. Submit `https://yourstudio.example/sitemap.xml` to Google Search Console and Bing Webmaster Tools after going live.
+5. The studio name, motto and social links set in the builder (or in `assets/js/config.js`) flow into every meta tag automatically.
+
+## E. What “done” looks like
+
+- Parent opens the live URL and sees the studio name and **Sign in to portal**.
+- Anonymous visitors who try to open a protected page are redirected to `login.html` — no data is exposed without sign-in.
 - After sign-in they see next classes with **date, time, duration** from the 4-cycle booking.
 - A graded quiz sat with `TC-0001` appears on the scoresheet without anyone typing a name.
 - Platform Health heartbeat increments.
-- Footer and JSON-LD point at the **client site and** hmgconcepts / hmgtechnologies / cssadewale.
+- The install banner appears and the PWA can be added to the home screen.
+- Footer, meta tags and JSON-LD point at the **client site and** hmgconcepts / hmgtechnologies / cssadewale.
+- Google Search Console confirms the sitemap is discovered and public pages are indexed.
 
 If any of those fail, do not call the studio “live”.
+
+## F. First-admin promotion (important)
+
+The first user who requests access starts as `pending`. To make them the studio owner:
+
+1. After they submit “Request access”, open Supabase → Table Editor → `profiles`.
+2. Find their row. Set `role` to `admin` (or `owner`) and `status` to `approved`.
+3. They can now sign in and see the full platform, including the Access Manager on the dashboard.
+4. All subsequent approvals are done from **Approvals** in the portal.

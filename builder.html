@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tutoring Connect Builder — HMG Concepts internal platform builder</title>
+<meta name="description" content="6-step wizard that builds a complete independent tutoring platform. Themes, fonts, 120+ modules. HMG Ecosystem licensed. Logo is a URL — never an upload.">
+<meta name="theme-color" content="#134e4a">
+<link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+<style>
+  body{background:#f8fafc}
+  .builder-shell{max-width:1200px;margin:0 auto;padding:40px 24px 60px}
+  .stepper{display:flex;gap:4px;margin-bottom:24px;overflow-x:auto}
+  .step-indicator{display:flex;align-items:center;gap:8px;padding:10px 16px;background:#fff;border-radius:12px;border:1.5px solid #e2e8f0;cursor:pointer;flex-shrink:0}
+  .step-indicator.active{background:linear-gradient(135deg,#134e4a,#0f766e);color:#fff;border-color:transparent}
+  .step-panel{background:#fff;padding:32px;border-radius:16px;border:1px solid #e2e8f0}
+  .preset-grid,.theme-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+  .preset-card,.theme-card{padding:16px;border-radius:12px;border:2px solid #e2e8f0;cursor:pointer;text-align:center}
+  .theme-card.selected,.preset-card:hover{border-color:#134e4a}
+  .nav-buttons{display:flex;justify-content:space-between;margin-top:28px;gap:12px}
+</style>
+</head>
+<body>
+<nav class="public-nav" style="display:flex;justify-content:space-between;padding:16px 24px">
+  <a href="index.html" class="app-brand" style="border:0;padding:0"><img src="assets/img/logo.svg" width="36" alt=""><strong>Tutoring Connect Builder</strong></a>
+  <div><a href="index.html">Home</a> · <a href="hmg-ecosystem.html">Ecosystem</a> · <a href="DEPLOYMENT-GUIDE.md">Deploy</a></div>
+</nav>
+<main class="builder-shell">
+  <h1>🚀 Build a tutoring studio</h1>
+  <p class="muted">HMG Concepts internal workflow. Configure, package and hand a client a parent-facing portal — never this builder.</p>
+  <div class="stepper">
+    <div class="step-indicator active" data-step-indicator="1" data-wizard="showStep(1)"><span class="num">1</span> Studio</div>
+    <div class="step-indicator" data-step-indicator="2" data-wizard="showStep(2)"><span class="num">2</span> Branding</div>
+    <div class="step-indicator" data-step-indicator="3" data-wizard="showStep(3)"><span class="num">3</span> Layout</div>
+    <div class="step-indicator" data-step-indicator="4" data-wizard="showStep(4)"><span class="num">4</span> Structure</div>
+    <div class="step-indicator" data-step-indicator="5" data-wizard="showStep(5)"><span class="num">5</span> Modules</div>
+    <div class="step-indicator" data-step-indicator="6" data-wizard="showStep(6)"><span class="num">6</span> Generate</div>
+  </div>
+
+  <div data-step-panel="1" class="step-panel">
+    <h2>Step 1 · Studio details</h2>
+    <p class="desc">Pick a preset or fill manually. Logo is a <b>URL</b> (Drive or https) — never an upload into the ZIP.</p>
+    <div class="preset-grid" style="margin-bottom:20px">
+      <div class="preset-card" data-wizard="usePreset('solo')"><div style="font-size:2rem">👤</div><h3>Solo tutor</h3><p>One virtual tutor</p></div>
+      <div class="preset-card" data-wizard="usePreset('studio')"><div style="font-size:2rem">🏫</div><h3>Small studio</h3><p>A few tutors</p></div>
+      <div class="preset-card" data-wizard="usePreset('exam')"><div style="font-size:2rem">📝</div><h3>Exam-prep</h3><p>WAEC / IGCSE / SAT</p></div>
+      <div class="preset-card" data-wizard="usePreset('enterprise')"><div style="font-size:2rem">🌟</div><h3>Everything</h3><p>All modules</p></div>
+    </div>
+    <div class="grid grid-2">
+      <div class="form-group"><label>Studio name *</label><input class="form-input" data-sync="schoolName" placeholder="ADEWALE CLASSROOM"></div>
+      <div class="form-group"><label>Short name</label><input class="form-input" data-sync="shortName" placeholder="ADC"></div>
+      <div class="form-group"><label>Student-ID prefix</label><input class="form-input" data-sync="admissionAcronym" placeholder="TC" maxlength="8"><div class="form-help">Learner IDs look like <b>TC-0001</b>.</div></div>
+      <div class="form-group"><label>Motto</label><input class="form-input" data-sync="schoolMotto" placeholder="Independent progress. Visible to parents."></div>
+      <div class="form-group"><label>Timezone</label><input class="form-input" data-sync="timezone" value="Africa/Lagos"></div>
+      <div class="form-group"><label>Currency</label><input class="form-input" data-sync="currency" value="₦"></div>
+      <div class="form-group"><label>Phone</label><input class="form-input" data-sync="phone" placeholder="2348100866322"></div>
+      <div class="form-group"><label>Email</label><input class="form-input" type="email" data-sync="email"></div>
+      <div class="form-group"><label>Logo URL (Drive or https)</label><input class="form-input" data-sync="logoUrl" placeholder="https://drive.google.com/…"></div>
+      <div class="form-group"><label>Site URL</label><input class="form-input" data-sync="siteUrl" placeholder="https://adewaleclassroom.vercel.app"></div>
+      <div class="form-group" style="grid-column:1/-1"><label>Address</label><input class="form-input" data-sync="address" placeholder="Lagos, Nigeria — strictly virtual"></div>
+      <div class="form-group"><label>Facebook</label><input class="form-input" data-sync="socialFacebook"></div>
+      <div class="form-group"><label>Instagram</label><input class="form-input" data-sync="socialInstagram"></div>
+      <div class="form-group"><label>X</label><input class="form-input" data-sync="socialTwitter"></div>
+      <div class="form-group"><label>LinkedIn</label><input class="form-input" data-sync="socialLinkedIn"></div>
+      <div class="form-group"><label>YouTube</label><input class="form-input" data-sync="socialYouTube"></div>
+      <div class="form-group"><label>TikTok</label><input class="form-input" data-sync="socialTikTok"></div>
+      <div class="form-group"><label>WhatsApp</label><input class="form-input" data-sync="socialWhatsApp" placeholder="https://wa.me/2348100866322"></div>
+    </div>
+    <h3 style="margin-top:20px">License</h3>
+    <label style="display:block;margin:8px 0"><input type="radio" name="licenseModel" value="lifetime" data-sync="licenseModel" checked> One-time / lifetime (recommended)</label>
+    <label style="display:block;margin:8px 0"><input type="radio" name="licenseModel" value="subscription" data-sync="licenseModel"> Subscription (remind + lock after expiry + grace)</label>
+    <div id="sub-fields" class="grid grid-2" style="display:none;margin-top:10px;padding:12px;border:1px dashed #134e4a;border-radius:12px">
+      <div class="form-group"><label>Plan label</label><input class="form-input" data-sync="licensePlan" placeholder="Termly 2026"></div>
+      <div class="form-group"><label>Cycle</label><select class="form-input" data-sync="licenseCycle"><option value="monthly">Monthly</option><option value="termly" selected>Termly</option><option value="annual">Annual</option></select></div>
+      <div class="form-group"><label>Expires on</label><input class="form-input" type="date" data-sync="licenseExpires"></div>
+      <div class="form-group"><label>Grace days</label><input class="form-input" type="number" value="7" data-sync="licenseGrace"></div>
+      <div class="form-group"><label>Renewal WhatsApp / URL</label><input class="form-input" data-sync="licenseRenewUrl" value="https://wa.me/2348100866322?text=Renew%20Tutoring%20Connect"></div>
+      <div class="form-group"><label>HMG registry URL (optional)</label><input class="form-input" data-sync="licenseRegistryUrl" placeholder="https://hmgconcepts.pages.dev/licenses.json"></div>
+    </div>
+    <div class="nav-buttons"><div></div><button class="btn btn-primary" data-wizard="next">Next: Branding →</button></div>
+  </div>
+
+  <div data-step-panel="2" class="step-panel" style="display:none">
+    <h2>Step 2 · Branding</h2>
+    <h3>Theme</h3><div class="theme-grid" id="theme-grid"></div>
+    <h3 style="margin-top:20px">Font</h3><div class="theme-grid" id="font-grid"></div>
+    <div class="nav-buttons"><button class="btn btn-outline" data-wizard="prev">← Back</button><button class="btn btn-primary" data-wizard="next">Next: Layout →</button></div>
+  </div>
+
+  <div data-step-panel="3" class="step-panel" style="display:none">
+    <h2>Step 3 · Layout</h2>
+    <div class="theme-grid" id="layout-grid"></div>
+    <div class="nav-buttons"><button class="btn btn-outline" data-wizard="prev">← Back</button><button class="btn btn-primary" data-wizard="next">Next: Structure →</button></div>
+  </div>
+
+  <div data-step-panel="4" class="step-panel" style="display:none">
+    <h2>Step 4 · Structure</h2>
+    <div class="form-group"><label>Subjects / exam boards (comma-separated)</label>
+      <input class="form-input" data-sync="levelsRaw" placeholder="IGCSE Maths, WAEC English, SAT, IELTS"></div>
+    <div class="nav-buttons"><button class="btn btn-outline" data-wizard="prev">← Back</button><button class="btn btn-primary" data-wizard="next">Next: Modules →</button></div>
+  </div>
+
+  <div data-step-panel="5" class="step-panel" style="display:none">
+    <h2>Step 5 · Modules</h2>
+    <p><span id="module-count" style="font-weight:800;color:#134e4a">0</span> selected.</p>
+    <div id="module-picker"></div>
+    <div class="nav-buttons"><button class="btn btn-outline" data-wizard="prev">← Back</button><button class="btn btn-primary" data-wizard="next">Next: Generate →</button></div>
+  </div>
+
+  <div data-step-panel="6" class="step-panel" style="display:none">
+    <h2>Step 6 · Preview & generate</h2>
+    <p>Optional: paste Supabase keys now, or add them later in <code>assets/js/config.js</code>.</p>
+    <div class="grid grid-2">
+      <div class="form-group"><label>Supabase URL</label><input class="form-input" data-sync="supabaseUrl" placeholder="https://xxxx.supabase.co"></div>
+      <div class="form-group"><label>Anon key</label><input class="form-input" data-sync="supabaseKey" placeholder="eyJ…"></div>
+      <div class="form-group" style="grid-column:1/-1"><label>Build output</label>
+        <select class="form-input" data-sync="buildType">
+          <option value="traditional" selected>Traditional — static HTML/CSS/JS (Vercel / Netlify / Pages)</option>
+          <option value="modern">Modern — static portal + Next.js wrapper in modern/</option>
+        </select>
+        <div class="form-help">Traditional is the default free deploy. Modern adds a Next.js scaffold (School Connect pattern) without changing the portal or the database.</div>
+      </div>
+    </div>
+    <div id="addon-list" style="display:none"></div>
+    <div class="card" style="margin-top:12px;display:none" id="quote-card"><div id="quote-lines"></div>
+      <div style="display:flex;justify-content:space-between;font-weight:800;margin-top:8px"><span>Estimated total (one-off)</span><span id="quote-total">₦0</span></div>
+      <a class="btn btn-sm btn-outline" style="margin-top:10px" target="_blank" href="https://wa.me/2348100866322?text=Hello%20HMG%2C%20I%20want%20a%20Tutoring%20Connect%20build.">Request on WhatsApp</a>
+    </div>
+    <ul style="margin:18px 0 0 20px;line-height:1.8">
+      <li>Parent-facing <code>index.html</code> (never this builder)</li>
+      <li>Full PWA + 10-layer keep-alive + Drive sync</li>
+      <li><code>database/complete-schema.sql</code> (v1–v4)</li>
+      <li>SEO: robots, sitemap, JSON-LD pointing at the client <b>and</b> HMG</li>
+    </ul>
+    <div class="nav-buttons">
+      <button class="btn btn-outline" data-wizard="prev">← Back</button>
+      <button id="generate-btn" class="btn btn-primary btn-lg" data-wizard="generate">🚀 Generate &amp; Download ZIP</button>
+    </div>
+  </div>
+</main>
+<footer style="padding:24px;text-align:center" class="muted">© 2026 HMG Concepts · HMG Technologies · Adewale Samson Adeagbo</footer>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="assets/js/catalog.js"></script>
+<script src="assets/js/wizard.js"></script>
+<script src="assets/js/generator.js"></script>
+<script src="assets/js/pwa-install.js"></script>
+<script>
+try { Wizard.init(); } catch (e) { console.error(e); }
+try {
+  const tg = document.getElementById('theme-grid');
+  if (tg && window.TC) tg.innerHTML = TC.THEMES.map(t => `<div class="theme-card" onclick="selectTheme('${t.id}')"><div style="display:flex;gap:4px;justify-content:center;margin-bottom:6px"><span style="width:22px;height:22px;border-radius:50%;background:${t.primary}"></span><span style="width:22px;height:22px;border-radius:50%;background:${t.accent}"></span></div><div>${t.name}</div></div>`).join('');
+  const fg = document.getElementById('font-grid');
+  if (fg && window.TC) fg.innerHTML = TC.FONTS.map(f => `<div class="theme-card" onclick="selectFont('${f.id}')"><b>${f.name}</b></div>`).join('');
+  const lg = document.getElementById('layout-grid');
+  if (lg && window.TC) lg.innerHTML = TC.LAYOUTS.map(l => `<div class="theme-card" onclick="selectLayout('${l.id}')"><b>${l.name}</b><div class="muted">${l.desc||''}</div></div>`).join('');
+} catch (e) { console.error(e); }
+function selectTheme(id){ Wizard.config.themeId=id; document.querySelectorAll('#theme-grid .theme-card').forEach(el=>el.classList.remove('selected')); if(event&&event.currentTarget) event.currentTarget.classList.add('selected'); Wizard.autosave(); }
+function selectFont(id){ Wizard.config.fontId=id; document.querySelectorAll('#font-grid .theme-card').forEach(el=>el.classList.remove('selected')); if(event&&event.currentTarget) event.currentTarget.classList.add('selected'); Wizard.autosave(); }
+function selectLayout(id){ Wizard.config.layout=id; document.querySelectorAll('#layout-grid .theme-card').forEach(el=>el.classList.remove('selected')); if(event&&event.currentTarget) event.currentTarget.classList.add('selected'); Wizard.autosave(); }
+document.addEventListener('input', e => {
+  if (e.target.dataset && e.target.dataset.sync === 'levelsRaw') {
+    Wizard.config.levels = (e.target.value||'').split(',').map(s=>s.trim()).filter(Boolean);
+  }
+});
+</script>
+</body>
+</html>
