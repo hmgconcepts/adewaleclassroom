@@ -70,6 +70,7 @@
 <main class="container" style="max-width:480px;padding:48px 16px">
   <h1 class="serif">Studio sign in</h1>
   <p class="muted" data-practice-motto></p>
+  <div id="login-notice" style="display:none;margin:12px 0;padding:12px 14px;border-radius:12px;font-size:.9rem;line-height:1.5"></div>
   <div style="display:flex;gap:8px;margin:16px 0">
     <button class="btn btn-primary" type="button" data-auth-tab="signin">Sign in</button>
     <button class="btn btn-ghost" type="button" data-auth-tab="signup">Request access</button>
@@ -97,4 +98,23 @@
     <p class="help">An admin approves you before sign-in works. That keeps family data closed.</p>
   </form>
 </main>
+<script>
+(function(){
+  try{
+    var p=new URLSearchParams(location.search);
+    var reason=p.get('reason');
+    var box=document.getElementById('login-notice');
+    if(!box) return;
+    if(reason==='noconfig'){
+      box.style.display='block';
+      box.style.background='#fef3c7';box.style.border='1px solid #f59e0b';box.style.color='#92400e';
+      box.innerHTML='<b>Database not yet connected.</b> Sign in is unavailable until the studio owner pastes the Supabase URL and anon key into <code>assets/js/config.js</code>. See <b>DEPLOYMENT-GUIDE.md</b>. If you are the owner, complete that step then refresh.';
+    } else if(reason==='pending'){
+      box.style.display='block';
+      box.style.background='#dbeafe';box.style.border='1px solid #3b82f6';box.style.color='#1e3a8a';
+      box.textContent='Your account is awaiting admin approval. You will be able to sign in once approved.';
+    }
+  }catch(e){}
+})();
+</script>
 </body></html>
