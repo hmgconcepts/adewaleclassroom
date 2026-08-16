@@ -138,7 +138,11 @@
 async function boot(){
   if(!window.sb) return;
   const {data}=await sb.from('booking_classes').select('*').in('status',['scheduled','done']).order('scheduled_at').limit(80);
-  document.getElementById('cls').innerHTML=(data||[]).map(c=>`<option value="${c.id}">Cycle ${c.cycle_no} · ${new Date(c.scheduled_at).toLocaleString()} · ${c.status}</option>`).join('');
+  const sel=document.getElementById('cls');
+  sel.innerHTML=(data||[]).map(c=>`<option value="${c.id}">Cycle ${c.cycle_no} · ${new Date(c.scheduled_at).toLocaleString()} · ${c.status}</option>`).join('');
+  // Auto-select the next upcoming scheduled class (automation).
+  const upcoming=(data||[]).find(c=>c.status==='scheduled');
+  if(upcoming) sel.value=upcoming.id;
   const t=await sb.from('sow_topics').select('id,topic,week_no').order('week_no').limit(200);
   document.getElementById('topics').innerHTML=(t.data||[]).map(x=>`<option value="${x.id}">W${x.week_no||'?'} · ${TC.esc(x.topic)}</option>`).join('');
 }

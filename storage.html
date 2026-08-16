@@ -131,7 +131,38 @@
           <p>Lesson media = Drive/YouTube URL. Optional buckets <code>archives</code> / <code>proctor</code> are for sealed JSON and exam snapshots, not a second Google Drive.</p>
           <p><a class="btn btn-outline" href="docs/GOOGLE-DRIVE-SYNC-GUIDE.md">Drive guide</a></p></article>
       </div>
+
+      <section class="card" id="storage-panel" style="margin-top:16px">
+        <h3>Live database usage</h3>
+        <p class="muted" id="storage-summary">Connecting… (estimated from Postgres statistics).</p>
+        <div class="table-wrap" style="margin-top:10px">
+          <table><thead><tr><th>Table</th><th style="text-align:right">Rows (est.)</th><th style="text-align:right">Size</th></tr></thead>
+          <tbody id="storage-rows"><tr><td colspan="3" class="muted">Loading…</td></tr></tbody></table>
+        </div>
+        <p class="muted" style="margin-top:8px">When a table grows large, export it from <a href="admin-data.html">Admin Data</a> (sealed archive) then purge old rows. Media is always a link, never an upload.</p>
+      </section>
     </main>
+    <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!window.sb) { document.getElementById('storage-summary').textContent = 'Preview mode — connect Supabase to see live usage.'; return; }
+      try {
+        const { data, error } = await window.sb.rpc('tc_storage_report');
+        if (error) throw error;
+        const total = (data || []).reduce((a, r) => a + Number(r.size_bytes || 0), 0);
+        const mb = (total / 1048576).toFixed(2);
+        const pct = Math.min(100, Math.round(total / (500 * 1048576) * 100));
+        document.getElementById('storage-summary').innerHTML =
+          'Estimated database size: <b>' + mb + ' MB</b> of 500 MB free (' + pct + '%). ' +
+          (pct > 80 ? '⚠️ Approaching the limit — archive and purge old rows.' : '✅ Comfortably within the free tier.');
+        document.getElementById('storage-rows').innerHTML = (data || []).slice(0, 25).map(r =>
+          '<tr><td>' + TC.esc(r.table_name) + '</td><td style="text-align:right">' + Number(r.rows).toLocaleString() +
+          '</td><td style="text-align:right">' + (Number(r.size_bytes)/1024).toFixed(1) + ' KB</td></tr>').join('') ||
+          '<tr><td colspan="3" class="muted">No tables.</td></tr>';
+      } catch (e) {
+        document.getElementById('storage-summary').textContent = 'Run database/complete-schema.sql to enable live usage stats (' + (e.message||e) + ').';
+      }
+    });
+    </script>
   </div>
 </div>
 <div id="toast-container" class="toast-container"></div>
