@@ -118,12 +118,44 @@
     <main class="app-content">
       <section class="help-card">
         <strong>Payments</strong>
-        <p>Record bank / cash / Paystack / Flutterwave / Stripe checkout links.</p>
-        
-        
+        <p>Fees are <b>hourly &times; class duration &times; number of classes</b>. Pick an engagement to see completed classes, the total hours and the amount due at the agreed hourly rate. Record bank / cash / Paystack / Flutterwave / Stripe checkout links.</p>
+      </section>
+      <section class="card" id="fee-calc" style="margin-bottom:16px">
+        <h3>Fee calculator</h3>
+        <div class="grid grid-3" style="align-items:end">
+          <div class="form-group"><label>Engagement</label><select class="form-select" id="fc-eng"></select></div>
+          <div class="form-group"><label>Hourly rate (₦)</label><input class="form-input" id="fc-rate" type="number" value="0"></div>
+          <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" type="button" id="fc-calc">Compute from completed classes</button></div>
+        </div>
+        <div id="fc-out" class="muted" style="margin-top:8px"></div>
       </section>
       <div id="crud-root"></div>
-      <script>document.addEventListener('DOMContentLoaded',()=>{ if(window.CRUD) CRUD.renderList('payments'); });</script>
+      <script>
+      document.addEventListener('DOMContentLoaded',()=>{
+        if(window.CRUD) CRUD.renderList('payments');
+        const sb=window.sb; const eng=document.getElementById('fc-eng');
+        if(sb && eng){
+          sb.from('engagements').select('id,name,hourly_rate').order('name').then(({data})=>{
+            eng.innerHTML='<option value=""></option>'+(data||[]).map(x=>'<option value="'+x.id+'" data-rate="'+(x.hourly_rate||0)+'">'+TC.esc(x.name)+'</option>').join('');
+          });
+          eng.onchange=()=>{const o=eng.selectedOptions[0]; if(o) document.getElementById('fc-rate').value=o.dataset.rate||0;};
+          document.getElementById('fc-calc').onclick=async()=>{
+            const out=document.getElementById('fc-out');
+            const id=eng.value; const rate=Number(document.getElementById('fc-rate').value)||0;
+            if(!id){out.textContent='Pick an engagement first.';return;}
+            const {data:blocks}=await sb.from('booking_blocks').select('id').eq('engagement_id',id);
+            const ids=(blocks||[]).map(b=>b.id);
+            if(!ids.length){out.textContent='No classes found for this engagement yet.';return;}
+            const {data}=await sb.from('booking_classes').select('scheduled_at,duration_minutes,status').in('block_id',ids).eq('status','done');
+            const rows=data||[];
+            const mins=rows.reduce((a,r)=>a+(Number(r.duration_minutes)||0),0);
+            const hours=Math.round(mins/60*100)/100;
+            const amount=Math.round(hours*rate);
+            out.innerHTML='<b>'+rows.length+' completed class(es)</b> · '+hours+' hours · amount due = '+hours+'h × ₦'+rate.toLocaleString()+' = <b>₦'+amount.toLocaleString()+'</b>';
+          };
+        }
+      });
+      </script>
     </main>
   </div>
 </div>
