@@ -4,9 +4,9 @@ window.PRACTICE = {
   name: 'ADEWALE CLASSROOM',
   shortName: 'ADC',
   motto: 'Independent progress. Visible to parents. Built for Nigerian and international learners.',
-  theme: { id: 'sky', primary: '#0284c7', accent: '#0ea5e9', primaryLight: '#0ea5e9', accentLight: '#38bdf8', primaryDark: '#075985', bg: '#f0f9ff' },
+  theme: { id: 'gosa', primary: '#0506ae', accent: '#964eec', primaryLight: '#4f46e5', accentLight: '#a78bfa', primaryDark: '#3730a3', bg: '#f8fafc' },
   layout: 'academy',
-  font: { id: 'plus', family: 'Plus Jakarta Sans', serif: 'Fraunces', css: 'Plus+Jakarta+Sans:wght@400;500;600;700;800|Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700;9..144,800' },
+  font: { id: 'plusjakarta', family: 'Plus Jakarta Sans', serif: 'Plus Jakarta Sans', css: 'Plus+Jakarta+Sans:wght@400;500;600;700;800' },
   address: 'Lagos, Nigeria — strictly virtual',
   phone: '2348100866322',
   email: '',
@@ -40,8 +40,8 @@ window.TC.esc = window.TC.esc || function (s) {
   return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 };
 
-const SUPABASE_URL = 'https://yqwzbttehegvnvkrmxjz.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlxd3pidHRlaGVndm52a3JteGp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MzY1NTUsImV4cCI6MjEwMjMxMjU1NX0.mUDfHCQmO3kyb9cwqTjhojh0C3qsLv11YOzc7iomVnw';
+const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
 window.sb = null;
 if (window.supabase && SUPABASE_URL && !SUPABASE_URL.includes('YOUR_') && SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.includes('YOUR_')) {
   window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {

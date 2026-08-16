@@ -7,6 +7,7 @@
   // to tutoring studios serving Nigerian and international families.
   // ===========================================================================
   const THEMES = [
+    { id: 'gosa', name: 'Gosa Indigo & Violet', primary: '#0506ae', accent: '#964eec', primaryLight: '#4f46e5', accentLight: '#a78bfa', primaryDark: '#3730a3', bg: '#f8fafc' },
     { id: 'sky', name: 'Adewale Sky Blue & White', primary: '#0284c7', accent: '#0ea5e9', primaryLight: '#0ea5e9', accentLight: '#38bdf8', primaryDark: '#075985', bg: '#f0f9ff' },
     { id: 'adewale', name: 'Adewale Emerald & Gold', primary: '#0f3d3e', accent: '#b8860b', primaryLight: '#14615f', accentLight: '#d4af37', bg: '#f6f1e7' },
     { id: 'lumen', name: 'Lumen Teal & Copper', primary: '#134e4a', accent: '#d97706', bg: '#f7f4ef' },
@@ -69,6 +70,7 @@
   const FONTS = [
     { id: 'dm', name: 'DM Sans + Source Serif', css: 'DM+Sans:wght@400;500;600;700;800|Source+Serif+4:wght@500;700;800', family: 'DM Sans', serif: 'Source Serif 4' },
     { id: 'manrope', name: 'Manrope + Fraunces', css: 'Manrope:wght@400;600;700;800|Fraunces:wght@600;800', family: 'Manrope', serif: 'Fraunces' },
+    { id: 'plusjakarta', name: 'Plus Jakarta Sans', css: 'Plus+Jakarta+Sans:wght@400;500;600;700;800', family: 'Plus Jakarta Sans', serif: 'Plus Jakarta Sans' },
     { id: 'plus', name: 'Plus Jakarta + Newsreader', css: 'Plus+Jakarta+Sans:wght@400;600;700;800|Newsreader:wght@600;800', family: 'Plus Jakarta Sans', serif: 'Newsreader' },
     { id: 'inter', name: 'Inter + Libre Baskerville', css: 'Inter:wght@400;600;700;800|Libre+Baskerville:wght@700', family: 'Inter', serif: 'Libre Baskerville' },
     { id: 'poppins', name: 'Poppins + Playfair Display', css: 'Poppins:wght@400;500;600;700;800|Playfair+Display:wght@600;700;800', family: 'Poppins', serif: 'Playfair Display' },

@@ -190,6 +190,14 @@ const App = {
       });
       document.querySelectorAll('[data-practice-motto]').forEach(el => { if (p.motto) el.textContent = p.motto; });
       document.body.classList.add('layout-' + (p.layout || 'sidebar'));
+      // Inject the configured Google Font (e.g. Plus Jakarta Sans for Gosa)
+      if (p.font && p.font.css) {
+        const fid='tc-brand-font';
+        let l=document.getElementById(fid);
+        if(!l){ l=document.createElement('link'); l.id=fid; l.rel='stylesheet'; document.head.appendChild(l); }
+        l.href='https://fonts.googleapis.com/css2?family='+p.font.css+'&display=swap';
+        if (p.font.family) document.documentElement.style.setProperty('--font', "'"+p.font.family.replace(/'/g,"")+"', system-ui, sans-serif");
+      }
     } catch (e) { console.warn('Brand hydration skipped:', e.message || e); }
   },
 

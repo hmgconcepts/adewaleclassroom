@@ -441,6 +441,9 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created after insert on auth.users
 for each row execute function public.handle_new_user();
 
+-- Drop any prior version (parameter may have been named p_identifier) so
+-- this script is safe to re-run. CREATE OR REPLACE cannot rename an IN param.
+drop function if exists public.lookup_login_email(text);
 create or replace function public.lookup_login_email(p_ident text)
 returns text language sql stable security definer as $$
   select coalesce(
@@ -523,7 +526,7 @@ grant select, insert on public.inquiries to anon;
 grant execute on function public.tc_keep_alive(text) to anon, authenticated;
 grant execute on function public.lookup_login_email(text) to anon, authenticated;
 
-insert into public.practice_settings(id, name, motto) values (1, 'Lumen Tutoring Studio', 'Independent progress. Visible to parents.')
+insert into public.practice_settings(id, name, motto) values (1, 'HMG Tutoring Studio', 'Independent progress. Visible to parents.')
 on conflict (id) do nothing;
 
 insert into public.methodologies(name, summary, steps) values
@@ -1354,9 +1357,9 @@ begin
   -- One row per subject from subject_scores JSON
   if new.subject_scores is not null and jsonb_typeof(new.subject_scores) = 'object' then
     for subj, rec in select key, value from jsonb_each(new.subject_scores) loop
-      if lower(subj) in ('overall','general') and jsonb_object_keys(new.subject_scores) is not null then
-        -- still write named subjects; skip only empty
-        null;
+      -- Skip an aggregate 'overall' bucket; real subjects each get their own row.
+      if lower(subj) in ('overall','general','total','aggregate') then
+        continue;
       end if;
       sc := coalesce((rec->>'score')::numeric, (rec->>'got')::numeric, 0);
       tot := coalesce((rec->>'total')::numeric, (rec->>'max')::numeric, 0);
@@ -1605,3 +1608,98 @@ grant select, insert, update, delete on public.security_prefs to authenticated;
 grant select on public.sc_ai_settings to authenticated;
 
 select 'Tutoring Connect V7 enterprise + AI tables installed ✅' as status;
+
+-- =====================================================================
+-- COMPAT: ensure CRUD tables have created_at for ordering/UI consistency.
+-- (Earlier versions of session_attendance/packages/payments/flashcards
+-- shipped without it, which caused "column created_at does not exist"
+-- errors on the Attendance and Hour banks pages.)
+-- =====================================================================
+alter table public.session_attendance add column if not exists created_at timestamptz not null default now();
+alter table public.packages add column if not exists created_at timestamptz not null default now();
+alter table public.payments add column if not exists created_at timestamptz not null default now();
+alter table public.flashcards add column if not exists created_at timestamptz not null default now();
+
+-- =====================================================================
+-- STORAGE REPORT (free-tier guardianship)
+-- Returns estimated live table sizes and a total so the Storage manager
+-- can show how close the studio is to the 500 MB free database limit.
+-- Safe to re-run; uses pg_class estimates (no heavy seq scans).
+-- =====================================================================
+create or replace function public.tc_storage_report()
+returns table (table_name text, rows bigint, size_bytes bigint)
+language sql stable security definer set search_path = public as $$
+  select relname::text,
+         coalesce(reltuples::bigint, 0),
+         coalesce(pg_relation_size(c.oid), 0)
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public'
+     and c.relkind = 'r'
+   order by pg_relation_size(c.oid) desc;
+$$;
+grant execute on function public.tc_storage_report() to authenticated;
+
+-- =====================================================================
+-- AUTO TIMETABLE GENERATOR (enterprise feature)
+-- Round-robin assigns subjects (with weekly period counts) across days and
+-- periods for a class. Deterministic and idempotent: clears prior generated
+-- rows for the class/session/term first, then re-inserts.
+-- =====================================================================
+create table if not exists public.timetable_requirements (
+  id uuid primary key default gen_random_uuid(),
+  class text not null, subject text not null, teacher text,
+  periods_per_week int not null default 1,
+  available_days text[] default '{}',
+  is_part_time boolean default false,
+  created_at timestamptz not null default now(),
+  unique(class, subject)
+);
+create table if not exists public.timetable (
+  id uuid primary key default gen_random_uuid(),
+  class text not null, session text default '', term text default '',
+  day text not null, period int not null, subject text not null, teacher text,
+  generated boolean default true,
+  created_at timestamptz not null default now(),
+  unique(class, session, term, day, period)
+);
+alter table public.timetable_requirements enable row level security;
+alter table public.timetable enable row level security;
+drop policy if exists timetable_staff on public.timetable;
+create policy timetable_staff on public.timetable for all using (public.is_tutor()) with check (public.is_tutor());
+drop policy if exists req_staff on public.timetable_requirements;
+create policy req_staff on public.timetable_requirements for all using (public.is_tutor()) with check (public.is_tutor());
+drop policy if exists timetable_read on public.timetable;
+create policy timetable_read on public.timetable for select using (true);
+
+create or replace function public.generate_timetable(
+  p_class text, p_session text default '', p_term text default '', p_periods_per_day int default 6
+)
+returns table (day text, period int, subject text, teacher text)
+language plpgsql security definer set search_path = public as $$
+declare
+  days text[] := array['Monday','Tuesday','Wednesday','Thursday','Friday'];
+  r record;
+  slot int := 0;
+  total_slots int;
+begin
+  delete from public.timetable where class = p_class and coalesce(session,'') = coalesce(p_session,'') and coalesce(term,'') = coalesce(p_term,'');
+  total_slots := array_length(days,1) * greatest(p_periods_per_day,1);
+  for r in select subject, teacher, periods_per_week from public.timetable_requirements
+            where class = p_class order by periods_per_week desc, subject loop
+    for i in 1..greatest(r.periods_per_week,1) loop
+      insert into public.timetable(class,session,term,day,period,subject,teacher,generated)
+      values (p_class, p_session, p_term,
+              days[1 + (slot % array_length(days,1))],
+              1 + ((slot / array_length(days,1)) % greatest(p_periods_per_day,1)),
+              r.subject, r.teacher, true)
+      on conflict (class,session,term,day,period) do nothing;
+      slot := slot + 1;
+      exit when slot >= total_slots;
+    end loop;
+    exit when slot >= total_slots;
+  end loop;
+  return query select t.day, t.period, t.subject, t.teacher from public.timetable t
+    where t.class=p_class order by t.day, t.period;
+end $$;
+grant execute on function public.generate_timetable(text,text,text,int) to authenticated;

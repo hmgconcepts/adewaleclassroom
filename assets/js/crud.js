@@ -542,7 +542,10 @@ const CRUD = {
     document.getElementById('crud-head').innerHTML = head;
     let rows = [];
     if (this.sb) {
-      let q = this.sb.from(schema.table).select('*').order('created_at', { ascending: false }).limit(200);
+      // Some tables (session_attendance, packages, payments...) pre-date a
+      // created_at column; order by a column that actually exists.
+      const orderCol = schema.orderBy || (schema.cols.some(c => c.key === 'created_at') ? 'created_at' : 'id');
+      let q = this.sb.from(schema.table).select('*').order(orderCol, { ascending: false }).limit(200);
       if (schema.defaultFilters) {
         Object.entries(schema.defaultFilters).forEach(([k, v]) => { q = q.eq(k, v); });
       }

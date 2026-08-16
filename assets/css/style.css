@@ -505,150 +505,55 @@ body:not([data-role-ready="1"]) .app-nav a[data-role-allow] { visibility: visibl
 .table-wrap{overflow-x:auto}
 
 /* ====================================================================
-   ADEWALE / PREMIUM THEME LAYER — Sky Blue & White
-   Clean, bright, eye-catching identity: sky blue on white.
+   PREMIUM THEME LAYER — Indigo & Violet (Gosa-style)
    ==================================================================== */
 :root{
-  --tc-primary-dark:#075985;
-  --tc-primary-soft:#e0f2fe;
-  --tc-sky:#0284c7;
-  --tc-sky-light:#0ea5e9;
-  --tc-sky-lighter:#38bdf8;
-  --tc-pale:#f0f9ff;
-  --tc-ink:#0c2a43;
-  --tc-sky-gradient:linear-gradient(135deg,#0284c7 0%,#38bdf8 100%);
-  --tc-sky-deep:linear-gradient(135deg,#075985 0%,#0284c7 100%);
+  --tc-primary-dark:#3730a3;
+  --tc-primary-soft:#eef2ff;
+  --tc-indigo:#4f46e5;
+  --tc-indigo-deep:#0506ae;
+  --tc-violet:#964eec;
+  --tc-violet-light:#a78bfa;
+  --tc-pale:#f8fafc;
+  --tc-ink:#0f172a;
+  --tc-gradient:linear-gradient(135deg,#0506ae 0%,#964eec 100%);
 }
-
-/* Brand ribbon across the top of every app shell */
-.app-topbar{
-  background:var(--tc-sky-deep)!important;
-  color:#fff;
-  box-shadow:0 2px 14px rgba(2,132,199,.25);
-}
+.app-topbar{background:var(--tc-gradient)!important;color:#fff;box-shadow:0 2px 14px rgba(5,6,174,.25)}
 .app-topbar a,.app-topbar .app-brand strong{color:#fff!important}
-
-.app-nav a.active{
-  background:var(--tc-sky-gradient)!important;
-  color:#fff!important;
-  box-shadow:0 8px 18px rgba(2,132,199,.28);
-}
-.btn-primary{
-  background:var(--tc-sky-gradient)!important;
-  border:0!important;
-  box-shadow:0 10px 22px rgba(2,132,199,.22);
-  letter-spacing:.01em;
-}
-.btn-primary:hover{filter:brightness(1.06);transform:translateY(-1px)}
-.btn-gold{
-  background:#fff;color:#0369a1;border:1.5px solid #0284c7;
-  border-radius:12px;padding:10px 20px;font-weight:700;cursor:pointer;
-  box-shadow:0 8px 18px rgba(2,132,199,.18);
-}
-.btn-gold:hover{background:#f0f9ff;transform:translateY(-1px)}
-
-/* Hero / landing — sky on white */
-.hero,.public-hero{
-  background:
-    radial-gradient(1200px 420px at 85% -15%,rgba(56,189,248,.28),transparent 60%),
-    radial-gradient(900px 500px at 0% 110%,rgba(14,165,233,.22),transparent 60%),
-    linear-gradient(180deg,#ffffff 0%,#f0f9ff 100%);
-  color:var(--tc-ink);
-  position:relative;overflow:hidden;
-}
-.hero h1,.public-hero h1{color:#075985;letter-spacing:-.02em}
+.app-nav a.active{background:var(--tc-gradient)!important;color:#fff!important;box-shadow:0 8px 18px rgba(5,6,174,.28)}
+.btn-primary{background:var(--tc-gradient)!important;border:0!important;box-shadow:0 10px 22px rgba(5,6,174,.22);letter-spacing:.01em}
+.btn-primary:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn-gold{background:#fff;color:#4338ca;border:1.5px solid #4f46e5;border-radius:12px;padding:10px 20px;font-weight:700;cursor:pointer;box-shadow:0 8px 18px rgba(79,70,229,.18)}
+.btn-gold:hover{background:#eef2ff;transform:translateY(-1px)}
+.hero,.public-hero{background:radial-gradient(1200px 420px at 85% -15%,rgba(150,78,236,.28),transparent 60%),radial-gradient(900px 500px at 0% 110%,rgba(79,70,229,.22),transparent 60%),linear-gradient(180deg,#fff 0%,#eef2ff 100%);color:var(--tc-ink);position:relative;overflow:hidden}
+.hero h1,.public-hero h1{color:#3730a3;letter-spacing:-.02em}
 .hero .muted,.public-hero .muted{color:#475569}
-.hero .btn-outline,.public-hero .btn-outline{
-  background:#fff;color:#0284c7;border:1.5px solid #0284c7
-}
-.hero .btn-outline:hover,.public-hero .btn-outline:hover{
-  background:#0284c7;color:#fff
-}
-.hero-badge{
-  background:rgba(255,255,255,.8)!important;border:1px solid #7dd3fc!important;
-  color:#0369a1!important;backdrop-filter:blur(4px);
-}
-
-/* Sky accent strip under serif headings */
+.hero .btn-outline,.public-hero .btn-outline{background:#fff;color:#4f46e5;border:1.5px solid #4f46e5}
+.hero .btn-outline:hover,.public-hero .btn-outline:hover{background:#4f46e5;color:#fff}
+.hero-badge{background:rgba(255,255,255,.85)!important;border:1px solid #c4b5fd!important;color:#5b21b6!important;backdrop-filter:blur(4px)}
 .serif,h1.serif,.app-page-title{position:relative}
-.app-page-title{
-  padding-bottom:10px;
-  border-bottom:2px solid var(--tc-sky-lighter);
-  display:inline-block;
-}
-
-/* Cards lift on hover with a sky top edge */
-.card,.stat-card{
-  position:relative;
-  transition:transform .25s cubic-bezier(.4,0,.2,1),box-shadow .25s;
-}
-.card:hover{transform:translateY(-2px);box-shadow:0 18px 40px rgba(2,132,199,.14)!important}
-.card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:3px;
-  background:var(--tc-sky-gradient);border-radius:16px 16px 0 0;opacity:.9;
-}
-
-/* Stat tiles — clean white */
-.stat-card{
-  background:linear-gradient(180deg,#fff 0%,#f8fafc 100%)!important;
-  border:1px solid #dbeafe!important;
-}
-.stat-value{color:#075985}
+.app-page-title{padding-bottom:10px;border-bottom:2px solid var(--tc-violet-light);display:inline-block}
+.card,.stat-card{position:relative;transition:transform .25s cubic-bezier(.4,0,.2,1),box-shadow .25s}
+.card:hover{transform:translateY(-2px);box-shadow:0 18px 40px rgba(5,6,174,.14)!important}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--tc-gradient);border-radius:16px 16px 0 0;opacity:.9}
+.stat-card{background:linear-gradient(180deg,#fff 0%,#f8fafc 100%)!important;border:1px solid #e0e7ff!important}
+.stat-value{color:#3730a3}
 .stat-label{color:#64748b;letter-spacing:.02em;text-transform:uppercase;font-size:.72rem;font-weight:700}
-
-/* Sidebar polish — white with sky accents */
-.app-sidebar{
-  background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%)!important;
-  border-right:1px solid #dbeafe!important;
-}
+.app-sidebar{background:linear-gradient(180deg,#fff 0%,#f8fafc 100%)!important;border-right:1px solid #e0e7ff!important}
 .app-brand strong{color:var(--tc-ink)!important;letter-spacing:-.02em}
-
-/* Tables */
-th{background:#f0f9ff!important;color:#075985!important}
-tbody tr:hover{background:#f0f9ff!important}
-
-/* Form focus ring in sky */
-.form-input:focus,.form-select:focus,.form-textarea:focus{
-  border-color:var(--tc-sky)!important;
-  box-shadow:0 0 0 4px rgba(2,132,199,.15)!important;
-}
-
-/* Badges */
-.badge-success{background:#0284c7!important;color:#fff}
+th{background:#eef2ff!important;color:#3730a3!important}
+tbody tr:hover{background:#f5f3ff!important}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--tc-indigo)!important;box-shadow:0 0 0 4px rgba(79,70,229,.15)!important}
+.badge-success{background:#4f46e5!important;color:#fff}
 .badge-warning{background:#f59e0b!important;color:#1a1300}
 .badge-bad,.badge-danger{background:#e11d48!important;color:#fff}
-
-/* Chatbot FAB matches the brand */
-.tc-chat-fab{background:var(--tc-sky-gradient)!important;box-shadow:0 10px 24px rgba(2,132,199,.4)!important}
-
-/* PWA banner */
-.pwa-install-banner{
-  border:2px solid var(--tc-sky-light)!important;
-  background:linear-gradient(180deg,#fff,#f0f9ff)!important;
-  box-shadow:0 18px 44px rgba(2,132,199,.22)!important;
-}
-
-/* Footer */
-.tc-hmg-footer{
-  background:var(--tc-primary-dark);
-  color:#cfe8f5;
-  margin-top:40px;
-}
-.tc-hmg-footer a{color:#7dd3fc}
+.tc-chat-fab{background:var(--tc-gradient)!important;box-shadow:0 10px 24px rgba(5,6,174,.4)!important}
+.pwa-install-banner{border:2px solid var(--tc-violet-light)!important;background:linear-gradient(180deg,#fff,#eef2ff)!important;box-shadow:0 18px 44px rgba(5,6,174,.22)!important}
+.tc-hmg-footer{background:var(--tc-primary-dark);color:#c7d2fe;margin-top:40px}
+.tc-hmg-footer a{color:#c4b5fd}
 .tc-hmg-footer a:hover{color:#fff}
-
-/* Subtle page-entrance animation */
 @keyframes tcFadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .app-content > *{animation:tcFadeUp .35s ease both}
-
-/* Academy layout: hero-style module cards on the dashboard */
 body.layout-academy .app-content{max-width:1200px}
-body.layout-academy .dash-quick-links .btn{
-  background:linear-gradient(180deg,#fff,#f8fafc);
-  border:1px solid #dbeafe;
-  box-shadow:0 6px 16px rgba(2,132,199,.08);
-}
-body.layout-academy .dash-quick-links .btn:hover{
-  border-color:var(--tc-sky-light);transform:translateY(-2px);
-}
-
+body.layout-academy .dash-quick-links .btn{background:linear-gradient(180deg,#fff,#f8fafc);border:1px solid #e0e7ff;box-shadow:0 6px 16px rgba(5,6,174,.08)}
+body.layout-academy .dash-quick-links .btn:hover{border-color:var(--tc-violet-light);transform:translateY(-2px)}
