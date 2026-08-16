@@ -1,6 +1,5 @@
-# ADEWALE CLASSROOM
+# Tutoring Connect Generator
 
-This package is the GENERATED Tutoring Connect studio.
-A product of HMG Technologies, a subsidiary of HMG Concepts.
-Deploy: run database/complete-schema.sql, paste keys into assets/js/config.js, host statically.
-There is no builder in this zip.
+This package is the GENERATOR (HMG Technologies / HMG Concepts).
+Open index.html then builder.html to stamp a client studio ZIP.
+Do not deploy this folder as a parent-facing portal.
