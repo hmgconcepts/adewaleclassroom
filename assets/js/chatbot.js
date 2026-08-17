@@ -331,10 +331,13 @@
       wrap.id = 'tc-chatbot';
       wrap.innerHTML =
         '<button id="tc-bot-fab" aria-label="Open the Studio Assistant" title="Studio Assistant">💬</button>' +
-        '<div id="tc-bot-panel" role="dialog" aria-label="Studio Assistant" hidden>' +
+        '<div id="tc-bot-panel" role="dialog" aria-label="Studio Assistant">' +
           '<div class="tc-bot-top"><div><b>Studio Assistant</b>' +
             '<div class="tc-bot-sub">Every page &amp; process · no AI API</div></div>' +
-            '<button id="tc-bot-x" aria-label="Close">×</button></div>' +
+            '<div class="tc-bot-actions">' +
+              '<button id="tc-bot-min" aria-label="Minimise" title="Minimise">–</button>' +
+              '<button id="tc-bot-x" aria-label="Close assistant" title="Close">×</button>' +
+            '</div></div>' +
           '<div id="tc-bot-log" aria-live="polite"></div>' +
           '<div id="tc-bot-chips"></div>' +
           '<form id="tc-bot-form"><input id="tc-bot-in" autocomplete="off" ' +
@@ -346,15 +349,54 @@
 
       var self = this;
       var panel = d.getElementById('tc-bot-panel');
-      d.getElementById('tc-bot-fab').onclick = function () {
-        self.open = !self.open;
-        panel.hidden = !self.open;
+      var fab = d.getElementById('tc-bot-fab');
+
+      /* V13 BUG FIX. Visibility used to be driven by the `hidden` attribute,
+         but the stylesheet sets `#tc-bot-panel{display:flex}` and an ID
+         selector beats the UA rule `[hidden]{display:none}`. The panel was
+         therefore ALWAYS on screen: the × appeared to do nothing, the launcher
+         appeared to do nothing, it covered the page, and because the panel
+         never registered as "opened" the greeting and the suggestion chips
+         never rendered. One CSS specificity bug caused four reported faults.
+         Visibility is now a class, which cannot be out-specified. */
+      this.setOpen = function (v) {
+        self.open = !!v;
+        panel.classList.toggle('tc-open', self.open);
+        panel.classList.remove('tc-min');
+        fab.setAttribute('aria-expanded', String(self.open));
+        fab.innerHTML = self.open ? '✕' : '💬';
+        fab.setAttribute('title', self.open ? 'Close the Studio Assistant' : 'Open the Studio Assistant');
         if (self.open) {
           if (!d.getElementById('tc-bot-log').childNodes.length) self.greet();
-          d.getElementById('tc-bot-in').focus();
+          try { d.getElementById('tc-bot-in').focus(); } catch (e) {}
         }
       };
-      d.getElementById('tc-bot-x').onclick = function () { self.open = false; panel.hidden = true; };
+
+      fab.onclick = function () { self.setOpen(!self.open); };
+      d.getElementById('tc-bot-x').onclick = function (e) {
+        if (e && e.stopPropagation) e.stopPropagation();
+        self.setOpen(false);
+      };
+      /* Minimise collapses to the title bar so the assistant can stay to hand
+         without covering the work underneath. */
+      d.getElementById('tc-bot-min').onclick = function (e) {
+        if (e && e.stopPropagation) e.stopPropagation();
+        panel.classList.toggle('tc-min');
+        this.textContent = panel.classList.contains('tc-min') ? '▢' : '–';
+        this.setAttribute('title', panel.classList.contains('tc-min') ? 'Restore' : 'Minimise');
+      };
+      /* Clicking the collapsed title bar restores it. */
+      panel.querySelector('.tc-bot-top').addEventListener('click', function (e) {
+        if (e.target.closest('button')) return;
+        if (panel.classList.contains('tc-min')) {
+          panel.classList.remove('tc-min');
+          d.getElementById('tc-bot-min').textContent = '–';
+        }
+      });
+
+      // Render the greeting + suggestion chips up front so a first-time user
+      // always sees what they can ask, even before opening the panel.
+      this.greet();
       d.getElementById('tc-bot-form').onsubmit = function (e) {
         e.preventDefault();
         var i = d.getElementById('tc-bot-in');
@@ -365,7 +407,7 @@
         setTimeout(function () { self.say(self.answer(v), 'bot'); }, 90);
       };
       d.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && self.open) { self.open = false; panel.hidden = true; }
+        if (e.key === 'Escape' && self.open) self.setOpen(false);
       });
     },
 
@@ -427,8 +469,15 @@
         'box-shadow:0 10px 26px rgba(0,0,0,.28)}' +
         '#tc-bot-fab:hover{transform:translateY(-2px)}' +
         '#tc-bot-panel{position:fixed;right:18px;bottom:84px;z-index:9997;width:min(430px,calc(100vw - 28px));' +
-        'max-height:min(640px,calc(100vh - 120px));display:flex;flex-direction:column;background:var(--surface,#fff);' +
+        'max-height:min(640px,calc(100vh - 120px));display:none;flex-direction:column;background:var(--surface,#fff);' +
         'border:1px solid var(--gray-300,#e2e8f0);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.3);overflow:hidden}' +
+        '#tc-bot-panel.tc-open{display:flex}' +
+        '#tc-bot-panel.tc-min{max-height:56px}' +
+        '#tc-bot-panel.tc-min #tc-bot-log,#tc-bot-panel.tc-min #tc-bot-chips,' +
+        '#tc-bot-panel.tc-min #tc-bot-form{display:none}' +
+        '#tc-bot-panel.tc-min .tc-bot-top{cursor:pointer}' +
+        '.tc-bot-actions{display:flex;gap:4px;align-items:center}' +
+        '#tc-bot-min{background:none;border:none;color:#fff;font-size:1.25rem;line-height:1;cursor:pointer;padding:0 6px}' +
         '.tc-bot-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;' +
         'background:var(--gradient,linear-gradient(135deg,#4f46e5,#06b6d4));color:#fff}' +
         '.tc-bot-sub{font-size:.74rem;opacity:.9}' +

@@ -304,6 +304,7 @@ const Voting = {
       if (typeof VT === 'undefined') return;
       if (action === 'create') VT.create();
       if (action === 'cast') VT.vote(t.dataset.poll);
+      if (action === 'export') { this.exportResults(pollId); return; }
       if (action === 'close') VT.toggleClose(t.dataset.poll);
       if (action === 'refresh') VT.refresh();
     });
@@ -356,24 +357,117 @@ const VT = {
   pollCard(p, isAdmin) {
     const candidates = this.parseCandidates(p);
     const closed = String(p.status) === 'closed';
-    const multi = p.type === 'multiple_choice' || p.allow_multiple;
-    const controls = closed ? '' : candidates.map(c => {
+    const multi = p.type === 'multiple_choice' || p.allow_multiple || p.multi_choice;
+    const controls = (closed || (p.closes_at && new Date(p.closes_at) < new Date())) ? '' : candidates.map(c => {
       const input = multi
         ? '<input type="checkbox" data-candidate="' + c.id + '"' + (this.selected[p.id] && this.selected[p.id].includes(c.id) ? ' checked' : '') + '>'
         : '<input type="radio" name="poll-' + p.id + '" data-candidate="' + c.id + '">';
       return '<label style="display:flex;gap:8px;align-items:center;padding:6px 0">' + input + '<span><b>' + TC.esc(c.name || '') + '</b>' + (c.info ? ' <span class="muted">' + TC.esc(c.info) + '</span>' : '') + '</span></label>';
     }).join('');
-    const adminBar = isAdmin ? '<div style="margin-top:8px"><button class="btn btn-sm btn-outline" data-vote-action="close" data-poll="' + p.id + '">' + (closed ? 'Closed' : 'Close poll') + '</button></div>' : '';
-    const voteBar = closed ? '<p class="badge" style="background:#64748b">Closed</p>'
+    /* V15 (item 27): surface everything a real ballot needs — a deadline with a
+       live countdown, the quorum, how many picks a multi-choice poll allows,
+       when results become visible, and a CSV export for the record. */
+    const now = Date.now();
+    const closesAt = p.closes_at ? new Date(p.closes_at) : null;
+    const expired = closesAt && closesAt.getTime() < now;
+    const reallyClosed = closed || expired;
+    const maxPicks = Number(p.max_choices || (multi ? candidates.length : 1)) || 1;
+
+    const msLeft = closesAt ? (closesAt.getTime() - now) : null;
+    const countdown = closesAt
+      ? (expired
+          ? '<span class="badge badge-danger">Voting closed ' + closesAt.toLocaleString() + '</span>'
+          : '<span class="badge badge-warning">Closes ' + closesAt.toLocaleString() +
+            ' · ' + (msLeft > 86400000
+                      ? Math.ceil(msLeft / 86400000) + ' day(s) left'
+                      : Math.max(1, Math.ceil(msLeft / 3600000)) + ' hour(s) left') + '</span>')
+      : '<span class="badge badge-info">No closing date</span>';
+
+    const meta = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0">'
+      + countdown
+      + (multi ? '<span class="badge badge-info">Pick up to ' + maxPicks + '</span>'
+               : '<span class="badge badge-info">Pick one</span>')
+      + (p.anonymous === false ? '<span class="badge badge-warning">Named vote</span>'
+                               : '<span class="badge badge-success">Anonymous</span>')
+      + (Number(p.quorum || 0) > 0 ? '<span class="badge badge-info">Quorum ' + p.quorum + '</span>' : '')
+      + (p.audience && p.audience !== 'all'
+          ? '<span class="badge badge-info">' + TC.esc(p.audience) + '</span>' : '')
+      + (p.results_visible === 'after_close'
+          ? '<span class="badge badge-warning">Results after close</span>'
+          : p.results_visible === 'after_vote'
+            ? '<span class="badge badge-warning">Results after you vote</span>' : '')
+      + '</div>';
+
+    const adminBar = isAdmin
+      ? '<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'
+        + '<button class="btn btn-sm btn-outline" data-vote-action="close" data-poll="' + p.id + '">'
+        + (reallyClosed ? 'Re-open poll' : 'Close poll now') + '</button>'
+        + '<button class="btn btn-sm btn-ghost" data-vote-action="export" data-poll="' + p.id + '">⬇ Export results (CSV)</button>'
+        + '</div>'
+      : '';
+    const voteBar = reallyClosed ? '<p class="badge" style="background:#64748b">Voting has closed</p>'
       : '<button class="btn btn-primary btn-sm" data-vote-action="cast" data-poll="' + p.id + '">Cast vote</button>';
     return '<article class="card" style="margin-bottom:16px" data-poll-card="' + p.id + '">'
       + '<h3 style="margin-top:0">' + TC.esc(p.title || 'Poll') + '</h3>'
       + (p.description ? '<p class="muted">' + TC.esc(p.description) + '</p>' : '')
+      + meta
       + '<div class="vote-candidates">' + controls + '</div>'
       + '<div data-results="' + p.id + '" style="margin-top:10px"></div>'
       + '<div style="display:flex;gap:8px;align-items:center;margin-top:10px">' + voteBar
       + ' <button class="btn btn-sm btn-ghost" data-vote-action="refresh" data-poll="' + p.id + '">↻ Results</button></div>'
       + adminBar + '</article>';
+  },
+
+
+  /* ==========================================================================
+     V15 additions (item 27) — deadline enforcement, quorum, disclosure rules
+     and a CSV export of the tally.
+     ========================================================================== */
+  async exportResults(pollId) {
+    const supabase = window.sb || this.sb;
+    if (!supabase) { if (window.toast) toast('Connect Supabase to export.', 'warning'); return; }
+    try {
+      const poll = (this.polls || []).find(p => String(p.id) === String(pollId)) || {};
+      let rows = [];
+      // Prefer the server-side tally: it honours anonymity and the disclosure rule.
+      const rpc = await supabase.rpc('tc_poll_results', { p_poll: pollId });
+      if (!rpc.error && rpc.data && rpc.data.results) {
+        rows = rpc.data.results.map(r => [r.choice, r.votes]);
+      } else {
+        const v = await supabase.from('poll_votes').select('choice').eq('poll_id', pollId);
+        const tally = {};
+        (v.data || []).forEach(x => String(x.choice || '').split('|').forEach(c => {
+          c = c.trim(); if (c) tally[c] = (tally[c] || 0) + 1;
+        }));
+        rows = Object.entries(tally).sort((a, b) => b[1] - a[1]);
+      }
+      const total = rows.reduce((a, r) => a + Number(r[1] || 0), 0) || 1;
+      const csv = ['poll,option,votes,share_percent']
+        .concat(rows.map(r => [
+          '"' + String(poll.title || '').replace(/"/g, '""') + '"',
+          '"' + String(r[0]).replace(/"/g, '""') + '"',
+          r[1],
+          (Number(r[1]) / total * 100).toFixed(1)
+        ].join(','))).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'poll-results-' + String(poll.title || pollId).toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) + '.csv';
+      a.click(); URL.revokeObjectURL(a.href);
+      if (window.toast) toast('Results exported.', 'success');
+    } catch (e) { if (window.toast) toast('Export failed: ' + (e.message || e), 'danger'); }
+  },
+
+  /** Refuse a vote that breaks the poll's own rules, with a clear reason. */
+  validateVote(poll, ids) {
+    const multi = poll.type === 'multiple_choice' || poll.allow_multiple || poll.multi_choice;
+    const max = Number(poll.max_choices || (multi ? 99 : 1)) || 1;
+    if (!ids.length) return 'Choose an option before casting your vote.';
+    if (!multi && ids.length > 1) return 'This poll allows only one choice.';
+    if (multi && ids.length > max) return 'You may pick at most ' + max + ' option(s); you picked ' + ids.length + '.';
+    if (poll.closes_at && new Date(poll.closes_at) < new Date()) return 'Voting closed on ' + new Date(poll.closes_at).toLocaleString() + '.';
+    if (String(poll.status) === 'closed') return 'This poll has been closed by the studio.';
+    return null;
   },
 
   collectSelection(pollId, multi) {

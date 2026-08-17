@@ -52,9 +52,9 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "builder",
    "change-password",
-   "contact"
+   "contact",
+   "dashboard"
   ],
   "actions": [
    "Sign out",
@@ -179,14 +179,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, admin-data, approvals, builder, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, admin-data, approvals, change-password, contact, dashboard. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "admin-data",
    "approvals",
-   "builder",
    "change-password",
-   "contact"
+   "contact",
+   "dashboard"
   ],
   "actions": [
    "Sign out",
@@ -258,14 +258,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, approvals, builder, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, approvals, change-password, contact, dashboard. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "activity-log",
    "approvals",
-   "builder",
    "change-password",
-   "contact"
+   "contact",
+   "dashboard"
   ],
   "actions": [
    "Sign out",
@@ -575,7 +575,7 @@
   ],
   "faqs": [],
   "purpose": "Approve parent/learner/tutor self-signups.",
-  "detail": "Approve parent/learner/tutor self-signups. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
+  "detail": "Approve parent/learner/tutor self-signups. The main actions available here are: <b>Reinstate</b>, <b>Sign out</b>, <b>Suspend</b>, <b>Theme</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -584,17 +584,19 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, builder, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, change-password, contact, dashboard. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "activity-log",
    "admin-data",
-   "builder",
    "change-password",
-   "contact"
+   "contact",
+   "dashboard"
   ],
   "actions": [
+   "Reinstate",
    "Sign out",
+   "Suspend",
    "Theme"
   ],
   "tabs": []
@@ -1312,7 +1314,7 @@
   ],
   "faqs": [],
   "purpose": "Learner runtime: code entry, timer, navigator. Open or rostered.",
-  "detail": "Learner runtime: code entry, timer, navigator. Open or rostered. The main actions available here are: <b>Save / print PDF</b>, <b>Start quiz</b>, <b>Submit</b>. Reachable without a portal password, but useless without a valid quiz code plus the learner's student ID. The code is the gate.",
+  "detail": "Learner runtime: code entry, timer, navigator. Open or rostered. The main actions available here are: <b>Save / print PDF</b>, <b>Start quiz</b>, <b>Submit paper</b>. Reachable without a portal password, but useless without a valid quiz code plus the learner's student ID. The code is the gate.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -1333,7 +1335,7 @@
   "actions": [
    "Save / print PDF",
    "Start quiz",
-   "Submit"
+   "Submit paper"
   ],
   "tabs": []
  },
@@ -1651,8 +1653,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "builder",
-   "contact"
+   "contact",
+   "dashboard"
   ],
   "actions": [
    "Sign out",
@@ -1906,8 +1908,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "builder",
-   "change-password"
+   "change-password",
+   "dashboard"
   ],
   "actions": [
    "Sign out",
@@ -2038,8 +2040,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "builder",
-   "change-password"
+   "change-password",
+   "contact"
   ],
   "actions": [
    "Sign out",
@@ -2094,8 +2096,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "builder",
-   "change-password"
+   "change-password",
+   "contact"
   ],
   "actions": [
    "Sign out",
@@ -2690,6 +2692,72 @@
   ],
   "tabs": []
  },
+ "family-links": {
+  "page": "family-links",
+  "file": "family-links.html",
+  "title": "Learners",
+  "group": "Platform",
+  "access": "staff",
+  "archetype": "list",
+  "sections": [
+   {
+    "name": "Page header",
+    "what": "The title, a one-line purpose, and the ? Page Help button that opens this same explanation inside the app."
+   },
+   {
+    "name": "Toolbar / filters",
+    "what": "Search box, status and date filters, and the Add / New button. Filters narrow the list below without reloading the page."
+   },
+   {
+    "name": "Records table",
+    "what": "Every record you are allowed to see. Parents and learners are filtered to their own rows by the database itself, not by hiding buttons."
+   },
+   {
+    "name": "Row actions",
+    "what": "Open, edit, duplicate or delete a record. Deleting asks for confirmation and is written to the activity log."
+   },
+   {
+    "name": "Record form (modal)",
+    "what": "Opens over the list. Required fields are marked; everything else can be completed later."
+   },
+   {
+    "name": "Export",
+    "what": "Download the current view as CSV. Your data is always portable — nothing is locked in."
+   }
+  ],
+  "roleViews": {
+   "owner": "Full configuration control.",
+   "tutor": "No access.",
+   "parent": "No access.",
+   "learner": "No access."
+  },
+  "tasks": [],
+  "faqs": [],
+  "purpose": "Connect a parent to the child or children they are responsible for. This single mapping is what switches the family portal on: once linked, a parent sees that child's classes, scores, reading, invoices and messages — and nothing about anyone else's child.",
+  "detail": "Connect a parent to the child or children they are responsible for. This single mapping is what switches the family portal on: once linked, a parent sees that child's classes, scores, reading, invoices and messages — and nothing about anyone else's child. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "audience": "Owner, admin and tutors who handle enrolment.",
+  "why": "An unlinked child is invisible to their parent, and a parent record with no portal login cannot sign in at all. Those two gaps are the reason almost every family says \"I can't see anything\", and this page finds both for you automatically.",
+  "how": [
+   "Pick the parent, pick the learner, choose the relationship, press Link them.",
+   "Read the <b>Needs attention</b> panel — it lists learners with no parent and parents with no portal login.",
+   "For a parent with no login: have them sign up, approve them on Approvals, then attach their account here.",
+   "Remove a link with the × beside a child; the parent stops seeing them immediately."
+  ],
+  "connects": "Writes parent_learner, which is what the is_parent_of() database rule reads. Pairs with My children, Approvals and Learners.",
+  "related": [
+   "about",
+   "activity-log",
+   "admin-data",
+   "approvals",
+   "change-password",
+   "contact"
+  ],
+  "actions": [
+   "Sign out",
+   "Theme"
+  ],
+  "tabs": []
+ },
  "feature-guide": {
   "page": "feature-guide",
   "file": "feature-guide.html",
@@ -2733,14 +2801,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, builder, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "activity-log",
    "admin-data",
    "approvals",
-   "builder",
-   "change-password"
+   "change-password",
+   "contact"
   ],
   "actions": [
    "Sign out",
@@ -3052,8 +3120,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "builder",
-   "change-password"
+   "change-password",
+   "contact"
   ],
   "actions": [
    "Sign out",
@@ -3803,8 +3871,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "builder",
-   "change-password"
+   "change-password",
+   "contact"
   ],
   "actions": [],
   "tabs": []
@@ -3992,8 +4060,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "builder",
-   "change-password"
+   "change-password",
+   "contact"
   ],
   "actions": [
    "Install now",
@@ -4507,14 +4575,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, builder, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "activity-log",
    "admin-data",
    "approvals",
-   "builder",
-   "change-password"
+   "change-password",
+   "contact"
   ],
   "actions": [
    "Sign out",
@@ -4640,8 +4708,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "builder",
-   "change-password"
+   "change-password",
+   "contact"
   ],
   "actions": [
    "Request access",
@@ -5046,6 +5114,72 @@
   ],
   "tabs": []
  },
+ "my-children": {
+  "page": "my-children",
+  "file": "my-children.html",
+  "title": "Learners",
+  "group": "Platform",
+  "access": "family",
+  "archetype": "list",
+  "sections": [
+   {
+    "name": "Page header",
+    "what": "The title, a one-line purpose, and the ? Page Help button that opens this same explanation inside the app."
+   },
+   {
+    "name": "Toolbar / filters",
+    "what": "Search box, status and date filters, and the Add / New button. Filters narrow the list below without reloading the page."
+   },
+   {
+    "name": "Records table",
+    "what": "Every record you are allowed to see. Parents and learners are filtered to their own rows by the database itself, not by hiding buttons."
+   },
+   {
+    "name": "Row actions",
+    "what": "Open, edit, duplicate or delete a record. Deleting asks for confirmation and is written to the activity log."
+   },
+   {
+    "name": "Record form (modal)",
+    "what": "Opens over the list. Required fields are marked; everything else can be completed later."
+   },
+   {
+    "name": "Export",
+    "what": "Download the current view as CSV. Your data is always portable — nothing is locked in."
+   }
+  ],
+  "roleViews": {
+   "owner": "Full configuration control.",
+   "tutor": "No access.",
+   "parent": "No access.",
+   "learner": "No access."
+  },
+  "tasks": [],
+  "faqs": [],
+  "purpose": "A parent's home page: one card per child showing the next class with date, time and duration, the latest scores by subject, attendance, hours left in the bank, and the reading set before the next lesson.",
+  "detail": "A parent's home page: one card per child showing the next class with date, time and duration, the latest scores by subject, attendance, hours left in the bank, and the reading set before the next lesson. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "audience": "Parents and guardians. Staff see the same layout for the learners they teach.",
+  "why": "This is the page that delivers the studio's promise — independent progress a parent can actually see. A parent who opens this weekly and sees movement renews.",
+  "how": [
+   "Each card is one child. Read the four headline tiles first.",
+   "Use <b>Next classes</b> to confirm the date, time and duration you agreed.",
+   "Open the full scoresheet for the detail behind any score.",
+   "If you see no children at all, the studio has not linked you yet — the page tells you exactly what to ask for."
+  ],
+  "connects": "Reads learners, scoresheet, sessions, attendance and reading, all filtered by Row Level Security. Fed by Family links.",
+  "related": [
+   "about",
+   "activity-log",
+   "admin-data",
+   "approvals",
+   "change-password",
+   "contact"
+  ],
+  "actions": [
+   "Sign out",
+   "Theme"
+  ],
+  "tabs": []
+ },
  "notifications": {
   "page": "notifications",
   "file": "notifications.html",
@@ -5161,8 +5295,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "builder",
-   "change-password"
+   "change-password",
+   "contact"
   ],
   "actions": [
    "Sign out",
@@ -5689,14 +5823,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, builder, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "activity-log",
    "admin-data",
    "approvals",
-   "builder",
-   "change-password"
+   "change-password",
+   "contact"
   ],
   "actions": [
    "Sign out",
@@ -5957,7 +6091,7 @@
    }
   ],
   "purpose": "Three quiz kinds. Self = iterative practice. Review = diagnose after class. Graded = exhaustive paper that auto-pushes to the scoresheet.",
-  "detail": "Three quiz kinds. Self = iterative practice. Review = diagnose after class. Graded = exhaustive paper that auto-pushes to the scoresheet. The main actions available here are: <b>Parse CSV preview</b>, <b>Save quiz</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "Three quiz kinds. Self = iterative practice. Review = diagnose after class. Graded = exhaustive paper that auto-pushes to the scoresheet. The main actions available here are: <b>Clear</b>, <b>Delete</b>, <b>Duplicate</b>, <b>Edit</b>, <b>Parse CSV preview</b>, <b>Save quiz</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -5976,6 +6110,10 @@
    "cbt-review"
   ],
   "actions": [
+   "Clear",
+   "Delete",
+   "Duplicate",
+   "Edit",
    "Parse CSV preview",
    "Save quiz",
    "Sign out",
@@ -6154,14 +6292,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, builder, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "activity-log",
    "admin-data",
    "approvals",
-   "builder",
-   "change-password"
+   "change-password",
+   "contact"
   ],
   "actions": [
    "Save profile",
@@ -7217,14 +7355,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, builder, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "activity-log",
    "admin-data",
    "approvals",
-   "builder",
-   "change-password"
+   "change-password",
+   "contact"
   ],
   "actions": [
    "Save to database",
@@ -7282,8 +7420,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "builder",
-   "change-password"
+   "change-password",
+   "contact"
   ],
   "actions": [],
   "tabs": []
@@ -7395,14 +7533,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, builder, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "activity-log",
    "admin-data",
    "approvals",
-   "builder",
-   "change-password"
+   "change-password",
+   "contact"
   ],
   "actions": [
    "Sign out",
@@ -7461,14 +7599,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, builder, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "activity-log",
    "admin-data",
    "approvals",
-   "builder",
-   "change-password"
+   "change-password",
+   "contact"
   ],
   "actions": [
    "Sign out",

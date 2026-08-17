@@ -263,15 +263,113 @@ const CBT = {
     return data;
   },
 
+
+  /* ==========================================================================
+     CSV round-tripping (V14) — items 8 & 12.
+     parseCSV already existed; these two complete the loop so a tutor can
+     DOWNLOAD a template, fill it in a spreadsheet, upload it back, and later
+     export an existing paper to edit it offline. The shape is deliberately the
+     same one School Connect emits, so CSVs move between the two products
+     unchanged.
+     ========================================================================== */
+  CSV_HEADERS: ['question','type','subject','a','b','c','d','answer','mark','explanation','passage','media_url','tolerance'],
+
+  _csvCell: function (v) {
+    var s = (v == null) ? '' : String(v);
+    if (Array.isArray(v)) s = v.join('|');
+    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  },
+
+  /** Export normalised questions back to the canonical CSV. */
+  toCSV: function (questions) {
+    var self = this;
+    var rows = [this.CSV_HEADERS.join(',')];
+    (questions || []).forEach(function (q) {
+      var o = q.options || [];
+      rows.push([
+        q.question, q.type, q.subject || '',
+        o[0] || '', o[1] || '', o[2] || '', o[3] || '',
+        Array.isArray(q.answer) ? q.answer.join('|') : (q.answer == null ? '' : q.answer),
+        q.mark == null ? 1 : q.mark,
+        q.explanation || '', q.passage || '', q.media_url || '',
+        q.tolerance == null ? '' : q.tolerance
+      ].map(self._csvCell).join(','));
+    });
+    return rows.join('\n');
+  },
+
+  /** A filled-in example template — one row per common question type, so the
+      tutor can see the exact shape rather than guess from headers alone. */
+  templateCSV: function () {
+    var ex = [
+      ['Solve for x: 2x + 5 = 13','mcq','Mathematics','x = 3','x = 4','x = 5','x = 6','x = 4','1','Subtract 5 then divide by 2.','','',''],
+      ['Water boils at 100 degrees Celsius at sea level.','true_false','Physics','True','False','','','True','1','At 1 atmosphere.','','',''],
+      ['The capital of Nigeria is ______.','fill_blank','Geography','','','','','Abuja','1','Moved from Lagos in 1991.','','',''],
+      ['Calculate the area of a circle of radius 7cm. Use pi = 22/7.','numeric','Mathematics','','','','','154','2','A = pi r squared.','','','0.5'],
+      ['Select ALL prime numbers.','multi_select','Mathematics','2','9','11','15','2|11','2','1 is not prime.','','',''],
+      ['Read the passage, then explain the author\u2019s main argument.','comprehension','English','','','','','','5','Look for the thesis in the opening paragraph.','Paste the passage text in this column.','',''],
+      ['Watch the clip and state the reaction observed at 2:14.','video_based','Chemistry','','','','','Effervescence','2','Carbon dioxide is released.','','https://youtu.be/EXAMPLE','']
+    ];
+    var self = this;
+    return [this.CSV_HEADERS.join(',')]
+      .concat(ex.map(function (r) { return r.map(self._csvCell).join(','); }))
+      .join('\n');
+  },
+
   promptPack(level, topic, count, klass, extra) {
     extra = extra || {};
     const types17 = this.QUESTION_TYPES_17.join(', ');
     const typesAll = this.allTypes().join(', ');
-    const head = `You are an expert examination setter for a Nigerian/international tutoring studio (ADEWALE CLASSROOM / Tutoring Connect).
-Return ONLY a CSV with headers:
+    const studio = (window.PRACTICE && window.PRACTICE.name) || 'this tutoring studio';
+    const subject = extra.subject || '[SUBJECT]';
+    const examType = extra.examType || extra.board || 'general classwork';
+    const head = `ROLE
+You are a veteran Chief Examiner and question-bank author with 20+ years setting
+papers for ${examType} in ${subject}. You write for ${studio}, a tutoring studio
+serving Nigerian and international learners.
+
+TASK
+Produce EXACTLY ${count} assessment items on the topic "${topic}" for a
+${klass || 'tutoring learner'} sitting ${examType} in ${subject}.
+
+OUTPUT CONTRACT — READ TWICE, THIS IS THE MOST IMPORTANT PART
+1. Output a SINGLE CSV code block and NOTHING else. No preamble, no commentary,
+   no markdown headings, no explanation before or after the block.
+2. The FIRST line must be exactly this header, character for character:
 question,type,subject,a,b,c,d,answer,mark,explanation,passage,media_url,tolerance
-Do not wrap in markdown. Use exactly ${count} rows. Topic: "${topic}". Level: ${klass || 'tutoring learner'}.
-media_url must be a public https or Google Drive / YouTube link — never a file upload.`;
+3. Then exactly ${count} data rows. One item per row.
+4. Any field containing a comma, quote or line break MUST be wrapped in double
+   quotes, and any internal double quote MUST be doubled ("" ). This is what
+   makes the file open cleanly in Excel, Google Sheets and LibreOffice.
+5. Never leave the "answer" column blank for an objective item.
+6. "subject" must be exactly: ${subject}
+7. Put a whole number in "mark". Use "tolerance" only for numeric items.
+8. media_url must be a public https, Google Drive or YouTube link — this
+   platform NEVER accepts file uploads, only links.
+9. End your reply with the CSV block and stop.
+
+SO THE TUTOR CAN SAVE IT AS A FILE
+After the CSV block, output nothing at all. The tutor will copy the block into a
+plain text editor and save it as "${(topic || 'questions').toString().toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40)}.csv",
+or paste it straight into the Quizzes page. Both must work, which is why the
+output has to be pure CSV.
+
+QUALITY BAR — a paper that fails any of these is not acceptable
+• Every stem is self-contained and unambiguous; a competent learner should never
+  have to guess what is being asked.
+• Distractors are PLAUSIBLE and diagnostic — each wrong option should correspond
+  to a real error a learner makes, never filler like "none of the above".
+• Vary the position of the correct option; do not let the key sit on "a".
+• Use the local context where it helps (Naira, Nigerian place names, WAEC/NECO
+  phrasing) but keep the science and mathematics internationally correct.
+• Command words must match the assessment level: state/define for recall,
+  explain/describe for comprehension, calculate/apply for application,
+  analyse/evaluate/justify for higher order.
+• Spread difficulty roughly 30% recall, 45% application, 25% higher order, and
+  order the rows from easier to harder.
+• Every "explanation" must teach: give the reasoning or the working, not just
+  "Option B is correct". A parent should be able to read it and understand.
+• No duplicated stems, no two items testing the identical fact.`;
     const packs = {
       simple: `${head}
 Use ONLY these SIMPLE types: mcq (4 options) and true_false.
@@ -325,12 +423,29 @@ Where the board uses a passage or data table, put it in the passage column.
 Sequence from easiest to hardest exactly as a real paper does.`,
 
       /* ---- Tutoring Connect enhancements beyond School Connect ---- */
-      marking_scheme: `You are an expert examiner writing a MARK SCHEME (not questions).
-Topic: "${topic}". Level: ${klass || 'tutoring learner'}.
-Return ONLY CSV with headers:
+      marking_scheme: `ROLE
+You are a Chief Examiner writing the official MARK SCHEME (not the questions)
+for ${subject} at ${examType} level, topic "${topic}", for a ${klass || 'tutoring learner'}.
+
+OUTPUT CONTRACT
+Output a SINGLE CSV code block and nothing else. First line exactly:
 question_ref,criterion,descriptor,marks,common_error,feedback_if_missed
-Write one row per awardable point, in the order a marker would award them.
-"feedback_if_missed" must be a sentence a tutor can paste straight to a parent.`,
+Then one row per AWARDABLE POINT, in the order a marker awards them.
+Quote any field containing a comma or quote; double any internal quote.
+The tutor will save this block as "${(topic||'mark-scheme').toString().toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40)}-mark-scheme.csv".
+
+QUALITY BAR
+• "criterion" names the skill being credited (e.g. "Correct substitution").
+• "descriptor" states precisely what earns the mark, in examiner language, so
+  two different markers would award identically.
+• Award method marks separately from accuracy marks, as a real board does.
+• "common_error" names the specific mistake that loses this mark.
+• "feedback_if_missed" must be a warm, plain-English sentence a tutor can paste
+  straight to a parent — no jargon, no blame, and it must say what to practise.
+• Include follow-through (error carried forward) rows where a real scheme would.
+
+FINAL CHECK
+□ Header exact. □ Marks are whole numbers. □ Nothing but the CSV block.`,
 
       differentiated: `${head}
 DIFFERENTIATED THREE-TIER SET on "${topic}". Produce ${count} rows split evenly:
@@ -374,7 +489,16 @@ Write a mixed Self-Quiz that checks they did the reading AND are ready for the n
 Use: comprehension, video_based, short_answer, mcq, fill_blank.
 media_url should rotate across the pack links.`
     };
-    return packs[level] || packs.enterprise;
+    var chosen = packs[level] || packs.enterprise;
+    return chosen + `
+
+FINAL CHECK BEFORE YOU ANSWER
+□ Exactly ${count} data rows, plus the one header row.
+□ Header matches the contract character for character.
+□ Every objective row has a non-empty, unambiguous key.
+□ Every field containing a comma or quote is properly quoted.
+□ "subject" is "${subject}" on every row.
+□ Nothing but the CSV block in your reply.`;
   }
 };
 window.CBT = CBT;

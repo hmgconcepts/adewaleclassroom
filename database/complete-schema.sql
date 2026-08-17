@@ -2515,3 +2515,1184 @@ end
 $housekeeping$;
 
 select 'Tutoring Connect V12 schema registry + quota guard installed ✅' as status;
+
+-- ===== V15 PACK INCLUDED (family portal + rich polls + combined invoicing) =====
+-- ============================================================================
+-- Tutoring Connect V15 — FAMILY PORTAL · RICH POLLS · COMBINED INVOICING
+-- ============================================================================
+-- Three additions, all idempotent and safe to re-run.
+--
+--  A. FAMILY PORTAL SUPPORT (item 16)
+--     parent_learner already existed but had no page, so nothing ever wrote to
+--     it and every parent portal was empty. Beyond the new UI, a parent needs
+--     two safe read paths that RLS can grant without exposing anyone else:
+--       * tc_my_children()      — the learners this signed-in parent may see
+--       * tc_child_summary(id)  — one child's headline numbers in a single call
+--     Both are SECURITY DEFINER and filter by the caller, so a parent cannot
+--     pass someone else's learner id and get data back.
+--
+--  B. RICH POLLS (item 27)
+--     polls had only (title, options, anonymous, status). Real voting needs a
+--     closing time, multiple-choice limits, an audience, a quorum and a rule
+--     for when results become visible. Added as nullable columns so existing
+--     polls keep working untouched.
+--
+--  C. COMBINED FAMILY INVOICING (the gap found in competitor research)
+--     TutorBird/Teachworks bill per student. A Nigerian parent with three
+--     children wants ONE invoice. tc_family_invoice() gathers every unpaid
+--     invoice for a parent into a single consolidated statement.
+-- ============================================================================
+
+-- ---------------------------------------------------------------------------
+-- A · FAMILY PORTAL
+-- ---------------------------------------------------------------------------
+create index if not exists parent_learner_parent_idx  on public.parent_learner (parent_id);
+create index if not exists parent_learner_learner_idx on public.parent_learner (learner_id);
+create index if not exists parents_user_idx           on public.parents (user_id);
+
+-- Which children may the signed-in user see? Staff see all; a parent sees only
+-- their own; a learner sees only themselves.
+create or replace function public.tc_my_children()
+returns table (
+  id uuid, full_name text, student_no text, year_group text, relationship text
+)
+language sql stable security definer set search_path = public
+as $$
+  select l.id, l.full_name, l.student_no, l.year_group,
+         coalesce(pl.relationship, case when l.user_id = auth.uid() then 'self' else 'staff' end)
+    from public.learners l
+    left join public.parent_learner pl on pl.learner_id = l.id
+    left join public.parents p on p.id = pl.parent_id and p.user_id = auth.uid()
+   where public.is_tutor()
+      or l.user_id = auth.uid()
+      or p.id is not null
+   group by l.id, l.full_name, l.student_no, l.year_group, pl.relationship, l.user_id
+   order by l.full_name;
+$$;
+grant execute on function public.tc_my_children() to authenticated;
+
+-- One child's headline numbers, in a single round trip.
+create or replace function public.tc_child_summary(p_learner uuid)
+returns jsonb
+language plpgsql stable security definer set search_path = public
+as $$
+declare
+  v_avg numeric; v_count int; v_att numeric; v_next timestamptz; v_hours numeric;
+begin
+  -- Authorisation is enforced here, not by the caller.
+  if not (public.is_tutor() or public.is_family_of_learner(p_learner)) then
+    return jsonb_build_object('ok', false, 'error', 'not_permitted');
+  end if;
+
+  select round(avg(pct), 1), count(*) into v_avg, v_count
+    from public.scoresheet where learner_id = p_learner;
+
+  select round(100.0 * count(*) filter (where lower(status) in ('present','late'))
+               / nullif(count(*), 0), 0)
+    into v_att
+    from public.session_attendance where learner_id = p_learner;
+
+  select min(s.starts_at) into v_next
+    from public.sessions s
+    join public.engagement_members em on em.engagement_id = s.engagement_id
+   where em.learner_id = p_learner and s.starts_at > now();
+
+  select coalesce(sum(e.hours_prepaid - e.hours_used), 0) into v_hours
+    from public.engagements e
+    join public.engagement_members em on em.engagement_id = e.id
+   where em.learner_id = p_learner;
+
+  return jsonb_build_object(
+    'ok', true, 'learner_id', p_learner,
+    'average_pct', v_avg, 'assessments', coalesce(v_count, 0),
+    'attendance_pct', v_att, 'next_class', v_next,
+    'hours_left', v_hours, 'checked_at', now());
+end $$;
+grant execute on function public.tc_child_summary(uuid) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- B · RICH POLLS
+-- ---------------------------------------------------------------------------
+alter table if exists public.polls add column if not exists description     text;
+alter table if exists public.polls add column if not exists audience        text default 'all';
+alter table if exists public.polls add column if not exists engagement_id   uuid references public.engagements(id) on delete set null;
+alter table if exists public.polls add column if not exists opens_at        timestamptz default now();
+alter table if exists public.polls add column if not exists closes_at       timestamptz;
+alter table if exists public.polls add column if not exists multi_choice    boolean not null default false;
+alter table if exists public.polls add column if not exists max_choices     int default 1;
+alter table if exists public.polls add column if not exists quorum          int default 0;
+alter table if exists public.polls add column if not exists results_visible text default 'always';  -- always | after_vote | after_close
+alter table if exists public.polls add column if not exists created_by      uuid;
+
+alter table if exists public.poll_votes add column if not exists created_at timestamptz default now();
+alter table if exists public.poll_votes add column if not exists comment    text;
+
+-- One vote per person per poll (a multi-choice poll stores its picks joined
+-- with "|" in a single row, so this constraint holds for both modes).
+create unique index if not exists poll_votes_one_per_voter
+  on public.poll_votes (poll_id, voter) where voter is not null;
+create index if not exists poll_votes_poll_idx on public.poll_votes (poll_id);
+
+-- Tally a poll without exposing who voted for what on an anonymous poll.
+create or replace function public.tc_poll_results(p_poll uuid)
+returns jsonb
+language plpgsql stable security definer set search_path = public
+as $$
+declare
+  v_poll record; v_total int; v_rows jsonb; v_closed boolean; v_voted boolean;
+begin
+  select * into v_poll from public.polls where id = p_poll;
+  if v_poll is null then return jsonb_build_object('ok', false, 'error', 'not_found'); end if;
+
+  v_closed := (v_poll.closes_at is not null and v_poll.closes_at < now())
+              or lower(coalesce(v_poll.status, 'open')) <> 'open';
+  select exists (select 1 from public.poll_votes where poll_id = p_poll and voter = auth.uid())
+    into v_voted;
+
+  -- Respect the poll's disclosure rule.
+  if coalesce(v_poll.results_visible, 'always') = 'after_close' and not v_closed
+     and not public.is_tutor() then
+    return jsonb_build_object('ok', true, 'hidden', true,
+                              'reason', 'Results are published when the poll closes.',
+                              'closes_at', v_poll.closes_at);
+  end if;
+  if coalesce(v_poll.results_visible, 'always') = 'after_vote' and not v_voted
+     and not public.is_tutor() then
+    return jsonb_build_object('ok', true, 'hidden', true,
+                              'reason', 'Cast your vote to see the results.');
+  end if;
+
+  select count(*) into v_total from public.poll_votes where poll_id = p_poll;
+
+  -- Split multi-choice picks so each option is counted individually.
+  select jsonb_agg(jsonb_build_object('choice', choice, 'votes', n)
+                   order by n desc)
+    into v_rows
+    from (
+      select trim(unnest(string_to_array(coalesce(choice, ''), '|'))) as choice, count(*) as n
+        from public.poll_votes
+       where poll_id = p_poll
+       group by 1
+       having trim(coalesce(choice, '')) <> ''
+    ) t;
+
+  return jsonb_build_object(
+    'ok', true, 'poll_id', p_poll, 'title', v_poll.title,
+    'closed', v_closed, 'closes_at', v_poll.closes_at,
+    'anonymous', coalesce(v_poll.anonymous, true),
+    'multi_choice', coalesce(v_poll.multi_choice, false),
+    'total_voters', v_total,
+    'quorum', coalesce(v_poll.quorum, 0),
+    'quorum_met', coalesce(v_poll.quorum, 0) = 0 or v_total >= v_poll.quorum,
+    'you_voted', v_voted,
+    'results', coalesce(v_rows, '[]'::jsonb));
+end $$;
+grant execute on function public.tc_poll_results(uuid) to authenticated;
+
+-- Everyone signed in may read an open poll and cast exactly one vote.
+grant select on public.polls to authenticated;
+grant select, insert, update, delete on public.poll_votes to authenticated;
+
+drop policy if exists polls_read_all on public.polls;
+create policy polls_read_all on public.polls for select using (true);
+
+drop policy if exists poll_votes_own on public.poll_votes;
+create policy poll_votes_own on public.poll_votes
+  for all using (voter = auth.uid() or public.is_tutor())
+  with check (voter = auth.uid() or public.is_tutor());
+
+-- ---------------------------------------------------------------------------
+-- C · COMBINED FAMILY INVOICING
+--     One statement per PARENT covering every child, instead of one invoice
+--     per child. This is the single feature the commercial tutoring platforms
+--     charge for that this product lacked.
+-- ---------------------------------------------------------------------------
+create or replace function public.tc_family_statement(p_parent uuid default null)
+returns jsonb
+language plpgsql stable security definer set search_path = public
+as $$
+declare
+  v_parent uuid; v_rows jsonb; v_total numeric; v_paid numeric; v_name text;
+begin
+  -- A parent may only ever pull their own statement; staff may pull any.
+  if p_parent is null then
+    select id into v_parent from public.parents where user_id = auth.uid() limit 1;
+  else
+    if public.is_tutor() then v_parent := p_parent;
+    else
+      select id into v_parent from public.parents
+       where id = p_parent and user_id = auth.uid() limit 1;
+    end if;
+  end if;
+  if v_parent is null then
+    return jsonb_build_object('ok', false, 'error', 'no_parent_record');
+  end if;
+
+  select full_name into v_name from public.parents where id = v_parent;
+
+  select jsonb_agg(x order by x->>'issued_on'), sum((x->>'total')::numeric), sum((x->>'paid')::numeric)
+    into v_rows, v_total, v_paid
+    from (
+      select jsonb_build_object(
+               'invoice_id', i.id,
+               'learner', coalesce(l.full_name, '—'),
+               'engagement', coalesce(e.name, '—'),
+               'issued_on', i.created_at::date,
+               'due_on', i.due_on,
+               'status', i.status,
+               'total', coalesce(i.amount, 0),
+               'paid', coalesce((select sum(p.amount) from public.payments p where p.invoice_id = i.id), 0)
+             ) as x
+        from public.invoices i
+        left join public.engagements e on e.id = i.engagement_id
+        left join public.engagement_members em on em.engagement_id = e.id
+        left join public.learners l on l.id = em.learner_id
+       where i.parent_id = v_parent
+    ) s;
+
+  return jsonb_build_object(
+    'ok', true,
+    'parent_id', v_parent,
+    'parent_name', v_name,
+    'currency', (select currency from public.practice_settings where id = 1),
+    'invoices', coalesce(v_rows, '[]'::jsonb),
+    'total_billed', coalesce(v_total, 0),
+    'total_paid', coalesce(v_paid, 0),
+    'balance', coalesce(v_total, 0) - coalesce(v_paid, 0),
+    'generated_at', now());
+end $$;
+grant execute on function public.tc_family_statement(uuid) to authenticated;
+
+-- Keep the registry honest about what is installed.
+insert into public.tc_schema_registry (id, version, packs, note)
+values (1, 'V15', array['v1-core','v2-tutoring-ops','v3-classroom-exams','v4-enterprise-parity',
+                        'v5-ops-parity','v6-cbt-modes','v7-family-access','v9-keepalive-drive',
+                        'v12-quota-guard','v15-family-polls-billing'],
+        'Installed by database/complete-schema.sql')
+on conflict (id) do update
+   set version = excluded.version, applied_at = now(),
+       packs = excluded.packs, note = excluded.note;
+
+select 'Tutoring Connect V15 family portal + rich polls + combined invoicing installed ✅' as status;
+
+-- BEGIN v16-exam-registration.sql
+-- =====================================================================
+-- V16 — EXAM REGISTRATION LIFECYCLE
+-- ---------------------------------------------------------------------
+-- WHAT THIS PACK IS FOR
+--
+-- Before V16, `exam_registrations` was a dead-drop mailbox. A candidate
+-- filled the public form, the row landed in the table, and that was the
+-- end of it. There was no exam number, no way for the candidate to check
+-- anything afterwards, no place to record the fee, no place to record a
+-- score, and no admission decision. The page could not produce a slip, a
+-- result or a letter, so every one of those documents had to be made by
+-- hand outside the system.
+--
+-- School Connect's `entrance.html` does all of that (result slip,
+-- certificate, admission letter, signing officer). This pack gives
+-- Tutoring Connect the same lifecycle, adapted for a tutoring studio that
+-- registers candidates for external boards (WAEC, NECO, JAMB, IGCSE,
+-- IELTS, SAT ...) rather than running its own entrance exam.
+--
+-- THE LIFECYCLE THIS PACK ENABLES
+--
+--   submitted -> verified -> paid -> admitted -> sat -> released
+--
+-- Everything is idempotent: run this file as many times as you like.
+-- It is also already included at the end of database/complete-schema.sql,
+-- so if you run that one file you do NOT need to run this one separately.
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- 1. Widen exam_registrations into a real candidate record.
+--    `add column if not exists` means existing rows are untouched and no
+--    data is lost — this is safe on a live studio.
+-- ---------------------------------------------------------------------
+alter table public.exam_registrations add column if not exists exam_no        text;
+alter table public.exam_registrations add column if not exists nationality    text;
+alter table public.exam_registrations add column if not exists state_of_origin text;
+alter table public.exam_registrations add column if not exists address        text;
+alter table public.exam_registrations add column if not exists prev_school    text;
+alter table public.exam_registrations add column if not exists guardian_phone text;
+alter table public.exam_registrations add column if not exists guardian_email text;
+alter table public.exam_registrations add column if not exists exam_date      date;
+alter table public.exam_registrations add column if not exists exam_time      text;
+alter table public.exam_registrations add column if not exists venue          text;
+alter table public.exam_registrations add column if not exists fee_amount     numeric(12,2);
+alter table public.exam_registrations add column if not exists fee_currency   text default 'NGN';
+alter table public.exam_registrations add column if not exists fee_status     text default 'unpaid';
+alter table public.exam_registrations add column if not exists fee_reference  text;
+alter table public.exam_registrations add column if not exists score          numeric(6,2);
+alter table public.exam_registrations add column if not exists max_score      numeric(6,2);
+alter table public.exam_registrations add column if not exists grade          text;
+alter table public.exam_registrations add column if not exists subject_scores jsonb;
+alter table public.exam_registrations add column if not exists decision       text;
+alter table public.exam_registrations add column if not exists decision_note  text;
+alter table public.exam_registrations add column if not exists decided_at     timestamptz;
+alter table public.exam_registrations add column if not exists officer_name   text;
+alter table public.exam_registrations add column if not exists officer_title  text;
+alter table public.exam_registrations add column if not exists learner_id     uuid;
+alter table public.exam_registrations add column if not exists updated_at     timestamptz default now();
+
+-- One candidate cannot hold two exam numbers, and no number is reused.
+create unique index if not exists exam_registrations_exam_no_uidx
+  on public.exam_registrations (exam_no) where exam_no is not null;
+
+-- Staff filter by these constantly; without them every filter is a seq scan.
+create index if not exists exam_registrations_status_idx  on public.exam_registrations (status);
+create index if not exists exam_registrations_board_idx   on public.exam_registrations (board);
+create index if not exists exam_registrations_created_idx on public.exam_registrations (created_at desc);
+
+-- ---------------------------------------------------------------------
+-- 2. Exam numbers.
+--    A candidate needs a short, human-readable, unique identifier they can
+--    quote on the phone. Format:  <PREFIX>/<BOARD>/<YEAR>/<NNNN>
+--    e.g.  TC/WAEC/2026/0007
+--    A sequence guarantees uniqueness even if two candidates submit in the
+--    same millisecond, which a count(*)+1 in JavaScript cannot.
+-- ---------------------------------------------------------------------
+create sequence if not exists public.exam_no_seq start with 1;
+
+create or replace function public.tc_next_exam_no(p_board text default 'EXAM', p_prefix text default 'TC')
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_n bigint;
+  v_board text;
+begin
+  v_n := nextval('public.exam_no_seq');
+  -- Normalise the board into a short slug: "UTME / JAMB" -> "UTMEJAMB"
+  v_board := upper(regexp_replace(coalesce(nullif(trim(p_board), ''), 'EXAM'), '[^A-Za-z0-9]', '', 'g'));
+  if v_board = '' then v_board := 'EXAM'; end if;
+  return coalesce(nullif(trim(p_prefix), ''), 'TC')
+      || '/' || left(v_board, 8)
+      || '/' || to_char(now(), 'YYYY')
+      || '/' || lpad(v_n::text, 4, '0');
+end $$;
+
+grant execute on function public.tc_next_exam_no(text, text) to anon, authenticated;
+
+-- ---------------------------------------------------------------------
+-- 3. Public registration, done safely.
+--    The anon role must be able to CREATE a registration but must never be
+--    able to READ the table — otherwise anybody could enumerate every
+--    candidate's phone number, date of birth and guardian details. So the
+--    insert goes through a SECURITY DEFINER function that returns only the
+--    new candidate's own exam number, and nothing else.
+-- ---------------------------------------------------------------------
+create or replace function public.tc_register_candidate(p jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_code   text := nullif(trim(coalesce(p->>'code','')), '');
+  v_link   public.exam_reg_links%rowtype;
+  v_no     text;
+  v_id     uuid;
+begin
+  if coalesce(trim(p->>'full_name'), '') = '' then
+    raise exception 'Full name is required';
+  end if;
+
+  -- If the candidate arrived through a registration link, honour that
+  -- link's rules: it must be open, unexpired and under its usage cap.
+  if v_code is not null then
+    select * into v_link from public.exam_reg_links where code = v_code;
+    if not found then
+      raise exception 'That registration link does not exist';
+    end if;
+    if v_link.status <> 'open' then
+      raise exception 'That registration link is closed';
+    end if;
+    if v_link.expires_on is not null and v_link.expires_on < current_date then
+      raise exception 'That registration link expired on %', v_link.expires_on;
+    end if;
+    if v_link.max_uses is not null and coalesce(v_link.uses, 0) >= v_link.max_uses then
+      raise exception 'That registration link has reached its limit of % registrations', v_link.max_uses;
+    end if;
+  end if;
+
+  v_no := public.tc_next_exam_no(coalesce(p->>'board', v_link.board, 'EXAM'), coalesce(p->>'prefix','TC'));
+
+  insert into public.exam_registrations (
+    code, exam_no, full_name, student_no, email, phone, dob, sex, id_no,
+    board, series, centre, subjects, photo_url, doc_url, guardian, notes,
+    nationality, state_of_origin, address, prev_school,
+    guardian_phone, guardian_email, status
+  ) values (
+    v_code, v_no,
+    trim(p->>'full_name'), nullif(trim(coalesce(p->>'student_no','')),''),
+    nullif(trim(coalesce(p->>'email','')),''),   nullif(trim(coalesce(p->>'phone','')),''),
+    nullif(p->>'dob','')::date,                  nullif(trim(coalesce(p->>'sex','')),''),
+    nullif(trim(coalesce(p->>'id_no','')),''),
+    coalesce(nullif(trim(coalesce(p->>'board','')),''), v_link.board),
+    coalesce(nullif(trim(coalesce(p->>'series','')),''), v_link.series),
+    nullif(trim(coalesce(p->>'centre','')),''),  nullif(trim(coalesce(p->>'subjects','')),''),
+    nullif(trim(coalesce(p->>'photo_url','')),''), nullif(trim(coalesce(p->>'doc_url','')),''),
+    nullif(trim(coalesce(p->>'guardian','')),''),  nullif(trim(coalesce(p->>'notes','')),''),
+    nullif(trim(coalesce(p->>'nationality','')),''), nullif(trim(coalesce(p->>'state_of_origin','')),''),
+    nullif(trim(coalesce(p->>'address','')),''),     nullif(trim(coalesce(p->>'prev_school','')),''),
+    nullif(trim(coalesce(p->>'guardian_phone','')),''), nullif(trim(coalesce(p->>'guardian_email','')),''),
+    'submitted'
+  ) returning id into v_id;
+
+  if v_code is not null then
+    update public.exam_reg_links set uses = coalesce(uses, 0) + 1 where code = v_code;
+  end if;
+
+  return jsonb_build_object('ok', true, 'id', v_id, 'exam_no', v_no,
+                            'full_name', trim(p->>'full_name'));
+end $$;
+
+grant execute on function public.tc_register_candidate(jsonb) to anon, authenticated;
+
+-- ---------------------------------------------------------------------
+-- 4. Candidate self-service lookup.
+--    A candidate checks their own slip or result with two facts only they
+--    and the studio know: their exam number AND their surname. Surname is
+--    the shared secret that stops someone walking the number sequence.
+--    Personal contact details are deliberately NOT returned.
+-- ---------------------------------------------------------------------
+create or replace function public.tc_candidate_lookup(p_exam_no text, p_surname text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare r public.exam_registrations%rowtype;
+begin
+  if coalesce(trim(p_exam_no), '') = '' or coalesce(trim(p_surname), '') = '' then
+    return jsonb_build_object('ok', false, 'error', 'Enter both your exam number and your surname.');
+  end if;
+
+  select * into r from public.exam_registrations
+   where upper(exam_no) = upper(trim(p_exam_no))
+     and full_name ilike '%' || trim(p_surname) || '%'
+   limit 1;
+
+  if not found then
+    return jsonb_build_object('ok', false,
+      'error', 'No candidate matches that exam number and surname. Check both and try again.');
+  end if;
+
+  return jsonb_build_object('ok', true, 'candidate', jsonb_build_object(
+    'exam_no', r.exam_no, 'full_name', r.full_name, 'board', r.board,
+    'series', r.series, 'centre', r.centre, 'subjects', r.subjects,
+    'photo_url', r.photo_url, 'status', r.status,
+    'exam_date', r.exam_date, 'exam_time', r.exam_time, 'venue', r.venue,
+    'fee_status', r.fee_status, 'fee_amount', r.fee_amount, 'fee_currency', r.fee_currency,
+    -- Scores are only revealed once staff have moved the record to 'released'.
+    'score',     case when r.status = 'released' then r.score     else null end,
+    'max_score', case when r.status = 'released' then r.max_score else null end,
+    'grade',     case when r.status = 'released' then r.grade     else null end,
+    'subject_scores', case when r.status = 'released' then r.subject_scores else null end,
+    'decision',      case when r.status = 'released' then r.decision      else null end,
+    'decision_note', case when r.status = 'released' then r.decision_note else null end,
+    'officer_name',  r.officer_name, 'officer_title', r.officer_title,
+    'released', (r.status = 'released')
+  ));
+end $$;
+
+grant execute on function public.tc_candidate_lookup(text, text) to anon, authenticated;
+
+-- ---------------------------------------------------------------------
+-- 5. Staff dashboard numbers in one round-trip.
+-- ---------------------------------------------------------------------
+create or replace function public.tc_exam_reg_stats()
+returns jsonb
+language sql
+security definer
+set search_path = public
+as $$
+  select jsonb_build_object(
+    'total',     count(*),
+    'submitted', count(*) filter (where status = 'submitted'),
+    'verified',  count(*) filter (where status = 'verified'),
+    'paid',      count(*) filter (where fee_status = 'paid'),
+    'unpaid',    count(*) filter (where coalesce(fee_status,'unpaid') <> 'paid'),
+    'released',  count(*) filter (where status = 'released'),
+    'admitted',  count(*) filter (where decision = 'admitted'),
+    'fees_collected', coalesce(sum(fee_amount) filter (where fee_status = 'paid'), 0),
+    'fees_outstanding', coalesce(sum(fee_amount) filter (where coalesce(fee_status,'unpaid') <> 'paid'), 0),
+    'this_month', count(*) filter (where created_at >= date_trunc('month', now())),
+    'boards', (
+      select coalesce(jsonb_object_agg(b, n), '{}'::jsonb)
+      from (select coalesce(board,'—') as b, count(*) as n
+              from public.exam_registrations group by 1 order by 2 desc limit 8) t
+    )
+  ) from public.exam_registrations;
+$$;
+
+grant execute on function public.tc_exam_reg_stats() to authenticated;
+revoke execute on function public.tc_exam_reg_stats() from anon;
+
+-- ---------------------------------------------------------------------
+-- 6. Convert an admitted candidate into a learner, in one click.
+--    Idempotent: calling it twice returns the learner already created
+--    instead of making a duplicate.
+-- ---------------------------------------------------------------------
+create or replace function public.tc_exam_to_learner(p_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  r public.exam_registrations%rowtype;
+  v_learner uuid;
+begin
+  if not public.is_tutor() then
+    raise exception 'Only studio staff can enrol a candidate.';
+  end if;
+
+  select * into r from public.exam_registrations where id = p_id;
+  if not found then
+    return jsonb_build_object('ok', false, 'error', 'Candidate not found.');
+  end if;
+  if r.learner_id is not null then
+    return jsonb_build_object('ok', true, 'learner_id', r.learner_id, 'already', true);
+  end if;
+
+  insert into public.learners (full_name, email, phone, dob, notes)
+  values (r.full_name, r.email, r.phone, r.dob,
+          'Enrolled from exam registration ' || coalesce(r.exam_no, '(no number)'))
+  returning id into v_learner;
+
+  update public.exam_registrations
+     set learner_id = v_learner, updated_at = now()
+   where id = p_id;
+
+  return jsonb_build_object('ok', true, 'learner_id', v_learner, 'already', false);
+end $$;
+
+grant execute on function public.tc_exam_to_learner(uuid) to authenticated;
+revoke execute on function public.tc_exam_to_learner(uuid) from anon;
+
+-- ---------------------------------------------------------------------
+-- 7. Tighten the anon insert policy.
+--    V3 shipped `with check (true)`, which let anyone insert anything into
+--    the table directly, bypassing link rules and self-assigning any exam
+--    number they liked. Registration now goes exclusively through
+--    tc_register_candidate(), which validates the link and allocates the
+--    number from the sequence. Anon keeps NO direct table rights.
+-- ---------------------------------------------------------------------
+drop policy if exists exam_reg_ins on public.exam_registrations;
+revoke insert on public.exam_registrations from anon;
+
+-- Staff keep full read/write (this policy already existed; restated so the
+-- pack is self-contained and safe to run on its own).
+drop policy if exists exam_reg_staff on public.exam_registrations;
+create policy exam_reg_staff on public.exam_registrations
+  for all using (public.is_tutor()) with check (public.is_tutor());
+
+select 'V16 exam registration lifecycle installed ✅' as status;
+
+-- =====================================================================
+-- V16b — NO-SHOW TRACKING (from the competitor benchmark)
+-- ---------------------------------------------------------------------
+-- Every platform in docs/COMPETITOR-BENCHMARK.md separates a no-show from
+-- an absence, and reports a "no-show rate", because the two differ
+-- commercially: an absence the family warned you about frees the slot; a
+-- no-show burns the tutor's hour and is chargeable. This studio could not
+-- tell them apart, so it could not prove its reminders were working.
+-- =====================================================================
+alter table public.session_attendance add column if not exists chargeable  boolean default true;
+alter table public.session_attendance add column if not exists notified_at timestamptz;
+
+create index if not exists session_attendance_status_idx on public.session_attendance (status);
+
+-- No-show rate over any window, per tutor or studio-wide.
+create or replace function public.tc_no_show_report(p_days int default 90)
+returns jsonb
+language sql
+security definer
+set search_path = public
+as $$
+  with a as (
+    select sa.*
+      from public.session_attendance sa
+      join public.sessions s on s.id = sa.session_id
+     where s.starts_at >= now() - make_interval(days => greatest(p_days, 1))
+  )
+  select jsonb_build_object(
+    'window_days', p_days,
+    'total',    count(*),
+    'present',  count(*) filter (where status in ('present','late')),
+    'absent',   count(*) filter (where status = 'absent'),
+    'excused',  count(*) filter (where status = 'excused'),
+    'no_show',  count(*) filter (where status = 'no-show'),
+    'late_cancel', count(*) filter (where status = 'cancelled-late'),
+    -- The headline industry metric.
+    'no_show_rate_pct', case when count(*) = 0 then 0
+      else round(100.0 * count(*) filter (where status = 'no-show') / count(*), 1) end,
+    'attendance_rate_pct', case when count(*) = 0 then 0
+      else round(100.0 * count(*) filter (where status in ('present','late')) / count(*), 1) end,
+    'chargeable_missed', count(*) filter (where status in ('no-show','cancelled-late') and coalesce(chargeable, true))
+  ) from a;
+$$;
+
+grant execute on function public.tc_no_show_report(int) to authenticated;
+revoke execute on function public.tc_no_show_report(int) from anon;
+
+select 'V16b no-show tracking installed ✅' as status;
+
+
+-- Keep the registry honest about what is installed.
+insert into public.tc_schema_registry (id, version, packs, note)
+values (1, 'V16', array['v1-core','v2-tutoring-ops','v3-classroom-exams','v4-enterprise-parity',
+                        'v5-ops-parity','v6-cbt-modes','v7-family-access','v9-keepalive-drive',
+                        'v12-quota-guard','v15-family-polls-billing','v16-exam-registration'],
+        'Installed by database/complete-schema.sql')
+on conflict (id) do update
+   set version = excluded.version, applied_at = now(),
+       packs = excluded.packs, note = excluded.note;
+
+select 'Tutoring Connect V16 — exam registration lifecycle + data workbench installed ✅' as status;
+
+-- BEGIN v17-licensing-and-family-billing.sql
+-- =====================================================================
+-- V17 — REAL LICENCE ENFORCEMENT  +  SIBLING / FAMILY BILLING
+-- ---------------------------------------------------------------------
+-- PART A — LICENSING (the "item 14" work, corrected)
+--
+-- I previously told you the builder did not expose the one-time vs
+-- subscription choice. That was WRONG — builder.html has exposed it since
+-- V8 (the radio pair plus plan, cycle, expiry, grace, renewal URL and
+-- registry URL). Repeating a claim without checking is the same mistake I
+-- made about licensing in V15, and I am recording it here rather than
+-- quietly fixing it.
+--
+-- The real defect is much more serious, and nobody had named it:
+--
+--     LICENCE ENFORCEMENT WAS ENTIRELY COSMETIC.
+--
+-- assets/js/license.js evaluates the licence in the BROWSER and then calls
+-- paint(), which appends a yellow bar and a modal <div> to the page. That
+-- is the whole of the enforcement. Any user can:
+--
+--     * press F12 and delete #tc-license-lock, or
+--     * run  License.paint = () => {}  in the console, or
+--     * simply block assets/js/license.js in the network tab
+--
+-- ...and carry on using an expired studio for ever, with full write access.
+-- A "locked" studio was never locked. Worse, the site_license table already
+-- had a `signature` column that nothing on earth read or wrote.
+--
+-- This pack moves the decision to PostgreSQL, where the browser cannot
+-- argue with it:
+--
+--     tc_license_status()    server-computed truth, safe to show anyone staff
+--     tc_license_writable()  the single boolean the database enforces
+--     tc_license_guard()     a trigger that refuses writes when not writable
+--
+-- Design decisions that matter:
+--
+--   1. READS ARE NEVER BLOCKED. An expired studio stays fully readable and
+--      fully exportable. "Your data is untouched" becomes literally true
+--      instead of a reassuring sentence in a modal. Holding a client's data
+--      hostage would be indefensible.
+--   2. THE LICENCE TABLE IS NEVER GUARDED, or an expired studio could never
+--      be renewed — you would have bricked it permanently.
+--   3. ENFORCEMENT IS A CHOICE, stored per studio:
+--          'banner'   — warn only (what the code did before; still the
+--                       default for one-time/lifetime studios)
+--          'readonly' — reads and exports fine, writes refused
+--          'lock'     — writes refused, and the UI locks too
+--   4. LIFETIME LICENCES ARE NEVER BLOCKED, whatever the enforcement mode.
+--      A one-time purchase does not expire. That is what one-time means.
+--
+-- PART B — SIBLING / FAMILY BILLING
+--
+-- docs/COMPETITOR-BENCHMARK.md flagged automatic sibling discounting as an
+-- open gap: Jackrabbit and TutorBird have it, and Nigerian centres openly
+-- advertise "15% off the second child, 25% off the third". V15 gave us
+-- combined family statements; this adds the discount arithmetic to them.
+--
+-- Idempotent. Already appended to database/complete-schema.sql.
+-- =====================================================================
+
+
+-- =====================================================================
+-- PART A — LICENSING
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- A1. Widen site_license into a real licence record.
+-- ---------------------------------------------------------------------
+alter table public.site_license add column if not exists tier            text default 'studio';
+alter table public.site_license add column if not exists enforcement     text default 'banner';
+alter table public.site_license add column if not exists seats_learners  int;
+alter table public.site_license add column if not exists seats_tutors    int;
+alter table public.site_license add column if not exists issued_to       text;
+alter table public.site_license add column if not exists issued_on       date default current_date;
+alter table public.site_license add column if not exists licence_key     text;
+alter table public.site_license add column if not exists last_checked_at timestamptz;
+alter table public.site_license add column if not exists notes           text;
+
+-- There must always be exactly one licence row, or every check below
+-- silently returns "no licence" and the studio locks itself out.
+insert into public.site_license (id, model, status, enforcement)
+values (1, 'lifetime', 'active', 'banner')
+on conflict (id) do nothing;
+
+-- An audit trail of every licence change. Renewals are money; money needs
+-- a paper trail, and "who extended this and when" must be answerable.
+create table if not exists public.tc_license_history (
+  id          bigserial primary key,
+  changed_at  timestamptz not null default now(),
+  changed_by  uuid,
+  action      text,
+  old_state   jsonb,
+  new_state   jsonb,
+  note        text
+);
+
+alter table public.tc_license_history enable row level security;
+grant select on public.tc_license_history to authenticated;
+revoke all on public.tc_license_history from anon;
+
+drop policy if exists tc_license_history_read on public.tc_license_history;
+create policy tc_license_history_read on public.tc_license_history
+  for select using (public.is_tutor());
+
+
+-- ---------------------------------------------------------------------
+-- A2. The server-side truth. This is what the UI must trust — not its own
+--     arithmetic on a value it read out of config.js.
+-- ---------------------------------------------------------------------
+create or replace function public.tc_license_status()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  l            public.site_license%rowtype;
+  v_left       int;
+  v_state      text;
+  v_learners   int := 0;
+  v_tutors     int := 0;
+  v_over       boolean := false;
+begin
+  select * into l from public.site_license where id = 1;
+  if not found then
+    -- Fail OPEN, not closed. A missing licence row is our bug, not the
+    -- studio's, and it must never take a paying client's studio down.
+    return jsonb_build_object('ok', true, 'state', 'ok', 'model', 'lifetime',
+                              'enforcement', 'banner', 'writable', true,
+                              'reason', 'no_licence_row_fail_open');
+  end if;
+
+  -- Seat usage. Wrapped so a missing table can never break the check.
+  begin
+    select count(*) into v_learners from public.learners;
+  exception when others then v_learners := 0; end;
+  begin
+    select count(*) into v_tutors from public.tutors;
+  exception when others then v_tutors := 0; end;
+
+  v_over := (l.seats_learners is not null and v_learners > l.seats_learners)
+         or (l.seats_tutors   is not null and v_tutors   > l.seats_tutors);
+
+  -- A one-time / lifetime licence never expires. That is the whole point.
+  if coalesce(l.model, 'lifetime') in ('lifetime', 'one_time', 'perpetual')
+     or l.expires_on is null then
+    v_state := case when lower(coalesce(l.status, 'active')) = 'suspended'
+                    then 'suspended' else 'ok' end;
+    v_left  := null;
+  elsif lower(coalesce(l.status, 'active')) = 'suspended' then
+    v_state := 'suspended';
+    v_left  := null;
+  else
+    v_left := (l.expires_on - current_date);
+    if    v_left >= 31 then v_state := 'ok';
+    elsif v_left >= 0  then v_state := 'remind';
+    elsif abs(v_left) <= coalesce(l.grace_days, 7) then v_state := 'grace';
+    else  v_state := 'expired';
+    end if;
+  end if;
+
+  return jsonb_build_object(
+    'ok', true,
+    'model',        coalesce(l.model, 'lifetime'),
+    'tier',         coalesce(l.tier, 'studio'),
+    'plan',         l.plan,
+    'status',       coalesce(l.status, 'active'),
+    'enforcement',  coalesce(l.enforcement, 'banner'),
+    'state',        v_state,
+    'expires_on',   l.expires_on,
+    'days_left',    v_left,
+    'grace_days',   coalesce(l.grace_days, 7),
+    'issued_to',    l.issued_to,
+    'issued_on',    l.issued_on,
+    'renew_url',    l.renew_url,
+    'lock_message', l.lock_message,
+    'seats', jsonb_build_object(
+      'learners_used', v_learners, 'learners_cap', l.seats_learners,
+      'tutors_used',   v_tutors,   'tutors_cap',   l.seats_tutors,
+      'over_limit',    v_over),
+    -- The one field the whole system hangs off.
+    'writable', public.tc_license_writable(),
+    'checked_at', now()
+  );
+end $$;
+
+grant execute on function public.tc_license_status() to authenticated;
+revoke execute on function public.tc_license_status() from anon;
+
+
+-- ---------------------------------------------------------------------
+-- A3. The single boolean the database enforces.
+--     Deliberately generous: it only ever returns false for a SUBSCRIPTION
+--     that is genuinely past expiry+grace (or suspended) AND whose owner
+--     chose an enforcing mode.
+-- ---------------------------------------------------------------------
+create or replace function public.tc_license_writable()
+returns boolean
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  l      public.site_license%rowtype;
+  v_left int;
+begin
+  select * into l from public.site_license where id = 1;
+  if not found then return true; end if;                     -- fail open
+
+  -- Owner opted out of hard enforcement: warn in the UI, never block.
+  if coalesce(l.enforcement, 'banner') = 'banner' then return true; end if;
+
+  -- A one-time purchase does not expire.
+  if coalesce(l.model, 'lifetime') in ('lifetime', 'one_time', 'perpetual') then
+    return true;
+  end if;
+
+  if lower(coalesce(l.status, 'active')) = 'suspended' then return false; end if;
+  if l.expires_on is null then return true; end if;
+
+  v_left := (l.expires_on - current_date);
+  -- Inside the term, or inside grace: writable.
+  return v_left >= -coalesce(l.grace_days, 7);
+end $$;
+
+grant execute on function public.tc_license_writable() to authenticated, anon;
+
+
+-- ---------------------------------------------------------------------
+-- A4. The guard trigger. This is the part the browser cannot delete.
+-- ---------------------------------------------------------------------
+create or replace function public.tc_license_guard()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if public.tc_license_writable() then
+    return case tg_op when 'DELETE' then old else new end;
+  end if;
+  raise exception
+    'This studio''s subscription has expired and the licence is set to enforce. '
+    'Your data is safe and can still be read, printed and exported — only new '
+    'changes are paused. Renew the licence on the License page to continue.'
+    using errcode = 'check_violation',
+          hint = 'Open license.html, or contact HMG with your studio name.';
+end $$;
+
+
+-- ---------------------------------------------------------------------
+-- A5. Attach the guard to the operational tables.
+--     NOT to site_license (or renewal becomes impossible), NOT to the
+--     licence history, NOT to the keep-alive tables (the studio must stay
+--     awake so it can be renewed), and NOT to anything read-only.
+-- ---------------------------------------------------------------------
+do $$
+declare
+  t text;
+  guarded text[] := array[
+    'learners','tutors','parents','engagements','engagement_members','sessions',
+    'session_attendance','session_notes','invoices','payments','packages',
+    'assignments','assessments','goals','mastery','cbt_exams','cbt_results',
+    'exam_registrations','announcements','messages','resources','documents',
+    'events','polls','bookings','curriculum','lesson_plans'
+  ];
+begin
+  foreach t in array guarded loop
+    if exists (select 1 from information_schema.tables
+                where table_schema = 'public' and table_name = t) then
+      execute format('drop trigger if exists tc_license_guard_trg on public.%I', t);
+      execute format(
+        'create trigger tc_license_guard_trg before insert or update or delete '
+        'on public.%I for each row execute function public.tc_license_guard()', t);
+    end if;
+  end loop;
+end $$;
+
+
+-- ---------------------------------------------------------------------
+-- A6. Admin RPC to change the licence, with an audit entry.
+-- ---------------------------------------------------------------------
+create or replace function public.tc_license_set(p jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_old jsonb;
+  v_new jsonb;
+begin
+  if not public.is_admin() then
+    raise exception 'Only a studio administrator can change the licence.';
+  end if;
+
+  select to_jsonb(l) into v_old from public.site_license l where id = 1;
+
+  update public.site_license set
+    model          = coalesce(nullif(trim(coalesce(p->>'model','')),''),          model),
+    tier           = coalesce(nullif(trim(coalesce(p->>'tier','')),''),           tier),
+    plan           = coalesce(nullif(trim(coalesce(p->>'plan','')),''),           plan),
+    status         = coalesce(nullif(trim(coalesce(p->>'status','')),''),         status),
+    enforcement    = coalesce(nullif(trim(coalesce(p->>'enforcement','')),''),    enforcement),
+    expires_on     = coalesce(nullif(p->>'expires_on','')::date,                  expires_on),
+    grace_days     = coalesce(nullif(p->>'grace_days','')::int,                   grace_days),
+    seats_learners = coalesce(nullif(p->>'seats_learners','')::int,               seats_learners),
+    seats_tutors   = coalesce(nullif(p->>'seats_tutors','')::int,                 seats_tutors),
+    issued_to      = coalesce(nullif(trim(coalesce(p->>'issued_to','')),''),      issued_to),
+    renew_url      = coalesce(nullif(trim(coalesce(p->>'renew_url','')),''),      renew_url),
+    lock_message   = coalesce(nullif(trim(coalesce(p->>'lock_message','')),''),   lock_message),
+    licence_key    = coalesce(nullif(trim(coalesce(p->>'licence_key','')),''),    licence_key),
+    last_checked_at = now()
+  where id = 1;
+
+  select to_jsonb(l) into v_new from public.site_license l where id = 1;
+
+  insert into public.tc_license_history (changed_by, action, old_state, new_state, note)
+  values (auth.uid(), coalesce(p->>'action', 'update'), v_old, v_new, p->>'note');
+
+  return public.tc_license_status();
+end $$;
+
+grant execute on function public.tc_license_set(jsonb) to authenticated;
+revoke execute on function public.tc_license_set(jsonb) from anon;
+
+
+-- ---------------------------------------------------------------------
+-- A7. Renew in one call — the common case, so it should not need a form.
+-- ---------------------------------------------------------------------
+create or replace function public.tc_license_renew(p_months int default 3, p_note text default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  l public.site_license%rowtype;
+  v_base date;
+  v_old jsonb;
+begin
+  if not public.is_admin() then
+    raise exception 'Only a studio administrator can renew the licence.';
+  end if;
+
+  select * into l from public.site_license where id = 1;
+  select to_jsonb(x) into v_old from public.site_license x where id = 1;
+
+  -- Renewing early must EXTEND the term, not truncate it. Renewing late
+  -- starts from today, so nobody is billed for the lapsed period.
+  v_base := greatest(coalesce(l.expires_on, current_date), current_date);
+
+  update public.site_license
+     set expires_on      = (v_base + make_interval(months => greatest(p_months, 1)))::date,
+         status          = 'active',
+         last_checked_at = now()
+   where id = 1;
+
+  insert into public.tc_license_history (changed_by, action, old_state, new_state, note)
+  select auth.uid(), 'renew', v_old, to_jsonb(x),
+         coalesce(p_note, 'Renewed by ' || greatest(p_months,1) || ' month(s)')
+    from public.site_license x where id = 1;
+
+  return public.tc_license_status();
+end $$;
+
+grant execute on function public.tc_license_renew(int, text) to authenticated;
+revoke execute on function public.tc_license_renew(int, text) from anon;
+
+
+-- =====================================================================
+-- PART B — SIBLING / FAMILY BILLING
+-- =====================================================================
+
+-- ---------------------------------------------------------------------
+-- B1. Discount rules live in settings so the studio owner controls them
+--     without anyone touching code.
+-- ---------------------------------------------------------------------
+alter table public.practice_settings add column if not exists sibling_discount_2   numeric(5,2) default 0;
+alter table public.practice_settings add column if not exists sibling_discount_3   numeric(5,2) default 0;
+alter table public.practice_settings add column if not exists sibling_discount_4   numeric(5,2) default 0;
+alter table public.practice_settings add column if not exists sibling_discount_on  text default 'per_child';
+alter table public.practice_settings add column if not exists family_billing_note  text;
+
+comment on column public.practice_settings.sibling_discount_on is
+  'per_child = the discount applies to each additional child''s own invoices; '
+  'family_total = the discount applies to the whole family balance.';
+
+
+-- ---------------------------------------------------------------------
+-- B2. Compute the discount a family qualifies for.
+--     Nigerian centres commonly advertise 15% off the second child and
+--     25% off the third (docs/COMPETITOR-BENCHMARK.md), so the rule is
+--     "highest band reached", not a sum of bands.
+-- ---------------------------------------------------------------------
+create or replace function public.tc_sibling_discount_pct(p_children int)
+returns numeric
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(
+    case
+      when coalesce(p_children, 0) >= 4 then nullif(s.sibling_discount_4, 0)
+      when p_children = 3 then nullif(s.sibling_discount_3, 0)
+      when p_children = 2 then nullif(s.sibling_discount_2, 0)
+      else 0
+    end,
+    -- If a higher band is blank, fall back to the best lower band that is set.
+    case
+      when coalesce(p_children, 0) >= 3 then greatest(coalesce(s.sibling_discount_3,0), coalesce(s.sibling_discount_2,0))
+      when p_children = 2 then coalesce(s.sibling_discount_2, 0)
+      else 0
+    end)
+  from public.practice_settings s where s.id = 1;
+$$;
+
+grant execute on function public.tc_sibling_discount_pct(int) to authenticated;
+
+
+-- ---------------------------------------------------------------------
+-- B3. Rebuild tc_family_statement with sibling discounting.
+--     Signature is unchanged and every key the V15 version returned is
+--     still returned, so invoices.html keeps working untouched. New keys
+--     are added alongside.
+-- ---------------------------------------------------------------------
+create or replace function public.tc_family_statement(p_parent uuid default null)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_parent uuid; v_rows jsonb; v_total numeric; v_paid numeric; v_name text;
+  v_children int := 0; v_pct numeric := 0; v_basis text; v_discount numeric := 0;
+  v_kids jsonb;
+begin
+  -- A parent may only ever pull their own statement; staff may pull any.
+  if p_parent is null then
+    select id into v_parent from public.parents where user_id = auth.uid() limit 1;
+  else
+    if public.is_tutor() then v_parent := p_parent;
+    else
+      select id into v_parent from public.parents
+       where id = p_parent and user_id = auth.uid() limit 1;
+    end if;
+  end if;
+  if v_parent is null then
+    return jsonb_build_object('ok', false, 'error', 'no_parent_record');
+  end if;
+
+  select full_name into v_name from public.parents where id = v_parent;
+
+  -- How many children does this family actually have on the roll?
+  select count(distinct pl.learner_id) into v_children
+    from public.parent_learner pl where pl.parent_id = v_parent;
+
+  select jsonb_agg(jsonb_build_object('learner_id', l.id, 'learner', l.full_name))
+    into v_kids
+    from public.parent_learner pl
+    join public.learners l on l.id = pl.learner_id
+   where pl.parent_id = v_parent;
+
+  select coalesce(sibling_discount_on, 'per_child') into v_basis
+    from public.practice_settings where id = 1;
+  v_pct := coalesce(public.tc_sibling_discount_pct(v_children), 0);
+
+  select jsonb_agg(x order by x->>'issued_on'), sum((x->>'total')::numeric), sum((x->>'paid')::numeric)
+    into v_rows, v_total, v_paid
+    from (
+      select jsonb_build_object(
+               'invoice_id', i.id,
+               'learner', coalesce(l.full_name, '—'),
+               'engagement', coalesce(e.name, '—'),
+               'issued_on', i.created_at::date,
+               'due_on', i.due_on,
+               'status', i.status,
+               'total', coalesce(i.amount, 0),
+               'paid', coalesce((select sum(p.amount) from public.payments p where p.invoice_id = i.id), 0)
+             ) as x
+        from public.invoices i
+        left join public.engagements e on e.id = i.engagement_id
+        left join public.engagement_members em on em.engagement_id = e.id
+        left join public.learners l on l.id = em.learner_id
+       where i.parent_id = v_parent
+    ) s;
+
+  v_total := coalesce(v_total, 0);
+  v_paid  := coalesce(v_paid, 0);
+
+  -- The discount is always calculated on what is still OWED, never on
+  -- money already received — you cannot discount a payment retrospectively.
+  if v_pct > 0 and v_children >= 2 then
+    v_discount := round(greatest(v_total - v_paid, 0) * v_pct / 100.0, 2);
+  end if;
+
+  return jsonb_build_object(
+    'ok', true,
+    'parent_id', v_parent,
+    'parent_name', v_name,
+    'currency', (select currency from public.practice_settings where id = 1),
+    'invoices', coalesce(v_rows, '[]'::jsonb),
+    'total_billed', v_total,
+    'total_paid', v_paid,
+    'balance', v_total - v_paid,                 -- pre-discount, as before
+    -- V17 additions
+    'children_count', v_children,
+    'children', coalesce(v_kids, '[]'::jsonb),
+    'sibling_discount_pct', v_pct,
+    'sibling_discount_basis', v_basis,
+    'sibling_discount_amount', v_discount,
+    'balance_after_discount', (v_total - v_paid) - v_discount,
+    'family_note', (select family_billing_note from public.practice_settings where id = 1),
+    'generated_at', now());
+end $$;
+
+grant execute on function public.tc_family_statement(uuid) to authenticated;
+
+select 'V17 licence enforcement + sibling billing installed ✅' as status;
+
+
+-- Keep the registry honest about what is installed.
+insert into public.tc_schema_registry (id, version, packs, note)
+values (1, 'V17', array['v1-core','v2-tutoring-ops','v3-classroom-exams','v4-enterprise-parity',
+                        'v5-ops-parity','v6-cbt-modes','v7-family-access','v9-keepalive-drive',
+                        'v12-quota-guard','v15-family-polls-billing','v16-exam-registration',
+                        'v17-licensing-family-billing'],
+        'Installed by database/complete-schema.sql')
+on conflict (id) do update
+   set version = excluded.version, applied_at = now(),
+       packs = excluded.packs, note = excluded.note;
+
+select 'Tutoring Connect V17 — enforced licensing + sibling billing installed ✅' as status;
+
+
