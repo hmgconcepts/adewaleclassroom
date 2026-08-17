@@ -309,6 +309,64 @@ ${extra.source || '[PASTE YOUTUBE OR DRIVE VIDEO LINK]'}
 Ask about timestamps, claims, worked examples on screen, and what to try next.
 Use: video_based, short_answer, mcq, true_false, scenario_mcq.
 Put the video URL in media_url. Mention a timestamp in the question where useful.`,
+      /* ---- School Connect parity packs (V11) ---- */
+      mcq_only: `${head}
+MCQ-ONLY STRICT PACK. Every single row MUST be type=mcq with EXACTLY four
+options a,b,c,d and one unambiguous key. No essays, no numeric, no blanks.
+answer must be the FULL TEXT of the correct option, copied character-for-character
+from the matching column. Reject any distractor that could also be argued correct.
+Vary the position of the key so it is not always "a".`,
+
+      exam_board: `${head}
+EXAM-BOARD PAPER in the house style of ${extra.board || '[WAEC / NECO / UTME / IGCSE / IELTS / SAT]'}.
+Mirror that board's real conventions: command words (state, explain, evaluate,
+calculate), mark weighting, and the balance of objective to theory items.
+Where the board uses a passage or data table, put it in the passage column.
+Sequence from easiest to hardest exactly as a real paper does.`,
+
+      /* ---- Tutoring Connect enhancements beyond School Connect ---- */
+      marking_scheme: `You are an expert examiner writing a MARK SCHEME (not questions).
+Topic: "${topic}". Level: ${klass || 'tutoring learner'}.
+Return ONLY CSV with headers:
+question_ref,criterion,descriptor,marks,common_error,feedback_if_missed
+Write one row per awardable point, in the order a marker would award them.
+"feedback_if_missed" must be a sentence a tutor can paste straight to a parent.`,
+
+      differentiated: `${head}
+DIFFERENTIATED THREE-TIER SET on "${topic}". Produce ${count} rows split evenly:
+one third SUPPORT (scaffolded, smaller numbers, a hint inside the passage column),
+one third CORE (grade-level), one third STRETCH (multi-step, exam-standard).
+Begin every question text with [SUPPORT], [CORE] or [STRETCH] so the tutor can
+filter, and keep the CSV otherwise identical in shape.`,
+
+      misconception: `${head}
+DIAGNOSTIC MISCONCEPTION SET on "${topic}".
+Every row must be mcq where EACH WRONG OPTION encodes a specific, named
+misconception a real learner holds — not filler. In the explanation column,
+name the misconception each distractor represents and how to correct it.
+This produces a quiz whose wrong answers are as informative as the right one.`,
+
+      multi_subject: `${head}
+MULTI-SUBJECT PAPER covering: ${extra.subjects || '[LIST THE SUBJECTS]'}.
+Produce ${count} rows TOTAL, split as evenly as possible across those subjects.
+The "subject" column is mandatory on every row and must exactly match one of the
+listed subject names — Tutoring Connect uses it to build the subject tabs and to
+write one scoresheet row per subject.
+Never let a question from one subject reference another.`,
+
+      past_paper: `${head}
+Work from this PAST PAPER / resource link (do not invent its contents beyond what
+is reasonable for the stated topic):
+${extra.source || '[PASTE THE PAST-PAPER OR DRIVE LINK]'}
+Produce fresh questions in the SAME STYLE and difficulty as that paper — do not
+copy it verbatim. Put the source in media_url so the learner can compare after.`,
+
+      oral_practice: `${head}
+SPEAKING / ORAL PRACTICE set for "${topic}" (IELTS-style or language oral).
+Use type=oral_prompt for each row. The question is the prompt the learner speaks
+to; the explanation column holds the assessor's checklist of what a strong
+response contains. Put a model-answer video link in media_url where useful.`,
+
       reading_pack: `${head}
 The learner completed a READING ASSIGNMENT pack titled "${topic}" with these links:
 ${extra.source || '[LIST THE ARTICLE + VIDEO LINKS]'}

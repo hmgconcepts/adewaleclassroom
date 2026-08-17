@@ -89,6 +89,7 @@ const App = {
 
     const page = currentPage();
     if (PUBLIC_PAGES.includes(page)) {
+      try { if (window.TCGuard) TCGuard.release(); } catch (_) {}
       this.initAuthTabs();
       this.bootShared();
       return;
@@ -97,6 +98,7 @@ const App = {
     // student ID (TC-0001) rather than a portal password. It is NOT an open
     // page — the exam code gates access — so allow it through without a role.
     if (page === 'cbt-exam' || page === 'cbt-multi' || page === 'cbt-review') {
+      try { if (window.TCGuard) TCGuard.release(); } catch (_) {}
       this.bootShared();
       return;
     }
@@ -265,7 +267,12 @@ const App = {
     const page = currentPage();
     if (page === 'dashboard') this.showDashboardLoading(true);
     const cached = this.getCachedProfile();
-    if (cached && cached.role && page === 'dashboard') {
+    // Optimistic pre-paint only. Never pre-paint a privileged role from an
+    // unverified localStorage value — that produced a "flash of admin UI"
+    // that a tampered cache could trigger deliberately.
+    const preRole = String((cached && cached.role) || '').toLowerCase();
+    const preIsPrivileged = App.isOwnerRole(preRole) || ['tutor', 'staff', 'teacher'].includes(preRole);
+    if (cached && cached.role && page === 'dashboard' && !preIsPrivileged) {
       try {
         App.currentRole = String(cached.role).toLowerCase();
         App.role = App.currentRole;
@@ -319,8 +326,29 @@ const App = {
       }
     }
     if (!user) {
-      if (cached && cached.id) {
-        App.currentRole = String(cached.role || 'parent').toLowerCase();
+      // BUGFIX (privilege escalation): this previously trusted the localStorage
+      // profile cache whenever no session could be read, so anyone could set
+      // tc-cached-profile.role = "super_admin" in devtools and render the full
+      // admin UI. RLS still protected the DATA, but admin-only navigation,
+      // controls and page scaffolding were exposed.
+      //
+      // The cache is now only honoured when a real Supabase auth token is
+      // present (i.e. we are genuinely offline / the token refresh failed),
+      // and never for privilege-bearing roles.
+      const hasStoredSession = (() => {
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && /^sb-.*-auth-token$/.test(k) && localStorage.getItem(k)) return true;
+          }
+        } catch (_) {}
+        return false;
+      })();
+      const cachedRole = String((cached && cached.role) || '').toLowerCase();
+      const cacheIsPrivileged = App.isOwnerRole(cachedRole) || ['tutor', 'staff', 'teacher'].includes(cachedRole);
+
+      if (cached && cached.id && hasStoredSession && !cacheIsPrivileged) {
+        App.currentRole = cachedRole || 'parent';
         App.role = App.currentRole;
         window.TC_PROFILE = cached;
         App.applyRoleDashboard(App.currentRole, cached);
@@ -328,8 +356,10 @@ const App = {
         App.loadPageData();
         this.bootShared();
         this.showDashboardLoading(false);
+        try { if (window.TCGuard) TCGuard.release(); } catch (_) {}
         return;
       }
+      try { localStorage.removeItem('tc-cached-profile'); } catch (_) {}
       location.href = 'login.html';
       return;
     }
@@ -379,6 +409,7 @@ const App = {
     this.bootShared();
     this.showDashboardLoading(false);
     App._roleResolved = true;
+    try { if (window.TCGuard) TCGuard.release(); } catch (_) {}
   },
 
   applyRoleVisibility() {

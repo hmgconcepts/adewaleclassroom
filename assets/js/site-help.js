@@ -68,14 +68,47 @@ const SiteHelp = {
     btn.id = 'page-help-btn';
     btn.type = 'button';
     btn.innerHTML = '❓ Page Help';
-    btn.style.cssText = 'position:fixed;bottom:20px;left:20px;z-index:9998;background:linear-gradient(135deg,#134e4a,#0f766e);color:white;border:none;border-radius:50px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 15px rgba(19,78,74,0.4)';
+    btn.style.cssText = 'position:fixed;bottom:20px;left:20px;z-index:9998;background:var(--gradient,linear-gradient(135deg,#4f46e5,#06b6d4));color:white;border:none;border-radius:50px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.28)';
     btn.onclick = () => this.showHelp();
     document.body.appendChild(btn);
   },
-  showHelp() {
-    let desc = this.descriptions[this.currentPage] || this.descriptions['default'];
+  /* V8: 60 pages had a curated blurb; the other 68 fell back to generic text.
+     Now anything without a curated entry is rendered in full from PAGE_GUIDE,
+     so every one of the 128 pages has real, specific help. */
+  fromGuide(page) {
     try {
-      if (window.TC && TC.ASSISTANT) desc = TC.ASSISTANT.formatPage(this.currentPage);
+      const g = (window.TC && window.TC.PAGE_GUIDE) || window.PAGE_GUIDE || {};
+      const e = g[page];
+      if (!e) return null;
+      const badge = { public: '🌍 Public page', 'code-gated': '🔑 Opened with a quiz code',
+        family: '👨‍👩‍👧 Family view', staff: '🎓 Staff only', owner: '🛡️ Owner / admin only' }[e.access] || '';
+      let h = '<h3 style="margin:0 0 6px">' + e.title + '</h3>';
+      if (badge) h += '<div style="font-size:.78rem;font-weight:700;color:var(--primary,#4f46e5);margin-bottom:10px">' + badge + '</div>';
+      h += '<p>' + e.detail + '</p>';
+      h += '<p><strong>Who it is for.</strong> ' + e.audience + '</p>';
+      h += '<p><strong>Why it matters.</strong> ' + e.why + '</p>';
+      h += '<p><strong>How to use it</strong></p><ol style="padding-left:20px">' +
+           (e.how || []).map(function (x) { return '<li style="margin:.3em 0">' + x + '</li>'; }).join('') + '</ol>';
+      h += '<p><strong>How it connects.</strong> ' + e.connects + '</p>';
+      if (e.related && e.related.length) {
+        h += '<p><strong>Related pages:</strong> ' + e.related.map(function (r) {
+          return '<a href="' + r + '.html">' + r.replace(/-/g, ' ') + '</a>';
+        }).join(' · ') + '</p>';
+      }
+      return h;
+    } catch (_) { return null; }
+  },
+  showHelp() {
+    let desc = this.descriptions[this.currentPage];
+    const rich = this.fromGuide(this.currentPage);
+    if (!desc && rich) desc = rich;
+    else if (desc && rich) desc = desc + '<hr style="margin:14px 0;border:none;border-top:1px solid #e2e8f0">' + rich;
+    if (!desc) desc = this.descriptions['default'];
+    try {
+      if (window.TC && TC.ASSISTANT && TC.ASSISTANT.formatPage) {
+        const a = TC.ASSISTANT.formatPage(this.currentPage);
+        if (a) desc = a + '<hr style="margin:14px 0;border:none;border-top:1px solid #e2e8f0">' + desc;
+      }
     } catch (_) {}
     const modal = document.createElement('div');
     modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';

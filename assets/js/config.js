@@ -4,13 +4,28 @@ window.PRACTICE = {
   name: 'ADEWALE CLASSROOM',
   shortName: 'ADC',
   motto: 'Independent progress. Visible to parents. Built for Nigerian and international learners.',
-  theme: { id: 'gosa', primary: '#0506ae', accent: '#964eec', primaryLight: '#4f46e5', accentLight: '#a78bfa', primaryDark: '#3730a3', bg: '#f8fafc' },
-  layout: 'academy',
-  font: { id: 'plusjakarta', family: 'Plus Jakarta Sans', serif: 'Plus Jakarta Sans', css: 'Plus+Jakarta+Sans:wght@400;500;600;700;800' },
+  /* V9.1 — identity aligned EXACTLY with the GOSA portal (gosaportal.vercel.app),
+     which is the reference HMG house look: indigo #0506ae with violet #964eec,
+     Plus Jakarta Sans, and the same two-stop 135deg gradient. The V8 audit had
+     replaced this with Oxford Navy + gold; that judgement is overridden here by
+     an explicit brand decision — one HMG look across School Connect, GOSA and
+     Tutoring Connect. The identical :root block is also baked into every page
+     (<style id="tc-brand">), exactly as GOSA does it, so the brand paints on the
+     very first frame with no flash of the stock palette. */
+  theme: { id: 'hmg', name: 'HMG House — Indigo & Violet',
+    primary: '#0506ae', accent: '#964eec',
+    primaryLight: '#964eec', primaryDark: '#0506ae',
+    accentLight: '#a78bfa', accentDark: '#6d17d5',
+    bg: '#f8fafc', ink: '#0f172a', ring: 'rgba(5,6,174,.22)',
+    gradient: 'linear-gradient(135deg,#0506ae,#964eec)',
+    onPrimary: '#ffffff' },
+  layout: 'sidebar',
+  font: { id: 'plusjakarta', family: 'Plus Jakarta Sans', serif: 'Plus Jakarta Sans',
+    css: 'Plus+Jakarta+Sans:wght@300;400;500;600;700;800' },
   address: 'Lagos, Nigeria — strictly virtual',
   phone: '2348100866322',
-  email: '',
-  siteUrl: '',
+  email: 'hello@adewaleclassroom.com',
+  siteUrl: 'https://adewaleclassroom.vercel.app',
   timezone: 'Africa/Lagos',
   currency: '₦',
   logoExt: 'svg',

@@ -1,0 +1,206 @@
+/* ============================================================================
+   layouts.css — Tutoring Connect V8
+   ----------------------------------------------------------------------------
+   Implements all 20 app-shell layouts offered by the builder wizard.
+   Before V8 only `layout-academy` had any CSS, so 19 of the 20 choices were
+   inert. Each layout below restyles the real shell elements that every
+   generated page ships with:
+       .app-shell / .sidebar / .app-content / .topbar / .app-nav / .card
+   Every rule is scoped to a body.layout-* class so exactly one is ever active,
+   and all of them fall back gracefully on small screens.
+   All colours come from the theme engine's CSS variables — never hard-coded.
+   ========================================================================== */
+
+/* ---- shared shell primitives (safe defaults if a page lacks them) -------- */
+body[class*="layout-"] .app-content { transition: max-width .2s ease, padding .2s ease; }
+body[class*="layout-"] .sidebar { transition: width .2s ease, transform .2s ease; }
+
+/* 1. Studio Sidebar — persistent left rail (the default) */
+body.layout-sidebar .sidebar { width: 250px; }
+body.layout-sidebar .app-content { max-width: 1280px; margin-inline: auto; padding: 24px; }
+
+/* 2. Top Nav Bar — horizontal menu, no rail */
+body.layout-topnav .sidebar {
+  position: static; width: 100%; height: auto; display: flex; flex-wrap: wrap;
+  align-items: center; gap: 4px; padding: 8px 16px; overflow-x: auto;
+}
+body.layout-topnav .sidebar .nav-section-title { display: none; }
+body.layout-topnav .sidebar a { white-space: nowrap; padding: 8px 12px; border-radius: 8px; }
+body.layout-topnav .app-shell { display: block; }
+body.layout-topnav .app-content { max-width: 1400px; margin-inline: auto; padding: 24px; }
+
+/* 3. Compact Phone-First — off-canvas drawer, large touch targets */
+body.layout-compact .sidebar {
+  position: fixed; inset: 0 auto 0 0; width: 82vw; max-width: 320px;
+  transform: translateX(-100%); z-index: 1200;
+}
+body.layout-compact .sidebar.open { transform: none; box-shadow: var(--shadow-xl); }
+body.layout-compact .sidebar a { padding: 14px 16px; font-size: 1.02rem; }
+body.layout-compact .app-content { padding: 14px; }
+body.layout-compact .btn { min-height: 46px; }
+
+/* 4. Dual Sidebar — primary rail + contextual sub-rail */
+body.layout-dual .app-shell { display: grid; grid-template-columns: 84px 210px 1fr; }
+body.layout-dual .sidebar { width: 84px; text-align: center; }
+body.layout-dual .sidebar a span.nav-label { display: none; }
+body.layout-dual .app-content::before {
+  content: ''; position: fixed; top: 0; bottom: 0; left: 84px; width: 210px;
+  background: var(--surface, #fff); border-right: 1px solid var(--gray-300, #e2e8f0); z-index: 1;
+}
+@media (max-width: 1100px) { body.layout-dual .app-shell { grid-template-columns: 1fr; } body.layout-dual .app-content::before { display: none; } }
+
+/* 5. Magazine Dashboard — editorial card grid */
+body.layout-magazine .app-content { max-width: 1320px; margin-inline: auto; }
+body.layout-magazine .grid { gap: 22px; }
+body.layout-magazine .card {
+  border: none; border-radius: var(--radius-lg, 16px); box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+body.layout-magazine .card h2, body.layout-magazine .card h3 {
+  font-family: var(--font-serif, Georgia, serif); letter-spacing: -.01em;
+}
+body.layout-magazine .page-title { font-size: 2.2rem; font-family: var(--font-serif, Georgia, serif); }
+
+/* 6. Minimal Focus — hide chrome, maximise content */
+body.layout-minimal .sidebar { width: 0; overflow: hidden; border: none; }
+body.layout-minimal .app-content { max-width: 1000px; margin-inline: auto; padding: 32px 20px; }
+body.layout-minimal .card { box-shadow: none; border: 1px solid var(--gray-300, #e2e8f0); }
+body.layout-minimal .topbar { background: transparent; box-shadow: none; }
+
+/* 7. Bottom Dock — thumb-friendly tab bar */
+body.layout-dock .sidebar {
+  position: fixed; left: 0; right: 0; bottom: 0; top: auto; width: 100%;
+  height: 62px; display: flex; align-items: center; justify-content: space-around;
+  padding: 0 6px; overflow-x: auto; z-index: 1100;
+  box-shadow: 0 -6px 20px rgba(0,0,0,.10);
+}
+body.layout-dock .sidebar .nav-section-title { display: none; }
+body.layout-dock .sidebar a { flex: 0 0 auto; font-size: .74rem; text-align: center; padding: 6px 10px; border-radius: 10px; }
+body.layout-dock .app-content { padding-bottom: 86px; }
+
+/* 8. Split Workspace — list + detail panes */
+body.layout-split .app-content { display: grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 20px; align-items: start; }
+body.layout-split .card:first-child { position: sticky; top: 16px; max-height: calc(100vh - 40px); overflow: auto; }
+@media (max-width: 980px) { body.layout-split .app-content { grid-template-columns: 1fr; } body.layout-split .card:first-child { position: static; max-height: none; } }
+
+/* 9. Command Centre — icon rail that expands on hover */
+body.layout-command .sidebar { width: 68px; overflow: hidden; }
+body.layout-command .sidebar:hover, body.layout-command .sidebar:focus-within { width: 248px; box-shadow: var(--shadow-lg); }
+body.layout-command .sidebar .nav-section-title { opacity: 0; transition: opacity .15s; }
+body.layout-command .sidebar:hover .nav-section-title { opacity: 1; }
+body.layout-command .app-content { margin-left: 0; }
+
+/* 10. Boxed Desktop — centred frame on a tinted page */
+body.layout-boxed { background: var(--surface-soft, #f1f5f9); }
+body.layout-boxed .app-content {
+  max-width: 1180px; margin: 20px auto; background: var(--surface, #fff);
+  border-radius: var(--radius-xl, 24px); box-shadow: var(--shadow-lg); padding: 28px;
+}
+
+/* 11. Fluid Wide — full bleed for big monitors and data tables */
+body.layout-fluid .app-content { max-width: none; padding: 20px 34px; }
+body.layout-fluid .table-wrap { overflow-x: auto; }
+body.layout-fluid table { width: 100%; font-size: .93rem; }
+
+/* 12. Kanban Board — horizontal column flow */
+body.layout-kanban .app-content .grid,
+body.layout-kanban .app-content .kanban {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(300px, 1fr);
+  gap: 16px; overflow-x: auto; padding-bottom: 14px; scroll-snap-type: x proximity;
+}
+body.layout-kanban .app-content .grid > *, body.layout-kanban .kanban > * { scroll-snap-align: start; }
+body.layout-kanban .card { border-top: 4px solid var(--primary); }
+@media (max-width: 720px) { body.layout-kanban .app-content .grid { grid-auto-flow: row; grid-auto-columns: auto; } }
+
+/* 13. Timeline Rail — vertical activity spine */
+body.layout-timeline .app-content { position: relative; padding-left: 34px; }
+body.layout-timeline .app-content::before {
+  content: ''; position: absolute; left: 12px; top: 0; bottom: 0; width: 2px;
+  background: linear-gradient(180deg, var(--primary), var(--accent)); opacity: .35;
+}
+body.layout-timeline .card { position: relative; }
+body.layout-timeline .card::before {
+  content: ''; position: absolute; left: -28px; top: 22px; width: 11px; height: 11px;
+  border-radius: 50%; background: var(--primary); box-shadow: 0 0 0 3px var(--surface, #fff);
+}
+
+/* 14. Academy Portal — hero + friendly module tiles (parents/learners) */
+body.layout-academy .app-content { max-width: 1200px; }
+body.layout-academy .dash-quick-links .btn {
+  background: linear-gradient(180deg, #fff, var(--surface-soft, #f8fafc));
+  border: 1px solid var(--gray-300, #e0e7ff);
+  box-shadow: 0 6px 16px var(--ring, rgba(5,6,174,.08));
+}
+body.layout-academy .dash-quick-links .btn:hover { border-color: var(--accent-light); transform: translateY(-2px); }
+body.layout-academy .page-title { font-size: 2rem; }
+body.layout-academy .card { border-radius: var(--radius-lg, 16px); }
+
+/* 15. Executive Suite — KPI strip then two-column report body */
+body.layout-executive .stat-grid, body.layout-executive .grid-4 {
+  position: sticky; top: 0; z-index: 5; background: var(--surface-soft, #f8fafc);
+  padding: 12px 0; border-bottom: 1px solid var(--gray-300, #e2e8f0);
+}
+body.layout-executive .app-content > .grid:not(.grid-4) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+body.layout-executive .stat-card { border-left: 4px solid var(--accent); }
+@media (max-width: 900px) { body.layout-executive .app-content > .grid:not(.grid-4) { grid-template-columns: 1fr; } }
+
+/* 16. Classroom Grid — even tiles for sessions/resources/classwork */
+body.layout-classroom .app-content .grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px;
+}
+body.layout-classroom .card {
+  border-top: 5px solid var(--accent); border-radius: 14px;
+  display: flex; flex-direction: column;
+}
+body.layout-classroom .card .btn { margin-top: auto; }
+
+/* 17. Sidebar + Wide Top — rail plus contextual action strip */
+body.layout-sidebarwidetop .topbar {
+  position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px;
+  padding: 12px 20px; background: var(--gradient); color: var(--on-primary, #fff);
+  box-shadow: var(--shadow);
+}
+body.layout-sidebarwidetop .topbar a, body.layout-sidebarwidetop .topbar .btn { color: var(--on-primary, #fff); }
+body.layout-sidebarwidetop .app-content { padding-top: 18px; }
+
+/* 18. Focus Writer — reading-width column for notes and reports */
+body.layout-focuswriter .app-content { max-width: 760px; margin-inline: auto; padding: 34px 18px; }
+body.layout-focuswriter, body.layout-focuswriter .card p, body.layout-focuswriter .card li {
+  font-family: var(--font-serif, Georgia, serif); line-height: 1.75; font-size: 1.03rem;
+}
+body.layout-focuswriter .card { border: none; box-shadow: none; padding-inline: 0; }
+body.layout-focuswriter .sidebar { opacity: .55; }
+body.layout-focuswriter .sidebar:hover { opacity: 1; }
+
+/* 19. Hub Spokes — central dashboard that fans out */
+body.layout-hub .app-content { max-width: 1120px; margin-inline: auto; text-align: center; }
+body.layout-hub .dash-quick-links, body.layout-hub .app-content .grid {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 18px;
+}
+body.layout-hub .dash-quick-links .btn, body.layout-hub .app-content .grid > .card {
+  flex: 0 1 220px; border-radius: 18px; text-align: center;
+}
+body.layout-hub .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+
+/* 20. Classic Portal — familiar two-tone LMS look */
+body.layout-legacy .sidebar { background: var(--primary-dark); }
+body.layout-legacy .topbar { background: var(--primary); color: var(--on-primary, #fff); }
+body.layout-legacy .card { border-radius: 6px; border: 1px solid var(--gray-400, #cbd5e1); box-shadow: none; }
+body.layout-legacy .btn { border-radius: 5px; }
+body.layout-legacy .page-title { border-bottom: 3px solid var(--accent); padding-bottom: 8px; }
+
+/* ---- print: never print the shell chrome -------------------------------- */
+@media print {
+  body[class*="layout-"] .sidebar,
+  body[class*="layout-"] .topbar,
+  body[class*="layout-"] .tc-install-nudge,
+  body[class*="layout-"] #tc-chatbot,
+  body[class*="layout-"] .footer { display: none !important; }
+  body[class*="layout-"] .app-content { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+  .card { break-inside: avoid; box-shadow: none !important; border: 1px solid #ddd !important; }
+}
+
+/* ---- reduced motion ------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}

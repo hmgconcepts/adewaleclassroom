@@ -102,10 +102,30 @@ const DataPortability = {
     }
     return report;
   },
-  async vaultUpload(env) {
-    const path = 'vault/' + new Date().toISOString().replace(/[:.]/g,'-') + '.json';
-    const up = await this.sb.storage.from(this.VAULT_BUCKET).upload(path, new Blob([JSON.stringify(env)], { type: 'application/json' }));
+  /* V11 — the platform rule is LINKS, NOT UPLOADS, so that a studio never eats
+     its free Supabase storage. The two supported backup destinations are:
+       1. a sealed download to the operator's own device  (default), and
+       2. the studio's OWN Google Drive via DriveSync      (recommended).
+     This Storage vault remains available for operators who deliberately want a
+     copy inside Supabase, but it is now OPT-IN, it refuses to run unless the
+     caller passes {confirm:true}, and it states the quota cost up front. */
+  async vaultUpload(env, opts) {
+    opts = opts || {};
+    if (!opts.confirm) {
+      throw new Error(
+        'Supabase Storage backup is opt-in. This platform prefers links over uploads so your ' +
+        'free 1 GB storage stays empty. Use "Download sealed backup", or Google Drive sync ' +
+        '(Admin data → Google Drive backup). To override, call vaultUpload(env, { confirm: true }).');
+    }
+    const body = JSON.stringify(env);
+    const kb = Math.round(body.length / 1024);
+    const path = 'vault/' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
+    const up = await this.sb.storage.from(this.VAULT_BUCKET)
+      .upload(path, new Blob([body], { type: 'application/json' }));
     if (up.error) throw Error(up.error.message + ' — run database/storage-offload.sql');
+    if (typeof toast === 'function') {
+      toast('Stored ' + kb + ' KB in Supabase Storage. Drive backups cost you nothing — consider switching.', 'warning', 8000);
+    }
     return path;
   }
 };

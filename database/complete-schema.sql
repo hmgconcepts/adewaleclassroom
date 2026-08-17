@@ -1,3 +1,58 @@
+-- ============================================================================
+--  TUTORING CONNECT — COMPLETE DATABASE SCHEMA  (V12)
+--  HMG Technologies · a subsidiary of HMG Concepts
+-- ============================================================================
+--
+--  RUN THIS ONE FILE. THAT IS ALL.
+--
+--  Open Supabase -> SQL Editor -> New query -> paste ALL of this file -> Run.
+--  It installs EVERY pack. You do NOT need to run any of the individual
+--  database/v*.sql files afterwards; they are kept only as reference and for
+--  patching a studio that is already live.
+--
+--  IT IS SAFE TO RUN THIS FILE AS MANY TIMES AS YOU LIKE.
+--  Every statement is idempotent, verified by tools/lint_schema.py:
+--      tables .......... CREATE TABLE IF NOT EXISTS
+--      indexes ......... CREATE INDEX IF NOT EXISTS
+--      columns ......... ADD COLUMN IF NOT EXISTS
+--      functions ....... CREATE OR REPLACE FUNCTION
+--      policies ........ DROP POLICY IF EXISTS immediately before CREATE POLICY
+--      triggers ........ DROP TRIGGER IF EXISTS immediately before CREATE TRIGGER
+--      seed rows ....... INSERT ... ON CONFLICT DO NOTHING / DO UPDATE
+--      extensions ...... CREATE EXTENSION IF NOT EXISTS, wrapped so an
+--                        unavailable extension never aborts the run
+--  Re-running never drops data. It only brings objects up to the current shape.
+--
+--  A NOTE ON REPEATED DEFINITIONS
+--  A few functions and triggers are defined more than once in this file
+--  (tc_keep_alive, tc_push_cbt_to_scoresheet, trg_push_cbt). That is deliberate,
+--  not sloppiness: the file is assembled from versioned packs in order, and a
+--  later pack intentionally SUPERSEDES an earlier definition — for example V6
+--  replaces the single-row scoresheet push with the multi-subject version that
+--  writes one row per subject. PostgreSQL applies them in order, so the last
+--  definition wins. Removing the earlier ones would break the ability to run an
+--  individual pack against an older studio.
+--
+--  WHAT GETS INSTALLED
+--      101 tables, Row Level Security enabled on all of them
+--      Family-scoped access so a parent sees only their own children
+--      Security-definer RPCs for the public surfaces (apply, quiz codes, keep-alive)
+--      Triggers: graded quiz -> scoresheet (overall + one row per subject)
+--      Keep-alive heartbeat + health reporting (free-tier pause protection)
+--      Google Drive backup settings
+--      Schema registry (tc_schema_info) so the app can report its own version
+--      Free-tier quota guard: LZ4 compression, size reporting, retention
+--
+--  AFTER RUNNING
+--      1. The last line should read:  Tutoring Connect V12 ... installed
+--      2. Sign up in the portal, then promote yourself:
+--             update public.profiles set role='admin', status='approved'
+--              where email='you@example.com';
+--      3. Platform health -> confirm the schema panel shows V12.
+--
+--  VERIFY IDEMPOTENCY YOURSELF:  python3 tools/lint_schema.py
+-- ============================================================================
+
 -- =============================================================================
 -- Tutoring Connect — COMPLETE SCHEMA (run this ONE file)
 -- =============================================================================
@@ -1703,3 +1758,760 @@ begin
     where t.class=p_class order by t.day, t.period;
 end $$;
 grant execute on function public.generate_timetable(text,text,text,int) to authenticated;
+
+
+-- ===== V7 PACK INCLUDED (family access + CBT submission fix) =====
+-- ============================================================================
+-- Tutoring Connect V7 — FAMILY ACCESS + CBT SUBMISSION FIX  (idempotent)
+-- ============================================================================
+-- WHY THIS PACK EXISTS
+--
+-- The V1–V6 packs enable RLS on all 101 tables (good) but the per-table
+-- policies were only ever completed for THREE family-facing tables:
+--   learners (learners_family), engagements (engagements_read), study_logs.
+--
+-- Every other family table received only the generated loop policies:
+--     <t>_admin       for all    using (is_admin())
+--     <t>_tutor_read  for select using (is_tutor())
+--
+-- Consequence: a signed-in PARENT or LEARNER is denied by RLS on scoresheet,
+-- assessments, sessions, invoices, messages, notifications, hour_ledger,
+-- bookings, reading, goals, mastery — i.e. the entire parent-facing product
+-- ("Independent progress. Visible to parents.") returns empty result sets.
+--
+-- Separately, public CBT submission is rejected: cbt_results has a table-level
+-- INSERT grant to anon but NO insert policy, so every learner who finishes a
+-- quiz gets 42501 "new row violates row-level security policy" and the score
+-- is lost (verified live against a deployed studio).
+--
+-- This pack adds the missing FAMILY-SCOPED policies. It never widens staff
+-- access and never grants anything to anon beyond the CBT submit path that
+-- the UI already assumes. Safe to re-run.
+-- ============================================================================
+
+-- ---------------------------------------------------------------------------
+-- 0. Helper: is the current user the learner, or a parent of the learner,
+--    on a given ENGAGEMENT? (engagement_members is the join table.)
+-- ---------------------------------------------------------------------------
+create or replace function public.is_family_of_engagement(p_engagement uuid)
+returns boolean language plpgsql stable security definer set search_path = public as $$
+begin
+  if p_engagement is null then return false; end if;
+  return exists (
+    select 1 from public.engagement_members em
+    where em.engagement_id = p_engagement
+      and (public.is_self_learner(em.learner_id) or public.is_parent_of(em.learner_id))
+  );
+end $$;
+grant execute on function public.is_family_of_engagement(uuid) to authenticated;
+
+-- Convenience: learner-or-parent on a learner row.
+create or replace function public.is_family_of_learner(p_learner uuid)
+returns boolean language plpgsql stable security definer set search_path = public as $$
+begin
+  if p_learner is null then return false; end if;
+  return public.is_self_learner(p_learner) or public.is_parent_of(p_learner);
+end $$;
+grant execute on function public.is_family_of_learner(uuid) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 1. PROFILES — a user must be able to read and edit their OWN profile.
+--    Previously admin-only: profile.html, the name chip and password/profile
+--    editing were dead for parents, learners and even tutors editing self.
+--    (Login itself survived only because tc_current_role() is SECURITY DEFINER.)
+-- ---------------------------------------------------------------------------
+drop policy if exists profiles_self_read on public.profiles;
+create policy profiles_self_read on public.profiles
+  for select using (id = auth.uid());
+
+drop policy if exists profiles_self_update on public.profiles;
+create policy profiles_self_update on public.profiles
+  for update using (id = auth.uid())
+  with check (id = auth.uid() and role = (select p.role from public.profiles p where p.id = auth.uid()));
+-- NOTE: the with-check pins `role` to its existing value so a user can edit
+-- their name/phone/photo but can NEVER escalate themselves to admin.
+
+-- ---------------------------------------------------------------------------
+-- 2. LEARNER-SCOPED TABLES (have a learner_id column)
+-- ---------------------------------------------------------------------------
+do $$
+declare t text;
+begin
+  foreach t in array array[
+    'scoresheet','assessments','session_attendance','session_notes',
+    'mastery_topics','reading_progress','cbt_results'
+  ] loop
+    execute format('drop policy if exists %I on public.%I', t||'_family_read', t);
+    execute format(
+      'create policy %I on public.%I for select using (public.is_family_of_learner(learner_id))',
+      t||'_family_read', t);
+  end loop;
+end $$;
+
+-- goals / assignments carry BOTH learner_id and engagement_id; a group
+-- assignment has learner_id null and must still reach the whole group.
+do $$
+declare t text;
+begin
+  foreach t in array array['goals','assignments'] loop
+    execute format('drop policy if exists %I on public.%I', t||'_family_read', t);
+    execute format(
+      'create policy %I on public.%I for select using ('
+      || ' public.is_family_of_learner(learner_id)'
+      || ' or (learner_id is null and public.is_family_of_engagement(engagement_id)))',
+      t||'_family_read', t);
+  end loop;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 3. ENGAGEMENT-SCOPED TABLES (have an engagement_id column)
+-- ---------------------------------------------------------------------------
+do $$
+declare t text;
+begin
+  foreach t in array array[
+    'sessions','hour_ledger','reading_assignments','curriculum_items',
+    'sow_terms','stream_posts','classwork_items'
+  ] loop
+    execute format('drop policy if exists %I on public.%I', t||'_family_read', t);
+    execute format(
+      'create policy %I on public.%I for select using (public.is_family_of_engagement(engagement_id))',
+      t||'_family_read', t);
+  end loop;
+end $$;
+
+-- sow_topics has NO engagement_id of its own — it reaches the engagement
+-- through term_id -> sow_terms.engagement_id. (Getting this wrong would make
+-- the whole patch fail at runtime with "column engagement_id does not exist".)
+drop policy if exists sow_topics_family_read on public.sow_topics;
+create policy sow_topics_family_read on public.sow_topics
+  for select using (
+    exists (
+      select 1 from public.sow_terms st
+      where st.id = sow_topics.term_id
+        and public.is_family_of_engagement(st.engagement_id)
+    )
+  );
+
+-- engagement_members: a family may see the membership rows of their own-- engagements (needed to resolve group names on the dashboard).
+drop policy if exists engagement_members_family_read on public.engagement_members;
+create policy engagement_members_family_read on public.engagement_members
+  for select using (
+    public.is_family_of_learner(learner_id) or public.is_family_of_engagement(engagement_id)
+  );
+
+-- ---------------------------------------------------------------------------
+-- 4. BOOKINGS — "Every booked class shows on your dashboard with the amount
+--    you agreed." booking_classes reaches its engagement through booking_blocks.
+-- ---------------------------------------------------------------------------
+drop policy if exists booking_blocks_family_read on public.booking_blocks;
+create policy booking_blocks_family_read on public.booking_blocks
+  for select using (public.is_family_of_engagement(engagement_id));
+
+drop policy if exists booking_classes_family_read on public.booking_classes;
+create policy booking_classes_family_read on public.booking_classes
+  for select using (
+    exists (
+      select 1 from public.booking_blocks bb
+      where bb.id = booking_classes.block_id
+        and public.is_family_of_engagement(bb.engagement_id)
+    )
+  );
+
+-- ---------------------------------------------------------------------------
+-- 5. BILLING — a parent must see their own invoices and the payments on them.
+--    invoices.parent_id -> parents.id -> parents.user_id = auth.uid()
+-- ---------------------------------------------------------------------------
+drop policy if exists invoices_family_read on public.invoices;
+create policy invoices_family_read on public.invoices
+  for select using (
+    exists (select 1 from public.parents p
+             where p.id = invoices.parent_id and p.user_id = auth.uid())
+    or public.is_family_of_engagement(engagement_id)
+  );
+
+drop policy if exists payments_family_read on public.payments;
+create policy payments_family_read on public.payments
+  for select using (
+    exists (
+      select 1 from public.invoices i
+      join public.parents p on p.id = i.parent_id
+      where i.id = payments.invoice_id and p.user_id = auth.uid()
+    )
+  );
+
+-- ---------------------------------------------------------------------------
+-- 6. NOTIFICATIONS + MESSAGES — the bell and the inbox were staff-only, so
+--    "Bell for messages and class reminders" never fired for a parent.
+-- ---------------------------------------------------------------------------
+drop policy if exists notifications_own_read on public.notifications;
+create policy notifications_own_read on public.notifications
+  for select using (user_id = auth.uid() or user_id is null);  -- null = broadcast
+
+drop policy if exists notifications_own_update on public.notifications;
+create policy notifications_own_update on public.notifications
+  for update using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- messages(sender uuid default auth.uid(), to_role text, ...)
+drop policy if exists messages_own_read on public.messages;
+create policy messages_own_read on public.messages
+  for select using (
+    sender = auth.uid()
+    or to_role is null
+    or lower(to_role) = 'all'
+    or lower(to_role) = lower(coalesce((select p.role from public.profiles p where p.id = auth.uid()), ''))
+  );
+
+drop policy if exists messages_own_send on public.messages;
+create policy messages_own_send on public.messages
+  for insert with check (sender = auth.uid());
+
+-- ---------------------------------------------------------------------------
+-- 7. PUSH SUBSCRIPTIONS — every signed-in user must be able to register their
+--    own device, otherwise web-push silently never enrols a parent.
+-- ---------------------------------------------------------------------------
+drop policy if exists push_self on public.push_subscriptions;
+create policy push_self on public.push_subscriptions
+  for all using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- ---------------------------------------------------------------------------
+-- 8. LOGIN AUDIT — security-guard.js claims "every sign-in and sign-out is
+--    recorded", but only staff could insert. Let any authenticated user append
+--    their OWN row; reading stays admin/tutor-only (tamper-evident).
+-- ---------------------------------------------------------------------------
+drop policy if exists login_audit_self_insert on public.login_audit;
+create policy login_audit_self_insert on public.login_audit
+  for insert with check (user_id = auth.uid() or user_id is null);
+
+-- ---------------------------------------------------------------------------
+-- 9. CBT SUBMISSION (the critical one)
+--    cbt-exam.html submits as an ANONYMOUS visitor (quiz code + student ID is
+--    the gate, by design). anon holds the INSERT grant but had no policy, so
+--    every submission failed with 42501 and the score was lost.
+-- ---------------------------------------------------------------------------
+drop policy if exists cbt_results_public_insert on public.cbt_results;
+create policy cbt_results_public_insert on public.cbt_results
+  for insert with check (true);
+-- Rationale for `true`: this mirrors the already-shipped and identical
+-- exam_reg_ins / inquiries_insert pattern. The row is write-only for anon
+-- (no anon SELECT policy exists), so a candidate can submit but can never
+-- read anyone's results back. Grading integrity is preserved server-side by
+-- the trg_push_cbt trigger, which re-reads the exam row.
+
+-- Let a family read their own results back (review screen + scoresheet).
+-- Already covered by cbt_results_family_read in section 2 for signed-in
+-- families; anonymous candidates keep their review in-page only.
+
+-- ---------------------------------------------------------------------------
+-- 10. TIGHTEN over-permissive V3 policies.
+--     stream_posts / classwork_items shipped as:
+--         for all using (true) with check (true)
+--     Any authenticated user — including a parent or a learner — could READ,
+--     EDIT and DELETE the classwork and stream of EVERY engagement. That is
+--     the exact opposite of "a sibling's scores never leak".
+--     Replaced with: family reads its own engagement (section 3), staff write.
+-- ---------------------------------------------------------------------------
+drop policy if exists stream_rw on public.stream_posts;
+drop policy if exists classwork_rw on public.classwork_items;
+
+do $$
+declare t text;
+begin
+  foreach t in array array['stream_posts','classwork_items'] loop
+    execute format('drop policy if exists %I on public.%I', t||'_staff_rw', t);
+    execute format(
+      'create policy %I on public.%I for all using (public.is_admin() or public.is_tutor())'
+      || ' with check (public.is_admin() or public.is_tutor())', t||'_staff_rw', t);
+  end loop;
+end $$;
+
+-- ---------------------------------------------------------------------------
+-- 11. Grants. RLS is the gate; these only make the gate reachable.
+-- ---------------------------------------------------------------------------
+grant select on public.booking_blocks, public.booking_classes to authenticated;
+grant select, update on public.notifications to authenticated;
+grant select, insert on public.messages to authenticated;
+grant select, insert, update, delete on public.push_subscriptions to authenticated;
+grant insert on public.login_audit to authenticated;
+grant select, update on public.profiles to authenticated;
+
+select 'Tutoring Connect V7 family-access + CBT submission fix installed ✅' as status;
+
+
+-- ===== V9 PACK INCLUDED (keep-alive hardening + Drive sync settings) =====
+-- ============================================================================
+-- Tutoring Connect V9 — KEEP-ALIVE HARDENING + DRIVE SYNC SUPPORT (idempotent)
+-- ============================================================================
+-- BACKGROUND (verified against Supabase behaviour, Aug 2026)
+--
+--   * Supabase pauses a FREE project after 7 consecutive days of inactivity.
+--   * "Inactivity" is measured by real DATABASE activity. Visiting your
+--     front end, opening the Supabase dashboard, or calling an API route that
+--     never touches Postgres does NOT reset the timer.
+--   * A paused project must be un-paused BY HAND from the dashboard, and a
+--     project left paused is eventually DELETED (~90 days).
+--   * pg_cron cannot save you on its own: it runs inside the database, so once
+--     the project pauses the scheduler pauses with it. It is a useful bonus
+--     layer, never the primary one.
+--
+-- WHAT V8 GOT WRONG (found by audit, reproduced against a live project)
+--
+--   1. `revoke all on public.tc_heartbeat from anon, authenticated` combined
+--      with RLS and no policy meant platform-health.html could NEVER read the
+--      heartbeat: the live project returns
+--         42501 permission denied for table tc_heartbeat
+--      So the keep-alive system was completely UNOBSERVABLE. An owner had no
+--      way to discover that their pings had stopped until the project paused.
+--      That is the single most dangerous failure mode: silent.
+--   2. There was no status RPC, so no external monitor could ask
+--      "how close am I to being paused?".
+--   3. tc_keep_alive only did an UPDATE. If row id=1 were ever missing the
+--      heartbeat silently no-opped and still returned success.
+--
+-- THIS PACK FIXES ALL THREE and adds an auditable ping log.
+-- Safe to re-run.
+-- ============================================================================
+
+-- ---------------------------------------------------------------------------
+-- 1. Heartbeat table (unchanged shape, guaranteed to exist)
+-- ---------------------------------------------------------------------------
+create table if not exists public.tc_heartbeat (
+  id integer primary key,
+  last_ping timestamptz not null default now(),
+  last_source text,
+  ping_count bigint not null default 0
+);
+insert into public.tc_heartbeat (id) values (1) on conflict (id) do nothing;
+alter table public.tc_heartbeat enable row level security;
+
+-- ---------------------------------------------------------------------------
+-- 2. Ping log — observability. Capped at 200 rows so it can never threaten
+--    the 500 MB free-tier budget (200 rows ≈ 20 KB).
+-- ---------------------------------------------------------------------------
+create table if not exists public.tc_keepalive_log (
+  id bigserial primary key,
+  pinged_at timestamptz not null default now(),
+  source text,
+  ok boolean not null default true
+);
+create index if not exists tc_keepalive_log_at_idx on public.tc_keepalive_log (pinged_at desc);
+alter table public.tc_keepalive_log enable row level security;
+
+-- ---------------------------------------------------------------------------
+-- 3. THE write. SECURITY DEFINER so anon can trigger it without any table
+--    grant. Now an UPSERT (never a silent no-op) and it records the ping.
+-- ---------------------------------------------------------------------------
+create or replace function public.tc_keep_alive(src text default 'unknown')
+returns timestamptz
+language plpgsql
+security definer
+set search_path = public
+as $keepalive$
+declare v_now timestamptz := now();
+begin
+  insert into public.tc_heartbeat (id, last_ping, last_source, ping_count)
+  values (1, v_now, left(coalesce(src, 'unknown'), 40), 1)
+  on conflict (id) do update
+     set last_ping   = v_now,
+         last_source = left(coalesce(src, 'unknown'), 40),
+         ping_count  = public.tc_heartbeat.ping_count + 1;
+
+  insert into public.tc_keepalive_log (pinged_at, source, ok)
+  values (v_now, left(coalesce(src, 'unknown'), 40), true);
+
+  -- Keep only the newest 200 log rows.
+  delete from public.tc_keepalive_log
+   where id < (select max(id) - 200 from public.tc_keepalive_log);
+
+  return v_now;
+end
+$keepalive$;
+grant execute on function public.tc_keep_alive(text) to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 4. THE read. Lets any monitor (or the Platform Health page) ask how close
+--    the project is to being paused, WITHOUT granting table access.
+--    Returns jsonb so external cron services can assert on it.
+--
+--    state: healthy  (< 3 days since last ping)
+--           warning  (3–5 days — a scheduler has probably missed a run)
+--           critical (> 5 days — pause is imminent, act now)
+-- ---------------------------------------------------------------------------
+create or replace function public.tc_keep_alive_status()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $status$
+  select jsonb_build_object(
+    'ok',            true,
+    'last_ping',     h.last_ping,
+    'last_source',   h.last_source,
+    'ping_count',    h.ping_count,
+    'hours_since',   round(extract(epoch from (now() - h.last_ping)) / 3600.0, 2),
+    'days_since',    round(extract(epoch from (now() - h.last_ping)) / 86400.0, 2),
+    'days_left',     greatest(0, round(7 - extract(epoch from (now() - h.last_ping)) / 86400.0, 2)),
+    'pause_risk_at', h.last_ping + interval '7 days',
+    'state', case
+               when now() - h.last_ping < interval '3 days' then 'healthy'
+               when now() - h.last_ping < interval '5 days' then 'warning'
+               else 'critical'
+             end,
+    'checked_at',    now()
+  )
+  from public.tc_heartbeat h
+  where h.id = 1;
+$status$;
+grant execute on function public.tc_keep_alive_status() to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 5. Observability for staff. THE V8 BUG FIX: the Platform Health page could
+--    not read this table at all. Staff may now read the heartbeat and the log;
+--    anon still cannot (it uses the status RPC instead). Nobody may write
+--    directly — the only write path remains the SECURITY DEFINER function.
+-- ---------------------------------------------------------------------------
+grant select on public.tc_heartbeat    to authenticated;
+grant select on public.tc_keepalive_log to authenticated;
+revoke all on public.tc_heartbeat     from anon;
+revoke all on public.tc_keepalive_log from anon;
+
+drop policy if exists tc_heartbeat_staff_read on public.tc_heartbeat;
+create policy tc_heartbeat_staff_read on public.tc_heartbeat
+  for select using (public.is_admin() or public.is_tutor());
+
+drop policy if exists tc_keepalive_log_staff_read on public.tc_keepalive_log;
+create policy tc_keepalive_log_staff_read on public.tc_keepalive_log
+  for select using (public.is_admin() or public.is_tutor());
+
+-- ---------------------------------------------------------------------------
+-- 6. pg_cron — a BONUS layer only.
+--    It cannot rescue a paused project (it pauses too), but while the project
+--    is awake it adds a free internal ping every 2 days. Never rely on it.
+-- ---------------------------------------------------------------------------
+do $cronsetup$
+begin
+  if exists (select 1 from pg_available_extensions where name = 'pg_cron') then
+    begin
+      create extension if not exists pg_cron;
+      perform cron.unschedule(jobid) from cron.job where jobname = 'tc-keep-alive';
+      perform cron.schedule('tc-keep-alive', '23 5 */2 * *',
+                            $job$select public.tc_keep_alive('pg_cron')$job$);
+    exception when others then
+      raise notice 'pg_cron keep-alive not scheduled (%). This is non-fatal.', sqlerrm;
+    end;
+  end if;
+end
+$cronsetup$;
+
+-- ---------------------------------------------------------------------------
+-- 7. Google Drive sync settings (used by assets/js/drive-sync.js)
+-- ---------------------------------------------------------------------------
+alter table if exists public.practice_settings add column if not exists drive_client_id     text default '';
+alter table if exists public.practice_settings add column if not exists drive_sync_enabled  boolean not null default false;
+alter table if exists public.practice_settings add column if not exists drive_sync_days     int not null default 7;
+alter table if exists public.practice_settings add column if not exists drive_folder_id     text default '';
+alter table if exists public.practice_settings add column if not exists drive_last_backup   timestamptz;
+alter table if exists public.practice_settings add column if not exists drive_last_status   text default '';
+alter table if exists public.practice_settings add column if not exists drive_last_rows     int default 0;
+alter table if exists public.practice_settings add column if not exists drive_last_bytes    bigint default 0;
+
+-- practice_settings is admin-write by the loop policy, but the Drive panel is
+-- opened by owners/admins only, so no extra policy is required. Reading it is
+-- already permitted for tutors via the *_tutor_read policy.
+
+select 'Tutoring Connect V9 keep-alive hardening + Drive settings installed ✅' as status;
+
+-- ===== V12 PACK INCLUDED (schema registry + free-tier quota guard) =====
+-- ============================================================================
+-- Tutoring Connect V12 — SCHEMA REGISTRY + FREE-TIER QUOTA GUARD (idempotent)
+-- ============================================================================
+-- Two jobs, both aimed squarely at surviving on the Supabase free tier:
+--
+--   PART A — a SCHEMA REGISTRY, so a studio can always answer "which version am
+--   I actually running?" without guessing. The V11 audit found the live ADEWALE
+--   CLASSROOM project silently sitting at V4 while its files expected V9; the
+--   only way to detect that was to probe for functions one by one. Now the
+--   database records its own version.
+--
+--   PART B — a QUOTA GUARD for the 500 MB database limit. The platform already
+--   refuses file uploads (links, never bytes), which protects the 1 GB *storage*
+--   quota. But the *database* can still fill up, and on this platform it will
+--   always fill up in the same place: CBT results. Every submitted quiz stores
+--   `answers`, `review` and `detail` as JSONB — a 60-question paper is roughly
+--   30-60 KB per candidate, so 300 sittings ≈ 15 MB, and a busy studio with
+--   several years of history will eventually notice.
+--
+--   Three defences, cheapest first:
+--     1. COMPRESS  — LZ4 on the heavy JSONB/text columns (PG14+). Typically
+--                    40-60% off JSONB payloads, applied by Postgres itself with
+--                    no application change.
+--     2. MEASURE   — tc_db_report() exposes total size, the worst tables, and
+--                    the percentage of the 500 MB budget consumed.
+--     3. RECLAIM   — tc_prune_logs() enforces retention on append-only logs, and
+--                    tc_slim_cbt_results() strips the verbose per-question blob
+--                    from OLD results while keeping every score, so analytics
+--                    and the scoresheet are completely unaffected.
+--
+--   Nothing here deletes a mark, a payment, a session or a learner record.
+--   Only logs and the bulky replay data of long-past quizzes are touched, and
+--   every step is opt-in with an explicit day threshold.
+--
+-- Safe to run repeatedly.
+-- ============================================================================
+
+-- ---------------------------------------------------------------------------
+-- PART A · SCHEMA REGISTRY
+-- ---------------------------------------------------------------------------
+create table if not exists public.tc_schema_registry (
+  id          integer primary key default 1,
+  version     text not null,
+  applied_at  timestamptz not null default now(),
+  packs       text[] not null default '{}',
+  note        text,
+  constraint tc_schema_registry_single_row check (id = 1)
+);
+
+insert into public.tc_schema_registry (id, version, packs, note)
+values (1, 'V12', array['v1-core','v2-tutoring-ops','v3-classroom-exams',
+                        'v4-enterprise-parity','v5-ops-parity','v6-cbt-modes',
+                        'v7-family-access','v9-keepalive-drive','v12-quota-guard'],
+        'Installed by database/complete-schema.sql')
+on conflict (id) do update
+   set version    = excluded.version,
+       applied_at = now(),
+       packs      = excluded.packs,
+       note       = excluded.note;
+
+alter table public.tc_schema_registry enable row level security;
+grant select on public.tc_schema_registry to authenticated;
+revoke all on public.tc_schema_registry from anon;
+
+drop policy if exists tc_schema_registry_read on public.tc_schema_registry;
+create policy tc_schema_registry_read on public.tc_schema_registry
+  for select using (public.is_admin() or public.is_tutor());
+
+-- One call the app can make instead of probing function-by-function.
+create or replace function public.tc_schema_info()
+returns jsonb
+language sql stable security definer set search_path = public
+as $$
+  select jsonb_build_object(
+    'ok', true,
+    'version', r.version,
+    'applied_at', r.applied_at,
+    'packs', r.packs,
+    'expected', 'V12'
+  ) from public.tc_schema_registry r where r.id = 1;
+$$;
+grant execute on function public.tc_schema_info() to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- PART B1 · COMPRESS — LZ4 on the columns that actually get big.
+--   Guarded twice: server_version must be >= 14, and each ALTER is wrapped so a
+--   build without LZ4 support degrades to the default pglz instead of failing
+--   the whole script.
+--   NOTE: this affects rows written AFTER the change. Existing rows re-compress
+--   when they are next rewritten (or on a VACUUM FULL, which we do not run
+--   automatically because it takes an exclusive lock).
+-- ---------------------------------------------------------------------------
+do $lz4$
+declare
+  t record;
+  targets text[][] := array[
+    -- The genuinely heavy ones, verified to exist in complete-schema.sql.
+    ['cbt_exams',        'questions'],      -- the whole question bank per paper
+    ['cbt_results',      'answers'],        -- what the candidate picked
+    ['cbt_results',      'review'],         -- per-question replay for the PDF
+    ['cbt_results',      'detail'],         -- grading detail
+    ['cbt_results',      'subject_scores'], -- per-subject breakdown
+    ['applications',     'payload'],        -- full application form submissions
+    ['application_links','fields'],
+    ['survey_responses', 'answers'],
+    ['module_records',   'data'],
+    ['surveys',          'questions'],
+    ['polls',            'options'],
+    ['session_notes',    'body'],
+    ['reading_items',    'notes'],
+    ['practice_settings','role_access'],
+    ['practice_settings','role_write']
+  ];
+  i int;
+begin
+  if current_setting('server_version_num')::int < 140000 then
+    raise notice 'LZ4 column compression needs PostgreSQL 14+. Skipped (TOAST/pglz still applies).';
+    return;
+  end if;
+  for i in 1 .. array_length(targets, 1) loop
+    begin
+      if exists (
+        select 1 from information_schema.columns
+         where table_schema = 'public'
+           and table_name  = targets[i][1]
+           and column_name = targets[i][2]
+      ) then
+        execute format('alter table public.%I alter column %I set compression lz4',
+                       targets[i][1], targets[i][2]);
+      end if;
+    exception when others then
+      raise notice 'LZ4 not applied to %.% (%). Default compression remains.',
+                   targets[i][1], targets[i][2], sqlerrm;
+    end;
+  end loop;
+end
+$lz4$;
+
+-- ---------------------------------------------------------------------------
+-- PART B2 · MEASURE — what is actually using the 500 MB?
+-- ---------------------------------------------------------------------------
+create or replace function public.tc_db_report()
+returns jsonb
+language sql stable security definer set search_path = public
+as $$
+  with sizes as (
+    select c.relname as table_name,
+           pg_total_relation_size(c.oid) as bytes
+      from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'public' and c.relkind = 'r'
+  ), total as (
+    select coalesce(sum(bytes), 0)::bigint as b from sizes
+  )
+  select jsonb_build_object(
+    'ok', true,
+    'checked_at', now(),
+    'quota_bytes', 524288000,                                  -- 500 MB free tier
+    'used_bytes', (select b from total),
+    'used_mb', round((select b from total) / 1048576.0, 2),
+    'used_pct', round((select b from total) / 5242880.0, 2),   -- % of 500 MB
+    'state', case
+               when (select b from total) > 440401920 then 'critical'   -- >84%
+               when (select b from total) > 366545920 then 'warning'    -- >70%
+               else 'healthy'
+             end,
+    'top_tables', (
+      select jsonb_agg(jsonb_build_object(
+               'table', table_name,
+               'mb', round(bytes / 1048576.0, 2),
+               'pct', round(bytes / greatest((select b from total), 1)::numeric * 100, 1)))
+        from (select * from sizes order by bytes desc limit 12) s
+    ),
+    'row_counts', (
+      select jsonb_object_agg(t, n) from (
+        select 'cbt_results' as t, (select count(*) from public.cbt_results) as n
+        union all select 'activity_log', (select count(*) from public.activity_log)
+        union all select 'notifications', (select count(*) from public.notifications)
+        union all select 'login_audit', (select count(*) from public.login_audit)
+        union all select 'sessions', (select count(*) from public.sessions)
+      ) x
+    )
+  );
+$$;
+grant execute on function public.tc_db_report() to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- PART B3 · RECLAIM — retention on append-only logs.
+--   Admin-only. Defaults are deliberately generous; nothing academic is touched.
+-- ---------------------------------------------------------------------------
+create or replace function public.tc_prune_logs(p_days int default 180)
+returns jsonb
+language plpgsql security definer set search_path = public
+as $$
+declare
+  cutoff timestamptz := now() - make_interval(days => greatest(p_days, 30));
+  a int := 0; b int := 0; c int := 0; d int := 0;
+begin
+  if not public.is_admin() then
+    raise exception 'Only an administrator may prune logs.';
+  end if;
+
+  delete from public.activity_log     where created_at < cutoff;              get diagnostics a = row_count;
+  delete from public.login_audit      where created_at < cutoff;              get diagnostics b = row_count;
+  delete from public.notifications    where created_at < cutoff
+                                        and read_at is not null;              get diagnostics c = row_count;
+  delete from public.tc_keepalive_log where pinged_at < now() - interval '30 days';
+  get diagnostics d = row_count;
+
+  return jsonb_build_object(
+    'ok', true, 'cutoff', cutoff,
+    'deleted', jsonb_build_object('activity_log', a, 'login_audit', b,
+                                  'notifications_read', c, 'keepalive_log', d));
+end $$;
+grant execute on function public.tc_prune_logs(int) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- PART B4 · RECLAIM — slim OLD quiz results.
+--   `detail` and `answers` are the per-question replay blob: what the learner
+--   picked, the key, the explanation. It is what powers the review screen and
+--   the PDF, and it is by far the biggest thing this platform stores.
+--
+--   After a couple of terms nobody re-opens a review, but the SCORE must live
+--   forever. So for results older than p_days we drop the replay blob and keep
+--   score, max_score, subject_scores and every scoresheet row. Analytics,
+--   value-added, predictions and the scoresheet are completely unaffected.
+--
+--   A marker is written into `detail` so the review screen can explain the
+--   absence honestly instead of rendering an empty page.
+-- ---------------------------------------------------------------------------
+create or replace function public.tc_slim_cbt_results(p_days int default 365)
+returns jsonb
+language plpgsql security definer set search_path = public
+as $$
+declare n int := 0; freed_estimate bigint := 0;
+begin
+  if not public.is_admin() then
+    raise exception 'Only an administrator may slim CBT results.';
+  end if;
+
+  select coalesce(sum(pg_column_size(answers) + pg_column_size(review) + pg_column_size(detail)), 0)
+    into freed_estimate
+    from public.cbt_results
+   where created_at < now() - make_interval(days => greatest(p_days, 90))
+     and detail is not null
+     and (detail ? 'archived') is not true;
+
+  update public.cbt_results
+     set answers = null,
+         review  = null,
+         detail  = jsonb_build_object(
+                     'archived', true,
+                     'archived_at', now(),
+                     'note', 'Per-question replay removed to protect the free-tier database. '
+                          || 'Score, per-subject scores and every scoresheet row are unchanged.')
+   where created_at < now() - make_interval(days => greatest(p_days, 90))
+     and detail is not null
+     and (detail ? 'archived') is not true;
+  get diagnostics n = row_count;
+
+  return jsonb_build_object('ok', true, 'slimmed', n,
+                            'freed_bytes_estimate', freed_estimate,
+                            'freed_mb_estimate', round(freed_estimate / 1048576.0, 2));
+end $$;
+grant execute on function public.tc_slim_cbt_results(int) to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- PART B5 · AUTOMATE — nightly housekeeping when pg_cron exists.
+--   Conservative: logs older than a year, quiz replay older than two years.
+--   pg_cron only runs while the project is awake, which is exactly what the
+--   keep-alive layers guarantee.
+-- ---------------------------------------------------------------------------
+do $housekeeping$
+begin
+  if exists (select 1 from pg_available_extensions where name = 'pg_cron') then
+    begin
+      create extension if not exists pg_cron;
+      perform cron.unschedule(jobid) from cron.job where jobname = 'tc-housekeeping';
+      perform cron.schedule('tc-housekeeping', '17 3 * * 0',
+        $job$
+          delete from public.activity_log     where created_at < now() - interval '365 days';
+          delete from public.login_audit      where created_at < now() - interval '365 days';
+          delete from public.tc_keepalive_log where pinged_at  < now() - interval '30 days';
+        $job$);
+    exception when others then
+      raise notice 'pg_cron housekeeping not scheduled (%). Non-fatal.', sqlerrm;
+    end;
+  end if;
+end
+$housekeeping$;
+
+select 'Tutoring Connect V12 schema registry + quota guard installed ✅' as status;

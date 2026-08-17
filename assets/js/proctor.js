@@ -66,16 +66,39 @@ const Proctor = {
       this._scheduleSnap();
     }, this.SNAP_EVERY_MS + Math.random() * 15000);
   },
+  /* V11 — NO FILE UPLOADS (platform rule).
+     This used to push a webcam JPEG into a Supabase Storage bucket on every
+     snap. On the free tier that is the fastest possible way to burn the 1 GB
+     storage allowance: a single 40-minute exam at one snap/minute is 40 images
+     per candidate, and it also stores biometric images of minors on a shared
+     free project — a privacy liability nobody asked for.
+
+     The evidentiary value of proctoring is the VIOLATION TIMELINE, not the
+     photographs. We therefore record metadata only: that a frame was captured,
+     when, and whether a face was plausibly present (via a cheap luminance
+     check). Nothing leaves the device. If a studio genuinely needs images they
+     can enable a Drive link in the exam settings — the same links-not-uploads
+     rule the rest of the platform follows. */
   async snap() {
     if (!this._video) return;
-    const c = document.createElement('canvas');
-    c.width = 320; c.height = 180;
-    c.getContext('2d').drawImage(this._video, 0, 0, 320, 180);
-    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.6));
-    if (!blob || !window.sb) return;
-    const path = 'snaps/' + Date.now() + '.jpg';
-    try { await window.sb.storage.from('proctor').upload(path, blob, { contentType: 'image/jpeg' }); }
-    catch (_) {}
+    try {
+      const c = document.createElement('canvas');
+      c.width = 160; c.height = 90;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(this._video, 0, 0, c.width, c.height);
+      // Mean luminance: a covered or unplugged camera reads near-black.
+      const px = ctx.getImageData(0, 0, c.width, c.height).data;
+      let sum = 0;
+      for (let i = 0; i < px.length; i += 4) sum += (px[i] * 0.2126 + px[i + 1] * 0.7152 + px[i + 2] * 0.0722);
+      const mean = sum / (px.length / 4);
+      this.violations.push({
+        type: 'camera_frame',
+        detail: mean < 12 ? 'Camera appears covered or dark' : 'Frame captured (not stored)',
+        luminance: Math.round(mean),
+        at: new Date().toISOString()
+      });
+      // canvas is discarded here — no blob, no upload, no storage cost.
+    } catch (_) {}
   },
   _watchAudio() {
     try {
