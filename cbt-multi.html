@@ -1,15 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="assets/js/auth-guard.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Multi-subject CBT • ADEWALE CLASSROOM</title>
 <meta name="description" content="UTME-style sitting. Shared timer. Per-subject and overall scores. Registered papers use student ID only. Each subject pushes its own scoresheet row.">
-<meta name="theme-color" content="#134e4a">
+<meta name="theme-color" content="#0506ae">
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/layouts.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/js/config.js"></script>
+<script src="assets/js/theme-engine.js"></script>
 <script src="assets/js/catalog.js"></script>
 <script src="assets/js/license.js"></script>
 <script src="assets/js/cbt.js"></script>
@@ -17,34 +20,289 @@
 <script src="assets/js/assistant-kb.js"></script>
 <script src="assets/js/pwa-install.js"></script>
 <script src="assets/js/site-help.js"></script>
+<script src="assets/js/page-guide.js" defer></script>
+<script src="assets/js/seo.js" defer></script>
+<script src="assets/js/keepalive-monitor.js" defer></script>
+<script src="assets/js/schema-doctor.js" defer></script>
+<script src="assets/js/quota-guard.js" defer></script>
 <script src="assets/js/chatbot.js"></script>
 <script src="assets/js/app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec;--tc-primary:#0506ae;--tc-accent:#964eec;--tc-gradient:linear-gradient(135deg,#0506ae,#964eec);--tc-primary-dark:#0506ae;--tc-primary-light:#964eec;--tc-violet:#964eec;--tc-violet-light:#a78bfa;--on-primary:#ffffff;--ring:rgba(5,6,174,.22)}</style>
 </head>
-<body data-cbt-exam="1">
-<main class="container" style="max-width:920px;padding:28px 16px 80px">
-  <h1 class="serif">Multi-subject CBT</h1>
-  <section class="help-card">
-    <strong>One sitting · subject tabs · two score layers</strong>
-    <p>Same identity rules as Take quiz: <b>Registered</b> = student ID only (official name auto-filled). <b>Open</b> = guests or registered learners. When the paper is Graded, the trigger writes <b>one scoresheet row per subject</b> plus an overall row — so Maths does not smear into English.</p>
-  </section>
-  <p><a class="btn btn-outline" href="cbt-exam.html">Single-paper Take quiz</a>
-     <a class="btn btn-ghost" href="practice.html">Create a paper</a></p>
-  <div id="gate" class="card">
-    <div class="form-group"><label>Quiz code</label><input class="form-input" id="code"></div>
-    <div class="form-group"><label>Student ID (required if Registered)</label><input class="form-input" id="sid" placeholder="TC-0001"></div>
-    <div class="form-group"><label>Name (auto from ID on Registered papers)</label><input class="form-input" id="dname"></div>
-    <p id="hint" class="muted"></p>
-    <button class="btn btn-primary" type="button" id="go">Open paper</button>
+<body data-cbt-multi="1">
+<main class="container" style="max-width:1080px;padding:26px 16px 90px">
+  <h1 class="page-title">Multi-subject CBT builder</h1>
+  <p class="page-sub muted">Build <b>one</b> paper containing <b>several subjects</b> — exactly the UTME/JAMB pattern.
+     Candidates get a single quiz code, see a tab per subject while sitting it, and questions never mix across subjects.
+     When the paper is <b>Graded</b>, the database trigger writes <b>one scoresheet row per subject plus an overall row</b>,
+     so Mathematics never smears into English.</p>
+
+  <div class="workflow" style="margin:14px 0">
+    <span>1. Name the paper</span><span>2. Add a subject block per subject</span>
+    <span>3. Paste that subject's CSV</span><span>4. Save &amp; share one code</span>
   </div>
-  <div id="exam" hidden></div>
-  <div id="review" hidden></div>
+
+  <section class="card">
+    <h3 style="margin-top:0">Paper settings</h3>
+    <div class="grid grid-2">
+      <div class="form-group"><label>Paper title</label>
+        <input class="form-input" id="mm-title" placeholder="End of term — Mathematics, English &amp; Physics"></div>
+      <div class="form-group"><label>Quiz code (candidates type this)</label>
+        <div style="display:flex;gap:6px"><input class="form-input" id="mm-code" placeholder="MOCK-2026">
+        <button class="btn btn-outline btn-sm" type="button" id="mm-gen">Generate</button></div></div>
+      <div class="form-group"><label>Quiz kind</label>
+        <select class="form-input" id="mm-kind">
+          <option value="graded">Graded — pushes to the scoresheet</option>
+          <option value="review">Review — answers + explanations, not graded</option>
+          <option value="self">Self — private practice</option>
+        </select></div>
+      <div class="form-group"><label>Total duration (minutes)</label>
+        <input class="form-input" type="number" id="mm-mins" value="90" min="5"></div>
+      <div class="form-group"><label>Questions per subject (0 = all)</label>
+        <input class="form-input" type="number" id="mm-sel" value="0" min="0"></div>
+      <div class="form-group"><label>Engagement (optional)</label>
+        <select class="form-input" id="mm-eng"><option value="">— none —</option></select></div>
+      <div class="form-group"><label>Identity mode</label>
+        <select class="form-input" id="mm-mode">
+          <option value="registered">Registered — student ID only, name auto-filled</option>
+          <option value="open">Open — guests may type a name</option>
+        </select></div>
+      <div class="form-group" style="grid-column:1/-1"><label>Candidate instructions</label>
+        <textarea class="form-input" id="mm-instr" rows="2">Answer all questions. Use the subject tabs to move between subjects. The timer is shared across the whole paper.</textarea></div>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:6px">
+      <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" id="mm-rand" checked> Randomise questions <span class="muted">(within each subject only)</span></label>
+      <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" id="mm-tab" checked> Log tab-switching</label>
+      <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" id="mm-copy" checked> Block copy / right-click</label>
+      <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" id="mm-full"> Force fullscreen</label>
+      <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" id="mm-rev" checked> Release review after submit</label>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:14px">
+    <h3 style="margin-top:0">Subjects</h3>
+    <p class="muted" style="font-size:.9rem">One block per subject. Paste that subject's CSV
+      (headers: <code>question,type,a,b,c,d,answer,explanation,mark</code>) or upload a .csv file.
+      Need question sets? Open <a href="cbt-prompts.html">Question prompt packs</a> — free, no AI API.</p>
+    <div id="mm-subjects"></div>
+    <button class="btn btn-outline" type="button" id="mm-add">＋ Add subject</button>
+  </section>
+
+  <section class="card" style="margin-top:14px">
+    <h3 style="margin-top:0">Blueprint</h3>
+    <div id="mm-blueprint" class="muted">Add a subject to see the paper blueprint.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn btn-primary" type="button" id="mm-save">💾 Save multi-subject paper</button>
+      <a class="btn btn-ghost" href="cbt-exam.html">Open the sitting page</a>
+      <a class="btn btn-ghost" href="practice.html">Single-subject builder</a>
+    </div>
+    <div id="mm-status" style="margin-top:10px"></div>
+  </section>
+
+  <section class="card" style="margin-top:14px">
+    <h3 style="margin-top:0">Existing multi-subject papers</h3>
+    <div id="mm-list" class="muted">Loading…</div>
+  </section>
 </main>
+
 <script>
-CBT.init(window.sb);
-const q=new URLSearchParams(location.search);
-if(q.get('code')) document.getElementById('code').value=q.get('code');
-const cached=localStorage.getItem('tc-student-no'); if(cached) document.getElementById('sid').value=cached;
-document.getElementById('go').onclick=()=>{ location.href='cbt-exam.html?code='+encodeURIComponent(document.getElementById('code').value.trim()); };
+/* ============================================================================
+   Multi-subject CBT builder (V10).
+   Before V10 this page was a 56-line stub that simply redirected to
+   cbt-exam.html — the multi-subject RUNTIME existed (cbt-exam.html renders
+   subject tabs from q.subject) but nothing in the product could BUILD such a
+   paper. This is that missing builder, modelled on the School Connect pattern
+   and adapted to Tutoring Connect's quiz_kind + engagement model.
+   ========================================================================== */
+const MM = {
+  n: 0,
+  esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); },
+
+  addSubject(name){
+    const i = ++this.n;
+    const box = document.createElement('div');
+    box.className = 'card';
+    box.style.cssText = 'margin:10px 0;background:var(--surface-soft,#f8fafc);border-left:4px solid var(--accent)';
+    box.dataset.mmSubject = i;
+    box.innerHTML =
+      '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">' +
+        '<div class="form-group" style="flex:1;min-width:200px;margin:0"><label>Subject name</label>' +
+          '<input class="form-input mm-name" placeholder="Mathematics" value="' + this.esc(name||'') + '"></div>' +
+        '<div class="form-group" style="width:150px;margin:0"><label>Marks each</label>' +
+          '<input class="form-input mm-mark" type="number" value="1" min="1"></div>' +
+        '<button class="btn btn-ghost btn-sm" type="button" data-mm-del="' + i + '">Remove</button>' +
+      '</div>' +
+      '<div class="form-group" style="margin-top:10px"><label>CSV for this subject</label>' +
+        '<textarea class="form-input mm-csv" rows="5" placeholder="question,type,a,b,c,d,answer,explanation,mark"></textarea></div>' +
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+        '<input type="file" accept=".csv,text/csv" class="mm-file">' +
+        '<span class="mm-count muted" style="font-size:.85rem">0 questions</span></div>';
+    document.getElementById('mm-subjects').appendChild(box);
+
+    box.querySelector('[data-mm-del]').onclick = () => { box.remove(); MM.blueprint(); };
+    const ta = box.querySelector('.mm-csv');
+    ta.addEventListener('input', () => MM.blueprint());
+    box.querySelector('.mm-name').addEventListener('input', () => MM.blueprint());
+    box.querySelector('.mm-file').addEventListener('change', e => {
+      const f = e.target.files && e.target.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = () => { ta.value = r.result; MM.blueprint(); };
+      r.readAsText(f);
+    });
+    this.blueprint();
+  },
+
+  blocks(){ return [...document.querySelectorAll('[data-mm-subject]')]; },
+
+  /* Parse every block into a normalised, subject-tagged question list. */
+  collect(){
+    const per = Number(document.getElementById('mm-sel').value || 0);
+    const rand = document.getElementById('mm-rand').checked;
+    const subjects = [], breakdown = [];
+    let questions = [], err = null;
+
+    this.blocks().forEach(b => {
+      const name = (b.querySelector('.mm-name').value || '').trim();
+      const csv  = (b.querySelector('.mm-csv').value || '').trim();
+      const mark = Number(b.querySelector('.mm-mark').value || 1) || 1;
+      if (!name && !csv) return;
+      if (!name) { err = err || 'Every subject block needs a name.'; return; }
+      if (!csv)  { err = err || ('Subject "' + name + '" has no questions.'); return; }
+      if (subjects.some(s => s.toLowerCase() === name.toLowerCase())) {
+        err = err || ('Duplicate subject name: ' + name); return;
+      }
+      let qs = [];
+      try { qs = CBT.parseCSV(csv) || []; } catch (e) { err = err || ('CSV error in ' + name + ': ' + e.message); return; }
+      if (!qs.length) { err = err || ('No rows parsed for ' + name + '.'); return; }
+
+      if (rand) qs = qs.map(q => [Math.random(), q]).sort((a, b2) => a[0] - b2[0]).map(x => x[1]);
+      if (per > 0) qs = qs.slice(0, per);
+
+      // Tag EVERY question with its subject — this is what drives the subject
+      // tabs at sitting time and the per-subject scoresheet rows afterwards.
+      qs.forEach(q => { q.subject = name; q.section = name; if (!q.mark) q.mark = mark; });
+
+      breakdown.push({ name, count: qs.length, marks: qs.length * mark, start: questions.length });
+      questions = questions.concat(qs);
+      subjects.push(name);
+      const c = b.querySelector('.mm-count');
+      if (c) c.textContent = qs.length + ' question' + (qs.length === 1 ? '' : 's');
+    });
+    return { questions, subjects, breakdown, err };
+  },
+
+  blueprint(){
+    const host = document.getElementById('mm-blueprint');
+    const { questions, breakdown, err } = this.collect();
+    if (err) { host.innerHTML = '<span style="color:#b42318">⚠️ ' + this.esc(err) + '</span>'; return; }
+    if (!breakdown.length) { host.innerHTML = '<span class="muted">Add a subject to see the paper blueprint.</span>'; return; }
+    const totalMarks = breakdown.reduce((a, s) => a + s.marks, 0);
+    host.innerHTML =
+      '<div class="table-wrap"><table style="width:100%;font-size:.9rem">' +
+      '<thead><tr><th align="left">Subject</th><th align="right">Questions</th><th align="right">Marks</th><th align="right">Share</th></tr></thead><tbody>' +
+      breakdown.map(s => '<tr><td><b>' + this.esc(s.name) + '</b></td><td align="right">' + s.count +
+        '</td><td align="right">' + s.marks + '</td><td align="right">' +
+        Math.round(s.marks / totalMarks * 100) + '%</td></tr>').join('') +
+      '</tbody><tfoot><tr><td><b>Total</b></td><td align="right"><b>' + questions.length +
+      '</b></td><td align="right"><b>' + totalMarks + '</b></td><td></td></tr></tfoot></table></div>';
+  },
+
+  async save(){
+    const say = (h, bad) => document.getElementById('mm-status').innerHTML =
+      '<div style="padding:10px 12px;border-radius:10px;background:#fff;border-left:4px solid ' +
+      (bad ? '#b42318' : '#047857') + '">' + h + '</div>';
+    const title = document.getElementById('mm-title').value.trim();
+    const code  = document.getElementById('mm-code').value.trim().toUpperCase();
+    if (!title) return say('⚠️ Give the paper a title.', true);
+    if (!code)  return say('⚠️ Give the paper a quiz code — candidates type this.', true);
+
+    const { questions, subjects, breakdown, err } = this.collect();
+    if (err) return say('⚠️ ' + this.esc(err), true);
+    if (subjects.length < 2) return say('⚠️ A multi-subject paper needs at least two subjects. Use the single-subject builder otherwise.', true);
+    if (!window.sb) return say('⚠️ Preview only — connect Supabase in assets/js/config.js to save.', true);
+
+    const kind = document.getElementById('mm-kind').value;
+    const row = {
+      title, code, quiz_kind: kind,
+      duration_min: Number(document.getElementById('mm-mins').value || 90),
+      subject: subjects.join(' · '),
+      engagement_id: document.getElementById('mm-eng').value || null,
+      questions,
+      instructions: document.getElementById('mm-instr').value || '',
+      anti_cheat: {
+        tab_focus: document.getElementById('mm-tab').checked,
+        block_copy: document.getElementById('mm-copy').checked,
+        fullscreen: document.getElementById('mm-full').checked
+      },
+      multi_subject: true,
+      subject_breakdown: breakdown,
+      identity_mode: document.getElementById('mm-mode').value,
+      push_to_scoresheet: kind === 'graded',
+      show_review: document.getElementById('mm-rev').checked,
+      is_open: true, status: 'open'
+    };
+    say('Saving…');
+    const { error } = await sb.from('cbt_exams').insert(row);
+    if (error) return say('❌ ' + this.esc(error.message), true);
+    const url = location.origin + location.pathname.replace(/cbt-multi\.html$/, '') + 'cbt-exam.html?code=' + encodeURIComponent(code);
+    say('✅ Saved <b>' + this.esc(title) + '</b> — ' + subjects.length + ' subjects, ' + questions.length +
+        ' questions.<br>Share this link:<br><code>' + this.esc(url) + '</code>');
+    this.list();
+  },
+
+  async list(){
+    const host = document.getElementById('mm-list');
+    if (!window.sb) { host.textContent = 'Connect Supabase to list saved papers.'; return; }
+    const { data, error } = await sb.from('cbt_exams')
+      .select('id,title,code,quiz_kind,subject,duration_min,created_at,multi_subject')
+      .eq('multi_subject', true).order('created_at', { ascending: false }).limit(25);
+    if (error) { host.innerHTML = '<span style="color:#b42318">' + this.esc(error.message) + '</span>'; return; }
+    if (!data || !data.length) { host.textContent = 'No multi-subject papers yet.'; return; }
+    host.innerHTML = '<div class="table-wrap"><table style="width:100%;font-size:.9rem">' +
+      '<thead><tr><th align="left">Title</th><th align="left">Code</th><th align="left">Subjects</th>' +
+      '<th align="left">Kind</th><th align="right">Mins</th><th></th></tr></thead><tbody>' +
+      data.map(r => '<tr><td>' + this.esc(r.title) + '</td><td><code>' + this.esc(r.code || '') + '</code></td>' +
+        '<td>' + this.esc(r.subject || '') + '</td><td>' + this.esc(r.quiz_kind || '') + '</td>' +
+        '<td align="right">' + (r.duration_min || '') + '</td>' +
+        '<td align="right"><a class="btn btn-sm btn-outline" href="cbt-exam.html?code=' +
+        encodeURIComponent(r.code || '') + '">Open</a></td></tr>').join('') +
+      '</tbody></table></div>';
+  },
+
+  async engagements(){
+    if (!window.sb) return;
+    try {
+      const { data } = await sb.from('engagements').select('id,name').order('name');
+      const sel = document.getElementById('mm-eng');
+      (data || []).forEach(e => {
+        const o = document.createElement('option');
+        o.value = e.id; o.textContent = e.name || e.id; sel.appendChild(o);
+      });
+    } catch (_) {}
+  },
+
+  init(){
+    document.getElementById('mm-add').onclick = () => this.addSubject();
+    document.getElementById('mm-save').onclick = () => this.save();
+    document.getElementById('mm-gen').onclick = () => {
+      document.getElementById('mm-code').value =
+        'MS-' + Math.random().toString(36).slice(2, 7).toUpperCase();
+    };
+    ['mm-sel','mm-rand'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', () => this.blueprint());
+    });
+    this.addSubject('Mathematics');
+    this.addSubject('English');
+    this.engagements();
+    this.list();
+  }
+};
+window.MM = MM;
+document.addEventListener('DOMContentLoaded', () => { try { CBT.init(window.sb); } catch(_){} MM.init(); });
 </script>
 </body>
 </html>

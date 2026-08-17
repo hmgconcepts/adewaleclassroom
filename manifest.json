@@ -1,12 +1,54 @@
 {
-  "name": "Tutoring Connect",
-  "short_name": "TutorConnect",
+  "name": "ADEWALE CLASSROOM",
+  "short_name": "ADC",
+  "description": "Independent progress. Visible to parents. Built for Nigerian and international learners.",
   "start_url": "dashboard.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#f7f4ef",
-  "theme_color": "#134e4a",
+  "orientation": "any",
+  "background_color": "#f8fafc",
+  "theme_color": "#0506ae",
+  "categories": [
+    "education",
+    "productivity"
+  ],
+  "lang": "en",
   "icons": [
-    { "src": "assets/img/logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "assets/img/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    {
+      "src": "assets/img/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/img/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/img/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "dashboard.html"
+    },
+    {
+      "name": "My scores",
+      "url": "scoresheet.html"
+    },
+    {
+      "name": "Bookings",
+      "url": "bookings.html"
+    },
+    {
+      "name": "Messages",
+      "url": "inbox.html"
+    }
   ]
 }

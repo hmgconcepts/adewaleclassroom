@@ -1,18 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="assets/js/auth-guard.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Take quiz • ADEWALE CLASSROOM</title>
 <meta name="description" content="Sit a quiz. Registered papers need your student ID only — your official name loads automatically. Open papers allow guests. Installable PWA.">
-<meta name="theme-color" content="#134e4a">
+<meta name="theme-color" content="#0506ae">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
 <link rel="apple-touch-icon" href="assets/img/logo.png">
 <link rel="stylesheet" href="assets/css/style.css">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Source+Serif+4:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/layouts.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/js/config.js"></script>
+<script src="assets/js/theme-engine.js"></script>
 <script src="assets/js/catalog.js"></script>
 <script src="assets/js/license.js"></script>
 <script src="assets/js/cbt.js"></script>
@@ -22,8 +24,17 @@
 <script src="assets/js/brand.js"></script>
 <script src="assets/js/pwa-install.js"></script>
 <script src="assets/js/site-help.js"></script>
+<script src="assets/js/page-guide.js" defer></script>
+<script src="assets/js/seo.js" defer></script>
+<script src="assets/js/keepalive-monitor.js" defer></script>
+<script src="assets/js/schema-doctor.js" defer></script>
+<script src="assets/js/quota-guard.js" defer></script>
 <script src="assets/js/chatbot.js"></script>
 <script src="assets/js/app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec;--tc-primary:#0506ae;--tc-accent:#964eec;--tc-gradient:linear-gradient(135deg,#0506ae,#964eec);--tc-primary-dark:#0506ae;--tc-primary-light:#964eec;--tc-violet:#964eec;--tc-violet-light:#a78bfa;--on-primary:#ffffff;--ring:rgba(5,6,174,.22)}</style>
 </head>
 <body data-cbt-exam="1">
 <main class="container" style="max-width:880px;padding:28px 16px 80px">
@@ -181,7 +192,7 @@ async function finish() {
     identity_mode: state.identity_mode
   };
   if (window.sb && state.exam.id) {
-    await window.sb.from('cbt_results').insert({
+    const payload = {
       exam_id: state.exam.id,
       learner_id: state.learner && state.learner.id,
       student_no: meta.student_no,
@@ -190,16 +201,48 @@ async function finish() {
       quiz_kind: state.exam.quiz_kind,
       answers, review: result.detail, subject_scores: result.subject_scores,
       violations: Proctor.violations, detail: result
-    });
+    };
+    // BUGFIX: this insert used to be fire-and-forget. When RLS or the network
+    // rejected it the learner still saw "Graded result saved" and the attempt
+    // was lost for good. Now we check the error, keep an offline copy so the
+    // work is never destroyed, and tell the truth.
+    try {
+      const { error } = await window.sb.from('cbt_results').insert(payload);
+      if (error) throw error;
+      state.saved = true;
+    } catch (err) {
+      state.saved = false;
+      state.saveError = (err && (err.message || err.error_description)) || String(err);
+      try {
+        const pending = JSON.parse(localStorage.getItem('tc-cbt-pending') || '[]');
+        pending.push({ at: new Date().toISOString(), payload: payload });
+        localStorage.setItem('tc-cbt-pending', JSON.stringify(pending.slice(-20)));
+      } catch (_) {}
+      console.error('[CBT] result was NOT saved to the server:', state.saveError);
+    }
+  } else {
+    state.saved = false;
+    state.saveError = 'No database configured for this studio.';
   }
   document.getElementById('exam').hidden = true;
   const rev = document.getElementById('review');
   rev.hidden = false;
   const show = state.exam.show_review !== false;
-  rev.innerHTML = (show ? CBT.reviewHTML(result, meta) : `<div class="card"><h2>Submitted</h2><p>Your tutor will release the review.</p></div>`) +
+  const banner = state.saved === false
+    ? `<div class="card" style="border-left:4px solid #b42318;background:#fef2f2;margin-bottom:12px">
+         <h3 style="color:#b42318;margin:0 0 6px">⚠️ Your score has NOT reached the tutor yet</h3>
+         <p style="margin:0">Your answers are safe on this device and your review is below —
+         do not close this tab until you have saved the PDF.
+         Please show this message to your tutor.</p>
+         <p class="muted" style="margin:6px 0 0;font-size:.8rem">Reason: ${TC.esc(state.saveError || 'unknown')}</p>
+       </div>`
+    : '';
+  rev.innerHTML = banner + (show ? CBT.reviewHTML(result, meta) : `<div class="card"><h2>Submitted</h2><p>Your tutor will release the review.</p></div>`) +
     `<p style="margin-top:12px"><button class="btn btn-accent" type="button" onclick="CBT.printReview()">Save / print PDF</button>
      <a class="btn btn-ghost" href="scoresheet.html">Open scoresheet</a></p>`;
-  if (state.exam.quiz_kind === 'graded') {
+  if (state.saved === false) {
+    toast('Your score could not be saved to the studio. Save the PDF and tell your tutor.', 'error', 12000);
+  } else if (state.exam.quiz_kind === 'graded') {
     toast('Graded result saved. Overall + each subject pushed to the scoresheet.', 'success');
   }
 }
