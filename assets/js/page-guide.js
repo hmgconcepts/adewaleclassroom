@@ -2605,7 +2605,7 @@
   ],
   "faqs": [],
   "purpose": "Candidate form opened by an exam link. Local and international boards.",
-  "detail": "Candidate form opened by an exam link. Local and international boards. The main actions available here are: <b>Sign out</b>, <b>Submit registration</b>, <b>Theme</b>. It is form-driven — you fill a form and save; the record appears in the list immediately. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
+  "detail": "Candidate form opened by an exam link. Local and international boards. The main actions available here are: <b>Acknowledgement</b>, <b>Certificate</b>, <b>Check my status</b>, <b>Copy exam number</b>, <b>Exam docket</b>, <b>Outcome letter</b>, <b>Register another candidate</b>, <b>Result slip</b>. It is form-driven — you fill a form and save; the record appears in the list immediately. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
   "audience": "Owner and admin — this is business development. Families never see the pipeline.",
   "why": "Tutoring income is won or lost at the top of the funnel. Recording every enquiry means you can see which channel actually produces paying families.",
   "how": [
@@ -2624,9 +2624,14 @@
    "onboarding"
   ],
   "actions": [
-   "Sign out",
-   "Submit registration",
-   "Theme"
+   "Acknowledgement",
+   "Certificate",
+   "Check my status",
+   "Copy exam number",
+   "Exam docket",
+   "Outcome letter",
+   "Register another candidate",
+   "Result slip"
   ],
   "tabs": []
  },
@@ -4116,7 +4121,7 @@
   ],
   "faqs": [],
   "purpose": "Generate from sessions or from packages. Printable. Multi-currency.",
-  "detail": "Generate from sessions or from packages. Printable. Multi-currency. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "Generate from sessions or from packages. Printable. Multi-currency. The main actions available here are: <b>Build statement</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Owner and admin. A parent sees only their own invoices, payments and receipts.",
   "why": "Cash flow keeps the studio alive. Because hours, rates and sessions are already in the system, the money side is arithmetic rather than guesswork.",
   "how": [
@@ -4135,6 +4140,7 @@
    "payroll"
   ],
   "actions": [
+   "Build statement",
    "Sign out",
    "Theme"
   ],
@@ -4566,7 +4572,7 @@
   "tasks": [],
   "faqs": [],
   "purpose": "Lifetime or subscription lock. Same idea as School Connect, adapted.",
-  "detail": "Lifetime or subscription lock. Same idea as School Connect, adapted. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
+  "detail": "Lifetime or subscription lock. Same idea as School Connect, adapted. The main actions available here are: <b>Run write test</b>, <b>Sign out</b>, <b>Theme</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -4585,6 +4591,7 @@
    "contact"
   ],
   "actions": [
+   "Run write test",
    "Sign out",
    "Theme"
   ],
@@ -5631,6 +5638,76 @@
    "payroll"
   ],
   "actions": [
+   "Sign out",
+   "Theme"
+  ],
+  "tabs": []
+ },
+ "payment-plans": {
+  "page": "payment-plans",
+  "file": "payment-plans.html",
+  "title": "Payment plans",
+  "group": "Platform",
+  "access": "staff",
+  "archetype": "list",
+  "sections": [
+   {
+    "name": "Page header",
+    "what": "The title, a one-line purpose, and the ? Page Help button that opens this same explanation inside the app."
+   },
+   {
+    "name": "Toolbar / filters",
+    "what": "Search box, status and date filters, and the Add / New button. Filters narrow the list below without reloading the page."
+   },
+   {
+    "name": "Records table",
+    "what": "Every record you are allowed to see. Parents and learners are filtered to their own rows by the database itself, not by hiding buttons."
+   },
+   {
+    "name": "Row actions",
+    "what": "Open, edit, duplicate or delete a record. Deleting asks for confirmation and is written to the activity log."
+   },
+   {
+    "name": "Record form (modal)",
+    "what": "Opens over the list. Required fields are marked; everything else can be completed later."
+   },
+   {
+    "name": "Export",
+    "what": "Download the current view as CSV. Your data is always portable — nothing is locked in."
+   }
+  ],
+  "roleViews": {
+   "owner": "Full configuration control.",
+   "tutor": "No access.",
+   "parent": "No access.",
+   "learner": "No access."
+  },
+  "tasks": [],
+  "faqs": [],
+  "purpose": "Splits a large fee into an instalment schedule and tracks every part of it. You enter the total, the number of instalments and how often they fall due; every date and amount is generated for you.",
+  "detail": "Splits a large fee into an instalment schedule and tracks every part of it. You enter the total, the number of instalments and how often they fall due; every date and amount is generated for you. The main actions available here are: <b>Generate schedule</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "audience": "Owner, admin and staff. A parent sees their own plan in the family portal, read-only.",
+  "why": "Termly fees are routinely paid in parts, and a family who cannot pay ₦180,000 at once will happily pay ₦60,000 three times. Every serious competitor offers instalments; without this the conversation happened in WhatsApp and the tracking lived in somebody's head. The arrears list replaces that.",
+  "how": [
+   "Choose the family and, optionally, the learner. Both lists auto-fill.",
+   "Enter the <b>total</b> owed — not the instalment amount. The split is calculated for you and previewed live as you type.",
+   "Choose how many instalments and how often: weekly, fortnightly, monthly or termly.",
+   "Press <b>Generate schedule</b>. Every due date and amount is created in one action.",
+   "Note that rounding is absorbed by the <b>first</b> instalment, never the last, so a family never meets a surprise odd amount at the end of a plan they had budgeted for.",
+   "Press <b>✓ Mark paid</b> on an instalment as the money arrives; today's date is filled in for you.",
+   "Anything past its due date appears in <b>Arrears</b> with the number of days late."
+  ],
+  "connects": "Sits alongside invoices.html and payments.html. Families with a wallet can draw instalments from wallet.html. Sibling discounts configured in settings.html apply to the family statement.",
+  "related": [
+   "about",
+   "activity-log",
+   "admin-data",
+   "approvals",
+   "change-password",
+   "contact"
+  ],
+  "actions": [
+   "Generate schedule",
    "Sign out",
    "Theme"
   ],
@@ -7109,6 +7186,79 @@
   ],
   "tabs": []
  },
+ "security-centre": {
+  "page": "security-centre",
+  "file": "security-centre.html",
+  "title": "Security &amp; compliance",
+  "group": "Platform",
+  "access": "staff",
+  "archetype": "list",
+  "sections": [
+   {
+    "name": "Page header",
+    "what": "The title, a one-line purpose, and the ? Page Help button that opens this same explanation inside the app."
+   },
+   {
+    "name": "Toolbar / filters",
+    "what": "Search box, status and date filters, and the Add / New button. Filters narrow the list below without reloading the page."
+   },
+   {
+    "name": "Records table",
+    "what": "Every record you are allowed to see. Parents and learners are filtered to their own rows by the database itself, not by hiding buttons."
+   },
+   {
+    "name": "Row actions",
+    "what": "Open, edit, duplicate or delete a record. Deleting asks for confirmation and is written to the activity log."
+   },
+   {
+    "name": "Record form (modal)",
+    "what": "Opens over the list. Required fields are marked; everything else can be completed later."
+   },
+   {
+    "name": "Export",
+    "what": "Download the current view as CSV. Your data is always portable — nothing is locked in."
+   }
+  ],
+  "roleViews": {
+   "owner": "Full configuration control.",
+   "tutor": "No access.",
+   "parent": "No access.",
+   "learner": "No access."
+  },
+  "tasks": [],
+  "faqs": [],
+  "purpose": "The studio's safety console. It shows what an anonymous stranger can reach, who has been touching learner records, failed sign-in attempts, the consent you hold and the data requests families have made. It also produces the two documents a regulator or a worried parent will ask for: a complete export of everything held on one learner, and an anonymised export for analytics.",
+  "detail": "The studio's safety console. It shows what an anonymous stranger can reach, who has been touching learner records, failed sign-in attempts, the consent you hold and the data requests families have made. It also produces the two documents a regulator or a worried parent will ask for: a complete export of everything held on one learner, and an anonymised export for analytics. The main actions available here are: <b>Download anonymised data</b>, <b>Download full record</b>, <b>Run security scan</b>, <b>Show audit trail</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "audience": "Owner and administrator only. Every function behind this page re-checks your role inside the database, so it cannot be reached by editing the page in a browser.",
+  "why": "You hold children's names, dates of birth, guardian phone numbers, addresses, exam scores and safeguarding notes. Nigeria's NDPA 2023 gives families the right to see and correct that data, and the same duty exists under GDPR and FERPA elsewhere. The control every one of those regimes names first is an immutable audit trail — a record of who accessed what that the accessor cannot edit or delete.",
+  "how": [
+   "Press <b>Run security scan</b>. It asks the database what an anonymous visitor can reach; everything listed should be something a stranger is <i>supposed</i> to use.",
+   "Confirm <b>Tables without row-level security</b> is empty. Anything listed there is readable by anyone holding the public key, which is printed in your page source.",
+   "Review failed sign-ins. Three or more failures against one address is either a forgotten password or somebody guessing.",
+   "Use the <b>Audit trail</b> to answer \"who changed this?\" — filter by table and record id and read the before-and-after of every field.",
+   "When a family asks what you hold on their child, use <b>Export a learner's full record</b>. The statutory deadline is 30 days here and 45 under FERPA; this takes seconds.",
+   "Log every request in <b>Data requests</b> so the clock is visible and nothing is missed.",
+   "Record photo, trip and marketing permissions in <b>Consent</b>, storing the signed form as a Drive link — this studio never accepts uploads."
+  ],
+  "connects": "Reads the same audit trail shown in activity-log.html. Works with safeguarding.html, compliance.html and policies.html. Licence state is managed in license.html.",
+  "related": [
+   "about",
+   "activity-log",
+   "admin-data",
+   "approvals",
+   "change-password",
+   "contact"
+  ],
+  "actions": [
+   "Download anonymised data",
+   "Download full record",
+   "Run security scan",
+   "Show audit trail",
+   "Sign out",
+   "Theme"
+  ],
+  "tabs": []
+ },
  "session-complete": {
   "page": "session-complete",
   "file": "session-complete.html",
@@ -7346,7 +7496,7 @@
   ],
   "faqs": [],
   "purpose": "Brand, signatures, 2FA, language, accessibility, cancellation policy, default timezone/currency.",
-  "detail": "Brand, signatures, 2FA, language, accessibility, cancellation policy, default timezone/currency. The main actions available here are: <b>Save to database</b>, <b>Sign out</b>, <b>Theme</b>, <b>Toggle dark mode</b>, <b>Toggle high contrast</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
+  "detail": "Brand, signatures, 2FA, language, accessibility, cancellation policy, default timezone/currency. The main actions available here are: <b>Save discount rules</b>, <b>Save to database</b>, <b>Sign out</b>, <b>Theme</b>, <b>Toggle dark mode</b>, <b>Toggle high contrast</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -7365,6 +7515,7 @@
    "contact"
   ],
   "actions": [
+   "Save discount rules",
    "Save to database",
    "Sign out",
    "Theme",
@@ -8397,6 +8548,76 @@
    "inquiries"
   ],
   "actions": [
+   "Sign out",
+   "Theme"
+  ],
+  "tabs": []
+ },
+ "wallet": {
+  "page": "wallet",
+  "file": "wallet.html",
+  "title": "Prepaid wallet",
+  "group": "Platform",
+  "access": "staff",
+  "archetype": "list",
+  "sections": [
+   {
+    "name": "Page header",
+    "what": "The title, a one-line purpose, and the ? Page Help button that opens this same explanation inside the app."
+   },
+   {
+    "name": "Toolbar / filters",
+    "what": "Search box, status and date filters, and the Add / New button. Filters narrow the list below without reloading the page."
+   },
+   {
+    "name": "Records table",
+    "what": "Every record you are allowed to see. Parents and learners are filtered to their own rows by the database itself, not by hiding buttons."
+   },
+   {
+    "name": "Row actions",
+    "what": "Open, edit, duplicate or delete a record. Deleting asks for confirmation and is written to the activity log."
+   },
+   {
+    "name": "Record form (modal)",
+    "what": "Opens over the list. Required fields are marked; everything else can be completed later."
+   },
+   {
+    "name": "Export",
+    "what": "Download the current view as CSV. Your data is always portable — nothing is locked in."
+   }
+  ],
+  "roleViews": {
+   "owner": "Full configuration control.",
+   "tutor": "No access.",
+   "parent": "No access.",
+   "learner": "No access."
+  },
+  "tasks": [],
+  "faqs": [],
+  "purpose": "A prepaid credit account for every family. A parent pays once for a block of lessons or a sum of money, and each attended session is drawn down from that balance automatically. Every movement is a permanent ledger row, so the balance is always the sum of its history and can never quietly drift.",
+  "detail": "A prepaid credit account for every family. A parent pays once for a block of lessons or a sum of money, and each attended session is drawn down from that balance automatically. Every movement is a permanent ledger row, so the balance is always the sum of its history and can never quietly drift. The main actions available here are: <b>Add credit</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "audience": "Owner, admin and staff can top up and inspect any family's wallet. A signed-in parent sees only their own balance and movements, enforced by row-level security in the database rather than by hiding a button.",
+  "why": "Chasing an invoice after the lesson has already been taught is the weakest position a tutoring studio can be in. A prepaid wallet reverses the cash flow — the money arrives first and the teaching draws it down. It is the feature the market leader builds its entire billing around, and it is reported to lift monthly renewals by up to 42% because families top up before they run out instead of being chased afterwards.",
+  "how": [
+   "Switch the wallet on in <b>Settings</b> and set the low-balance threshold that puts a family on the chase list.",
+   "Choose a family from the dropdown — it fills itself from your parents list, so there is nothing to type.",
+   "Enter the amount received and the bank reference, then press <b>Add credit</b>.",
+   "Pick the unit: <b>Currency</b> holds money, <b>Sessions</b> holds a number of lessons. Studios with one fixed lesson price usually prefer sessions.",
+   "Teach as normal. Marking a learner present on the Attendance page deducts the session automatically.",
+   "Work the <b>Low balances</b> list weekly — each family has a one-tap WhatsApp link.",
+   "To correct a mistake, add a reversing entry rather than editing history. That is what keeps the ledger auditable."
+  ],
+  "connects": "Deducts automatically from attendance.html. Feeds invoices.html and payment-plans.html. Balances appear to families in my-children.html. Thresholds are configured in settings.html.",
+  "related": [
+   "about",
+   "activity-log",
+   "admin-data",
+   "approvals",
+   "change-password",
+   "contact"
+  ],
+  "actions": [
+   "Add credit",
    "Sign out",
    "Theme"
   ],

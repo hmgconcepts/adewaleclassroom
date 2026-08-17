@@ -1347,6 +1347,49 @@
       how: ['Use Sign in if you have an account.', 'Use Apply to request a place.', 'Install the app from the banner.'],
       next: [['login.html', 'Sign in'], ['apply.html', 'Apply'], ['about.html', 'About']]
     },
+    wallet: {
+      title: 'Prepaid wallet',
+      who: 'Staff top up and inspect any family. A parent sees only their own balance.',
+      why: 'Chasing an invoice after the lesson is already taught is the weakest position a studio can be in. A prepaid wallet reverses the cash flow: the money arrives first and the teaching draws it down. The market leader builds its whole billing on this and reports it lifts monthly renewals by up to 42%.',
+      what: 'A credit ledger per family, in money or in sessions. Every movement is a permanent row, so the balance is always the sum of its history and cannot quietly drift. Attending a session deducts automatically. A low-balance chase list shows exactly who is about to run out, each with a one-tap WhatsApp link.',
+      how: [
+        'Switch the wallet on in Settings and set your low-balance threshold.',
+        'Choose a family (the list auto-fills), enter the amount and the bank reference, press Add credit.',
+        'Choose the unit: Currency holds money, Sessions holds a number of lessons.',
+        'Teach normally — marking a learner present on Attendance deducts the session for you.',
+        'Work the Low balances list weekly. To fix a mistake, add a reversing entry rather than editing history.'
+      ],
+      next: [['attendance.html', 'Attendance'], ['payment-plans.html', 'Payment plans'], ['settings.html', 'Settings']]
+    },
+    payment_plans: {
+      title: 'Payment plans',
+      who: 'Owner, admin and staff. Parents see their own plan read-only.',
+      why: 'Termly fees are routinely paid in parts. A family who cannot pay N180,000 at once will happily pay N60,000 three times. Without this the conversation lived in WhatsApp and the tracking lived in somebody\u2019s head.',
+      what: 'Enter a total, a number of instalments and a frequency; every due date and amount is generated. Rounding is absorbed by the FIRST instalment, never the last, so a family never meets a surprise odd amount at the end of a plan they budgeted for. Overdue parts appear in an arrears list with days late.',
+      how: [
+        'Choose the family and optionally the learner \u2014 both lists auto-fill.',
+        'Enter the TOTAL owed, not the instalment. The split previews live as you type.',
+        'Pick weekly, fortnightly, monthly or termly, then press Generate schedule.',
+        'Press "Mark paid" as money arrives; today\u2019s date fills itself in.',
+        'Work the Arrears panel weekly.'
+      ],
+      next: [['invoices.html', 'Invoices'], ['wallet.html', 'Prepaid wallet'], ['payments.html', 'Payments']]
+    },
+    security_centre: {
+      title: 'Security & compliance centre',
+      who: 'Owner and administrator only. Every function re-checks your role inside the database.',
+      why: 'You hold children\u2019s names, dates of birth, guardian phone numbers, addresses, exam scores and safeguarding notes. Nigeria\u2019s NDPA 2023 gives families the right to see and correct that data; GDPR and FERPA impose the same duty elsewhere. The control all of them name first is an immutable audit trail.',
+      what: 'A security scan that asks the database what an anonymous stranger can reach; a list of tables with row-level security off; failed sign-in monitoring; an append-only audit trail showing the before-and-after of every change; a one-click full export of everything held on one learner; an anonymised SHA-256 export for analytics; and registers for consent and data requests.',
+      how: [
+        'Press Run security scan. Everything listed should be something a stranger is supposed to reach.',
+        'Confirm "Tables without row-level security" is empty.',
+        'Review failed sign-ins \u2014 three or more against one address is a forgotten password or a guesser.',
+        'Use the Audit trail to answer "who changed this?" by table and record id.',
+        'Answer a family\u2019s data request with Export a learner\u2019s full record. The deadline is 30 days here, 45 under FERPA.',
+        'Log every request so the clock is visible, and record photo/trip/marketing consent with a Drive link as evidence.'
+      ],
+      next: [['activity-log.html', 'Activity log'], ['safeguarding.html', 'Safeguarding'], ['license.html', 'Licence']]
+    },
     default: {
       title: 'This page',
       who: 'Depends on the module.',

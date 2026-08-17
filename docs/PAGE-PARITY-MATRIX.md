@@ -28,20 +28,20 @@ feature the page ships.
 
 | Capability | Tutoring Connect | School Connect | Verdict |
 | --- | --- | --- | --- |
-| `list` | 128/130 (98%) | 116/131 (89%) | **ahead** |
-| `create` | 128/130 (98%) | 112/131 (85%) | **ahead** |
-| `edit` | 126/130 (97%) | 78/131 (60%) | **ahead** |
-| `delete` | 126/130 (97%) | 23/131 (18%) | **ahead** |
-| `search` | 126/130 (97%) | 7/131 (5%) | **ahead** |
-| `sort` | 126/130 (97%) | 33/131 (25%) | **ahead** |
-| `filter` | 126/130 (97%) | 42/131 (32%) | **ahead** |
-| `paginate` | 126/130 (97%) | 1/131 (1%) | **ahead** |
-| `export` | 126/130 (97%) | 107/131 (82%) | **ahead** |
-| `print` | 126/130 (97%) | 17/131 (13%) | **ahead** |
-| `detail` | 126/130 (97%) | 0/131 (0%) | **ahead** |
-| `bulk` | 126/130 (97%) | 21/131 (16%) | **ahead** |
-| `kpi` | 128/130 (98%) | 97/131 (74%) | **ahead** |
-| `rolegate` | 128/130 (98%) | 110/131 (84%) | **ahead** |
+| `list` | 131/133 (98%) | 116/131 (89%) | **ahead** |
+| `create` | 131/133 (98%) | 112/131 (85%) | **ahead** |
+| `edit` | 129/133 (97%) | 78/131 (60%) | **ahead** |
+| `delete` | 129/133 (97%) | 23/131 (18%) | **ahead** |
+| `search` | 129/133 (97%) | 7/131 (5%) | **ahead** |
+| `sort` | 129/133 (97%) | 33/131 (25%) | **ahead** |
+| `filter` | 129/133 (97%) | 42/131 (32%) | **ahead** |
+| `paginate` | 129/133 (97%) | 1/131 (1%) | **ahead** |
+| `export` | 129/133 (97%) | 107/131 (82%) | **ahead** |
+| `print` | 129/133 (97%) | 17/131 (13%) | **ahead** |
+| `detail` | 129/133 (97%) | 0/131 (0%) | **ahead** |
+| `bulk` | 129/133 (97%) | 21/131 (16%) | **ahead** |
+| `kpi` | 131/133 (98%) | 97/131 (74%) | **ahead** |
+| `rolegate` | 131/133 (98%) | 110/131 (84%) | **ahead** |
 
 ## Per-page matrix — Tutoring Connect
 
@@ -134,6 +134,7 @@ feature the page ships.
 | `parent-meetings.html` | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 14/14 | parent_meeting.html | 6 |
 | `parents.html` | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 14/14 | — | — |
 | `payment-history.html` | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 14/14 | payments_online.html | 8 |
+| `payment-plans.html` | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 14/14 | — | — |
 | `payments.html` | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 14/14 | payments_online.html | 8 |
 | `payroll.html` | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 14/14 | hr.html | 0 |
 | `platform-health.html` | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 14/14 | — | — |
@@ -156,6 +157,7 @@ feature the page ships.
 | `safeguarding.html` | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 14/14 | conduct.html | 6 |
 | `scholarships.html` | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 14/14 | — | — |
 | `scoresheet.html` | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 14/14 | results.html | 6 |
+| `security-centre.html` | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 14/14 | — | — |
 | `session-complete.html` | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 14/14 | — | — |
 | `session-notes.html` | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 14/14 | — | — |
 | `sessions.html` | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 14/14 | timetable.html | 9 |
@@ -176,6 +178,7 @@ feature the page ships.
 | `value-added.html` | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 14/14 | — | — |
 | `voting.html` | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 14/14 | — | — |
 | `waitlist.html` | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 14/14 | — | — |
+| `wallet.html` | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 14/14 | — | — |
 | `whiteboard.html` | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | ● | 14/14 | — | — |
 
 ## Deliberately minimal pages (excluded from the parity comparison)
