@@ -11,6 +11,8 @@
 <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="assets/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;800&display=swap" rel="stylesheet">
 <meta property="og:title" content="Site license • ADEWALE CLASSROOM">
 <meta property="og:description" content="Lifetime or subscription lock.">
 <meta property="og:type" content="website">
@@ -66,54 +68,151 @@
 <script src="assets/js/bookings-engine.js"></script>
 <script src="assets/js/analytics.js"></script>
 <script src="assets/js/super.js"></script>
+<script src="assets/js/record-actions.js"></script>
+<script src="assets/js/receipts.js"></script>
 <script src="assets/js/app.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec;--tc-primary:#0506ae;--tc-accent:#964eec;--tc-gradient:linear-gradient(135deg,#0506ae,#964eec);--tc-primary-dark:#0506ae;--tc-primary-light:#964eec;--tc-violet:#964eec;--tc-violet-light:#a78bfa;--on-primary:#ffffff;--ring:rgba(5,6,174,.22)}</style>
+<script src="assets/js/ux-enhance.js" defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
 </head>
 <body>
 <div class="app-layout" data-require-role="any" id="app-layout">
   <aside class="app-sidebar" id="app-sidebar">
     <div class="app-brand"><img data-logo src="assets/img/logo.svg" alt=""><div><strong data-practice-name>ADEWALE CLASSROOM</strong><span class="muted">Tutoring Connect</span></div></div>
     <nav class="app-nav">
-      <a href="dashboard.html" data-module-id="dashboard" data-module="dashboard" data-role-allow="any"><span class="app-nav-icon">⌂</span><span>Dashboard</span></a>
-      <a href="engagements.html" data-module-id="engagements" data-module="engagements" data-role-allow="admin tutor staff"><span class="app-nav-icon">◈</span><span>Engagements</span></a>
-      <a href="learners.html" data-module-id="learners" data-module="learners" data-role-allow="any"><span class="app-nav-icon">◎</span><span>Learners</span></a>
-      <a href="groups.html" data-module-id="groups" data-module="groups" data-role-allow="admin tutor staff"><span class="app-nav-icon">👥</span><span>Groups</span></a>
-      <a href="parents.html" data-module-id="parents" data-module="parents" data-role-allow="admin tutor staff"><span class="app-nav-icon">👪</span><span>Parents</span></a>
-      <a href="tutors.html" data-module-id="tutors" data-module="tutors" data-role-allow="admin"><span class="app-nav-icon">👨‍🏫</span><span>Tutors</span></a>
-      <a href="subjects.html" data-module-id="subjects" data-module="subjects" data-role-allow="admin tutor staff"><span class="app-nav-icon">📖</span><span>Subjects</span></a>
-      <a href="inquiries.html" data-module-id="inquiries" data-module="inquiries" data-role-allow="admin tutor staff"><span class="app-nav-icon">✉</span><span>Inquiries</span></a>
-      <a href="calendar.html" data-module-id="calendar" data-module="calendar" data-role-allow="any"><span class="app-nav-icon">▦</span><span>Calendar</span></a>
-      <a href="bookings.html" data-module-id="bookings" data-module="bookings" data-role-allow="any"><span class="app-nav-icon">📅</span><span>Cycle bookings</span></a>
-      <a href="sessions.html" data-module-id="sessions" data-module="sessions" data-role-allow="any"><span class="app-nav-icon">🗓️</span><span>Sessions</span></a>
-      <a href="session-complete.html" data-module-id="session_complete" data-module="session_complete" data-role-allow="admin tutor staff"><span class="app-nav-icon">✅</span><span>Complete a class</span></a>
-      <a href="attendance.html" data-module-id="attendance" data-module="attendance" data-role-allow="any"><span class="app-nav-icon">📋</span><span>Attendance</span></a>
-      <a href="sow.html" data-module-id="sow" data-module="sow" data-role-allow="admin tutor staff"><span class="app-nav-icon">📑</span><span>Scheme of work</span></a>
-      <a href="practice.html" data-module-id="practice" data-module="practice" data-role-allow="admin tutor staff"><span class="app-nav-icon">📝</span><span>Quizzes</span></a>
-      <a href="cbt-exam.html" data-module-id="cbt_exam" data-module="cbt_exam" data-role-allow="any"><span class="app-nav-icon">🖊</span><span>Take quiz</span></a>
-      <a href="reading.html" data-module-id="reading" data-module="reading" data-role-allow="any"><span class="app-nav-icon">📚</span><span>Reading</span></a>
-      <a href="scoresheet.html" data-module-id="scoresheet" data-module="scoresheet" data-role-allow="any"><span class="app-nav-icon">📒</span><span>Scoresheet</span></a>
-      <a href="stream.html" data-module-id="stream" data-module="stream" data-role-allow="any"><span class="app-nav-icon">📡</span><span>Stream</span></a>
-      <a href="classwork.html" data-module-id="classwork" data-module="classwork" data-role-allow="any"><span class="app-nav-icon">📂</span><span>Classwork</span></a>
-      <a href="forum.html" data-module-id="forum" data-module="forum" data-role-allow="any"><span class="app-nav-icon">💬</span><span>Group forum</span></a>
-      <a href="insights.html" data-module-id="insights" data-module="insights" data-role-allow="any"><span class="app-nav-icon">▣</span><span>Insights Lab</span></a>
-      <a href="learner-360.html" data-module-id="learner_360" data-module="learner_360" data-role-allow="any"><span class="app-nav-icon">◎</span><span>Learner 360</span></a>
-      <a href="analytics.html" data-module-id="analytics" data-module="analytics" data-role-allow="admin"><span class="app-nav-icon">📊</span><span>Analytics</span></a>
-      <a href="packages.html" data-module-id="packages" data-module="packages" data-role-allow="any"><span class="app-nav-icon">◷</span><span>Hour banks</span></a>
-      <a href="invoices.html" data-module-id="invoices" data-module="invoices" data-role-allow="any"><span class="app-nav-icon">🧾</span><span>Invoices</span></a>
-      <a href="inbox.html" data-module-id="inbox" data-module="inbox" data-role-allow="any"><span class="app-nav-icon">📥</span><span>Inbox</span></a>
-      <a href="announcements.html" data-module-id="announcements" data-module="announcements" data-role-allow="any"><span class="app-nav-icon">📢</span><span>Announcements</span></a>
-      <a href="notifications.html" data-module-id="notifications" data-module="notifications" data-role-allow="any"><span class="app-nav-icon">🔔</span><span>Notifications</span></a>
-      <a href="voting.html" data-module-id="voting" data-module="voting" data-role-allow="any"><span class="app-nav-icon">🗳️</span><span>Voting</span></a>
-      <a href="apply.html" data-module-id="apply" data-module="apply" data-role-allow="any"><span class="app-nav-icon">📝</span><span>Apply</span></a>
-      <a href="exam-links.html" data-module-id="exam_links" data-module="exam_links" data-role-allow="admin tutor staff"><span class="app-nav-icon">🎫</span><span>Exam links</span></a>
-      <a href="settings.html" data-module-id="settings" data-module="settings" data-role-allow="admin"><span class="app-nav-icon">⚙️</span><span>Settings</span></a>
-      <a href="admin-data.html" data-module-id="admin_data" data-module="admin_data" data-role-allow="admin"><span class="app-nav-icon">🗃️</span><span>Admin data</span></a>
-      <a href="platform-health.html" data-module-id="platform_health" data-module="platform_health" data-role-allow="admin"><span class="app-nav-icon">🛡️</span><span>Health</span></a>
-      <a href="feature-guide.html" data-module-id="feature_guide" data-module="feature_guide" data-role-allow="any"><span class="app-nav-icon">📘</span><span>Feature guide</span></a>
-      <a href="hmg-ecosystem.html" data-module-id="hmg_ecosystem" data-module="hmg_ecosystem" data-role-allow="any"><span class="app-nav-icon">🌐</span><span>HMG Ecosystem</span></a>
+      <div class="nav-section-title">◈ Core</div>
+      <a href="engagements.html" data-module-id="engagements" data-module="engagements" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Engagements</span></a>
+      <a href="groups.html" data-module-id="groups" data-module="groups" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Groups</span></a>
+      <a href="learners.html" data-module-id="learners" data-module="learners" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learners</span></a>
+      <a href="parents.html" data-module-id="parents" data-module="parents" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Parents</span></a>
+      <a href="subjects.html" data-module-id="subjects" data-module="subjects" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Subjects</span></a>
+      <a href="tutors.html" data-module-id="tutors" data-module="tutors" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Tutors</span></a>
+      <div class="nav-section-title">✉ Growth</div>
+      <a href="application-links.html" data-module-id="application_links" data-module="application_links" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Application links</span></a>
+      <a href="exam-register.html" data-module-id="exam_register" data-module="exam_register" data-role-allow="any"><span class="app-nav-icon">•</span><span>Exam registration</span></a>
+      <a href="exam-links.html" data-module-id="exam_links" data-module="exam_links" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Exam registration links</span></a>
+      <a href="inquiries.html" data-module-id="inquiries" data-module="inquiries" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Inquiries</span></a>
+      <a href="onboarding.html" data-module-id="onboarding" data-module="onboarding" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Onboarding checklists</span></a>
+      <a href="public-book.html" data-module-id="public_book" data-module="public_book" data-role-allow="any"><span class="app-nav-icon">•</span><span>Public self-booking</span></a>
+      <a href="referrals.html" data-module-id="referrals" data-module="referrals" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Referrals</span></a>
+      <a href="apply.html" data-module-id="apply" data-module="apply" data-role-allow="any"><span class="app-nav-icon">•</span><span>Request a place</span></a>
+      <a href="reviews.html" data-module-id="reviews" data-module="reviews" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Reviews &amp;amp; testimonials</span></a>
+      <a href="trials.html" data-module-id="trials" data-module="trials" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Trial lessons</span></a>
+      <a href="waitlist.html" data-module-id="waitlist" data-module="waitlist" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Waitlist</span></a>
+      <div class="nav-section-title">🗓️ Sessions</div>
+      <a href="attendance.html" data-module-id="attendance" data-module="attendance" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Attendance</span></a>
+      <a href="availability.html" data-module-id="availability" data-module="availability" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Availability</span></a>
+      <a href="calendar.html" data-module-id="calendar" data-module="calendar" data-role-allow="any"><span class="app-nav-icon">•</span><span>Calendar</span></a>
+      <a href="cancellations.html" data-module-id="cancellations" data-module="cancellations" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Cancellations</span></a>
+      <a href="session-complete.html" data-module-id="session_complete" data-module="session_complete" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Complete a class</span></a>
+      <a href="bookings.html" data-module-id="bookings" data-module="bookings" data-role-allow="any"><span class="app-nav-icon">•</span><span>Cycle bookings</span></a>
+      <a href="reminders.html" data-module-id="reminders" data-module="reminders" data-role-allow="any"><span class="app-nav-icon">•</span><span>Lesson reminders + calendar</span></a>
+      <a href="makeups.html" data-module-id="makeups" data-module="makeups" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Make-up sessions</span></a>
+      <a href="makeup-credits.html" data-module-id="makeup_credits" data-module="makeup_credits" data-role-allow="any"><span class="app-nav-icon">•</span><span>Makeup credit bank</span></a>
+      <a href="meetings.html" data-module-id="meetings" data-module="meetings" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Meeting links</span></a>
+      <a href="session-notes.html" data-module-id="session_notes" data-module="session_notes" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Session notes</span></a>
+      <a href="sessions.html" data-module-id="sessions" data-module="sessions" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Sessions</span></a>
+      <a href="whiteboard.html" data-module-id="whiteboard" data-module="whiteboard" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Whiteboard rooms</span></a>
+      <a href="events.html" data-module-id="events" data-module="events" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Workshops &amp;amp; events</span></a>
+      <div class="nav-section-title">📚 Learning</div>
+      <a href="accommodations.html" data-module-id="accommodations" data-module="accommodations" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Accommodations / SEN</span></a>
+      <a href="certificates.html" data-module-id="certificates" data-module="certificates" data-role-allow="any"><span class="app-nav-icon">•</span><span>Certificates</span></a>
+      <a href="classwork.html" data-module-id="classwork" data-module="classwork" data-role-allow="any"><span class="app-nav-icon">•</span><span>Classwork</span></a>
+      <a href="curriculum.html" data-module-id="curriculum" data-module="curriculum" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Curriculum maps</span></a>
+      <a href="diagnostics.html" data-module-id="diagnostics" data-module="diagnostics" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Diagnostics</span></a>
+      <a href="library.html" data-module-id="library" data-module="library" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Digital library</span></a>
+      <a href="eresources.html" data-module-id="eresources" data-module="eresources" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>E-resources / notes</span></a>
+      <a href="goals.html" data-module-id="goals" data-module="goals" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Goals &amp;amp; learning plans</span></a>
+      <a href="assignments.html" data-module-id="assignments" data-module="assignments" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Homework</span></a>
+      <a href="portfolio.html" data-module-id="portfolio" data-module="portfolio" data-role-allow="any"><span class="app-nav-icon">•</span><span>Learner portfolio</span></a>
+      <a href="learning-styles.html" data-module-id="learning_styles" data-module="learning_styles" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learning styles</span></a>
+      <a href="lesson-plans.html" data-module-id="lesson_plans" data-module="lesson_plans" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Lesson plans</span></a>
+      <a href="methodologies.html" data-module-id="methodologies" data-module="methodologies" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Methodologies</span></a>
+      <a href="lms.html" data-module-id="lms" data-module="lms" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Mini LMS</span></a>
+      <a href="cbt-multi.html" data-module-id="cbt_multi" data-module="cbt_multi" data-role-allow="any"><span class="app-nav-icon">•</span><span>Multi-subject CBT builder</span></a>
+      <a href="progress-reports.html" data-module-id="progress_reports" data-module="progress_reports" data-role-allow="any"><span class="app-nav-icon">•</span><span>Progress reports</span></a>
+      <a href="cbt-prompts.html" data-module-id="cbt_prompts" data-module="cbt_prompts" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Question bank prompts</span></a>
+      <a href="practice.html" data-module-id="practice" data-module="practice" data-role-allow="any"><span class="app-nav-icon">•</span><span>Quizzes — Self / Review / Graded</span></a>
+      <a href="reading.html" data-module-id="reading" data-module="reading" data-role-allow="any"><span class="app-nav-icon">•</span><span>Reading assignments</span></a>
+      <a href="resources.html" data-module-id="resources" data-module="resources" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Resource library</span></a>
+      <a href="rubrics.html" data-module-id="rubrics" data-module="rubrics" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Rubrics</span></a>
+      <a href="sow.html" data-module-id="sow" data-module="sow" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Scheme of work</span></a>
+      <a href="flashcards.html" data-module-id="flashcards" data-module="flashcards" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Spaced practice</span></a>
+      <a href="gamification.html" data-module-id="gamification" data-module="gamification" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Streaks &amp;amp; badges</span></a>
+      <a href="study-log.html" data-module-id="study_log" data-module="study_log" data-role-allow="any"><span class="app-nav-icon">•</span><span>Study log / session timer</span></a>
+      <a href="cbt-exam.html" data-module-id="cbt_exam" data-module="cbt_exam" data-role-allow="any"><span class="app-nav-icon">•</span><span>Take a quiz</span></a>
+      <a href="mastery.html" data-module-id="mastery" data-module="mastery" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Topic mastery</span></a>
+      <a href="transcripts.html" data-module-id="transcripts" data-module="transcripts" data-role-allow="any"><span class="app-nav-icon">•</span><span>Transcripts</span></a>
+      <div class="nav-section-title">▣ Analytics</div>
+      <a href="at-risk.html" data-module-id="at_risk" data-module="at_risk" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>At-risk board</span></a>
+      <a href="exam-targets.html" data-module-id="exam_targets" data-module="exam_targets" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Exam targets</span></a>
+      <a href="group-insights.html" data-module-id="group_insights" data-module="group_insights" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Group insights</span></a>
+      <a href="insights.html" data-module-id="insights" data-module="insights" data-role-allow="any"><span class="app-nav-icon">•</span><span>Insights Lab</span></a>
+      <a href="learner-360.html" data-module-id="learner_360" data-module="learner_360" data-role-allow="any"><span class="app-nav-icon">•</span><span>Learner 360</span></a>
+      <a href="analytics.html" data-module-id="analytics" data-module="analytics" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Practice analytics</span></a>
+      <a href="predictions.html" data-module-id="predictions" data-module="predictions" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Predicted grades</span></a>
+      <a href="scoresheet.html" data-module-id="scoresheet" data-module="scoresheet" data-role-allow="any"><span class="app-nav-icon">•</span><span>Scoresheet</span></a>
+      <a href="value-added.html" data-module-id="value_added" data-module="value_added" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Value-added</span></a>
+      <div class="nav-section-title">🧾 Finance</div>
+      <a href="products.html" data-module-id="products" data-module="products" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Books &amp;amp; materials</span></a>
+      <a href="fees.html" data-module-id="fees" data-module="fees" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Fee catalogue</span></a>
+      <a href="packages.html" data-module-id="packages" data-module="packages" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Hour banks</span></a>
+      <a href="invoices.html" data-module-id="invoices" data-module="invoices" data-role-allow="any"><span class="app-nav-icon">•</span><span>Invoices</span></a>
+      <a href="payment-history.html" data-module-id="payment_history" data-module="payment_history" data-role-allow="any"><span class="app-nav-icon">•</span><span>Payment history</span></a>
+      <a href="payments.html" data-module-id="payments" data-module="payments" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Payments</span></a>
+      <a href="finance.html" data-module-id="finance" data-module="finance" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Practice finance</span></a>
+      <a href="scholarships.html" data-module-id="scholarships" data-module="scholarships" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Scholarships &amp;amp; discounts</span></a>
+      <a href="payroll.html" data-module-id="payroll" data-module="payroll" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Tutor payroll</span></a>
+      <div class="nav-section-title">⚙️ Platform</div>
+      <a href="about.html" data-module-id="about" data-module="about" data-role-allow="any"><span class="app-nav-icon">•</span><span>About</span></a>
+      <a href="developer.html" data-module-id="developer" data-module="developer" data-role-allow="any"><span class="app-nav-icon">•</span><span>About the developer</span></a>
+      <a href="activity-log.html" data-module-id="activity_log" data-module="activity_log" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Activity log</span></a>
+      <a href="admin-data.html" data-module-id="admin_data" data-module="admin_data" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Admin data</span></a>
+      <a href="approvals.html" data-module-id="approvals" data-module="approvals" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Approvals</span></a>
+      <a href="change-password.html" data-module-id="change_password" data-module="change_password" data-role-allow="any"><span class="app-nav-icon">•</span><span>Change password</span></a>
+      <a href="contact.html" data-module-id="contact" data-module="contact" data-role-allow="any"><span class="app-nav-icon">•</span><span>Contact</span></a>
+      <a href="dashboard.html" data-module-id="dashboard" data-module="dashboard" data-role-allow="any"><span class="app-nav-icon">•</span><span>Dashboard</span></a>
+      <a href="feature-guide.html" data-module-id="feature_guide" data-module="feature_guide" data-role-allow="any"><span class="app-nav-icon">•</span><span>Feature guide</span></a>
+      <a href="install.html" data-module-id="install" data-module="install" data-role-allow="any"><span class="app-nav-icon">•</span><span>Install the app</span></a>
+      <a href="family-links.html" data-module-id="family_links" data-module="family_links" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learners</span></a>
+      <a href="my-children.html" data-module-id="my_children" data-module="my_children" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learners</span></a>
+      <a href="profile.html" data-module-id="profile" data-module="profile" data-role-allow="any"><span class="app-nav-icon">•</span><span>My profile</span></a>
+      <a href="platform-health.html" data-module-id="platform_health" data-module="platform_health" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Platform health</span></a>
+      <a href="status-manager.html" data-module-id="status_manager" data-module="status_manager" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Role &amp;amp; status</span></a>
+      <a href="settings.html" data-module-id="settings" data-module="settings" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Settings</span></a>
+      <a href="license.html" data-module-id="license" data-module="license" data-role-allow="admin" class="active"><span class="app-nav-icon">•</span><span>Site license</span></a>
+      <a href="storage.html" data-module-id="storage" data-module="storage" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Storage manager</span></a>
+      <div class="nav-section-title">• Comms</div>
+      <a href="announcements.html" data-module-id="announcements" data-module="announcements" data-role-allow="any"><span class="app-nav-icon">•</span><span>Announcements</span></a>
+      <a href="stream.html" data-module-id="stream" data-module="stream" data-role-allow="any"><span class="app-nav-icon">•</span><span>Class stream</span></a>
+      <a href="complaints.html" data-module-id="complaints" data-module="complaints" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Complaints</span></a>
+      <a href="forum.html" data-module-id="forum" data-module="forum" data-role-allow="any"><span class="app-nav-icon">•</span><span>Group forum</span></a>
+      <a href="inbox.html" data-module-id="inbox" data-module="inbox" data-role-allow="any"><span class="app-nav-icon">•</span><span>Inbox</span></a>
+      <a href="messages.html" data-module-id="messages" data-module="messages" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Messaging (WA / Email / SMS)</span></a>
+      <a href="notifications.html" data-module-id="notifications" data-module="notifications" data-role-allow="any"><span class="app-nav-icon">•</span><span>Notifications</span></a>
+      <a href="parent-meetings.html" data-module-id="parent_meetings" data-module="parent_meetings" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Parent conferences</span></a>
+      <a href="polls.html" data-module-id="polls" data-module="polls" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Polls</span></a>
+      <a href="broadcasts.html" data-module-id="broadcasts" data-module="broadcasts" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Result broadcasts</span></a>
+      <a href="surveys.html" data-module-id="surveys" data-module="surveys" data-role-allow="any"><span class="app-nav-icon">•</span><span>Surveys &amp;amp; CSAT</span></a>
+      <a href="voting.html" data-module-id="voting" data-module="voting" data-role-allow="any"><span class="app-nav-icon">•</span><span>Voting &amp;amp; polls</span></a>
+      <div class="nav-section-title">• HMG Concepts</div>
+      <a href="hmg-products.html" data-module-id="hmg_products" data-module="hmg_products" data-role-allow="any"><span class="app-nav-icon">•</span><span>HMG Digital Products</span></a>
+      <a href="hmg-ecosystem.html" data-module-id="hmg_ecosystem" data-module="hmg_ecosystem" data-role-allow="any"><span class="app-nav-icon">•</span><span>HMG Ecosystem</span></a>
+      <div class="nav-section-title">• Media</div>
+      <a href="birthdays.html" data-module-id="birthdays" data-module="birthdays" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Birthdays</span></a>
+      <a href="directory.html" data-module-id="directory" data-module="directory" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Directory</span></a>
+      <a href="gallery.html" data-module-id="gallery" data-module="gallery" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Gallery</span></a>
+      <a href="idcards.html" data-module-id="idcards" data-module="idcards" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learner cards</span></a>
+      <div class="nav-section-title">• Ops</div>
+      <a href="compliance.html" data-module-id="compliance" data-module="compliance" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Compliance</span></a>
+      <a href="documents.html" data-module-id="documents" data-module="documents" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Contracts &amp;amp; consent</span></a>
+      <a href="substitutions.html" data-module-id="substitutions" data-module="substitutions" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Cover tutors</span></a>
+      <a href="helpdesk.html" data-module-id="helpdesk" data-module="helpdesk" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Help desk</span></a>
+      <a href="policies.html" data-module-id="policies" data-module="policies" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Policies</span></a>
+      <a href="rooms.html" data-module-id="rooms" data-module="rooms" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Rooms / locations</span></a>
+      <a href="safeguarding.html" data-module-id="safeguarding" data-module="safeguarding" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Safeguarding log</span></a>
+      <a href="timezones.html" data-module-id="timezones" data-module="timezones" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Timezone desk</span></a>
+      <a href="leave.html" data-module-id="leave" data-module="leave" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Tutor leave</span></a>
     </nav>
   </aside>
   <div class="app-main">
@@ -126,19 +225,356 @@
         <button class="btn btn-sm btn-ghost" type="button" data-signout onclick="App.signOut()">Sign out</button></div>
     </header>
     <main class="app-content">
-      <section class="help-card">
-        <strong>Site license</strong>
-        <p>Lifetime or subscription lock.</p>
-        
-        
+      <section class="help-card page-intro">
+        <div class="page-intro-head"><strong>Site license</strong><span class="page-intro-badge" style="background:#b42318">🛡️ Owner / admin only</span></div>
+        <p class="page-intro-what">Lifetime or subscription lock. Same idea as School Connect, adapted. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.</p>
+        <p class="page-intro-who"><b>Who it is for.</b> Owner and admin. This is configuration and governance, not day-to-day teaching.</p>
+        <p class="page-intro-why"><b>Why it matters.</b> Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.</p>
+        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Only an owner or admin should change anything on this page.</li><li>Read the note beside each setting before you touch it.</li><li>Save, then reload any normal page to confirm the change took effect.</li><li>If something looks wrong afterwards, the activity log records who changed what and when.</li></ol></details>
+        <p class="page-intro-rel"><b>Related:</b> <a href="about.html">about</a> · <a href="activity-log.html">activity log</a> · <a href="admin-data.html">admin data</a> · <a href="approvals.html">approvals</a> · <a href="change-password.html">change password</a> · <a href="contact.html">contact</a></p>
       </section>
-      <p class="muted">Use the related links and the ❓ Page Help button. Connect Supabase to load live rows.</p>
+      <!-- ==============================================================
+           V17 — REAL LICENCE CONSOLE
+           This page was a stub: a page-intro card, one line of placeholder
+           text ("Use the related links…") and an EMPTY <script> block. The
+           page named after the licence had no licence UI on it at all.
+           =============================================================== -->
+
+      <div id="lic-alert"></div>
+
+      <div class="card">
+        <h2 style="margin-top:0">🛡️ Licence status</h2>
+        <p class="muted" style="margin-top:0">These figures come from the <b>database</b>, not from
+          this page's own arithmetic. That distinction matters: before V17 the licence was evaluated
+          in the browser and enforced by drawing a box over the screen, which anyone could delete with
+          F12. Enforcement now happens in PostgreSQL, on 27 operational tables, where the browser
+          cannot argue with it.</p>
+        <div id="lic-kpis" class="crud-kpis"></div>
+        <div id="lic-detail" style="margin-top:12px"></div>
+      </div>
+
+      <div class="grid grid-2" style="align-items:start;gap:18px;margin-top:16px">
+
+        <div class="card">
+          <h3 style="margin-top:0">💳 Licence model</h3>
+          <p class="muted" style="margin-top:0">Tutoring Connect supports both commercial models the
+            generator offers. Change it here at any time — the studio is never rebuilt.</p>
+
+          <div class="form-group"><label>Model</label>
+            <select class="form-select" id="lic-model">
+              <option value="lifetime">One-time / lifetime — bought once, never expires</option>
+              <option value="subscription">Subscription — renews on a cycle</option>
+            </select>
+            <div class="form-help">A one-time licence is never nagged, never locked and ignores the
+              expiry date entirely, whatever the enforcement setting says.</div></div>
+
+          <div class="form-group"><label>Tier</label>
+            <select class="form-select" id="lic-tier">
+              <option value="starter">Starter — a solo tutor finding their feet</option>
+              <option value="studio">Studio — the standard package</option>
+              <option value="academy">Academy — multi-tutor, larger roll</option>
+              <option value="enterprise">Enterprise — bespoke</option>
+            </select></div>
+
+          <div class="form-group"><label>Plan label</label>
+            <input class="form-input" id="lic-plan" placeholder="Termly 2026">
+            <div class="form-help">Free text shown to the owner. Purely descriptive.</div></div>
+
+          <div id="lic-sub-fields">
+            <div class="grid grid-2">
+              <div class="form-group"><label>Expires on</label>
+                <input class="form-input" type="date" id="lic-expires"></div>
+              <div class="form-group"><label>Grace days after expiry</label>
+                <input class="form-input" type="number" id="lic-grace" min="0" value="7">
+                <div class="form-help">The studio keeps working during grace.</div></div>
+            </div>
+          </div>
+
+          <div class="form-group"><label>What happens when it expires</label>
+            <select class="form-select" id="lic-enforcement">
+              <option value="banner">Warn only — show a banner, never block anything</option>
+              <option value="readonly">Read-only — reads, prints and exports keep working; writes are refused</option>
+              <option value="lock">Lock — writes refused and the interface locks too</option>
+            </select>
+            <div class="form-help"><b>Reads are never blocked in any mode.</b> An expired studio can
+              always be read, printed and exported. Holding a client's own data hostage would be
+              indefensible, so it is not an option this software offers.</div></div>
+
+          <div class="grid grid-2">
+            <div class="form-group"><label>Learner seats</label>
+              <input class="form-input" type="number" id="lic-seats-learners" min="0" placeholder="blank = unlimited"></div>
+            <div class="form-group"><label>Tutor seats</label>
+              <input class="form-input" type="number" id="lic-seats-tutors" min="0" placeholder="blank = unlimited"></div>
+          </div>
+
+          <div class="form-group"><label>Licensed to</label>
+            <input class="form-input" id="lic-issued-to" placeholder="ADEWALE CLASSROOM"></div>
+          <div class="form-group"><label>Renewal link (WhatsApp or URL)</label>
+            <input class="form-input" id="lic-renew-url" placeholder="https://wa.me/2348100866322?text=Renew"></div>
+          <div class="form-group"><label>Message shown when locked</label>
+            <textarea class="form-textarea" id="lic-lock-message" rows="2"></textarea></div>
+          <div class="form-group"><label>Note for the audit trail</label>
+            <input class="form-input" id="lic-note" placeholder="Why are you making this change?"></div>
+
+          <button class="btn btn-primary" type="button" id="lic-save">💾 Save licence</button>
+        </div>
+
+        <div>
+          <div class="card">
+            <h3 style="margin-top:0">🔄 Renew</h3>
+            <p class="muted" style="margin-top:0">Renewing <b>early extends</b> the existing term
+              rather than truncating it, and renewing <b>late starts from today</b>, so nobody is
+              billed for a period they could not use.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-outline btn-sm" data-renew="1">+1 month</button>
+              <button class="btn btn-outline btn-sm" data-renew="3">+1 term (3)</button>
+              <button class="btn btn-outline btn-sm" data-renew="6">+6 months</button>
+              <button class="btn btn-primary btn-sm" data-renew="12">+1 year</button>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:16px">
+            <h3 style="margin-top:0">🧪 Test the enforcement</h3>
+            <p class="muted" style="margin-top:0">Proves the guard is real rather than asking you to
+              take it on trust. This attempts a harmless write and reports exactly what the database
+              said back.</p>
+            <button class="btn btn-outline btn-sm" type="button" id="lic-test">Run write test</button>
+            <div id="lic-test-out" style="margin-top:10px"></div>
+          </div>
+
+          <div class="card" style="margin-top:16px">
+            <h3 style="margin-top:0">📜 Change history</h3>
+            <p class="muted" style="margin-top:0">Every licence change is recorded — renewals are
+              money, and money needs a paper trail.</p>
+            <div id="lic-history" class="muted">Loading…</div>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 </div>
 <div id="toast-container" class="toast-container"></div>
 <script>
+/* =====================================================================
+   LICENCE CONSOLE — V17
+   Reads tc_license_status(), writes through tc_license_set() and
+   tc_license_renew(). All three are SECURITY DEFINER and admin-gated in
+   the database, so a non-admin who reaches this page can look but not
+   touch — the buttons fail server-side, not merely by being hidden.
+   ===================================================================== */
+(function () {
+  'use strict';
 
+  var sb = window.sb || window.SB || (window.App && window.App.sb) || null;
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return window.TC && TC.esc ? TC.esc(s == null ? '' : s) : String(s == null ? '' : s); }
+  function say(m, t) { if (window.toast) toast(m, t || 'success'); else alert(m); }
+
+  var STATE = null;
+
+  function alertBox(html, tone) {
+    $('lic-alert').innerHTML = '<div class="card" style="border-left:5px solid ' +
+      (tone === 'danger' ? '#b91c1c' : tone === 'warning' ? '#b45309' : '#0506ae') +
+      ';margin-bottom:16px">' + html + '</div>';
+  }
+
+  async function load() {
+    if (!sb) {
+      alertBox('<b>Preview mode.</b> Connect Supabase to read the live licence.', 'warning');
+      return;
+    }
+    var res = await sb.rpc('tc_license_status');
+    if (res.error) {
+      alertBox('<b>The licence functions are not installed yet.</b><p style="margin:.4rem 0 0">' +
+        'This page needs <code>tc_license_status()</code>, which ships in V17. Run ' +
+        '<code>database/complete-schema.sql</code> once in the Supabase SQL editor, then reload.</p>' +
+        '<p class="muted" style="margin:.4rem 0 0">' + esc(res.error.message) + '</p>', 'danger');
+      return;
+    }
+    STATE = res.data || {};
+    paint();
+    history();
+  }
+
+  function paint() {
+    var d = STATE, s = d.seats || {};
+    var tone = { ok: 'success', remind: 'warning', grace: 'warning',
+                 expired: 'danger', suspended: 'danger' }[d.state] || 'muted';
+
+    $('lic-kpis').innerHTML = [
+      ['Model',       d.model === 'subscription' ? 'Subscription' : 'One-time / lifetime'],
+      ['Tier',        d.tier || '—'],
+      ['State',       d.state],
+      ['Writable now', d.writable ? 'Yes' : 'No — writes refused'],
+      ['Expires',     d.expires_on || 'never'],
+      ['Days left',   d.days_left == null ? '—' : d.days_left],
+      ['Learners',    (s.learners_used == null ? '—' : s.learners_used) +
+                      (s.learners_cap ? ' / ' + s.learners_cap : ' / ∞')],
+      ['Tutors',      (s.tutors_used == null ? '—' : s.tutors_used) +
+                      (s.tutors_cap ? ' / ' + s.tutors_cap : ' / ∞')]
+    ].map(function (c) {
+      return '<div class="crud-kpi"><span class="crud-kpi-label">' + esc(c[0]) +
+             '</span><strong class="crud-kpi-value">' + esc(c[1]) + '</strong></div>';
+    }).join('');
+
+    var explain;
+    if (d.model !== 'subscription') {
+      explain = 'This studio holds a <b>one-time / lifetime</b> licence. It does not expire, it is ' +
+                'never nagged, and the enforcement setting below has no effect on it. Nothing to do.';
+    } else if (d.state === 'ok') {
+      explain = 'The subscription is current. A reminder banner will appear studio-wide when there ' +
+                'are 30 days or fewer remaining.';
+    } else if (d.state === 'remind') {
+      explain = 'The subscription expires in <b>' + esc(d.days_left) + ' day(s)</b>. Everything ' +
+                'still works normally; a reminder banner is showing on every page.';
+    } else if (d.state === 'grace') {
+      explain = 'The subscription expired <b>' + Math.abs(d.days_left) + ' day(s)</b> ago and the ' +
+                'studio is inside its <b>' + esc(d.grace_days) + '-day grace period</b>. Everything ' +
+                'still works. When grace runs out the enforcement setting below takes effect.';
+    } else if (d.state === 'suspended') {
+      explain = 'This licence has been <b>suspended</b>.';
+    } else {
+      explain = 'The subscription expired <b>' + Math.abs(d.days_left) + ' day(s)</b> ago and grace ' +
+                'has run out.';
+    }
+
+    if (d.model === 'subscription' && (d.state === 'expired' || d.state === 'suspended')) {
+      explain += d.enforcement === 'banner'
+        ? ' Enforcement is set to <b>warn only</b>, so the studio is still fully usable.'
+        : ' Enforcement is set to <b>' + esc(d.enforcement) + '</b>, so the database is refusing ' +
+          'new writes. <b>Reading, printing and exporting all still work</b> — the data is untouched.';
+    }
+    if (s.over_limit) {
+      explain += ' <br><b style="color:#b45309">Seat limit exceeded.</b> The studio keeps working; ' +
+                 'this is a commercial flag, not a technical block.';
+    }
+
+    $('lic-detail').innerHTML =
+      '<p style="margin:0"><span class="badge badge-' + tone + '">' + esc(d.state) + '</span> ' +
+      explain + '</p>' +
+      (d.issued_to ? '<p class="muted" style="margin:.5rem 0 0">Licensed to <b>' + esc(d.issued_to) +
+        '</b>' + (d.issued_on ? ' since ' + esc(d.issued_on) : '') + '</p>' : '');
+
+    // Fill the form from the server state.
+    $('lic-model').value       = d.model === 'subscription' ? 'subscription' : 'lifetime';
+    $('lic-tier').value        = d.tier || 'studio';
+    $('lic-plan').value        = d.plan || '';
+    $('lic-expires').value     = d.expires_on || '';
+    $('lic-grace').value       = d.grace_days == null ? 7 : d.grace_days;
+    $('lic-enforcement').value = d.enforcement || 'banner';
+    $('lic-seats-learners').value = s.learners_cap == null ? '' : s.learners_cap;
+    $('lic-seats-tutors').value   = s.tutors_cap   == null ? '' : s.tutors_cap;
+    $('lic-issued-to').value   = d.issued_to || '';
+    $('lic-renew-url').value   = d.renew_url || '';
+    $('lic-lock-message').value = d.lock_message || '';
+    toggleSub();
+  }
+
+  function toggleSub() {
+    var sub = $('lic-model').value === 'subscription';
+    $('lic-sub-fields').style.display = sub ? '' : 'none';
+    // A lifetime licence cannot be enforced against, so say so plainly.
+    $('lic-enforcement').disabled = !sub;
+    $('lic-enforcement').title = sub ? '' : 'A one-time licence never expires, so there is nothing to enforce.';
+  }
+  $('lic-model').onchange = toggleSub;
+
+  $('lic-save').onclick = async function () {
+    if (!sb) { say('Connect Supabase first.', 'warning'); return; }
+    var p = {
+      model:       $('lic-model').value,
+      tier:        $('lic-tier').value,
+      plan:        $('lic-plan').value.trim(),
+      enforcement: $('lic-enforcement').value,
+      expires_on:  $('lic-expires').value,
+      grace_days:  $('lic-grace').value,
+      seats_learners: $('lic-seats-learners').value,
+      seats_tutors:   $('lic-seats-tutors').value,
+      issued_to:   $('lic-issued-to').value.trim(),
+      renew_url:   $('lic-renew-url').value.trim(),
+      lock_message: $('lic-lock-message').value.trim(),
+      note:        $('lic-note').value.trim(),
+      action:      'update'
+    };
+    var r = await sb.rpc('tc_license_set', { p: p });
+    if (r.error) { say(r.error.message, 'danger'); return; }
+    STATE = r.data; paint(); history();
+    $('lic-note').value = '';
+    say('Licence saved ✅');
+    if (window.License) License.apply();
+  };
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-renew]'), function (b) {
+    b.onclick = async function () {
+      if (!sb) { say('Connect Supabase first.', 'warning'); return; }
+      var m = Number(b.dataset.renew);
+      if (!confirm('Extend the licence by ' + m + ' month(s)?')) return;
+      var r = await sb.rpc('tc_license_renew', { p_months: m, p_note: $('lic-note').value.trim() || null });
+      if (r.error) { say(r.error.message, 'danger'); return; }
+      STATE = r.data; paint(); history();
+      say('Renewed by ' + m + ' month(s) ✅');
+      if (window.License) License.apply();
+    };
+  });
+
+  /* Proof, not promises: attempt a real write and report what came back. */
+  $('lic-test').onclick = async function () {
+    var out = $('lic-test-out');
+    if (!sb) { out.innerHTML = '<p class="muted">Connect Supabase first.</p>'; return; }
+    out.innerHTML = '<p class="muted">Testing…</p>';
+
+    var readOk = false, writeOk = false, writeErr = '';
+    var probe = await sb.from('announcements').select('id').limit(1);
+    readOk = !probe.error;
+
+    var ins = await sb.from('announcements')
+      .insert({ title: '__licence write test__', body: 'Created by the licence console; safe to delete.' })
+      .select('id').maybeSingle();
+    if (ins.error) { writeErr = ins.error.message; }
+    else {
+      writeOk = true;
+      if (ins.data && ins.data.id) await sb.from('announcements').delete().eq('id', ins.data.id);
+    }
+
+    out.innerHTML =
+      '<table class="crud-detail"><tbody>' +
+        '<tr><th>Read</th><td>' + (readOk
+          ? '<span class="badge badge-success">allowed</span>'
+          : '<span class="badge badge-danger">blocked</span>') + '</td></tr>' +
+        '<tr><th>Write</th><td>' + (writeOk
+          ? '<span class="badge badge-success">allowed</span>'
+          : '<span class="badge badge-danger">refused</span>') + '</td></tr>' +
+      '</tbody></table>' +
+      (writeErr ? '<p class="muted" style="margin:.5rem 0 0;font-size:.8rem">' + esc(writeErr) + '</p>' : '') +
+      '<p class="muted" style="margin:.5rem 0 0">' +
+        (readOk && !writeOk
+          ? 'This is exactly the intended behaviour of an enforced, expired licence: the data is ' +
+            'readable and exportable, but nothing new can be written.'
+          : readOk && writeOk
+            ? 'The licence is permitting writes, which is correct for a current or warn-only licence.'
+            : 'Reads are failing, which is a row-level-security or sign-in problem rather than a ' +
+              'licence problem.') +
+      '</p>';
+  };
+
+  async function history() {
+    var host = $('lic-history');
+    if (!sb) { host.textContent = 'Connect Supabase to see the history.'; return; }
+    var r = await sb.from('tc_license_history')
+      .select('changed_at,action,note').order('changed_at', { ascending: false }).limit(15);
+    if (r.error) { host.innerHTML = '<span class="muted">' + esc(r.error.message) + '</span>'; return; }
+    if (!r.data || !r.data.length) { host.textContent = 'No licence changes recorded yet.'; return; }
+    host.classList.remove('muted');
+    host.innerHTML = '<table class="crud-detail"><tbody>' + r.data.map(function (h) {
+      return '<tr><th>' + esc(new Date(h.changed_at).toLocaleString()) + '</th><td><b>' +
+             esc(h.action) + '</b>' + (h.note ? ' — ' + esc(h.note) : '') + '</td></tr>';
+    }).join('') + '</tbody></table>';
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
+  else load();
+})();
 </script>
+
 </body>
 </html>

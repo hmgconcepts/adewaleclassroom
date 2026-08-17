@@ -4,8 +4,8 @@
 <script src="assets/js/auth-guard.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Meeting links • ADEWALE CLASSROOM</title>
-<meta name="description" content="Jitsi (free), Google Meet or Zoom links stored per session. No paid classroom required.">
+<title>Family links • ADEWALE CLASSROOM</title>
+<meta name="description" content="Learners — ADEWALE CLASSROOM">
 <meta name="theme-color" content="#0506ae">
 <meta name="author" content="HMG Technologies · HMG Concepts">
 <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
@@ -13,8 +13,8 @@
 <link rel="apple-touch-icon" href="assets/img/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;800&display=swap" rel="stylesheet">
-<meta property="og:title" content="Meeting links • ADEWALE CLASSROOM">
-<meta property="og:description" content="Jitsi (free), Google Meet or Zoom links stored per session. No paid classroom required.">
+<meta property="og:title" content="Learners • ADEWALE CLASSROOM">
+<meta property="og:description" content="Learners — ADEWALE CLASSROOM">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="assets/css/style.css">
@@ -109,7 +109,7 @@
       <a href="reminders.html" data-module-id="reminders" data-module="reminders" data-role-allow="any"><span class="app-nav-icon">•</span><span>Lesson reminders + calendar</span></a>
       <a href="makeups.html" data-module-id="makeups" data-module="makeups" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Make-up sessions</span></a>
       <a href="makeup-credits.html" data-module-id="makeup_credits" data-module="makeup_credits" data-role-allow="any"><span class="app-nav-icon">•</span><span>Makeup credit bank</span></a>
-      <a href="meetings.html" data-module-id="meetings" data-module="meetings" data-role-allow="admin tutor staff" class="active"><span class="app-nav-icon">•</span><span>Meeting links</span></a>
+      <a href="meetings.html" data-module-id="meetings" data-module="meetings" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Meeting links</span></a>
       <a href="session-notes.html" data-module-id="session_notes" data-module="session_notes" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Session notes</span></a>
       <a href="sessions.html" data-module-id="sessions" data-module="sessions" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Sessions</span></a>
       <a href="whiteboard.html" data-module-id="whiteboard" data-module="whiteboard" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Whiteboard rooms</span></a>
@@ -174,7 +174,7 @@
       <a href="dashboard.html" data-module-id="dashboard" data-module="dashboard" data-role-allow="any"><span class="app-nav-icon">•</span><span>Dashboard</span></a>
       <a href="feature-guide.html" data-module-id="feature_guide" data-module="feature_guide" data-role-allow="any"><span class="app-nav-icon">•</span><span>Feature guide</span></a>
       <a href="install.html" data-module-id="install" data-module="install" data-role-allow="any"><span class="app-nav-icon">•</span><span>Install the app</span></a>
-      <a href="family-links.html" data-module-id="family_links" data-module="family_links" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learners</span></a>
+      <a href="family-links.html" data-module-id="family_links" data-module="family_links" data-role-allow="admin tutor staff" class="active"><span class="app-nav-icon">•</span><span>Learners</span></a>
       <a href="my-children.html" data-module-id="my_children" data-module="my_children" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learners</span></a>
       <a href="profile.html" data-module-id="profile" data-module="profile" data-role-allow="any"><span class="app-nav-icon">•</span><span>My profile</span></a>
       <a href="platform-health.html" data-module-id="platform_health" data-module="platform_health" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Platform health</span></a>
@@ -218,7 +218,7 @@
   <div class="app-main">
     <header class="app-topbar">
       <button class="mobile-toggle" type="button" aria-label="Menu">☰</button>
-      <h1 class="app-page-title">Meeting links</h1>
+      <h1 class="app-page-title">Learners</h1>
       <div class="user-chip"><strong id="user-display-name" data-user-name></strong>
         <span id="user-display-role" data-user-role></span>
         <button class="btn btn-sm btn-ghost" id="btn-dark" type="button">Theme</button>
@@ -226,21 +226,216 @@
     </header>
     <main class="app-content">
       <section class="help-card page-intro">
-        <div class="page-intro-head"><strong>Meeting links</strong><span class="page-intro-badge" style="background:#334155">🎓 Staff only</span></div>
-        <p class="page-intro-what">Jitsi (free), Google Meet or Zoom links stored per session or as a standing room. No paid classroom required. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.</p>
-        <p class="page-intro-who"><b>Who it is for.</b> Tutors run this day to day. Parents and learners see their own sessions and nothing else.</p>
-        <p class="page-intro-why"><b>Why it matters.</b> Attendance is what deducts hours from the hour bank, which is what justifies the invoice. Get this right and billing disputes disappear.</p>
-        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Choose the date range or the engagement you are working on.</li><li>Create or open a session and set the date, time, duration and tutor.</li><li>Mark attendance — this is the step that deducts hours from the hour bank.</li><li>Write session notes so the parent has a permanent record of what was actually taught.</li></ol></details>
-        <p class="page-intro-rel"><b>Related:</b> <a href="attendance.html">attendance</a> · <a href="availability.html">availability</a> · <a href="bookings.html">bookings</a> · <a href="calendar.html">calendar</a> · <a href="cancellations.html">cancellations</a> · <a href="events.html">events</a></p>
+        <div class="page-intro-head"><strong>Learners</strong><span class="page-intro-badge" style="background:#334155">🎓 Staff only</span></div>
+        <p class="page-intro-what">Connect a parent to the child or children they are responsible for. This single mapping is what switches the family portal on: once linked, a parent sees that child's classes, scores, reading, invoices and messages — and nothing about anyone else's child. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.</p>
+        <p class="page-intro-who"><b>Who it is for.</b> Owner, admin and tutors who handle enrolment.</p>
+        <p class="page-intro-why"><b>Why it matters.</b> An unlinked child is invisible to their parent, and a parent record with no portal login cannot sign in at all. Those two gaps are the reason almost every family says &quot;I can&#x27;t see anything&quot;, and this page finds both for you automatically.</p>
+        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Pick the parent, pick the learner, choose the relationship, press Link them.</li><li>Read the <b>Needs attention</b> panel — it lists learners with no parent and parents with no portal login.</li><li>For a parent with no login: have them sign up, approve them on Approvals, then attach their account here.</li><li>Remove a link with the × beside a child; the parent stops seeing them immediately.</li></ol></details>
+        <p class="page-intro-rel"><b>Related:</b> <a href="about.html">about</a> · <a href="activity-log.html">activity log</a> · <a href="admin-data.html">admin data</a> · <a href="approvals.html">approvals</a> · <a href="change-password.html">change password</a> · <a href="contact.html">contact</a></p>
       </section>
-      <div id="crud-root"></div>
-      <script>document.addEventListener('DOMContentLoaded',()=>{ if(window.CRUD) CRUD.renderList('meetings'); });</script>
-    </main>
+
+      <div class="grid grid-4" style="gap:12px;margin-bottom:14px">
+        <div class="stat-card"><div class="stat-value" id="fl-parents">—</div><div class="stat-label">Parents</div></div>
+        <div class="stat-card"><div class="stat-value" id="fl-links">—</div><div class="stat-label">Family links</div></div>
+        <div class="stat-card" style="border-left:4px solid #b45309"><div class="stat-value" id="fl-orphans">—</div><div class="stat-label">Learners with no parent</div></div>
+        <div class="stat-card" style="border-left:4px solid #b42318"><div class="stat-value" id="fl-noaccount">—</div><div class="stat-label">Parents with no portal login</div></div>
+      </div>
+
+      <section class="card">
+        <h3 style="margin-top:0">Link a parent to a child</h3>
+        <div class="grid grid-2" style="gap:10px">
+          <div class="form-group"><label>Parent</label><select class="form-select" id="fl-parent"></select></div>
+          <div class="form-group"><label>Learner</label><select class="form-select" id="fl-learner"></select></div>
+          <div class="form-group"><label>Relationship</label>
+            <select class="form-select" id="fl-rel">
+              <option>Mother</option><option>Father</option><option>Guardian</option>
+              <option>Grandparent</option><option>Sponsor</option><option>Other</option>
+            </select></div>
+          <div class="form-group" style="display:flex;align-items:flex-end">
+            <button class="btn btn-primary" type="button" id="fl-add">＋ Link them</button></div>
+        </div>
+        <div id="fl-msg" style="margin-top:8px"></div>
+      </section>
+
+      <section class="card" style="margin-top:14px">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+          <h3 style="margin:0;flex:1">Families</h3>
+          <input class="form-input" id="fl-search" placeholder="Search a parent or child" style="width:auto;min-width:200px">
+          <button class="btn btn-sm btn-outline" type="button" id="fl-refresh">↻ Refresh</button>
+        </div>
+        <div id="fl-families"><p class="muted">Loading…</p></div>
+      </section>
+
+      <section class="card" style="margin-top:14px;border-left:4px solid #b45309">
+        <h3 style="margin-top:0">⚠️ Needs attention</h3>
+        <div id="fl-issues"><p class="muted">Checking…</p></div>
+      </section>
+    </main></main>
   </div>
 </div>
 <div id="toast-container" class="toast-container"></div>
 <script>
 
+</script>
+
+<script>
+/* ============================================================================
+   Family links (V15 — item 16).
+   parent_learner had a CRUD schema but NO PAGE, so there was no way anywhere in
+   the product to connect a parent to their child. Without that row,
+   is_parent_of() is false and the parent sees an empty portal — which is
+   exactly the "parents can't see anything" symptom.
+
+   This page also surfaces the second, subtler trap: a parent record whose
+   user_id is null has no portal account at all, so linking them changes
+   nothing until they sign up and are attached. Both problems are detected and
+   explained here rather than left for the family to discover.
+   ========================================================================== */
+const FL = {
+  parents: [], learners: [], links: [], profiles: [],
+  esc: s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),
+
+  async load(){
+    if(!window.sb){ document.getElementById('fl-families').innerHTML='<p class="muted">Connect Supabase to manage families.</p>'; return; }
+    const [p,l,k] = await Promise.all([
+      sb.from('parents').select('id,full_name,email,phone,user_id,status').order('full_name').limit(500),
+      sb.from('learners').select('id,full_name,student_no,year_group').order('full_name').limit(800),
+      sb.from('parent_learner').select('id,parent_id,learner_id,relationship').limit(2000)
+    ]);
+    if(p.error){ document.getElementById('fl-families').innerHTML='<p style="color:#b42318">'+this.esc(p.error.message)+'</p>'; return; }
+    this.parents=p.data||[]; this.learners=l.data||[]; this.links=k.data||[];
+
+    const ps=document.getElementById('fl-parent');
+    ps.innerHTML='<option value="">— choose a parent —</option>'+this.parents
+      .map(x=>`<option value="${x.id}">${this.esc(x.full_name)}${x.user_id?'':' (no portal login)'}</option>`).join('');
+    const ls=document.getElementById('fl-learner');
+    ls.innerHTML='<option value="">— choose a learner —</option>'+this.learners
+      .map(x=>`<option value="${x.id}">${this.esc(x.full_name)}${x.student_no?(' · '+this.esc(x.student_no)):''}</option>`).join('');
+
+    const linked=new Set(this.links.map(x=>x.learner_id));
+    const orphans=this.learners.filter(x=>!linked.has(x.id));
+    const noAcct=this.parents.filter(x=>!x.user_id);
+    document.getElementById('fl-parents').textContent=this.parents.length;
+    document.getElementById('fl-links').textContent=this.links.length;
+    document.getElementById('fl-orphans').textContent=orphans.length;
+    document.getElementById('fl-noaccount').textContent=noAcct.length;
+
+    this.renderFamilies();
+    this.renderIssues(orphans,noAcct);
+  },
+
+  renderFamilies(){
+    const q=(document.getElementById('fl-search').value||'').toLowerCase();
+    const host=document.getElementById('fl-families');
+    const byParent={};
+    this.links.forEach(k=>{ (byParent[k.parent_id]=byParent[k.parent_id]||[]).push(k); });
+    let rows=this.parents.filter(p=>{
+      if(!q) return true;
+      if((p.full_name||'').toLowerCase().includes(q)) return true;
+      return (byParent[p.id]||[]).some(k=>{
+        const l=this.learners.find(x=>x.id===k.learner_id);
+        return l && (l.full_name||'').toLowerCase().includes(q);
+      });
+    });
+    if(!rows.length){ host.innerHTML='<p class="muted">No families match.</p>'; return; }
+    host.innerHTML=rows.map(p=>{
+      const kids=(byParent[p.id]||[]).map(k=>{
+        const l=this.learners.find(x=>x.id===k.learner_id)||{};
+        return `<span class="badge badge-info" style="margin:2px 4px 2px 0;display:inline-block">
+          ${this.esc(l.full_name||'?')}${l.student_no?(' · '+this.esc(l.student_no)):''}
+          ${k.relationship?(' — '+this.esc(k.relationship)):''}
+          <button class="btn btn-sm btn-ghost" type="button" data-unlink="${k.id}"
+            style="padding:0 5px;color:#b42318" title="Remove this link">×</button></span>`;
+      }).join('') || '<span class="muted">No children linked — this parent sees an empty portal.</span>';
+      return `<div class="card" style="margin-bottom:8px">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <b>${this.esc(p.full_name)}</b>
+          ${p.user_id?'<span class="badge badge-success">portal login ✓</span>'
+                     :'<span class="badge badge-danger">no portal login</span>'}
+          <span class="muted" style="font-size:.84rem">${this.esc(p.email||'')} ${this.esc(p.phone||'')}</span>
+        </div>
+        <div style="margin-top:6px">${kids}</div>
+      </div>`;
+    }).join('');
+    host.querySelectorAll('[data-unlink]').forEach(b=>b.onclick=()=>this.unlink(b.dataset.unlink));
+  },
+
+  renderIssues(orphans,noAcct){
+    const host=document.getElementById('fl-issues');
+    let html='';
+    if(orphans.length){
+      html+=`<p><b>${orphans.length} learner(s) have no parent linked.</b> Their parent will sign in and see nothing.</p>
+        <p style="margin:6px 0">${orphans.slice(0,25).map(l=>`<span class="badge badge-warning" style="margin:2px">${this.esc(l.full_name)}</span>`).join('')}
+        ${orphans.length>25?`<span class="muted">…and ${orphans.length-25} more</span>`:''}</p>`;
+    }
+    if(noAcct.length){
+      html+=`<p style="margin-top:10px"><b>${noAcct.length} parent(s) have no portal login.</b>
+        Linking them is not enough — the parent must sign up at <code>login.html</code>,
+        then be approved on <a href="approvals.html">Approvals</a>. Once approved, attach their
+        account below so the database recognises them.</p>
+        <div class="grid grid-2" style="gap:8px;margin-top:8px">
+          <div class="form-group"><label>Parent record</label><select class="form-select" id="fl-np">
+            ${noAcct.map(p=>`<option value="${p.id}">${this.esc(p.full_name)}</option>`).join('')}
+          </select></div>
+          <div class="form-group"><label>Portal account (approved sign-ups)</label>
+            <select class="form-select" id="fl-nu"><option value="">— loading —</option></select></div>
+        </div>
+        <button class="btn btn-outline btn-sm" type="button" id="fl-attach">🔗 Attach this login to the parent record</button>`;
+    }
+    host.innerHTML = html || '<p style="color:#046c4e">✓ Every learner has a parent, and every parent has a portal login.</p>';
+    if(noAcct.length) this.loadProfiles();
+  },
+
+  async loadProfiles(){
+    try{
+      const {data}=await sb.from('profiles').select('id,full_name,email,role,status')
+        .in('role',['parent','guardian']).limit(400);
+      const sel=document.getElementById('fl-nu');
+      if(!sel) return;
+      const free=(data||[]).filter(u=>!this.parents.some(p=>p.user_id===u.id));
+      sel.innerHTML=free.length
+        ? free.map(u=>`<option value="${u.id}">${this.esc(u.full_name||u.email)} · ${this.esc(u.status||'')}</option>`).join('')
+        : '<option value="">No unattached parent sign-ups</option>';
+      const btn=document.getElementById('fl-attach');
+      if(btn) btn.onclick=async()=>{
+        const pid=document.getElementById('fl-np').value, uid=sel.value;
+        if(!pid||!uid){ toast('Pick both a parent record and a portal account.','warning'); return; }
+        const {error}=await sb.from('parents').update({user_id:uid}).eq('id',pid);
+        if(error) toast(error.message,'danger');
+        else { toast('Attached. That parent can now see their children.','success'); this.load(); }
+      };
+    }catch(e){}
+  },
+
+  async add(){
+    const pid=document.getElementById('fl-parent').value;
+    const lid=document.getElementById('fl-learner').value;
+    const rel=document.getElementById('fl-rel').value;
+    const msg=document.getElementById('fl-msg');
+    if(!pid||!lid){ msg.innerHTML='<span style="color:#b45309">Choose both a parent and a learner.</span>'; return; }
+    if(this.links.some(k=>k.parent_id===pid&&k.learner_id===lid)){
+      msg.innerHTML='<span style="color:#b45309">Those two are already linked.</span>'; return; }
+    const {error}=await sb.from('parent_learner').insert({parent_id:pid,learner_id:lid,relationship:rel});
+    if(error){ msg.innerHTML='<span style="color:#b42318">'+this.esc(error.message)+'</span>'; return; }
+    const p=this.parents.find(x=>x.id===pid)||{}, l=this.learners.find(x=>x.id===lid)||{};
+    msg.innerHTML='<span style="color:#046c4e">✓ '+this.esc(p.full_name)+' is now linked to '+this.esc(l.full_name)+
+      (p.user_id?' and can see them immediately.':' — but still needs a portal login (see below).')+'</span>';
+    this.load();
+  },
+
+  async unlink(id){
+    if(!confirm('Remove this family link?\n\nThe parent will immediately stop seeing that child.')) return;
+    const {error}=await sb.from('parent_learner').delete().eq('id',id);
+    if(error) toast(error.message,'danger'); else { toast('Link removed.','success'); this.load(); }
+  }
+};
+window.FL = FL;
+document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>{
+  FL.load();
+  document.getElementById('fl-add').onclick=()=>FL.add();
+  document.getElementById('fl-refresh').onclick=()=>FL.load();
+  document.getElementById('fl-search').oninput=()=>FL.renderFamilies();
+},900));
 </script>
 </body>
 </html>

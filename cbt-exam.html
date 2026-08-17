@@ -12,6 +12,7 @@
 <link rel="apple-touch-icon" href="assets/img/logo.png">
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="stylesheet" href="assets/css/layouts.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=Source+Serif+4:wght@700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/js/config.js"></script>
 <script src="assets/js/theme-engine.js"></script>
@@ -19,6 +20,7 @@
 <script src="assets/js/license.js"></script>
 <script src="assets/js/cbt.js"></script>
 <script src="assets/js/proctor.js"></script>
+<script src="assets/js/cbt-exam-kit.js"></script>
 <script src="assets/js/assistant-kb.js"></script>
 <script src="assets/js/media.js"></script>
 <script src="assets/js/brand.js"></script>
@@ -30,20 +32,25 @@
 <script src="assets/js/schema-doctor.js" defer></script>
 <script src="assets/js/quota-guard.js" defer></script>
 <script src="assets/js/chatbot.js"></script>
+<script src="assets/js/record-actions.js"></script>
+<script src="assets/js/receipts.js"></script>
 <script src="assets/js/app.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec;--tc-primary:#0506ae;--tc-accent:#964eec;--tc-gradient:linear-gradient(135deg,#0506ae,#964eec);--tc-primary-dark:#0506ae;--tc-primary-light:#964eec;--tc-violet:#964eec;--tc-violet-light:#a78bfa;--on-primary:#ffffff;--ring:rgba(5,6,174,.22)}</style>
+<script src="assets/js/ux-enhance.js" defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
 </head>
 <body data-cbt-exam="1">
 <main class="container" style="max-width:880px;padding:28px 16px 80px">
   <p class="muted"><a href="index.html" data-practice-name>ADEWALE CLASSROOM</a> · <a href="install.html">Install app</a></p>
   <h1 class="serif">Take a quiz</h1>
-  <section class="help-card">
-    <strong>Two modes — the paper decides who you are</strong>
-    <p><b>Registered:</b> only enrolled learners. Enter your <b>student ID</b> (TC-0001). Your official name is loaded and shown — you do not type it to identify yourself (that prevents spelling errors). <b>Open / anonymous:</b> anyone may sit. Registered learners can still enter their ID so the score lands on their scoresheet; guests type a display name only.</p>
-  </section>
+  <section class="help-card page-intro">
+        <div class="page-intro-head"><strong>Take a quiz</strong><span class="page-intro-badge" style="background:#7c3aed">🔑 Opened with a quiz code</span></div>
+        <p class="page-intro-what">Learner runtime: code entry, timer, navigator. Open or rostered. The main actions available here are: <b>Save / print PDF</b>, <b>Start quiz</b>, <b>Submit paper</b>. Reachable without a portal password, but useless without a valid quiz code plus the learner's student ID. The code is the gate.</p>
+        <p class="page-intro-who"><b>Who it is for.</b> Tutors author the content, learners work through it, parents watch the progress.</p>
+        <p class="page-intro-why"><b>Why it matters.</b> This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.</p>
+        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Pick the engagement, and the learner if it is a group.</li><li>Add or import the items you need — topics, tasks, questions or reading links.</li><li>Publish, so the learner sees it on their own dashboard.</li><li>Track completion and scores as the work comes back in.</li></ol></details>
+        <p class="page-intro-rel"><b>Related:</b> <a href="accommodations.html">accommodations</a> · <a href="assignments.html">assignments</a> · <a href="cbt-multi.html">cbt multi</a> · <a href="cbt-prompts.html">cbt prompts</a> · <a href="cbt-review.html">cbt review</a> · <a href="certificates.html">certificates</a></p>
+      </section>
   <div id="gate" class="card">
     <div class="form-group"><label>Quiz code</label><input class="form-input" id="code" autocomplete="off" placeholder="ADC-MATH-01"></div>
     <p id="mode-hint" class="muted">Enter the code first. The paper will say whether it is Registered or Open.</p>
@@ -137,22 +144,89 @@ document.getElementById('start').onclick = async () => {
   const exam = state.exam;
   state.questions = (exam.questions || []).map((q,i) => CBT.normalizeQuestion(q, i));
   if (!state.questions.length) { toast('This quiz has no questions yet.', 'warning'); return; }
-  Proctor.startGuards(exam.anti_cheat || { tab_focus: true, block_copy: true }, () => {});
+  /* ------------------------------------------------------------------
+     V14 exam runtime. Anti-cheat, watermark, question palette, calculator
+     and maths keyboard all come from assets/js/cbt-exam-kit.js.
+     ------------------------------------------------------------------ */
+  const ac = Object.assign({
+    tab_focus: true, block_copy: true, block_devtools: true,
+    fullscreen: false, camera: false, audio_monitor: false, max_violations: 8
+  }, exam.anti_cheat || {});
+  ac._code = exam.code || '';
+  ac._candidate = (state.learner && state.learner.full_name) ||
+                  document.getElementById('dname').value || 'candidate';
+
   document.getElementById('gate').hidden = true;
   const root = document.getElementById('exam');
   root.hidden = false;
   const mins = Number(exam.duration_min || 30);
   state.started = Date.now();
+  state.flags = {};
   const bySub = CBT.groupBySubject(state.questions);
   const tabs = Object.keys(bySub).length > 1
     ? '<div id="sub-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">' +
       Object.keys(bySub).map((s,i) => '<button type="button" class="btn btn-sm '+(i===0?'btn-primary':'btn-outline')+'" data-sub="'+TC.esc(s)+'">'+TC.esc(s)+'</button>').join('') + '</div>'
     : '';
-  root.innerHTML = `<div class="card" style="position:sticky;top:8px;z-index:5;display:flex;justify-content:space-between"><strong>${TC.esc(exam.title)}</strong><span id="timer">${mins}:00</span></div>
+
+  const idLine = (state.learner && state.learner.student_no)
+    ? TC.esc(state.learner.full_name || '') + ' · ' + TC.esc(state.learner.student_no)
+    : TC.esc(document.getElementById('dname').value || 'Guest candidate');
+
+  root.innerHTML = `<div class="card" style="position:sticky;top:8px;z-index:5">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <strong>${TC.esc(exam.title)}</strong>
+        <span><span id="timer" style="font-weight:800;color:var(--primary)">${mins}:00</span></span>
+      </div>
+      <div class="muted" style="font-size:.85rem;margin-top:4px">${idLine}</div>
+    </div>
     <p class="muted">${TC.esc(exam.quiz_kind || 'quiz')} · ${TC.esc(state.identity_mode)} · ${state.questions.length} items</p>
+    ${exam.instructions ? '<div class="card" style="background:#fffbeb;border-left:4px solid #b45309"><b>Instructions</b><p style="margin:6px 0 0">'+TC.esc(exam.instructions)+'</p></div>' : ''}
     ${tabs}
+    <div id="qpalette" style="margin:12px 0"></div>
     <div id="qbox">${state.questions.map((q,i) => CBT.renderQuestion(q,i)).join('')}</div>
-    <button class="btn btn-primary" type="button" id="submit">Submit</button>`;
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+      <button class="btn btn-primary" type="button" id="submit">Submit paper</button>
+      <button class="btn btn-outline" type="button" id="flagq">🚩 Flag this question</button>
+    </div>`;
+
+  // Item 13 — the studio name, bold and centred, at the head of the paper.
+  ExamKit.brandBanner(root, (exam.quiz_kind === 'graded' ? 'Graded assessment' : 'Computer-Based Test'));
+
+  // Item 9 — watermark + the full anti-cheat suite.
+  ExamKit.watermark(idLine + ' · ' + new Date().toLocaleString());
+  ExamKit.onAutoSubmit = () => { try { finish(); } catch (_) {} };
+  ExamKit.startAntiCheat(ac, () => {});
+
+  // Item 14 — calculator + maths keyboard.
+  ExamKit.mountToolbar({ calculator: exam.calculator !== false, mathkb: exam.math_keyboard !== false });
+
+  // Item 20 — numbered question tabs, so a candidate can jump anywhere.
+  const answersNow = () => CBT.collectAnswers(document.getElementById('qbox'));
+  const cards = () => document.querySelectorAll('#qbox .cbt-q');
+  state.current = 0;
+  const paint = () => {
+    ExamKit.renderPalette(document.getElementById('qpalette'), {
+      questions: state.questions, answers: answersNow(), flags: state.flags,
+      current: state.current,
+      onJump: (i) => {
+        state.current = i;
+        const el = cards()[i];
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.style.outline = '3px solid var(--accent)';
+          setTimeout(() => { el.style.outline = ''; }, 1400);
+        }
+        paint();
+      }
+    });
+  };
+  paint();
+  document.getElementById('qbox').addEventListener('input', () => paint());
+  document.getElementById('qbox').addEventListener('change', () => paint());
+  document.getElementById('flagq').onclick = () => {
+    state.flags[state.current] = !state.flags[state.current];
+    paint();
+  };
   if (Object.keys(bySub).length > 1) {
     const show = (sub) => {
       document.querySelectorAll('#qbox .cbt-q').forEach((el, i) => {
@@ -181,6 +255,7 @@ document.getElementById('start').onclick = async () => {
 async function finish() {
   clearTimeout(state._t);
   Proctor.stop();
+  const kitViolations = (window.ExamKit && ExamKit.stopAntiCheat()) || [];
   const answers = CBT.collectAnswers(document.getElementById('qbox'));
   const result = CBT.grade(state.questions, answers);
   const displayName = document.getElementById('dname').value.trim() || (state.learner && state.learner.full_name) || 'Guest';
@@ -200,7 +275,7 @@ async function finish() {
       score: result.got, max_score: result.max,
       quiz_kind: state.exam.quiz_kind,
       answers, review: result.detail, subject_scores: result.subject_scores,
-      violations: Proctor.violations, detail: result
+      violations: (Proctor.violations || []).concat(kitViolations), detail: result
     };
     // BUGFIX: this insert used to be fire-and-forget. When RLS or the network
     // rejected it the learner still saw "Graded result saved" and the attempt

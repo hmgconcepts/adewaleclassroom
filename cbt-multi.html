@@ -26,14 +26,36 @@
 <script src="assets/js/schema-doctor.js" defer></script>
 <script src="assets/js/quota-guard.js" defer></script>
 <script src="assets/js/chatbot.js"></script>
+<script src="assets/js/record-actions.js"></script>
+<script src="assets/js/receipts.js"></script>
 <script src="assets/js/app.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec;--tc-primary:#0506ae;--tc-accent:#964eec;--tc-gradient:linear-gradient(135deg,#0506ae,#964eec);--tc-primary-dark:#0506ae;--tc-primary-light:#964eec;--tc-violet:#964eec;--tc-violet-light:#a78bfa;--on-primary:#ffffff;--ring:rgba(5,6,174,.22)}</style>
+<script src="assets/js/ux-enhance.js" defer></script>
+<script src="assets/js/media.js"></script>
+<script src="assets/js/brand.js"></script>
+<script src="assets/js/notifications.js"></script>
+<script src="assets/js/ics.js"></script>
+<script src="assets/js/ai-assistant.js"></script>
+<script src="assets/js/security-guard.js"></script>
+<script src="assets/js/voting.js"></script>
+<script src="assets/js/enterprise.js"></script>
+<script src="assets/js/crud.js"></script>
+<script src="assets/js/insights.js"></script>
+<script src="assets/js/bookings-engine.js"></script>
+<script src="assets/js/analytics.js"></script>
+<script src="assets/js/super.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
 </head>
 <body data-cbt-multi="1">
 <main class="container" style="max-width:1080px;padding:26px 16px 90px">
+      <section class="help-card page-intro">
+        <div class="page-intro-head"><strong>Multi-subject CBT builder</strong><span class="page-intro-badge" style="background:#7c3aed">🔑 Opened with a quiz code</span></div>
+        <p class="page-intro-what">One sitting, subject tabs (UTME-style). Shared timer, per-subject breakdown, same anti-cheat. The main actions available here are: <b>Generate</b>, <b>Remove</b>. Reachable without a portal password, but useless without a valid quiz code plus the learner's student ID. The code is the gate.</p>
+        <p class="page-intro-who"><b>Who it is for.</b> Tutors author the content, learners work through it, parents watch the progress.</p>
+        <p class="page-intro-why"><b>Why it matters.</b> This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.</p>
+        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Pick the engagement, and the learner if it is a group.</li><li>Add or import the items you need — topics, tasks, questions or reading links.</li><li>Publish, so the learner sees it on their own dashboard.</li><li>Track completion and scores as the work comes back in.</li></ol></details>
+        <p class="page-intro-rel"><b>Related:</b> <a href="accommodations.html">accommodations</a> · <a href="assignments.html">assignments</a> · <a href="cbt-exam.html">cbt exam</a> · <a href="cbt-prompts.html">cbt prompts</a> · <a href="cbt-review.html">cbt review</a> · <a href="certificates.html">certificates</a></p>
+      </section>
   <h1 class="page-title">Multi-subject CBT builder</h1>
   <p class="page-sub muted">Build <b>one</b> paper containing <b>several subjects</b> — exactly the UTME/JAMB pattern.
      Candidates get a single quiz code, see a tab per subject while sitting it, and questions never mix across subjects.
@@ -102,8 +124,24 @@
     <div id="mm-status" style="margin-top:10px"></div>
   </section>
 
+  <!-- =================================================================
+       V16 — PAPER MANAGEMENT WORKBENCH
+       The parity audit (tools/audit_parity.py) found this page scored 6/14
+       against School Connect's cbt.html at 11/14. It could BUILD a paper
+       but barely manage one: a hand-rolled 25-row table with no search, no
+       sort, no filter, no paging, no export, no print, no bulk action and
+       no way to open a paper's full record. It now uses the same V16 data
+       workbench as every other page, so all of that arrives at once, plus
+       the exam-specific row actions (open, copy the sit-link, duplicate).
+       ================================================================= -->
   <section class="card" style="margin-top:14px">
-    <h3 style="margin-top:0">Existing multi-subject papers</h3>
+    <h3 style="margin-top:0">📚 Existing multi-subject papers</h3>
+    <p class="muted" style="margin-top:0">Every multi-subject paper this studio has built. Search it,
+      sort it, filter by kind or status, page through it, export it, print it, open any paper's full
+      record, or select several and delete them together. Press <b>Sit</b> to open the paper the way a
+      candidate sees it, or <b>Link</b> to copy the candidate's sit-link to your clipboard so you can
+      paste it into WhatsApp.</p>
+    <div id="mm-kpis" class="crud-kpis"></div>
     <div id="mm-list" class="muted">Loading…</div>
   </section>
 </main>
@@ -139,6 +177,7 @@ const MM = {
         '<textarea class="form-input mm-csv" rows="5" placeholder="question,type,a,b,c,d,answer,explanation,mark"></textarea></div>' +
       '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
         '<input type="file" accept=".csv,text/csv" class="mm-file">' +
+        '<button class="btn btn-sm btn-ghost" type="button" data-mm-tpl="' + i + '">⬇ template</button>' +
         '<span class="mm-count muted" style="font-size:.85rem">0 questions</span></div>';
     document.getElementById('mm-subjects').appendChild(box);
 
@@ -146,6 +185,14 @@ const MM = {
     const ta = box.querySelector('.mm-csv');
     ta.addEventListener('input', () => MM.blueprint());
     box.querySelector('.mm-name').addEventListener('input', () => MM.blueprint());
+    box.querySelector('[data-mm-tpl]').onclick = () => {
+      const csv = (window.CBT && CBT.templateCSV) ? CBT.templateCSV() : 'question,type,subject,a,b,c,d,answer,mark,explanation\n';
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'subject-questions-template.csv';
+      a.click(); URL.revokeObjectURL(a.href);
+    };
     box.querySelector('.mm-file').addEventListener('change', e => {
       const f = e.target.files && e.target.files[0]; if (!f) return;
       const r = new FileReader();
@@ -234,9 +281,17 @@ const MM = {
       instructions: document.getElementById('mm-instr').value || '',
       anti_cheat: {
         tab_focus: document.getElementById('mm-tab').checked,
+        window_blur: document.getElementById('mm-tab').checked,
         block_copy: document.getElementById('mm-copy').checked,
-        fullscreen: document.getElementById('mm-full').checked
+        block_right_click: document.getElementById('mm-copy').checked,
+        block_devtools: true,
+        fullscreen: document.getElementById('mm-full').checked,
+        watermark: (document.getElementById('mm-wm')||{}).checked !== false,
+        camera: !!(document.getElementById('mm-cam')||{}).checked,
+        audio_monitor: !!(document.getElementById('mm-aud')||{}).checked,
+        max_violations: Number((document.getElementById('mm-maxv')||{}).value || 8)
       },
+      calculator: true, math_keyboard: true,
       multi_subject: true,
       subject_breakdown: breakdown,
       identity_mode: document.getElementById('mm-mode').value,
@@ -253,23 +308,82 @@ const MM = {
     this.list();
   },
 
+  /* V16 — the paper list is now the shared data workbench, not a
+     hand-rolled 25-row table. Registering a schema with crud.js buys this
+     page sorting, per-column filters, server-side paging, free-text
+     search, a column chooser, saved views, bulk delete, CSV export, a
+     printable view and a full-record drawer, all in one call. */
   async list(){
     const host = document.getElementById('mm-list');
+    const kpis = document.getElementById('mm-kpis');
     if (!window.sb) { host.textContent = 'Connect Supabase to list saved papers.'; return; }
-    const { data, error } = await sb.from('cbt_exams')
-      .select('id,title,code,quiz_kind,subject,duration_min,created_at,multi_subject')
-      .eq('multi_subject', true).order('created_at', { ascending: false }).limit(25);
-    if (error) { host.innerHTML = '<span style="color:#b42318">' + this.esc(error.message) + '</span>'; return; }
-    if (!data || !data.length) { host.textContent = 'No multi-subject papers yet.'; return; }
-    host.innerHTML = '<div class="table-wrap"><table style="width:100%;font-size:.9rem">' +
-      '<thead><tr><th align="left">Title</th><th align="left">Code</th><th align="left">Subjects</th>' +
-      '<th align="left">Kind</th><th align="right">Mins</th><th></th></tr></thead><tbody>' +
-      data.map(r => '<tr><td>' + this.esc(r.title) + '</td><td><code>' + this.esc(r.code || '') + '</code></td>' +
-        '<td>' + this.esc(r.subject || '') + '</td><td>' + this.esc(r.quiz_kind || '') + '</td>' +
-        '<td align="right">' + (r.duration_min || '') + '</td>' +
-        '<td align="right"><a class="btn btn-sm btn-outline" href="cbt-exam.html?code=' +
-        encodeURIComponent(r.code || '') + '">Open</a></td></tr>').join('') +
-      '</tbody></table></div>';
+    if (!window.CRUD) { host.textContent = 'Paper list unavailable — crud.js did not load.'; return; }
+
+    // Headline numbers so the page reads as a console, not a table dump.
+    const { data: all } = await sb.from('cbt_exams')
+      .select('id,quiz_kind,status,duration_min,created_at')
+      .eq('multi_subject', true).limit(1000);
+    if (kpis && all) {
+      const n = all.length;
+      const by = k => all.filter(r => (r.quiz_kind || '') === k).length;
+      const mins = all.map(r => Number(r.duration_min) || 0);
+      const month = all.filter(r => {
+        const d = new Date(r.created_at);
+        return !isNaN(d) && d.getMonth() === new Date().getMonth() && d.getFullYear() === new Date().getFullYear();
+      }).length;
+      kpis.innerHTML = [
+        ['Papers', n],
+        ['Self-quiz', by('self')],
+        ['Review quiz', by('review')],
+        ['Graded quiz', by('graded')],
+        ['Published', all.filter(r => r.status === 'published').length],
+        ['Drafts', all.filter(r => (r.status || 'draft') === 'draft').length],
+        ['Average length', n ? Math.round(mins.reduce((x, y) => x + y, 0) / n) + ' min' : '—'],
+        ['Built this month', month]
+      ].map(c => '<div class="crud-kpi"><span class="crud-kpi-label">' + c[0] +
+                 '</span><strong class="crud-kpi-value">' + c[1] + '</strong></div>').join('');
+    }
+
+    const self = this;
+    CRUD.SCHEMA = CRUD.SCHEMA || {};
+    CRUD.SCHEMA.cbt_multi_papers = {
+      table: 'cbt_exams',
+      title: 'Multi-subject paper',
+      orderBy: 'created_at',
+      defaultFilters: { multi_subject: true },
+      empty: 'No multi-subject papers yet. Build one with the form above — add a subject, paste or ' +
+             'upload its questions, then press "Save multi-subject paper".',
+      cols: [
+        { key: 'title',        label: 'Title' },
+        { key: 'code',         label: 'Code', help: 'Candidates type this code to sit the paper.' },
+        { key: 'subject',      label: 'Subjects' },
+        { key: 'quiz_kind',    label: 'Kind',   type: 'select', options: ['self','review','graded'],
+          help: 'Self-quiz = practice. Review quiz = after class, finds gaps. Graded quiz = counts, pushes to the scoresheet.' },
+        { key: 'status',       label: 'Status', type: 'select', options: ['draft','published','closed','archived'] },
+        { key: 'duration_min', label: 'Minutes', type: 'number' },
+        { key: 'exam_type',    label: 'Exam type' },
+        { key: 'engagement_id',label: 'Engagement', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id' },
+        { key: 'instructions', label: 'Instructions', type: 'textarea' },
+        { key: 'created_at',   label: 'Built', type: 'datetime-local' }
+      ],
+      rowActions: [
+        { id: 'sit',  label: '▶ Sit',  cls: 'btn-outline', title: 'Open the paper exactly as a candidate sees it' },
+        { id: 'link', label: '🔗 Link', cls: 'btn-outline', title: 'Copy the candidate sit-link to the clipboard' }
+      ],
+      onRowAction: function (action, r) {
+        if (!r) return;
+        const url = location.origin + location.pathname.replace(/cbt-multi\.html$/, '') +
+                    'cbt-exam.html?code=' + encodeURIComponent(r.code || '');
+        if (action === 'sit') { window.open(url, '_blank'); return; }
+        if (action === 'link') {
+          try { navigator.clipboard.writeText(url); if (window.toast) toast('Sit-link copied — paste it to your candidates.', 'success'); }
+          catch (e) { prompt('Copy this link:', url); }
+        }
+      }
+    };
+    host.classList.remove('muted');
+    host.textContent = '';
+    CRUD.renderList('cbt_multi_papers', 'mm-list');
   },
 
   async engagements(){

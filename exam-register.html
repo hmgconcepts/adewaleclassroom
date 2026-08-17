@@ -11,6 +11,8 @@
 <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="assets/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;800&display=swap" rel="stylesheet">
 <meta property="og:title" content="Exam registration • ADEWALE CLASSROOM">
 <meta property="og:description" content="Register for WAEC, NECO, UTME, IGCSE, IELTS, SAT and more. Passport is a Drive link.">
 <meta property="og:type" content="website">
@@ -66,54 +68,151 @@
 <script src="assets/js/bookings-engine.js"></script>
 <script src="assets/js/analytics.js"></script>
 <script src="assets/js/super.js"></script>
+<script src="assets/js/record-actions.js"></script>
+<script src="assets/js/receipts.js"></script>
 <script src="assets/js/app.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec;--tc-primary:#0506ae;--tc-accent:#964eec;--tc-gradient:linear-gradient(135deg,#0506ae,#964eec);--tc-primary-dark:#0506ae;--tc-primary-light:#964eec;--tc-violet:#964eec;--tc-violet-light:#a78bfa;--on-primary:#ffffff;--ring:rgba(5,6,174,.22)}</style>
+<script src="assets/js/ux-enhance.js" defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
 </head>
 <body>
 <div class="app-layout" data-require-role="any" id="app-layout">
   <aside class="app-sidebar" id="app-sidebar">
     <div class="app-brand"><img data-logo src="assets/img/logo.svg" alt=""><div><strong data-practice-name>ADEWALE CLASSROOM</strong><span class="muted">Tutoring Connect</span></div></div>
     <nav class="app-nav">
-      <a href="dashboard.html" data-module-id="dashboard" data-module="dashboard" data-role-allow="any"><span class="app-nav-icon">⌂</span><span>Dashboard</span></a>
-      <a href="engagements.html" data-module-id="engagements" data-module="engagements" data-role-allow="admin tutor staff"><span class="app-nav-icon">◈</span><span>Engagements</span></a>
-      <a href="learners.html" data-module-id="learners" data-module="learners" data-role-allow="any"><span class="app-nav-icon">◎</span><span>Learners</span></a>
-      <a href="groups.html" data-module-id="groups" data-module="groups" data-role-allow="admin tutor staff"><span class="app-nav-icon">👥</span><span>Groups</span></a>
-      <a href="parents.html" data-module-id="parents" data-module="parents" data-role-allow="admin tutor staff"><span class="app-nav-icon">👪</span><span>Parents</span></a>
-      <a href="tutors.html" data-module-id="tutors" data-module="tutors" data-role-allow="admin"><span class="app-nav-icon">👨‍🏫</span><span>Tutors</span></a>
-      <a href="subjects.html" data-module-id="subjects" data-module="subjects" data-role-allow="admin tutor staff"><span class="app-nav-icon">📖</span><span>Subjects</span></a>
-      <a href="inquiries.html" data-module-id="inquiries" data-module="inquiries" data-role-allow="admin tutor staff"><span class="app-nav-icon">✉</span><span>Inquiries</span></a>
-      <a href="calendar.html" data-module-id="calendar" data-module="calendar" data-role-allow="any"><span class="app-nav-icon">▦</span><span>Calendar</span></a>
-      <a href="bookings.html" data-module-id="bookings" data-module="bookings" data-role-allow="any"><span class="app-nav-icon">📅</span><span>Cycle bookings</span></a>
-      <a href="sessions.html" data-module-id="sessions" data-module="sessions" data-role-allow="any"><span class="app-nav-icon">🗓️</span><span>Sessions</span></a>
-      <a href="session-complete.html" data-module-id="session_complete" data-module="session_complete" data-role-allow="admin tutor staff"><span class="app-nav-icon">✅</span><span>Complete a class</span></a>
-      <a href="attendance.html" data-module-id="attendance" data-module="attendance" data-role-allow="any"><span class="app-nav-icon">📋</span><span>Attendance</span></a>
-      <a href="sow.html" data-module-id="sow" data-module="sow" data-role-allow="admin tutor staff"><span class="app-nav-icon">📑</span><span>Scheme of work</span></a>
-      <a href="practice.html" data-module-id="practice" data-module="practice" data-role-allow="admin tutor staff"><span class="app-nav-icon">📝</span><span>Quizzes</span></a>
-      <a href="cbt-exam.html" data-module-id="cbt_exam" data-module="cbt_exam" data-role-allow="any"><span class="app-nav-icon">🖊</span><span>Take quiz</span></a>
-      <a href="reading.html" data-module-id="reading" data-module="reading" data-role-allow="any"><span class="app-nav-icon">📚</span><span>Reading</span></a>
-      <a href="scoresheet.html" data-module-id="scoresheet" data-module="scoresheet" data-role-allow="any"><span class="app-nav-icon">📒</span><span>Scoresheet</span></a>
-      <a href="stream.html" data-module-id="stream" data-module="stream" data-role-allow="any"><span class="app-nav-icon">📡</span><span>Stream</span></a>
-      <a href="classwork.html" data-module-id="classwork" data-module="classwork" data-role-allow="any"><span class="app-nav-icon">📂</span><span>Classwork</span></a>
-      <a href="forum.html" data-module-id="forum" data-module="forum" data-role-allow="any"><span class="app-nav-icon">💬</span><span>Group forum</span></a>
-      <a href="insights.html" data-module-id="insights" data-module="insights" data-role-allow="any"><span class="app-nav-icon">▣</span><span>Insights Lab</span></a>
-      <a href="learner-360.html" data-module-id="learner_360" data-module="learner_360" data-role-allow="any"><span class="app-nav-icon">◎</span><span>Learner 360</span></a>
-      <a href="analytics.html" data-module-id="analytics" data-module="analytics" data-role-allow="admin"><span class="app-nav-icon">📊</span><span>Analytics</span></a>
-      <a href="packages.html" data-module-id="packages" data-module="packages" data-role-allow="any"><span class="app-nav-icon">◷</span><span>Hour banks</span></a>
-      <a href="invoices.html" data-module-id="invoices" data-module="invoices" data-role-allow="any"><span class="app-nav-icon">🧾</span><span>Invoices</span></a>
-      <a href="inbox.html" data-module-id="inbox" data-module="inbox" data-role-allow="any"><span class="app-nav-icon">📥</span><span>Inbox</span></a>
-      <a href="announcements.html" data-module-id="announcements" data-module="announcements" data-role-allow="any"><span class="app-nav-icon">📢</span><span>Announcements</span></a>
-      <a href="notifications.html" data-module-id="notifications" data-module="notifications" data-role-allow="any"><span class="app-nav-icon">🔔</span><span>Notifications</span></a>
-      <a href="voting.html" data-module-id="voting" data-module="voting" data-role-allow="any"><span class="app-nav-icon">🗳️</span><span>Voting</span></a>
-      <a href="apply.html" data-module-id="apply" data-module="apply" data-role-allow="any"><span class="app-nav-icon">📝</span><span>Apply</span></a>
-      <a href="exam-links.html" data-module-id="exam_links" data-module="exam_links" data-role-allow="admin tutor staff"><span class="app-nav-icon">🎫</span><span>Exam links</span></a>
-      <a href="settings.html" data-module-id="settings" data-module="settings" data-role-allow="admin"><span class="app-nav-icon">⚙️</span><span>Settings</span></a>
-      <a href="admin-data.html" data-module-id="admin_data" data-module="admin_data" data-role-allow="admin"><span class="app-nav-icon">🗃️</span><span>Admin data</span></a>
-      <a href="platform-health.html" data-module-id="platform_health" data-module="platform_health" data-role-allow="admin"><span class="app-nav-icon">🛡️</span><span>Health</span></a>
-      <a href="feature-guide.html" data-module-id="feature_guide" data-module="feature_guide" data-role-allow="any"><span class="app-nav-icon">📘</span><span>Feature guide</span></a>
-      <a href="hmg-ecosystem.html" data-module-id="hmg_ecosystem" data-module="hmg_ecosystem" data-role-allow="any"><span class="app-nav-icon">🌐</span><span>HMG Ecosystem</span></a>
+      <div class="nav-section-title">◈ Core</div>
+      <a href="engagements.html" data-module-id="engagements" data-module="engagements" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Engagements</span></a>
+      <a href="groups.html" data-module-id="groups" data-module="groups" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Groups</span></a>
+      <a href="learners.html" data-module-id="learners" data-module="learners" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learners</span></a>
+      <a href="parents.html" data-module-id="parents" data-module="parents" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Parents</span></a>
+      <a href="subjects.html" data-module-id="subjects" data-module="subjects" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Subjects</span></a>
+      <a href="tutors.html" data-module-id="tutors" data-module="tutors" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Tutors</span></a>
+      <div class="nav-section-title">✉ Growth</div>
+      <a href="application-links.html" data-module-id="application_links" data-module="application_links" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Application links</span></a>
+      <a href="exam-register.html" data-module-id="exam_register" data-module="exam_register" data-role-allow="any" class="active"><span class="app-nav-icon">•</span><span>Exam registration</span></a>
+      <a href="exam-links.html" data-module-id="exam_links" data-module="exam_links" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Exam registration links</span></a>
+      <a href="inquiries.html" data-module-id="inquiries" data-module="inquiries" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Inquiries</span></a>
+      <a href="onboarding.html" data-module-id="onboarding" data-module="onboarding" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Onboarding checklists</span></a>
+      <a href="public-book.html" data-module-id="public_book" data-module="public_book" data-role-allow="any"><span class="app-nav-icon">•</span><span>Public self-booking</span></a>
+      <a href="referrals.html" data-module-id="referrals" data-module="referrals" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Referrals</span></a>
+      <a href="apply.html" data-module-id="apply" data-module="apply" data-role-allow="any"><span class="app-nav-icon">•</span><span>Request a place</span></a>
+      <a href="reviews.html" data-module-id="reviews" data-module="reviews" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Reviews &amp;amp; testimonials</span></a>
+      <a href="trials.html" data-module-id="trials" data-module="trials" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Trial lessons</span></a>
+      <a href="waitlist.html" data-module-id="waitlist" data-module="waitlist" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Waitlist</span></a>
+      <div class="nav-section-title">🗓️ Sessions</div>
+      <a href="attendance.html" data-module-id="attendance" data-module="attendance" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Attendance</span></a>
+      <a href="availability.html" data-module-id="availability" data-module="availability" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Availability</span></a>
+      <a href="calendar.html" data-module-id="calendar" data-module="calendar" data-role-allow="any"><span class="app-nav-icon">•</span><span>Calendar</span></a>
+      <a href="cancellations.html" data-module-id="cancellations" data-module="cancellations" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Cancellations</span></a>
+      <a href="session-complete.html" data-module-id="session_complete" data-module="session_complete" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Complete a class</span></a>
+      <a href="bookings.html" data-module-id="bookings" data-module="bookings" data-role-allow="any"><span class="app-nav-icon">•</span><span>Cycle bookings</span></a>
+      <a href="reminders.html" data-module-id="reminders" data-module="reminders" data-role-allow="any"><span class="app-nav-icon">•</span><span>Lesson reminders + calendar</span></a>
+      <a href="makeups.html" data-module-id="makeups" data-module="makeups" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Make-up sessions</span></a>
+      <a href="makeup-credits.html" data-module-id="makeup_credits" data-module="makeup_credits" data-role-allow="any"><span class="app-nav-icon">•</span><span>Makeup credit bank</span></a>
+      <a href="meetings.html" data-module-id="meetings" data-module="meetings" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Meeting links</span></a>
+      <a href="session-notes.html" data-module-id="session_notes" data-module="session_notes" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Session notes</span></a>
+      <a href="sessions.html" data-module-id="sessions" data-module="sessions" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Sessions</span></a>
+      <a href="whiteboard.html" data-module-id="whiteboard" data-module="whiteboard" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Whiteboard rooms</span></a>
+      <a href="events.html" data-module-id="events" data-module="events" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Workshops &amp;amp; events</span></a>
+      <div class="nav-section-title">📚 Learning</div>
+      <a href="accommodations.html" data-module-id="accommodations" data-module="accommodations" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Accommodations / SEN</span></a>
+      <a href="certificates.html" data-module-id="certificates" data-module="certificates" data-role-allow="any"><span class="app-nav-icon">•</span><span>Certificates</span></a>
+      <a href="classwork.html" data-module-id="classwork" data-module="classwork" data-role-allow="any"><span class="app-nav-icon">•</span><span>Classwork</span></a>
+      <a href="curriculum.html" data-module-id="curriculum" data-module="curriculum" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Curriculum maps</span></a>
+      <a href="diagnostics.html" data-module-id="diagnostics" data-module="diagnostics" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Diagnostics</span></a>
+      <a href="library.html" data-module-id="library" data-module="library" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Digital library</span></a>
+      <a href="eresources.html" data-module-id="eresources" data-module="eresources" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>E-resources / notes</span></a>
+      <a href="goals.html" data-module-id="goals" data-module="goals" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Goals &amp;amp; learning plans</span></a>
+      <a href="assignments.html" data-module-id="assignments" data-module="assignments" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Homework</span></a>
+      <a href="portfolio.html" data-module-id="portfolio" data-module="portfolio" data-role-allow="any"><span class="app-nav-icon">•</span><span>Learner portfolio</span></a>
+      <a href="learning-styles.html" data-module-id="learning_styles" data-module="learning_styles" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learning styles</span></a>
+      <a href="lesson-plans.html" data-module-id="lesson_plans" data-module="lesson_plans" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Lesson plans</span></a>
+      <a href="methodologies.html" data-module-id="methodologies" data-module="methodologies" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Methodologies</span></a>
+      <a href="lms.html" data-module-id="lms" data-module="lms" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Mini LMS</span></a>
+      <a href="cbt-multi.html" data-module-id="cbt_multi" data-module="cbt_multi" data-role-allow="any"><span class="app-nav-icon">•</span><span>Multi-subject CBT builder</span></a>
+      <a href="progress-reports.html" data-module-id="progress_reports" data-module="progress_reports" data-role-allow="any"><span class="app-nav-icon">•</span><span>Progress reports</span></a>
+      <a href="cbt-prompts.html" data-module-id="cbt_prompts" data-module="cbt_prompts" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Question bank prompts</span></a>
+      <a href="practice.html" data-module-id="practice" data-module="practice" data-role-allow="any"><span class="app-nav-icon">•</span><span>Quizzes — Self / Review / Graded</span></a>
+      <a href="reading.html" data-module-id="reading" data-module="reading" data-role-allow="any"><span class="app-nav-icon">•</span><span>Reading assignments</span></a>
+      <a href="resources.html" data-module-id="resources" data-module="resources" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Resource library</span></a>
+      <a href="rubrics.html" data-module-id="rubrics" data-module="rubrics" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Rubrics</span></a>
+      <a href="sow.html" data-module-id="sow" data-module="sow" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Scheme of work</span></a>
+      <a href="flashcards.html" data-module-id="flashcards" data-module="flashcards" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Spaced practice</span></a>
+      <a href="gamification.html" data-module-id="gamification" data-module="gamification" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Streaks &amp;amp; badges</span></a>
+      <a href="study-log.html" data-module-id="study_log" data-module="study_log" data-role-allow="any"><span class="app-nav-icon">•</span><span>Study log / session timer</span></a>
+      <a href="cbt-exam.html" data-module-id="cbt_exam" data-module="cbt_exam" data-role-allow="any"><span class="app-nav-icon">•</span><span>Take a quiz</span></a>
+      <a href="mastery.html" data-module-id="mastery" data-module="mastery" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Topic mastery</span></a>
+      <a href="transcripts.html" data-module-id="transcripts" data-module="transcripts" data-role-allow="any"><span class="app-nav-icon">•</span><span>Transcripts</span></a>
+      <div class="nav-section-title">▣ Analytics</div>
+      <a href="at-risk.html" data-module-id="at_risk" data-module="at_risk" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>At-risk board</span></a>
+      <a href="exam-targets.html" data-module-id="exam_targets" data-module="exam_targets" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Exam targets</span></a>
+      <a href="group-insights.html" data-module-id="group_insights" data-module="group_insights" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Group insights</span></a>
+      <a href="insights.html" data-module-id="insights" data-module="insights" data-role-allow="any"><span class="app-nav-icon">•</span><span>Insights Lab</span></a>
+      <a href="learner-360.html" data-module-id="learner_360" data-module="learner_360" data-role-allow="any"><span class="app-nav-icon">•</span><span>Learner 360</span></a>
+      <a href="analytics.html" data-module-id="analytics" data-module="analytics" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Practice analytics</span></a>
+      <a href="predictions.html" data-module-id="predictions" data-module="predictions" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Predicted grades</span></a>
+      <a href="scoresheet.html" data-module-id="scoresheet" data-module="scoresheet" data-role-allow="any"><span class="app-nav-icon">•</span><span>Scoresheet</span></a>
+      <a href="value-added.html" data-module-id="value_added" data-module="value_added" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Value-added</span></a>
+      <div class="nav-section-title">🧾 Finance</div>
+      <a href="products.html" data-module-id="products" data-module="products" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Books &amp;amp; materials</span></a>
+      <a href="fees.html" data-module-id="fees" data-module="fees" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Fee catalogue</span></a>
+      <a href="packages.html" data-module-id="packages" data-module="packages" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Hour banks</span></a>
+      <a href="invoices.html" data-module-id="invoices" data-module="invoices" data-role-allow="any"><span class="app-nav-icon">•</span><span>Invoices</span></a>
+      <a href="payment-history.html" data-module-id="payment_history" data-module="payment_history" data-role-allow="any"><span class="app-nav-icon">•</span><span>Payment history</span></a>
+      <a href="payments.html" data-module-id="payments" data-module="payments" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Payments</span></a>
+      <a href="finance.html" data-module-id="finance" data-module="finance" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Practice finance</span></a>
+      <a href="scholarships.html" data-module-id="scholarships" data-module="scholarships" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Scholarships &amp;amp; discounts</span></a>
+      <a href="payroll.html" data-module-id="payroll" data-module="payroll" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Tutor payroll</span></a>
+      <div class="nav-section-title">⚙️ Platform</div>
+      <a href="about.html" data-module-id="about" data-module="about" data-role-allow="any"><span class="app-nav-icon">•</span><span>About</span></a>
+      <a href="developer.html" data-module-id="developer" data-module="developer" data-role-allow="any"><span class="app-nav-icon">•</span><span>About the developer</span></a>
+      <a href="activity-log.html" data-module-id="activity_log" data-module="activity_log" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Activity log</span></a>
+      <a href="admin-data.html" data-module-id="admin_data" data-module="admin_data" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Admin data</span></a>
+      <a href="approvals.html" data-module-id="approvals" data-module="approvals" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Approvals</span></a>
+      <a href="change-password.html" data-module-id="change_password" data-module="change_password" data-role-allow="any"><span class="app-nav-icon">•</span><span>Change password</span></a>
+      <a href="contact.html" data-module-id="contact" data-module="contact" data-role-allow="any"><span class="app-nav-icon">•</span><span>Contact</span></a>
+      <a href="dashboard.html" data-module-id="dashboard" data-module="dashboard" data-role-allow="any"><span class="app-nav-icon">•</span><span>Dashboard</span></a>
+      <a href="feature-guide.html" data-module-id="feature_guide" data-module="feature_guide" data-role-allow="any"><span class="app-nav-icon">•</span><span>Feature guide</span></a>
+      <a href="install.html" data-module-id="install" data-module="install" data-role-allow="any"><span class="app-nav-icon">•</span><span>Install the app</span></a>
+      <a href="family-links.html" data-module-id="family_links" data-module="family_links" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learners</span></a>
+      <a href="my-children.html" data-module-id="my_children" data-module="my_children" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learners</span></a>
+      <a href="profile.html" data-module-id="profile" data-module="profile" data-role-allow="any"><span class="app-nav-icon">•</span><span>My profile</span></a>
+      <a href="platform-health.html" data-module-id="platform_health" data-module="platform_health" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Platform health</span></a>
+      <a href="status-manager.html" data-module-id="status_manager" data-module="status_manager" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Role &amp;amp; status</span></a>
+      <a href="settings.html" data-module-id="settings" data-module="settings" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Settings</span></a>
+      <a href="license.html" data-module-id="license" data-module="license" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Site license</span></a>
+      <a href="storage.html" data-module-id="storage" data-module="storage" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Storage manager</span></a>
+      <div class="nav-section-title">• Comms</div>
+      <a href="announcements.html" data-module-id="announcements" data-module="announcements" data-role-allow="any"><span class="app-nav-icon">•</span><span>Announcements</span></a>
+      <a href="stream.html" data-module-id="stream" data-module="stream" data-role-allow="any"><span class="app-nav-icon">•</span><span>Class stream</span></a>
+      <a href="complaints.html" data-module-id="complaints" data-module="complaints" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Complaints</span></a>
+      <a href="forum.html" data-module-id="forum" data-module="forum" data-role-allow="any"><span class="app-nav-icon">•</span><span>Group forum</span></a>
+      <a href="inbox.html" data-module-id="inbox" data-module="inbox" data-role-allow="any"><span class="app-nav-icon">•</span><span>Inbox</span></a>
+      <a href="messages.html" data-module-id="messages" data-module="messages" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Messaging (WA / Email / SMS)</span></a>
+      <a href="notifications.html" data-module-id="notifications" data-module="notifications" data-role-allow="any"><span class="app-nav-icon">•</span><span>Notifications</span></a>
+      <a href="parent-meetings.html" data-module-id="parent_meetings" data-module="parent_meetings" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Parent conferences</span></a>
+      <a href="polls.html" data-module-id="polls" data-module="polls" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Polls</span></a>
+      <a href="broadcasts.html" data-module-id="broadcasts" data-module="broadcasts" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Result broadcasts</span></a>
+      <a href="surveys.html" data-module-id="surveys" data-module="surveys" data-role-allow="any"><span class="app-nav-icon">•</span><span>Surveys &amp;amp; CSAT</span></a>
+      <a href="voting.html" data-module-id="voting" data-module="voting" data-role-allow="any"><span class="app-nav-icon">•</span><span>Voting &amp;amp; polls</span></a>
+      <div class="nav-section-title">• HMG Concepts</div>
+      <a href="hmg-products.html" data-module-id="hmg_products" data-module="hmg_products" data-role-allow="any"><span class="app-nav-icon">•</span><span>HMG Digital Products</span></a>
+      <a href="hmg-ecosystem.html" data-module-id="hmg_ecosystem" data-module="hmg_ecosystem" data-role-allow="any"><span class="app-nav-icon">•</span><span>HMG Ecosystem</span></a>
+      <div class="nav-section-title">• Media</div>
+      <a href="birthdays.html" data-module-id="birthdays" data-module="birthdays" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Birthdays</span></a>
+      <a href="directory.html" data-module-id="directory" data-module="directory" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Directory</span></a>
+      <a href="gallery.html" data-module-id="gallery" data-module="gallery" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Gallery</span></a>
+      <a href="idcards.html" data-module-id="idcards" data-module="idcards" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learner cards</span></a>
+      <div class="nav-section-title">• Ops</div>
+      <a href="compliance.html" data-module-id="compliance" data-module="compliance" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Compliance</span></a>
+      <a href="documents.html" data-module-id="documents" data-module="documents" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Contracts &amp;amp; consent</span></a>
+      <a href="substitutions.html" data-module-id="substitutions" data-module="substitutions" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Cover tutors</span></a>
+      <a href="helpdesk.html" data-module-id="helpdesk" data-module="helpdesk" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Help desk</span></a>
+      <a href="policies.html" data-module-id="policies" data-module="policies" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Policies</span></a>
+      <a href="rooms.html" data-module-id="rooms" data-module="rooms" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Rooms / locations</span></a>
+      <a href="safeguarding.html" data-module-id="safeguarding" data-module="safeguarding" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Safeguarding log</span></a>
+      <a href="timezones.html" data-module-id="timezones" data-module="timezones" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Timezone desk</span></a>
+      <a href="leave.html" data-module-id="leave" data-module="leave" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Tutor leave</span></a>
     </nav>
   </aside>
   <div class="app-main">
@@ -126,59 +225,841 @@
         <button class="btn btn-sm btn-ghost" type="button" data-signout onclick="App.signOut()">Sign out</button></div>
     </header>
     <main class="app-content">
-      <section class="help-card">
-        <strong>Local + international exam registration</strong>
-        <p>WAEC, NECO, GCE, NABTEB, BECE, UTME/JAMB, IGCSE, IELTS, TOEFL, SAT, GRE, GMAT, JUPEB. Passport photograph is a Google Drive link with preview — never an upload into the 500 MB database.</p>
-        <div class="workflow"><span>1. Open a studio exam link or pick a board</span><span>2. Fill candidate details</span><span>3. Paste Drive passport URL</span><span>4. Submit — staff see it on Exam links</span></div>
-        <div class="related"><a class="btn btn-outline btn-sm" href="exam-links.html">Staff: create links</a><a class="btn btn-outline btn-sm" href="apply.html">Tutoring application</a></div>
+      <!-- ==================================================================
+           PAGE DESCRIPTION (V16 rewrite)
+           The old copy on this page was wrong: it was the Inquiries page's
+           text pasted in, and it told the reader "families never see the
+           pipeline" on a page whose whole purpose is to be seen by families.
+           Replaced with an accurate description of what this page now does.
+           ================================================================== -->
+      <section class="help-card page-intro">
+        <div class="page-intro-head">
+          <strong>Exam registration</strong>
+          <span class="page-intro-badge" style="background:#0f766e">🌍 Public page</span>
+          <span class="page-intro-badge" style="background:#0506ae">🔐 Staff console below</span>
+        </div>
+
+        <p class="page-intro-what"><b>What this page is.</b> This is the studio's exam-registration
+        desk. It handles the full life of a candidate, from the moment they fill the form to the
+        moment they collect a printed result: <b>register → verify → pay → sit → result → decision
+        → enrol</b>. Candidates register for external boards the studio prepares them for — WAEC,
+        NECO, GCE, NABTEB, BECE, UTME/JAMB, IGCSE, IELTS, TOEFL, SAT, GRE, GMAT, JUPEB — and for the
+        studio's own placement tests.</p>
+
+        <p class="page-intro-who"><b>Who sees what.</b> The page shows two different things depending
+        on who opens it. <b>Anyone at all</b> — no sign-in — gets the registration form and the
+        <i>Check my status</i> box. <b>Signed-in studio staff</b> additionally get the candidate
+        console underneath: the register of every candidate, the money, the scores, the decisions,
+        and the four printable documents.</p>
+
+        <p class="page-intro-why"><b>Why it matters.</b> Exam registration is where a tutoring studio
+        first touches a family that has not yet enrolled, and it is usually the first money that
+        changes hands. Before V16 this page was a one-way mailbox: the candidate typed their details,
+        the row landed in the database, and nothing else in the system knew about it. There was no
+        exam number to quote on the phone, no way for a candidate to check anything without ringing
+        you, no record of whether the fee was paid, nowhere to put a score, and no admission letter.
+        All of that had to be done by hand in Word. It is now all here.</p>
+
+        <details class="page-intro-how"><summary>How to use this page — candidates</summary>
+          <ol>
+            <li>Fill the form. Every field marked with a red dot is required; the rest help us place
+                you correctly but can be left blank.</li>
+            <li>If you were sent a registration link with a code in it, the board and sitting are
+                filled in for you automatically — do not change them.</li>
+            <li>Press <b>Submit registration</b>. You are immediately given an <b>exam number</b> in
+                the form <code>TC/WAEC/2026/0007</code>. <b>Write it down.</b> It is how the studio
+                identifies you from now on.</li>
+            <li>Print or screenshot the acknowledgement slip that appears.</li>
+            <li>Come back to this page any time and use <b>Check my status</b> with your exam number
+                and your surname to see whether your fee has been received, when and where you sit,
+                and — once the studio releases them — your scores.</li>
+          </ol>
+        </details>
+
+        <details class="page-intro-how"><summary>How to use this page — studio staff</summary>
+          <ol>
+            <li>New candidates arrive with status <b>submitted</b>. Open one and check the details
+                against the ID document they linked.</li>
+            <li>Press <b>Verify</b> once the details are right. Record the fee with <b>Mark paid</b>
+                and put the bank reference in the box so the receipt matches your statement.</li>
+            <li>Set the <b>exam date, time and venue</b>. The candidate's docket updates instantly —
+                you do not need to email anyone.</li>
+            <li>After the exam, enter the <b>score</b> and, if you want a per-subject breakdown, add
+                the subjects and marks. The grade is worked out for you but you can override it.</li>
+            <li>Record the <b>decision</b> and press <b>Release</b>. Only after Release can the
+                candidate see their score — this is what stops results leaking early.</li>
+            <li>Print the <b>docket</b>, <b>result slip</b>, <b>certificate</b> or <b>outcome letter</b>
+                straight from the row. They carry the studio's name, colours and your signing
+                officer's name.</li>
+            <li>For a candidate you want to keep, press <b>Enrol as learner</b>. They become a real
+                learner record and everything else in the studio — sessions, invoices, reports —
+                opens up to them. Pressing it twice is safe; it will not create a duplicate.</li>
+          </ol>
+        </details>
+
+        <p class="page-intro-rel"><b>Related:</b>
+          <a href="exam-links.html">exam registration links</a> ·
+          <a href="exam-targets.html">exam targets</a> ·
+          <a href="cbt-exam.html">sit a CBT exam</a> ·
+          <a href="certificates.html">certificates</a> ·
+          <a href="learners.html">learners</a> ·
+          <a href="invoices.html">invoices</a> ·
+          <a href="apply.html">request a place</a>
+        </p>
       </section>
 
-      <div class="card" style="max-width:720px">
-        <form id="ex-form">
-          <div class="grid grid-2">
-            <div class="form-group"><label>Full name</label><input class="form-input" name="full_name" required></div>
-            <div class="form-group"><label>Student ID (if already enrolled)</label><input class="form-input" name="student_no" placeholder="TC-0001"></div>
-            <div class="form-group"><label>Email</label><input class="form-input" type="email" name="email"></div>
-            <div class="form-group"><label>Phone</label><input class="form-input" name="phone"></div>
-            <div class="form-group"><label>Date of birth</label><input class="form-input" type="date" name="dob"></div>
-            <div class="form-group"><label>Sex</label><select class="form-select" name="sex"><option></option><option>F</option><option>M</option></select></div>
-            <div class="form-group"><label>Board</label>
-              <select class="form-select" name="board">
-                <option>WAEC</option><option>NECO</option><option>GCE</option><option>NABTEB</option><option>BECE</option>
-                <option>UTME / JAMB</option><option>IGCSE</option><option>IELTS</option><option>TOEFL</option>
-                <option>SAT</option><option>GRE</option><option>GMAT</option><option>JUPEB</option>
-              </select></div>
-            <div class="form-group"><label>Series / sitting</label><input class="form-input" name="series" placeholder="May/June 2027"></div>
-            <div class="form-group"><label>Preferred centre</label><input class="form-input" name="centre"></div>
-            <div class="form-group"><label>Subjects (comma separated)</label><input class="form-input" name="subjects"></div>
-            <div class="form-group"><label>Passport photo (Drive link)</label><input class="form-input" name="photo_url" placeholder="https://drive.google.com/…"></div>
-            <div class="form-group"><label>Supporting doc (Drive)</label><input class="form-input" name="doc_url"></div>
-            <div class="form-group"><label>Guardian</label><input class="form-input" name="guardian"></div>
-            <div class="form-group" style="grid-column:1/-1"><label>Notes</label><textarea class="form-textarea" name="notes"></textarea></div>
-          </div>
-          <div id="pass-prev"></div>
-          <button class="btn btn-primary" type="submit">Submit registration</button>
-        </form>
+      <!-- ============================ CANDIDATE SIDE ==================== -->
+      <div class="grid grid-2" style="align-items:start;gap:18px">
+
+        <!-- ---------- Registration form ---------- -->
+        <div class="card">
+          <h2 style="margin-top:0">📝 Register as a candidate</h2>
+          <p class="muted" id="ex-link-note" style="margin-top:0"></p>
+
+          <form id="ex-form">
+            <div class="grid grid-2">
+              <div class="form-group"><label>Full name <span style="color:#b91c1c">•</span></label>
+                <input class="form-input" name="full_name" required autocomplete="name">
+                <div class="form-help">Exactly as it appears on the ID you will bring to the hall.</div></div>
+
+              <div class="form-group"><label>Already a learner here?</label>
+                <input class="form-input" name="student_no" list="ex-learner-list" placeholder="Start typing your name…">
+                <datalist id="ex-learner-list"></datalist>
+                <div class="form-help">Leave blank if this is your first contact with the studio.</div></div>
+
+              <div class="form-group"><label>Email</label>
+                <input class="form-input" type="email" name="email" autocomplete="email"></div>
+
+              <div class="form-group"><label>Phone</label>
+                <input class="form-input" name="phone" autocomplete="tel" placeholder="+234…"></div>
+
+              <div class="form-group"><label>Date of birth</label>
+                <input class="form-input" type="date" name="dob"></div>
+
+              <div class="form-group"><label>Sex</label>
+                <select class="form-select" name="sex"><option value=""></option><option>F</option><option>M</option></select></div>
+
+              <div class="form-group"><label>Board <span style="color:#b91c1c">•</span></label>
+                <select class="form-select" name="board" required>
+                  <option>WAEC</option><option>NECO</option><option>GCE</option><option>NABTEB</option>
+                  <option>BECE</option><option>UTME / JAMB</option><option>IGCSE</option>
+                  <option>IELTS</option><option>TOEFL</option><option>SAT</option><option>GRE</option>
+                  <option>GMAT</option><option>JUPEB</option><option>Studio placement test</option>
+                </select></div>
+
+              <div class="form-group"><label>Series / sitting</label>
+                <select class="form-select" name="series" id="ex-series"></select>
+                <div class="form-help">Auto-filled with the next four sittings. Pick the one you want.</div></div>
+
+              <div class="form-group"><label>Preferred centre</label>
+                <input class="form-input" name="centre" list="ex-centres">
+                <datalist id="ex-centres">
+                  <option>Online — candidate's own device</option><option>Studio centre — Lagos</option>
+                  <option>Studio centre — Abuja</option><option>Studio centre — Ibadan</option>
+                  <option>Studio centre — Port Harcourt</option><option>International — remote proctored</option>
+                </datalist></div>
+
+              <div class="form-group"><label>Nationality</label>
+                <input class="form-input" name="nationality" list="ex-nat" value="Nigeria">
+                <datalist id="ex-nat"><option>Nigeria</option><option>Ghana</option><option>Kenya</option>
+                  <option>South Africa</option><option>United Kingdom</option><option>United States</option>
+                  <option>Canada</option><option>United Arab Emirates</option></datalist></div>
+
+              <div class="form-group"><label>State / region of origin</label>
+                <input class="form-input" name="state_of_origin" list="ex-states">
+                <datalist id="ex-states"></datalist></div>
+
+              <div class="form-group"><label>Previous school</label>
+                <input class="form-input" name="prev_school"></div>
+
+              <div class="form-group" style="grid-column:1/-1"><label>Subjects</label>
+                <input class="form-input" name="subjects" id="ex-subjects" placeholder="Click the chips below, or type your own">
+                <div id="ex-subject-chips" class="workflow" style="margin-top:8px"></div>
+                <div class="form-help">Tap a subject to add or remove it. The box fills itself.</div></div>
+
+              <div class="form-group"><label>Guardian / next of kin</label>
+                <input class="form-input" name="guardian"></div>
+
+              <div class="form-group"><label>Guardian phone</label>
+                <input class="form-input" name="guardian_phone"></div>
+
+              <div class="form-group"><label>Guardian email</label>
+                <input class="form-input" type="email" name="guardian_email"></div>
+
+              <div class="form-group"><label>Passport photo — link only</label>
+                <input class="form-input" name="photo_url" placeholder="https://drive.google.com/…">
+                <div class="form-help">Paste a Google Drive or https link. This studio never accepts
+                  file uploads, which is what keeps it inside the free storage tier.</div></div>
+
+              <div class="form-group"><label>Supporting document — link only</label>
+                <input class="form-input" name="doc_url" placeholder="https://drive.google.com/…"></div>
+
+              <div class="form-group" style="grid-column:1/-1"><label>Address</label>
+                <input class="form-input" name="address"></div>
+
+              <div class="form-group" style="grid-column:1/-1"><label>Anything we should know</label>
+                <textarea class="form-textarea" name="notes" rows="2"></textarea></div>
+            </div>
+
+            <div id="pass-prev"></div>
+            <button class="btn btn-primary" type="submit" id="ex-submit">Submit registration</button>
+          </form>
+
+          <div id="ex-success" hidden></div>
+        </div>
+
+        <!-- ---------- Candidate self-service lookup ---------- -->
+        <div class="card">
+          <h2 style="margin-top:0">🔎 Check my status</h2>
+          <p class="muted" style="margin-top:0">Already registered? Enter your exam number and your
+            surname to see your docket, whether your fee has been received, and your result once the
+            studio releases it. No account, no password.</p>
+
+          <div class="form-group"><label>Exam number</label>
+            <input class="form-input" id="lk-no" placeholder="TC/WAEC/2026/0007" style="text-transform:uppercase"></div>
+          <div class="form-group"><label>Surname</label>
+            <input class="form-input" id="lk-name" placeholder="As you wrote it on the form"></div>
+          <button class="btn btn-primary" type="button" id="lk-go">Check my status</button>
+
+          <div id="lk-out" style="margin-top:14px"></div>
+        </div>
       </div>
+
+      <!-- ============================ STAFF CONSOLE ===================== -->
+      <section id="ex-staff" hidden style="margin-top:22px">
+        <div class="card">
+          <h2 style="margin-top:0">🗂️ Candidate console <span class="badge badge-muted">studio staff only</span></h2>
+          <p class="muted" style="margin-top:0">Everything below is invisible to candidates and to
+            families. It is protected by row-level security in the database, not by hiding it in the
+            page — a candidate who edits the HTML still cannot read it.</p>
+          <div id="ex-stats" class="crud-kpis"></div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <div id="ex-crud"></div>
+        </div>
+      </section>
+    </main>
     </main>
   </div>
 </div>
 <div id="toast-container" class="toast-container"></div>
 <script>
+/* =====================================================================
+   EXAM REGISTRATION — V16
+   ---------------------------------------------------------------------
+   This page has three independent parts, and each one degrades on its own
+   without breaking the others:
 
-const code = new URLSearchParams(location.search).get('code') || '';
-document.querySelector('[name=photo_url]').onchange = function(){
-  if (window.Media) document.getElementById('pass-prev').innerHTML = Media.card(this.value, 'Passport preview');
-};
-document.getElementById('ex-form').onsubmit = async (e) => {
-  e.preventDefault();
-  const row = Object.fromEntries(new FormData(e.target).entries());
-  row.code = code;
-  if (!window.sb) { toast('Preview only. Connect Supabase to store registrations.','warning'); return; }
-  const { error } = await sb.from('exam_registrations').insert(row);
-  if (error) toast(error.message,'danger'); else { toast('Registration submitted','success'); e.target.reset(); }
-};
+     A. PUBLIC REGISTRATION   — anyone, no sign-in. Posts through the
+        SECURITY DEFINER function tc_register_candidate() so the anon role
+        never needs write access to the candidate table.
+     B. CANDIDATE LOOKUP      — anyone, no sign-in. Two shared secrets
+        (exam number + surname) via tc_candidate_lookup(). Scores stay
+        hidden until staff set the record to 'released'.
+     C. STAFF CONSOLE         — signed-in studio staff only. Renders the
+        V16 data workbench over exam_registrations and adds the lifecycle
+        buttons and the four printable documents.
 
+   Everything that can be auto-filled is auto-filled: sittings, subject
+   chips, states, centres, nationality, the board (from a link code), and
+   the exam number (allocated by a Postgres sequence, never typed).
+   ===================================================================== */
+(function () {
+  'use strict';
+
+  var sb   = window.SB || (window.App && App.sb) || null;
+  var code = new URLSearchParams(location.search).get('code') || '';
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return window.TC && TC.esc ? TC.esc(s == null ? '' : s) : String(s == null ? '' : s); }
+  function say(m, t) { if (window.toast) toast(m, t || 'success'); else alert(m); }
+
+  /* ------------------------------------------------------------------
+     AUTO-FILL 1 — sittings.
+     Boards sit in predictable windows. Offer the next four rather than
+     making a 15-year-old guess the wording of "May/June 2027".
+     ------------------------------------------------------------------ */
+  (function series() {
+    var el = $('ex-series'); if (!el) return;
+    var now = new Date(), y = now.getFullYear(), out = [], i;
+    var windows = ['January/February', 'May/June', 'August/September', 'November/December'];
+    for (i = 0; i < 8 && out.length < 6; i++) {
+      var yy = y + Math.floor(i / 4), w = windows[i % 4];
+      out.push(w + ' ' + yy);
+    }
+    el.innerHTML = '<option value=""></option>' + out.map(function (s) {
+      return '<option>' + esc(s) + '</option>';
+    }).join('');
+    el.selectedIndex = 2; // the next realistic sitting, not the one just gone
+  })();
+
+  /* AUTO-FILL 2 — Nigerian states + FCT, so nobody misspells "Akwa Ibom". */
+  (function states() {
+    var el = $('ex-states'); if (!el) return;
+    var s = ['Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno','Cross River',
+      'Delta','Ebonyi','Edo','Ekiti','Enugu','FCT — Abuja','Gombe','Imo','Jigawa','Kaduna','Kano',
+      'Katsina','Kebbi','Kogi','Kwara','Lagos','Nasarawa','Niger','Ogun','Ondo','Osun','Oyo',
+      'Plateau','Rivers','Sokoto','Taraba','Yobe','Zamfara','Outside Nigeria'];
+    el.innerHTML = s.map(function (x) { return '<option>' + esc(x) + '</option>'; }).join('');
+  })();
+
+  /* AUTO-FILL 3 — subject chips. Tap to toggle; the text box writes itself.
+     The catalogue is board-aware: choosing IELTS shows the IELTS bands, not
+     Further Mathematics. */
+  var SUBJECTS = {
+    'default': ['English Language','Mathematics','Biology','Chemistry','Physics','Economics',
+                'Government','Literature-in-English','Geography','Agricultural Science',
+                'Further Mathematics','Commerce','Financial Accounting','Civic Education','CRS/IRS'],
+    'IELTS':   ['Listening','Reading','Writing','Speaking'],
+    'TOEFL':   ['Listening','Reading','Writing','Speaking'],
+    'SAT':     ['Reading & Writing','Mathematics'],
+    'GRE':     ['Verbal Reasoning','Quantitative Reasoning','Analytical Writing'],
+    'GMAT':    ['Quantitative','Verbal','Data Insights','Analytical Writing'],
+    'UTME / JAMB': ['Use of English','Mathematics','Biology','Chemistry','Physics','Economics',
+                    'Government','Literature-in-English','Geography','CRS/IRS'],
+    'IGCSE':   ['English Language','Mathematics','Biology','Chemistry','Physics','Business Studies',
+                'Economics','Computer Science','Geography','History']
+  };
+
+  function chips() {
+    var host = $('ex-subject-chips'), box = $('ex-subjects');
+    if (!host || !box) return;
+    var boardEl = document.querySelector('[name=board]');
+    var list = SUBJECTS[boardEl && boardEl.value] || SUBJECTS['default'];
+    var chosen = box.value.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+
+    host.innerHTML = list.map(function (s) {
+      var on = chosen.indexOf(s) > -1;
+      return '<span data-subj="' + esc(s) + '" role="button" tabindex="0" style="cursor:pointer;' +
+        (on ? 'background:#0506ae;color:#fff;border-color:#0506ae' : '') + '">' +
+        (on ? '✓ ' : '+ ') + esc(s) + '</span>';
+    }).join('');
+
+    Array.prototype.forEach.call(host.querySelectorAll('[data-subj]'), function (el) {
+      var toggle = function () {
+        var s = el.dataset.subj;
+        var cur = box.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean);
+        var i = cur.indexOf(s);
+        if (i > -1) cur.splice(i, 1); else cur.push(s);
+        box.value = cur.join(', ');
+        chips();
+      };
+      el.onclick = toggle;
+      el.onkeydown = function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } };
+    });
+  }
+  chips();
+  var boardSel = document.querySelector('[name=board]');
+  if (boardSel) boardSel.onchange = chips;
+  var subjBox = $('ex-subjects');
+  if (subjBox) subjBox.oninput = chips;
+
+  /* Passport preview — links only, rendered through the shared Media card. */
+  var photo = document.querySelector('[name=photo_url]');
+  if (photo) photo.onchange = function () {
+    if (window.Media && $('pass-prev')) $('pass-prev').innerHTML = Media.card(this.value, 'Passport preview');
+  };
+
+  /* ------------------------------------------------------------------
+     A registration LINK pre-selects the board and sitting, and tells the
+     candidate which exam they are registering for, so they cannot pick
+     the wrong one by accident.
+     ------------------------------------------------------------------ */
+  (async function link() {
+    var note = $('ex-link-note');
+    if (!code) {
+      if (note) note.innerHTML = 'Open registration — anyone may register. ' +
+        'If the studio sent you a link with a code in it, use that link instead so your ' +
+        'registration is attached to the right sitting.';
+      return;
+    }
+    if (!sb) { if (note) note.textContent = 'Registration code: ' + code; return; }
+    var r = await sb.from('exam_reg_links').select('*').eq('code', code).maybeSingle();
+    if (r.error || !r.data) {
+      if (note) note.innerHTML = '<span style="color:#b91c1c"><b>That registration link was not ' +
+        'recognised or has been closed.</b> You may still register below as an open candidate.</span>';
+      return;
+    }
+    var L = r.data;
+    if (L.board)  { var b = document.querySelector('[name=board]'); if (b) b.value = L.board; chips(); }
+    if (L.series) { var s = $('ex-series'); if (s) { if (![].some.call(s.options, function (o) { return o.value === L.series; })) s.add(new Option(L.series, L.series)); s.value = L.series; } }
+    if (note) note.innerHTML = '<b>' + esc(L.title || 'Registration') + '</b> · code <code>' + esc(L.code) + '</code>' +
+      (L.board ? ' · ' + esc(L.board) : '') + (L.series ? ' · ' + esc(L.series) : '') +
+      (L.expires_on ? ' · closes ' + esc(L.expires_on) : '') +
+      (L.intro ? '<br>' + esc(L.intro) : '');
+  })();
+
+  /* ------------------------------------------------------------------
+     A. SUBMIT — through the RPC, never straight into the table.
+     ------------------------------------------------------------------ */
+  var form = $('ex-form');
+  if (form) form.onsubmit = async function (e) {
+    e.preventDefault();
+    var btn = $('ex-submit');
+    var fd = new FormData(form), payload = { code: code };
+    fd.forEach(function (v, k) { v = String(v).trim(); if (v !== '') payload[k] = v; });
+
+    if (!payload.full_name) { say('Your full name is required.', 'danger'); return; }
+    if (!sb) { say('Preview mode — connect Supabase to submit a real registration.', 'warning'); return; }
+
+    btn.disabled = true; btn.textContent = 'Submitting…';
+    var res = await sb.rpc('tc_register_candidate', { p: payload });
+    btn.disabled = false; btn.textContent = 'Submit registration';
+
+    if (res.error) {
+      // schema-doctor turns raw Postgres text into something a human reads.
+      var msg = (window.SchemaDoctor && SchemaDoctor.humanise)
+        ? SchemaDoctor.humanise(res.error) : res.error.message;
+      say(msg, 'danger');
+      return;
+    }
+    var d = res.data || {};
+    if (!d.ok) { say(d.error || 'Registration failed.', 'danger'); return; }
+
+    form.hidden = true;
+    var box = $('ex-success');
+    box.hidden = false;
+    box.innerHTML =
+      '<div style="border:2px solid #0506ae;border-radius:16px;padding:20px;background:#f8f9ff">' +
+        '<h3 style="margin:0 0 6px;color:#0506ae">✅ Registration received</h3>' +
+        '<p style="margin:.3rem 0">Your exam number is</p>' +
+        '<p style="font-size:1.7rem;font-weight:800;letter-spacing:1px;margin:.2rem 0;font-family:monospace">' + esc(d.exam_no) + '</p>' +
+        '<p class="muted" style="margin:.4rem 0"><b>Write this down.</b> You need it, together with your ' +
+          'surname, to check your fee status, your exam docket and your result on this page.</p>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">' +
+          '<button class="btn btn-primary btn-sm" type="button" id="ex-print-ack">🖨 Print acknowledgement slip</button>' +
+          '<button class="btn btn-outline btn-sm" type="button" id="ex-copy-no">Copy exam number</button>' +
+          '<button class="btn btn-ghost btn-sm" type="button" id="ex-again">Register another candidate</button>' +
+        '</div>' +
+      '</div>';
+    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    $('ex-copy-no').onclick = function () {
+      try { navigator.clipboard.writeText(d.exam_no); say('Exam number copied'); }
+      catch (err) { say(d.exam_no); }
+    };
+    $('ex-again').onclick = function () { form.reset(); form.hidden = false; box.hidden = true; chips(); };
+    $('ex-print-ack').onclick = function () {
+      printDoc('acknowledgement', {
+        exam_no: d.exam_no, full_name: d.full_name,
+        board: payload.board, series: payload.series, centre: payload.centre,
+        subjects: payload.subjects, photo_url: payload.photo_url,
+        status: 'submitted', fee_status: 'unpaid'
+      });
+    };
+  };
+
+  /* ------------------------------------------------------------------
+     B. CANDIDATE LOOKUP
+     ------------------------------------------------------------------ */
+  var go = $('lk-go');
+  if (go) go.onclick = async function () {
+    var no = ($('lk-no').value || '').trim(), nm = ($('lk-name').value || '').trim();
+    var out = $('lk-out');
+    if (!no || !nm) { out.innerHTML = '<p style="color:#b91c1c">Enter both your exam number and your surname.</p>'; return; }
+    if (!sb) { out.innerHTML = '<p class="muted">Preview mode — connect Supabase to look up a candidate.</p>'; return; }
+
+    out.innerHTML = '<p class="muted">Checking…</p>';
+    var res = await sb.rpc('tc_candidate_lookup', { p_exam_no: no, p_surname: nm });
+    if (res.error) { out.innerHTML = '<p style="color:#b91c1c">' + esc(res.error.message) + '</p>'; return; }
+    var d = res.data || {};
+    if (!d.ok) { out.innerHTML = '<p style="color:#b91c1c">' + esc(d.error) + '</p>'; return; }
+
+    var c = d.candidate;
+    var feePaid = c.fee_status === 'paid';
+    out.innerHTML =
+      '<div style="border:1px solid #e2e8f0;border-radius:14px;padding:16px;background:#fff">' +
+        '<h3 style="margin:0 0 4px">' + esc(c.full_name) + '</h3>' +
+        '<p class="muted" style="margin:0 0 10px;font-family:monospace">' + esc(c.exam_no) + '</p>' +
+        '<table class="crud-detail"><tbody>' +
+          row('Board', c.board) + row('Sitting', c.series) + row('Centre', c.centre) +
+          row('Subjects', c.subjects) +
+          row('Registration status', '<span class="badge badge-' +
+              (c.status === 'released' ? 'success' : c.status === 'submitted' ? 'warning' : 'muted') +
+              '">' + esc(c.status) + '</span>') +
+          row('Exam fee', '<span class="badge badge-' + (feePaid ? 'success' : 'danger') + '">' +
+              esc(feePaid ? 'Paid' : 'Not yet received') + '</span>' +
+              (c.fee_amount ? ' ' + esc(c.fee_currency || '') + ' ' + Number(c.fee_amount).toLocaleString() : '')) +
+          row('Exam date', c.exam_date ? esc(c.exam_date) + (c.exam_time ? ' at ' + esc(c.exam_time) : '') : '<span class="muted">not scheduled yet</span>') +
+          row('Venue', c.venue) +
+        '</tbody></table>' +
+
+        (c.released
+          ? '<div style="margin-top:14px;padding:12px;border-radius:12px;background:#ecfdf5;border:1px solid #a7f3d0">' +
+              '<strong style="color:#065f46">Result released</strong>' +
+              '<p style="margin:.4rem 0;font-size:1.3rem;font-weight:800">' +
+                esc(c.score == null ? '—' : c.score) + (c.max_score ? ' / ' + esc(c.max_score) : '') +
+                (c.grade ? '  ·  Grade ' + esc(c.grade) : '') + '</p>' +
+              (c.decision ? '<p style="margin:.2rem 0"><b>Decision:</b> ' + esc(c.decision) + '</p>' : '') +
+              (c.decision_note ? '<p class="muted" style="margin:.2rem 0">' + esc(c.decision_note) + '</p>' : '') +
+            '</div>'
+          : '<p class="muted" style="margin-top:12px">Your result has not been released yet. This page ' +
+            'will show it the moment the studio publishes it — there is nothing else you need to do.</p>') +
+
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">' +
+          '<button class="btn btn-outline btn-sm" type="button" id="lk-docket">🖨 Print exam docket</button>' +
+          (c.released ? '<button class="btn btn-primary btn-sm" type="button" id="lk-slip">🖨 Print result slip</button>' : '') +
+        '</div>' +
+      '</div>';
+
+    $('lk-docket').onclick = function () { printDoc('docket', c); };
+    if ($('lk-slip')) $('lk-slip').onclick = function () { printDoc('result', c); };
+  };
+
+  function row(k, v) {
+    if (v == null || v === '') v = '<span class="muted">—</span>';
+    return '<tr><th>' + esc(k) + '</th><td>' + v + '</td></tr>';
+  }
+
+  /* ------------------------------------------------------------------
+     PRINTABLE DOCUMENTS
+     Four documents, one renderer. They open in a new tab and go straight
+     to the print dialog, from which any browser can "Save as PDF" — which
+     is why this studio needs no PDF library and no paid service.
+       acknowledgement — proof the registration was received
+       docket          — what to bring, where and when to sit
+       result          — the scored slip
+       certificate     — a decorative certificate for a pass
+       letter          — admission / outcome letter over an officer's name
+     ------------------------------------------------------------------ */
+  function brand() {
+    var c = window.CONFIG || {};
+    return {
+      name: c.practiceName || c.siteName || document.title.split('•').pop().trim() || 'Tutoring Studio',
+      primary: '#0506ae', accent: '#964eec',
+      tagline: c.tagline || 'Independent progress. Visible to parents.'
+    };
+  }
+
+  function printDoc(kind, c) {
+    var b = brand();
+    var w = window.open('', '_blank');
+    if (!w) { say('Allow pop-ups so the document can open.', 'warning'); return; }
+
+    var titles = {
+      acknowledgement: 'ACKNOWLEDGEMENT OF REGISTRATION',
+      docket: 'EXAMINATION DOCKET',
+      result: 'STATEMENT OF RESULT',
+      certificate: 'CERTIFICATE',
+      letter: (c.decision === 'admitted' ? 'LETTER OF ADMISSION' : 'NOTIFICATION OF OUTCOME')
+    };
+
+    var photo = c.photo_url
+      ? '<img src="' + esc(c.photo_url) + '" alt="" style="width:104px;height:124px;object-fit:cover;border:1px solid #999">'
+      : '<div style="width:104px;height:124px;border:1px dashed #999;display:flex;align-items:center;' +
+        'justify-content:center;font-size:.62rem;color:#777;text-align:center">PASSPORT<br>PHOTOGRAPH</div>';
+
+    var subjectTable = '';
+    if (c.subject_scores) {
+      var ss = c.subject_scores;
+      try { if (typeof ss === 'string') ss = JSON.parse(ss); } catch (e) { ss = null; }
+      if (ss && typeof ss === 'object') {
+        subjectTable = '<table class="grid"><thead><tr><th>Subject</th><th>Score</th></tr></thead><tbody>' +
+          Object.keys(ss).map(function (k) {
+            return '<tr><td>' + esc(k) + '</td><td>' + esc(ss[k]) + '</td></tr>';
+          }).join('') + '</tbody></table>';
+      }
+    }
+
+    var bodyHtml = '';
+
+    if (kind === 'certificate') {
+      bodyHtml =
+        '<div style="border:10px double ' + b.accent + ';padding:44px 34px;text-align:center;margin-top:10px">' +
+          '<div style="font-size:2.5rem;letter-spacing:8px;color:' + b.accent + ';font-weight:700">CERTIFICATE</div>' +
+          '<div style="letter-spacing:5px;color:#444;margin-top:4px">OF ACHIEVEMENT</div>' +
+          '<p style="margin-top:26px">This is to certify that</p>' +
+          '<div style="font-size:1.8rem;margin:10px auto;max-width:560px;border-bottom:2px solid ' + b.primary +
+            ';padding-bottom:8px;font-family:Georgia,serif">' + esc(c.full_name) + '</div>' +
+          '<p style="max-width:620px;margin:16px auto;line-height:1.7">' +
+            'sat the <b>' + esc(c.board || 'examination') + '</b> ' + esc(c.series || '') +
+            ' examination prepared for by <b>' + esc(b.name) + '</b>' +
+            (c.score != null ? ', attaining a score of <b>' + esc(c.score) +
+              (c.max_score ? ' out of ' + esc(c.max_score) : '') + '</b>' : '') +
+            (c.grade ? ' and a grade of <b>' + esc(c.grade) + '</b>' : '') + '.' +
+          '</p>' +
+          '<p style="font-family:monospace;font-size:.8rem;color:#555">' + esc(c.exam_no || '') + '</p>' +
+        '</div>';
+    } else if (kind === 'letter') {
+      var admitted = c.decision === 'admitted';
+      bodyHtml =
+        '<p style="text-align:right;margin-top:22px">' + new Date().toLocaleDateString() + '</p>' +
+        '<p style="margin:0"><b>' + esc(c.full_name) + '</b><br>' +
+          '<span style="font-family:monospace;font-size:.85rem">' + esc(c.exam_no || '') + '</span></p>' +
+        '<h3 style="text-align:center;text-decoration:underline;margin:22px 0">' + titles.letter + '</h3>' +
+        '<p style="line-height:1.8">Dear ' + esc((c.full_name || '').split(' ')[0]) + ',</p>' +
+        '<p style="line-height:1.8">' +
+          (admitted
+            ? 'Following your performance in the <b>' + esc(c.board || '') + '</b> ' + esc(c.series || '') +
+              ' assessment, I am pleased to inform you that you have been <b>offered a place</b> with ' +
+              esc(b.name) + '.'
+            : 'Thank you for sitting the <b>' + esc(c.board || '') + '</b> ' + esc(c.series || '') +
+              ' assessment with ' + esc(b.name) + '. After careful consideration we are unable to ' +
+              'offer you a place on this occasion.') +
+        '</p>' +
+        (c.score != null ? '<p style="line-height:1.8">Your recorded score was <b>' + esc(c.score) +
+          (c.max_score ? ' out of ' + esc(c.max_score) : '') + '</b>' +
+          (c.grade ? ', grade <b>' + esc(c.grade) + '</b>' : '') + '.</p>' : '') +
+        (c.decision_note ? '<p style="line-height:1.8">' + esc(c.decision_note) + '</p>' : '') +
+        '<p style="line-height:1.8">' + (admitted
+          ? 'Please respond to this letter to confirm your place so that we can schedule your first session.'
+          : 'You are very welcome to register for the next sitting. Our tutors would be glad to help you prepare.') +
+        '</p><p style="line-height:1.8">Yours sincerely,</p>';
+    } else {
+      bodyHtml =
+        '<h3 style="text-align:center;letter-spacing:2px;margin:18px 0 12px">' + titles[kind] + '</h3>' +
+        '<div style="display:flex;gap:20px;align-items:flex-start">' +
+          '<table class="grid" style="flex:1"><tbody>' +
+            trow('Candidate', c.full_name) +
+            trow('Exam number', '<span style="font-family:monospace;font-weight:700">' + esc(c.exam_no || '') + '</span>') +
+            trow('Board', c.board) + trow('Sitting', c.series) +
+            trow('Centre', c.centre) + trow('Subjects', c.subjects) +
+            (kind === 'docket' || kind === 'acknowledgement'
+              ? trow('Exam date', (c.exam_date || 'to be announced') + (c.exam_time ? ' at ' + c.exam_time : '')) +
+                trow('Venue', c.venue || 'to be announced') +
+                trow('Fee', (c.fee_status === 'paid' ? 'PAID' : 'OUTSTANDING') +
+                  (c.fee_amount ? ' — ' + (c.fee_currency || '') + ' ' + Number(c.fee_amount).toLocaleString() : ''))
+              : '') +
+            (kind === 'result'
+              ? trow('Score', (c.score == null ? '—' : c.score) + (c.max_score ? ' / ' + c.max_score : '')) +
+                trow('Grade', c.grade) + trow('Decision', c.decision)
+              : '') +
+          '</tbody></table>' +
+          '<div>' + photo + '</div>' +
+        '</div>' +
+        subjectTable +
+        (kind === 'docket'
+          ? '<div style="margin-top:16px;border:1px solid #999;padding:12px">' +
+              '<b>Instructions to the candidate</b><ol style="margin:.4rem 0 0;line-height:1.7">' +
+              '<li>Bring this docket and a photo ID to the hall. You will not be admitted without both.</li>' +
+              '<li>Arrive <b>45 minutes</b> before the start time.</li>' +
+              '<li>Mobile phones, smart watches and unauthorised material are not permitted.</li>' +
+              '<li>If your fee is shown as OUTSTANDING above, settle it before the exam date.</li>' +
+              '</ol></div>'
+          : '') +
+        (kind === 'acknowledgement'
+          ? '<p style="margin-top:16px;line-height:1.7">This slip confirms that your registration has been ' +
+            'received. It is <b>not</b> an exam docket and does not guarantee a seat until the fee is ' +
+            'received. Keep your exam number safe — you need it and your surname to check your status.</p>'
+          : '');
+    }
+
+    w.document.write(
+      '<!doctype html><html><head><meta charset="utf-8"><title>' + esc(titles[kind] || 'Document') + ' — ' + esc(c.exam_no || '') + '</title>' +
+      '<style>' +
+        'body{font-family:"Plus Jakarta Sans",system-ui,sans-serif;color:#111;margin:26px;max-width:820px}' +
+        '.hdr{display:flex;justify-content:space-between;align-items:center;border-bottom:4px solid ' + b.primary + ';padding-bottom:10px}' +
+        '.hdr h1{margin:0;font-size:1.35rem;color:' + b.primary + '}' +
+        '.hdr small{color:#555}' +
+        'table.grid{border-collapse:collapse;width:100%;margin-top:12px;font-size:.86rem}' +
+        'table.grid th,table.grid td{border:1px solid #bbb;padding:6px 9px;text-align:left}' +
+        'table.grid th{background:#f1f1f7;width:32%}' +
+        '.sig{margin-top:42px;display:flex;justify-content:space-between;gap:30px}' +
+        '.sig div{flex:1;border-top:1px solid #111;padding-top:5px;font-size:.8rem}' +
+        '.ftr{margin-top:26px;border-top:1px solid #ddd;padding-top:8px;font-size:.68rem;color:#666;text-align:center}' +
+        '@media print{@page{size:A4;margin:14mm}button{display:none}}' +
+      '</style></head><body>' +
+        '<div class="hdr"><div><h1>' + esc(b.name) + '</h1><small>' + esc(b.tagline) + '</small></div>' +
+        '<small>Issued ' + new Date().toLocaleDateString() + '</small></div>' +
+        bodyHtml +
+        '<div class="sig">' +
+          '<div>' + esc(c.officer_name || '') + '<br><small>' + esc(c.officer_title || 'Registrar / Studio Director') + '</small></div>' +
+          '<div style="text-align:right">Official stamp</div>' +
+        '</div>' +
+        '<div class="ftr">' + esc(b.name) + ' · a product of HMG Technologies, a subsidiary of HMG Concepts ' +
+          '(His Marvellous Grace) · Built with Tutoring Connect<br>' +
+          'Verify this document by entering exam number <b>' + esc(c.exam_no || '') + '</b> and the ' +
+          'candidate surname on the Exam registration page of ' + esc(location.host || 'this studio') + '.</div>' +
+      '</body></html>');
+    w.document.close();
+    setTimeout(function () { w.print(); }, 400);
+  }
+
+  function trow(k, v) {
+    return '<tr><th>' + esc(k) + '</th><td>' + (v == null || v === '' ? '—' : (String(v).indexOf('<') === 0 ? v : esc(v))) + '</td></tr>';
+  }
+
+  /* ------------------------------------------------------------------
+     C. STAFF CONSOLE
+     ------------------------------------------------------------------ */
+  async function staff() {
+    if (!sb) return;
+    var isStaff = false;
+    try {
+      if (window.App && typeof App.isStaff === 'function') isStaff = App.isStaff();
+      else if (window.App && App.currentRole) isStaff = ['admin', 'tutor', 'staff', 'owner'].indexOf(App.currentRole) > -1;
+      if (!isStaff) {
+        // Authoritative check: only staff can read the table at all.
+        var probe = await sb.from('exam_registrations').select('id').limit(1);
+        isStaff = !probe.error;
+      }
+    } catch (e) { isStaff = false; }
+    if (!isStaff) return;
+
+    $('ex-staff').hidden = false;
+
+    // Learner auto-complete becomes available once staff are signed in.
+    try {
+      var ls = await sb.from('learners').select('id,full_name').limit(300);
+      if (!ls.error) {
+        $('ex-learner-list').innerHTML = (ls.data || []).map(function (l) {
+          return '<option value="' + esc(l.full_name) + '">';
+        }).join('');
+      }
+    } catch (e) {}
+
+    async function stats() {
+      var host = $('ex-stats');
+      var r = await sb.rpc('tc_exam_reg_stats');
+      if (r.error || !r.data) { host.innerHTML = '<p class="muted">Statistics unavailable — run database/complete-schema.sql.</p>'; return; }
+      var d = r.data;
+      var cards = [
+        ['Candidates', d.total], ['Awaiting verification', d.submitted], ['Verified', d.verified],
+        ['Fees paid', d.paid], ['Fees outstanding', d.unpaid], ['Results released', d.released],
+        ['Admitted', d.admitted], ['Registered this month', d.this_month],
+        ['Fees collected', Number(d.fees_collected || 0).toLocaleString()],
+        ['Fees still owed', Number(d.fees_outstanding || 0).toLocaleString()]
+      ];
+      host.innerHTML = cards.map(function (c) {
+        return '<div class="crud-kpi"><span class="crud-kpi-label">' + esc(c[0]) +
+               '</span><strong class="crud-kpi-value">' + esc(c[1] == null ? 0 : c[1]) + '</strong></div>';
+      }).join('');
+    }
+    stats();
+
+    /* Register the candidate table with the V16 workbench. Doing it this
+       way means this page inherits sorting, per-column filters, server
+       paging, the column chooser, saved views, bulk delete, CSV, print and
+       the record drawer without re-implementing any of it — and the five
+       lifecycle buttons ride along via schema.rowActions. */
+    if (!window.CRUD) return;
+    CRUD.SCHEMA = CRUD.SCHEMA || {};
+    CRUD.SCHEMA.exam_registrations = {
+      table: 'exam_registrations',
+      title: 'Candidate',
+      orderBy: 'created_at',
+      empty: 'No exam candidates have registered yet. Share a registration link from the Exam registration links page to start collecting them.',
+      cols: [
+        { key: 'exam_no',      label: 'Exam no' },
+        { key: 'full_name',    label: 'Candidate' },
+        { key: 'board',        label: 'Board',  type: 'select', options: ['WAEC','NECO','GCE','NABTEB','BECE','UTME / JAMB','IGCSE','IELTS','TOEFL','SAT','GRE','GMAT','JUPEB','Studio placement test'] },
+        { key: 'series',       label: 'Sitting' },
+        { key: 'status',       label: 'Status', type: 'select', options: ['submitted','verified','paid','admitted','sat','released','withdrawn'] },
+        { key: 'fee_status',   label: 'Fee',    type: 'select', options: ['unpaid','part','paid','waived'] },
+        { key: 'fee_amount',   label: 'Fee amount', type: 'number' },
+        { key: 'fee_currency', label: 'Currency', type: 'select', options: ['NGN','USD','GBP','EUR','GHS','KES','ZAR','CAD'] },
+        { key: 'fee_reference',label: 'Payment ref' },
+        { key: 'exam_date',    label: 'Exam date', type: 'date' },
+        { key: 'exam_time',    label: 'Exam time' },
+        { key: 'venue',        label: 'Venue' },
+        { key: 'centre',       label: 'Preferred centre' },
+        { key: 'subjects',     label: 'Subjects' },
+        { key: 'score',        label: 'Score', type: 'number' },
+        { key: 'max_score',    label: 'Out of', type: 'number' },
+        { key: 'grade',        label: 'Grade', type: 'select', options: ['A1','B2','B3','C4','C5','C6','D7','E8','F9','Distinction','Merit','Pass','Fail'] },
+        { key: 'decision',     label: 'Decision', type: 'select', options: ['pending','admitted','waitlisted','not admitted'] },
+        { key: 'decision_note',label: 'Decision note', type: 'textarea' },
+        { key: 'officer_name', label: 'Signing officer' },
+        { key: 'officer_title',label: 'Officer title' },
+        { key: 'email',        label: 'Email', type: 'email' },
+        { key: 'phone',        label: 'Phone', type: 'tel' },
+        { key: 'dob',          label: 'Date of birth', type: 'date' },
+        { key: 'sex',          label: 'Sex', type: 'select', options: ['F','M'] },
+        { key: 'nationality',  label: 'Nationality' },
+        { key: 'state_of_origin', label: 'State / region' },
+        { key: 'address',      label: 'Address' },
+        { key: 'prev_school',  label: 'Previous school' },
+        { key: 'guardian',     label: 'Guardian' },
+        { key: 'guardian_phone', label: 'Guardian phone', type: 'tel' },
+        { key: 'guardian_email', label: 'Guardian email', type: 'email' },
+        { key: 'photo_url',    label: 'Passport link', help: 'Link only — Drive / https. Never an upload.' },
+        { key: 'doc_url',      label: 'Document link' },
+        { key: 'notes',        label: 'Notes', type: 'textarea' },
+        { key: 'created_at',   label: 'Registered', type: 'datetime-local' }
+      ],
+      rowActions: [
+        { id: 'advance', label: '▸ Advance', cls: 'btn-outline', title: 'Move this candidate to the next stage of the lifecycle' },
+        { id: 'docs',    label: '🖨 Docs',   cls: 'btn-outline', title: 'Print the docket, result slip, certificate or outcome letter' },
+        { id: 'enrol',   label: '👤 Enrol',  cls: 'btn-outline', title: 'Turn this candidate into a learner record' }
+      ],
+      onRowAction: async function (action, r, reload) {
+        if (!r) return;
+
+        if (action === 'docs') {
+          var host = document.getElementById('ex-docs') || (function () {
+            var h = document.createElement('div');
+            h.id = 'ex-docs'; h.className = 'modal-backdrop';
+            document.body.appendChild(h); return h;
+          })();
+          host.innerHTML =
+            '<div class="modal" style="max-width:520px"><div class="modal-header">' +
+              '<h2>Documents — ' + esc(r.full_name) + '</h2>' +
+              '<button type="button" onclick="closeModal(\'ex-docs\')">×</button></div>' +
+            '<div class="modal-body">' +
+              '<p class="muted" style="margin-top:0">Each document opens in a new tab and goes straight ' +
+              'to your print dialog, where every browser offers <b>Save as PDF</b>. No PDF service, no cost.</p>' +
+              '<div class="form-group"><label>Signing officer name</label>' +
+                '<input class="form-input" id="doc-officer" value="' + esc(r.officer_name || '') + '"></div>' +
+              '<div class="form-group"><label>Officer title</label>' +
+                '<input class="form-input" id="doc-officer-title" value="' + esc(r.officer_title || 'Registrar / Studio Director') + '"></div>' +
+              '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+                '<button class="btn btn-outline btn-sm" data-doc="acknowledgement">Acknowledgement</button>' +
+                '<button class="btn btn-outline btn-sm" data-doc="docket">Exam docket</button>' +
+                '<button class="btn btn-outline btn-sm" data-doc="result">Result slip</button>' +
+                '<button class="btn btn-outline btn-sm" data-doc="certificate">Certificate</button>' +
+                '<button class="btn btn-primary btn-sm" data-doc="letter">Outcome letter</button>' +
+              '</div></div></div>';
+          host.classList.add('show');
+          Array.prototype.forEach.call(host.querySelectorAll('[data-doc]'), function (b) {
+            b.onclick = async function () {
+              var on = document.getElementById('doc-officer').value.trim();
+              var ot = document.getElementById('doc-officer-title').value.trim();
+              if (on !== (r.officer_name || '') || ot !== (r.officer_title || '')) {
+                await sb.from('exam_registrations').update({ officer_name: on, officer_title: ot, updated_at: new Date().toISOString() }).eq('id', r.id);
+                r.officer_name = on; r.officer_title = ot;
+              }
+              printDoc(b.dataset.doc, r);
+            };
+          });
+          return;
+        }
+
+        if (action === 'enrol') {
+          if (!confirm('Create a learner record for ' + r.full_name + '?')) return;
+          var e1 = await sb.rpc('tc_exam_to_learner', { p_id: r.id });
+          if (e1.error) { say(e1.error.message, 'danger'); return; }
+          if (!e1.data || !e1.data.ok) { say((e1.data && e1.data.error) || 'Could not enrol.', 'danger'); return; }
+          say(e1.data.already ? 'Already enrolled — opening the existing learner.' : 'Enrolled as a learner ✅');
+          reload();
+          return;
+        }
+
+        if (action === 'advance') {
+          var order = ['submitted', 'verified', 'paid', 'admitted', 'sat', 'released'];
+          var i = order.indexOf(r.status || 'submitted');
+          var next = order[Math.min(i + 1, order.length - 1)];
+          if (next === r.status) { say('This candidate is already at the final stage.', 'warning'); return; }
+          var patch = { status: next, updated_at: new Date().toISOString() };
+          if (next === 'paid') patch.fee_status = 'paid';
+          if (next === 'released' && !r.decision) patch.decision = 'pending';
+          if (next === 'released') patch.decided_at = new Date().toISOString();
+          if (!confirm('Move ' + r.full_name + ' from "' + (r.status || 'submitted') + '" to "' + next + '"?' +
+                       (next === 'released' ? '\n\nReleasing makes the score visible to the candidate.' : ''))) return;
+          var up = await sb.from('exam_registrations').update(patch).eq('id', r.id);
+          if (up.error) { say(up.error.message, 'danger'); return; }
+          say('Moved to ' + next + ' ✅');
+          stats();
+          reload();
+        }
+      }
+    };
+    CRUD.renderList('exam_registrations', 'ex-crud');
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', staff);
+  else staff();
+})();
 </script>
 </body>
 </html>

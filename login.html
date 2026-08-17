@@ -11,6 +11,8 @@
 <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="assets/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;800&display=swap" rel="stylesheet">
 <meta property="og:title" content="Sign in • ADEWALE CLASSROOM">
 <meta property="og:description" content="Sign in to ADEWALE CLASSROOM — official tutoring portal.">
 <meta property="og:type" content="website">
@@ -66,11 +68,12 @@
 <script src="assets/js/bookings-engine.js"></script>
 <script src="assets/js/analytics.js"></script>
 <script src="assets/js/super.js"></script>
+<script src="assets/js/record-actions.js"></script>
+<script src="assets/js/receipts.js"></script>
 <script src="assets/js/app.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec;--tc-primary:#0506ae;--tc-accent:#964eec;--tc-gradient:linear-gradient(135deg,#0506ae,#964eec);--tc-primary-dark:#0506ae;--tc-primary-light:#964eec;--tc-violet:#964eec;--tc-violet-light:#a78bfa;--on-primary:#ffffff;--ring:rgba(5,6,174,.22)}</style>
+<script src="assets/js/ux-enhance.js" defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
 </head>
 <body>
 <header class="public-nav" style="display:flex;justify-content:space-between;align-items:center;padding:16px 24px">
@@ -78,6 +81,14 @@
   <nav><a href="about.html">About</a> · <a href="apply.html">Apply</a> · <a href="install.html">Install</a></nav>
 </header>
 <main class="container" style="max-width:480px;padding:48px 16px">
+      <section class="help-card page-intro">
+        <div class="page-intro-head"><strong>Studio sign in</strong><span class="page-intro-badge" style="background:#0f766e">🌍 Public page</span></div>
+        <p class="page-intro-what">The single entry point to the private portal. It signs in parents, learners, tutors and admins, and offers password recovery and a route to apply. The main actions available here are: <b>Request access</b>, <b>Sign in</b>. It is form-driven — you fill a form and save; the record appears in the list immediately. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.</p>
+        <p class="page-intro-who"><b>Who it is for.</b> Everyone who has an account.</p>
+        <p class="page-intro-why"><b>Why it matters.</b> Every privacy guarantee in the product begins here. The role attached to your account decides what the database will and will not return for the rest of your session.</p>
+        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Enter your email — or a learner's student ID such as TC-0001 — and your password.</li><li>Use <b>Forgot password</b> to get a secure reset link by email.</li><li>New families should use <b>Apply</b> instead; accounts require admin approval before they open.</li><li>After sign-in you land on the dashboard built for your role.</li></ol></details>
+        <p class="page-intro-rel"><b>Related:</b> <a href="about.html">about</a> · <a href="activity-log.html">activity log</a> · <a href="admin-data.html">admin data</a> · <a href="approvals.html">approvals</a> · <a href="change-password.html">change password</a> · <a href="contact.html">contact</a></p>
+      </section>
   <h1 class="serif">Studio sign in</h1>
   <p class="muted" data-practice-motto></p>
   <div id="login-notice" style="display:none;margin:12px 0;padding:12px 14px;border-radius:12px;font-size:.9rem;line-height:1.5"></div>
