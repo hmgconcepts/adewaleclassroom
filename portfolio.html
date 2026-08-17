@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="assets/js/auth-guard.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Learner portfolio • ADEWALE CLASSROOM</title>
 <meta name="description" content="Best work, recordings, marked scripts — Drive links curated for applications.">
-<meta name="theme-color" content="#134e4a">
+<meta name="theme-color" content="#0506ae">
 <meta name="author" content="HMG Technologies · HMG Concepts">
 <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="assets/img/logo.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;800&display=swap" rel="stylesheet">
 <meta property="og:title" content="Learner portfolio • ADEWALE CLASSROOM">
 <meta property="og:description" content="Best work, recordings, marked scripts — Drive links curated for applications.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/layouts.css">
 <style>
 .help-card{background:linear-gradient(135deg,#ecfdf5,#fff7ed);border:1px solid #d1fae5;border-radius:16px;padding:16px 18px;margin-bottom:16px}
 .help-card p{margin:.4rem 0 0;color:#334155;line-height:1.55}
@@ -39,6 +39,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="assets/js/config.js"></script>
+<script src="assets/js/theme-engine.js"></script>
 <script src="assets/js/catalog.js"></script>
 <script src="assets/js/license.js"></script>
 <script src="assets/js/media.js"></script>
@@ -48,6 +49,11 @@
 <script src="assets/js/site-help.js"></script>
 <script src="assets/js/assistant-kb.js"></script>
 <script src="assets/js/ics.js"></script>
+<script src="assets/js/page-guide.js" defer></script>
+<script src="assets/js/seo.js" defer></script>
+<script src="assets/js/keepalive-monitor.js" defer></script>
+<script src="assets/js/schema-doctor.js" defer></script>
+<script src="assets/js/quota-guard.js" defer></script>
 <script src="assets/js/chatbot.js"></script>
 <script src="assets/js/ai-assistant.js"></script>
 <script src="assets/js/security-guard.js"></script>
@@ -61,6 +67,10 @@
 <script src="assets/js/analytics.js"></script>
 <script src="assets/js/super.js"></script>
 <script src="assets/js/app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec;--tc-primary:#0506ae;--tc-accent:#964eec;--tc-gradient:linear-gradient(135deg,#0506ae,#964eec);--tc-primary-dark:#0506ae;--tc-primary-light:#964eec;--tc-violet:#964eec;--tc-violet-light:#a78bfa;--on-primary:#ffffff;--ring:rgba(5,6,174,.22)}</style>
 </head>
 <body>
 <div class="app-layout" data-require-role="any" id="app-layout">
