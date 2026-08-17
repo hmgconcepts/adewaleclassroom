@@ -4,9 +4,9 @@
 <script src="assets/js/auth-guard.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Reset password • ADEWALE CLASSROOM</title>
+<title>Payment plans • ADEWALE CLASSROOM</title>
 <meta name="robots" content="noindex,nofollow">
-<meta name="description" content="Supabase Auth email reset. Free. No paid SMS OTP.">
+<meta name="description" content="Payment plans — ADEWALE CLASSROOM">
 <meta name="theme-color" content="#0506ae">
 <meta name="author" content="HMG Technologies · HMG Concepts">
 <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
@@ -14,8 +14,8 @@
 <link rel="apple-touch-icon" href="assets/img/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;800&display=swap" rel="stylesheet">
-<meta property="og:title" content="Reset password • ADEWALE CLASSROOM">
-<meta property="og:description" content="Supabase Auth email reset. Free. No paid SMS OTP.">
+<meta property="og:title" content="Makeup credit bank • ADEWALE CLASSROOM">
+<meta property="og:description" content="When the studio cancels, the family earns a credit on that engagement. Spent on a makeup. Never smeared across siblings.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="assets/css/style.css">
@@ -222,7 +222,7 @@
   <div class="app-main">
     <header class="app-topbar">
       <button class="mobile-toggle" type="button" aria-label="Menu">☰</button>
-      <h1 class="app-page-title">Reset password</h1>
+      <h1 class="app-page-title">Payment plans</h1>
       <div class="user-chip"><strong id="user-display-name" data-user-name></strong>
         <span id="user-display-role" data-user-role></span>
         <button class="btn btn-sm btn-ghost" id="btn-dark" type="button">Theme</button>
@@ -230,19 +230,179 @@
     </header>
     <main class="app-content">
       <section class="help-card page-intro">
-        <div class="page-intro-head"><strong>Reset password</strong><span class="page-intro-badge" style="background:#0f766e">🌍 Public page</span></div>
-        <p class="page-intro-what">Sends a secure password-reset link by email through Supabase Auth. Nobody at the studio can see or set your password. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.</p>
-        <p class="page-intro-who"><b>Who it is for.</b> Anyone locked out of their account.</p>
-        <p class="page-intro-why"><b>Why it matters.</b> Self-service recovery keeps the admin out of the credential business entirely, which is both safer and less work.</p>
-        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Type the email address on your account.</li><li>Open the email and click the link — it expires shortly.</li><li>Choose a new password; the strength meter shows you when it is strong enough.</li></ol></details>
-        <p class="page-intro-rel"><b>Related:</b> <a href="about.html">about</a> · <a href="activity-log.html">activity log</a> · <a href="admin-data.html">admin data</a> · <a href="approvals.html">approvals</a> · <a href="change-password.html">change password</a> · <a href="contact.html">contact</a></p>
+        <div class="page-intro-head"><strong>Payment plans</strong><span class="page-intro-badge" style="background:#0506ae">💳 Money</span></div>
+        <p class="page-intro-what"><b>What this page is.</b> Splits a large fee into a schedule of instalments and then tracks each one. Enter the total, say how many parts and how often, and the whole schedule is generated for you — you never calculate or type a single due date.</p>
+        <p class="page-intro-who"><b>Who it is for.</b> Owner, admin and staff. A parent sees their own plan in the family portal, read-only.</p>
+        <p class="page-intro-why"><b>Why it matters.</b> Termly fees in Nigeria are routinely paid in parts, and a family that cannot pay ₦180,000 in one go will happily pay ₦60,000 three times. Every major competitor offers instalments and this studio did not, so the conversation had to happen in WhatsApp and be tracked in somebody's head. The arrears list below replaces that entirely.</p>
+        <details class="page-intro-how"><summary>How to use this page — step by step</summary><ol><li>Choose the family. The list fills itself from your parents — nothing to type.</li><li>Enter the <b>total</b> the family owes, not the instalment amount. The split is worked out for you.</li><li>Choose how many instalments and how often (weekly, fortnightly, monthly or termly).</li><li>Press <b>Generate schedule</b>. Every due date and amount is created at once.</li><li>Rounding is absorbed by the <b>first</b> instalment, never the last, so a family never gets a surprise odd amount at the end of a plan they had budgeted for.</li><li>Mark each instalment <b>paid</b> as the money arrives. Anything past its date appears in <b>Arrears</b> automatically.</li></ol></details>
+        <p class="page-intro-rel"><b>Related:</b> <a href='invoices.html'>invoices</a> · <a href='payments.html'>payments</a> · <a href='wallet.html'>prepaid wallet</a> · <a href='fees.html'>fees</a> · <a href='parents.html'>parents</a></p>
       </section>
-      <p class="muted">Use the related links and the ❓ Page Help button. Connect Supabase to load live rows.</p>
-    </main>
+
+      <div id="pp-kpis" class="crud-kpis"></div>
+
+      <div class="grid grid-2" style="align-items:start;gap:18px">
+        <div class="card">
+          <h2 style="margin-top:0">🧮 Create a plan</h2>
+          <div class="form-group"><label>Family</label><select class="form-select" id="pp-parent"></select></div>
+          <div class="form-group"><label>Learner (optional)</label><select class="form-select" id="pp-learner"></select></div>
+          <div class="form-group"><label>Plan title</label>
+            <input class="form-input" id="pp-title" placeholder="First term 2026 — Mathematics"></div>
+          <div class="grid grid-2">
+            <div class="form-group"><label>Total amount</label>
+              <input class="form-input" type="number" step="0.01" id="pp-total" placeholder="180000"></div>
+            <div class="form-group"><label>Number of instalments</label>
+              <input class="form-input" type="number" min="1" max="24" id="pp-n" value="3"></div>
+            <div class="form-group"><label>Frequency</label>
+              <select class="form-select" id="pp-freq">
+                <option value="weekly">Weekly</option>
+                <option value="fortnightly">Fortnightly</option>
+                <option value="monthly" selected>Monthly</option>
+                <option value="termly">Termly (every 3 months)</option>
+              </select></div>
+            <div class="form-group"><label>First payment due</label>
+              <input class="form-input" type="date" id="pp-start"></div>
+          </div>
+          <div id="pp-preview" class="crud-kpis" style="margin:4px 0 10px"></div>
+          <button class="btn btn-primary" type="button" id="pp-make">Generate schedule</button>
+        </div>
+
+        <div class="card">
+          <h2 style="margin-top:0">⏰ Arrears</h2>
+          <p class="muted" style="margin-top:0">Instalments past their due date. Work this list weekly.</p>
+          <div id="pp-arrears" class="muted">Loading…</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2 style="margin-top:0">📋 All plans</h2>
+        <div id="pp-crud"></div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h2 style="margin-top:0">🧾 Instalments</h2>
+        <p class="muted" style="margin-top:0">Every instalment across every plan. Filter by status to
+          find what is due this week, and mark each one paid as the money lands.</p>
+        <div id="pp-items"></div>
+      </div>
+
+</main>
   </div>
 </div>
 <div id="toast-container" class="toast-container"></div>
 <script>
+
+(function(){
+  'use strict';
+  var sb = window.sb || window.SB || (window.App && App.sb) || null;
+  function $(i){return document.getElementById(i);}
+  function esc(s){return window.TC&&TC.esc?TC.esc(s==null?'':s):String(s==null?'':s);}
+  function say(m,t){if(window.toast)toast(m,t||'success');else alert(m);}
+
+  // AUTO-FILL: today's date, so nobody types a date that already exists.
+  $('pp-start').value = new Date().toISOString().slice(0,10);
+
+  function preview(){
+    var tot=Number($('pp-total').value||0), n=Math.max(1,Number($('pp-n').value||1));
+    if(!tot){ $('pp-preview').innerHTML=''; return; }
+    var each=Math.round(tot/n*100)/100, first=Math.round((tot-each*(n-1))*100)/100;
+    $('pp-preview').innerHTML =
+      '<div class="crud-kpi"><span class="crud-kpi-label">First instalment</span><strong class="crud-kpi-value">'+first.toLocaleString()+'</strong></div>'+
+      '<div class="crud-kpi"><span class="crud-kpi-label">Then '+(n-1)+' × </span><strong class="crud-kpi-value">'+each.toLocaleString()+'</strong></div>'+
+      '<div class="crud-kpi"><span class="crud-kpi-label">Total</span><strong class="crud-kpi-value">'+tot.toLocaleString()+'</strong></div>';
+  }
+  ['pp-total','pp-n'].forEach(function(i){$(i).oninput=preview;});
+
+  async function boot(){
+    if(!sb){ $('pp-arrears').textContent='Connect Supabase.'; return; }
+    var p=await sb.from('parents').select('id,full_name').order('full_name').limit(500);
+    if(!p.error) $('pp-parent').innerHTML='<option value="">— choose —</option>'+
+      (p.data||[]).map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.full_name)+'</option>';}).join('');
+    var l=await sb.from('learners').select('id,full_name').order('full_name').limit(500);
+    if(!l.error) $('pp-learner').innerHTML='<option value="">— any —</option>'+
+      (l.data||[]).map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.full_name)+'</option>';}).join('');
+    arrears(); grids(); preview();
+  }
+
+  async function arrears(){
+    var host=$('pp-arrears');
+    var r=await sb.rpc('tc_payment_plan_arrears');
+    if(r.error){
+      host.innerHTML='<p style="color:#b45309"><b>Not installed yet.</b> Run '+
+        '<code>database/complete-schema.sql</code> (V19).</p><p class="muted" style="font-size:.8rem">'+esc(r.error.message)+'</p>';
+      return;
+    }
+    var a=(r.data&&r.data.arrears)||[];
+    var total=a.reduce(function(s,x){return s+Number(x.amount||0);},0);
+    $('pp-kpis').innerHTML=
+      '<div class="crud-kpi"><span class="crud-kpi-label">Overdue instalments</span><strong class="crud-kpi-value">'+a.length+'</strong></div>'+
+      '<div class="crud-kpi"><span class="crud-kpi-label">Value overdue</span><strong class="crud-kpi-value">'+total.toLocaleString()+'</strong></div>';
+    if(!a.length){ host.classList.add('muted'); host.textContent='Nothing overdue. '; return; }
+    host.classList.remove('muted');
+    host.innerHTML='<table class="crud-detail"><tbody>'+a.map(function(x){
+      return '<tr><th>'+esc(x.parent||'—')+'</th><td>#'+esc(x.seq)+' · <b>'+Number(x.amount).toLocaleString()+
+        '</b> · due '+esc(x.due_on)+' · <span class="badge badge-danger">'+esc(x.days_late)+' days late</span></td></tr>';
+    }).join('')+'</tbody></table>';
+  }
+
+  $('pp-make').onclick=async function(){
+    if(!sb){say('Connect Supabase.','warning');return;}
+    var tot=Number($('pp-total').value||0);
+    if(!$('pp-parent').value){say('Choose a family.','danger');return;}
+    if(tot<=0){say('Enter the total amount.','danger');return;}
+    var r=await sb.rpc('tc_create_payment_plan',{p:{
+      parent_id:$('pp-parent').value, learner_id:$('pp-learner').value||null,
+      title:$('pp-title').value.trim()||null, total_amount:tot,
+      instalments:Number($('pp-n').value||3), frequency:$('pp-freq').value,
+      starts_on:$('pp-start').value }});
+    if(r.error){say(r.error.message,'danger');return;}
+    if(r.data&&r.data.ok===false){say(r.data.error,'danger');return;}
+    say('Schedule created ✅'); $('pp-total').value=''; $('pp-title').value=''; preview();
+    arrears(); grids();
+  };
+
+  function grids(){
+    if(!window.CRUD) return;
+    CRUD.SCHEMA=CRUD.SCHEMA||{};
+    CRUD.SCHEMA.payment_plans={table:'payment_plans',title:'Payment plan',orderBy:'created_at',
+      empty:'No payment plans yet. Create one with the form above.',
+      cols:[
+        {key:'title',label:'Title'},
+        {key:'parent_id',label:'Family',type:'ref',refTable:'parents',refValue:'full_name',refStore:'id'},
+        {key:'learner_id',label:'Learner',type:'ref',refTable:'learners',refValue:'full_name',refStore:'id'},
+        {key:'total_amount',label:'Total',type:'number'},
+        {key:'instalments',label:'Parts',type:'number'},
+        {key:'frequency',label:'Frequency',type:'select',options:['weekly','fortnightly','monthly','termly']},
+        {key:'starts_on',label:'Starts',type:'date'},
+        {key:'status',label:'Status',type:'select',options:['active','completed','cancelled']},
+        {key:'notes',label:'Notes',type:'textarea'},
+        {key:'created_at',label:'Created',type:'datetime-local'}
+      ]};
+    CRUD.SCHEMA.payment_plan_items={table:'payment_plan_items',title:'Instalment',orderBy:'due_on',
+      empty:'No instalments yet.',
+      cols:[
+        {key:'plan_id',label:'Plan',type:'ref',refTable:'payment_plans',refValue:'title',refStore:'id'},
+        {key:'seq',label:'#',type:'number'},
+        {key:'due_on',label:'Due on',type:'date'},
+        {key:'amount',label:'Amount',type:'number'},
+        {key:'status',label:'Status',type:'select',options:['due','paid','late','waived']},
+        {key:'paid_on',label:'Paid on',type:'date'},
+        {key:'reference',label:'Reference'},
+        {key:'created_at',label:'Created',type:'datetime-local'}
+      ],
+      rowActions:[{id:'paid',label:'✓ Mark paid',cls:'btn-outline',title:'Record this instalment as paid today'}],
+      onRowAction:async function(a,r,reload){
+        if(a!=='paid'||!r)return;
+        if(r.status==='paid'){say('Already marked paid.','warning');return;}
+        var up=await sb.from('payment_plan_items').update({status:'paid',paid_on:new Date().toISOString().slice(0,10)}).eq('id',r.id);
+        if(up.error){say(up.error.message,'danger');return;}
+        say('Marked paid ✅'); arrears(); reload();
+      }};
+    CRUD.renderList('payment_plans','pp-crud');
+    CRUD.renderList('payment_plan_items','pp-items');
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
 
 </script>
 </body>
