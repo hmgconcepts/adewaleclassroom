@@ -311,3 +311,156 @@ aggregate buckets are skipped so nothing is double-counted.
 **220** runtime + **47** traditional-build + **55** modern-build assertions,
 0 failures · 12 SQL files, 0 idempotency blockers · 18 prompt packs ·
 32 question types · 14 keep-alive layers.
+
+---
+
+## 🆕 Version 13 (16 Aug 2026) — reported-bug sweep
+
+### The Studio Assistant: four faults, one root cause
+`#tc-bot-panel{display:flex}` is an **ID selector**, so it out-specified the
+browser's `[hidden]{display:none}`. The panel was therefore *permanently open*:
+the × appeared dead, the launcher appeared dead, it covered the page, and
+because it never registered as "opened" the greeting and suggestion chips never
+rendered. Visibility is now driven by a **class** (which cannot be
+out-specified), plus a new **minimise** button, Esc-to-close, a launcher icon
+that flips to ✕, and **10 predefined prompts rendered up front**.
+*(Items 1, 3, 4, 5 — all from one CSS specificity bug.)*
+
+### Text you could not read
+A contrast audit with the studio's real token values resolved found genuinely
+unreadable text on white — worst of all `.form-help`, which sits under **every
+form field**, at **2.56:1**. A new legibility layer brings everything to WCAG AA
+without touching the brand hues, so the studio still matches GOSA exactly:
+
+| | before | after |
+|---|---|---|
+| `.form-help` / `.muted` / `.stat-label` | 2.56:1 | **6.17:1** |
+| `.badge-warning` | 2.15:1 | **7.03:1** |
+| `.badge-success` | 2.54:1 | **6.44:1** |
+| `.badge-info` / `.badge-danger` | 3.68 / 3.76:1 | **6.70 / 6.57:1** |
+| `::placeholder` | — | **4.83:1** |
+
+Plus visible keyboard focus rings and a readable footer.
+
+### A real description at the head of every page
+All **128 pages** now open with a page-intro card generated from the 128-page
+knowledge base: what the page is, an access badge, **who it is for**, **why it
+matters**, a collapsible **how-to**, and related pages. No page is thin.
+
+### "invalid input syntax for type numeric" — fixed for all 74 CRUD pages
+`FormData.get()` returns `""` for a blank field. Postgres accepts that for text
+but rejects it for `numeric`, `date`, `timestamp` and `uuid` — which is why
+creating an **Engagement** or saving a **Session** failed while text-only records
+saved fine. Blank now means **NULL**, numbers are coerced to real numbers, and
+an empty `id` is never sent. One fix, every page.
+
+### "Sign in with Supabase to save." on My profile
+The handler captured `window.TC_PROFILE` at page load, but app.js resolves the
+role **asynchronously** — so the closure always held an empty object. Identity is
+now resolved **at click time**, falling back to the auth session.
+
+### New: `ux-enhance.js`
+Password **show/hide** on every password field · free-text fields upgrade to
+**database-backed dropdowns** (`data-lookup`) so names can never drift ·
+auto-fill (today's date, next half hour, "me") · single-option selects
+auto-choose · unsaved-changes guard.
+
+### Numbers
+**255** runtime + **47** traditional-build + **55** modern-build assertions,
+0 failures · 12 SQL files, 0 idempotency blockers.
+
+---
+
+## 🆕 Version 14 (17 Aug 2026) — the CBT cluster + the pages that could not be used
+
+### Exam runtime rebuilt — `assets/js/cbt-exam-kit.js`
+* **Studio name bold and centred** at the head of every paper *(item 13)*.
+* **Numbered question tabs** — grouped by subject, showing answered / current /
+  flagged, jump to any question *(item 20)*.
+* **Full anti-cheat suite** *(item 9)*: tab & app switching, window focus loss,
+  copy / cut / paste, right-click, devtools & print shortcuts, fullscreen,
+  candidate watermark, camera snapshots (metadata only), audio monitoring, a
+  live violation counter and **auto-submit at a configurable limit**.
+* **Scientific calculator** *(item 14)* — deliberately **not** `eval()`-based
+  like School Connect's. A real tokeniser + recursive-descent parser: degrees /
+  radians, memory, ANS, history, factorial, nCr/nPr, `logb`, hyperbolics,
+  implicit multiplication, right-associative powers. 25/25 expressions correct,
+  and it **refuses arbitrary JS**.
+* **Maths keyboard** — 73 symbols across 7 groups, inserted into the focused box.
+
+### Quizzes page *(items 8, 12, 23)*
+CSV **file upload**, a **downloadable worked template** (7 question types), and
+full management of existing papers: **Edit · Duplicate · ＋Append CSV · Delete**.
+CSV round-trips (parse → export → parse) with commas and quotes intact, so
+School Connect files work here unchanged. The multi-subject builder gets the
+same template download and the full anti-cheat config.
+
+### Question prompts *(items 7, 11)*
+Added **Subject** and **Exam Type** fields (20 boards). Prompts grew from ~600 to
+**3,100+ characters**: an explicit OUTPUT CONTRACT, a QUALITY BAR, a FINAL CHECK,
+and a **save-as-.csv** box so the CSV the chat returns becomes a file in one click.
+
+### Pages that existed but could not be used
+* **Approvals** *(item 21)* was a 130-line stub — the dashboard counted pending
+  accounts but there was **no way to approve anyone**. Now a real console:
+  counts, filters, search, role-setting and approve / suspend / reinstate.
+* **Navigation** *(item 28)*: **90 of 127 pages were unreachable** from the
+  sidebar. Now **120/120**, grouped into 11 labelled sections.
+* **Reading assignments and Classwork** *(items 24, 25)* could only create.
+  New `record-actions.js` adds **Edit / Duplicate / Delete** with the same
+  blank-to-NULL coercion, so a cleared field never throws.
+* **Cycle bookings** *(item 18)*: 1–7 classes per cycle, 1–12 cycles, and a
+  **day-of-week picker with per-day times** — Mon/Wed/Fri/Sun × 4 cycles
+  generates exactly 16 dated classes on those days.
+* **E-receipts** *(item 26)*: branded, printable, amount **in words**, stable
+  receipt number that never duplicates on reprint, and the outstanding balance.
+
+### Numbers
+**324** runtime + **47** traditional-build + **55** modern-build assertions,
+0 failures · 12 SQL files, 0 idempotency blockers · nav coverage 120/120.
+
+---
+
+## 🆕 Version 15 (17 Aug 2026) — family portal, real ballots, one bill per family
+
+### Item 16 — the parent portal actually connects now
+`parent_learner` had a CRUD schema but **no page anywhere in the product**, so
+nothing ever wrote to it. Without that row `is_parent_of()` is false and every
+parent portal is empty — the real reason families "can't see anything".
+
+* **`family-links.html`** — link a parent to each child with a relationship, and
+  it surfaces the two silent traps automatically: **learners with no parent**
+  (invisible to their family) and **parents with no portal login** (linking them
+  changes nothing until an account is attached). Both are listed with the fix.
+* **`my-children.html`** — the parent's home page: one card per child with the
+  next classes (date, time, duration, join link), latest scores by subject,
+  attendance, assessments and the reading set before the next lesson.
+* New SQL: `tc_my_children()` and `tc_child_summary()`, both SECURITY DEFINER
+  and **filtered by the caller**, so passing another family's learner id
+  returns `not_permitted` rather than data.
+
+### Item 27 — polls became real ballots
+The schema held only `(title, options, anonymous, status)`. Added **closing
+date, multi-choice with a maximum, audience, quorum, and a results-disclosure
+rule** (always / after you vote / after close) enforced in SQL by
+`tc_poll_results()`, not just hidden in the UI. The ballot now shows a live
+countdown, how many picks are allowed, the quorum and the disclosure rule;
+voting is refused after the deadline; and results **export to CSV**.
+A unique index enforces one vote per person.
+
+### Competitor gap closed — combined family invoicing
+TutorBird, Teachworks and Teach'n Go all bill **per student**. A parent with
+three children wants **one** invoice. `tc_family_statement()` gathers every
+invoice across all of a parent's children into a single printable statement
+grouped by child, with total billed, total paid and one balance due.
+
+### Item 14 — licensing: I was wrong last turn
+I reported that the builder "doesn't expose the choice". It does — and
+`normalizeCfg()` writes it correctly. Verified end to end by generating both a
+lifetime and a subscription ZIP and reading the licence block out of the
+resulting `config.js`. A regression test now locks that behaviour in.
+
+### Numbers
+**367** runtime + **47** traditional-build + **55** modern-build assertions,
+0 failures · 13 SQL files, 0 idempotency blockers · nav coverage **122/122** ·
+130 pages documented.
