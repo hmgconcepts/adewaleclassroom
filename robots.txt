@@ -39,6 +39,7 @@ Disallow: /cancellations.html
 Disallow: /cbt-exam.html
 Disallow: /cbt-multi.html
 Disallow: /cbt-prompts.html
+Disallow: /cbt-results.html
 Disallow: /cbt-review.html
 Disallow: /certificates.html
 Disallow: /change-password.html
