@@ -37,6 +37,7 @@
 <script src="assets/js/record-actions.js"></script>
 <script src="assets/js/receipts.js"></script>
 <script src="assets/js/app.js"></script>
+<script src="assets/js/legibility.js" defer></script>
 <script src="assets/js/ux-enhance.js" defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
@@ -197,6 +198,7 @@ document.getElementById('start').onclick = async () => {
       <span id="qprogress" class="muted" style="font-weight:700;min-width:130px;text-align:center"></span>
       <button class="btn btn-outline" type="button" id="nextq">Next ›</button>
       <button class="btn btn-outline" type="button" id="flagq">🚩 Flag this question</button>
+      <button class="btn btn-outline" type="button" id="howto">❓ How do I answer these?</button>
       <button class="btn btn-primary" type="button" id="submit" style="margin-left:auto">Submit paper</button>
     </div>`;
 
@@ -275,6 +277,30 @@ document.getElementById('start').onclick = async () => {
     state.current = vis[next];
     paint();
   };
+  /* ITEM 4 — the full question-type legend, openable at any time. It costs
+     the candidate nothing: the timer keeps running either way, and knowing
+     how to answer is not an advantage, it is a precondition. */
+  const howBtn = document.getElementById('howto');
+  if (howBtn) howBtn.onclick = () => {
+    let h = document.getElementById('tcq-legend-modal');
+    if (!h) {
+      h = document.createElement('div');
+      h.id = 'tcq-legend-modal';
+      h.className = 'modal-backdrop';
+      document.body.appendChild(h);
+    }
+    h.innerHTML = '<div class="modal tc-popup" style="max-width:680px">' +
+      '<div class="modal-header"><h2>How to answer each question style</h2>' +
+      '<button type="button" onclick="closeModal(\'tcq-legend-modal\')">×</button></div>' +
+      '<div class="modal-body">' +
+        (window.CBTTypes ? CBTTypes.legendHTML() : '<p>Guide unavailable.</p>') +
+      '</div><div class="modal-footer">' +
+      '<button class="btn btn-primary" type="button" onclick="closeModal(\'tcq-legend-modal\')">Got it</button>' +
+      '</div></div>';
+    h.classList.add('show');
+    if (window.TCLegibility) window.TCLegibility.rescan();
+  };
+
   document.getElementById('prevq').onclick = () => step(-1);
   document.getElementById('nextq').onclick = () => step(1);
 
