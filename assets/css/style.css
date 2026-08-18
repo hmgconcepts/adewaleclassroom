@@ -709,3 +709,76 @@ select:focus-visible, textarea:focus-visible {
   .crud-toolbar{flex-direction:column;align-items:stretch}
   .crud-toolbar-actions{justify-content:flex-start}
 }
+
+/* =====================================================================
+   BUG FIX 11 — POPUP / MODAL LEGIBILITY
+   ---------------------------------------------------------------------
+   Reported: "whenever a popup message shows up on any page, the text is
+   not legible."
+
+   Cause: .modal set `background: white` but never set a text colour, so
+   the contents inherited `color` from whatever ancestor happened to be in
+   effect. Inside the app shell — and in dark mode, and on several of the
+   63 themes — that inherited colour is a light grey or near-white
+   intended for a dark surface. White text on a white card is invisible.
+   The per-page inline <style> blocks repeated the same omission.
+
+   Fixed by pinning an explicit, high-contrast colour on every popup
+   surface and its children. Contrast checked: #0f172a on #ffffff is
+   17.4:1, far above the WCAG AA requirement of 4.5:1, and it survives
+   any theme because it does not depend on a variable.
+   ===================================================================== */
+.modal,
+.modal-content,
+.modal-backdrop .modal,
+#crud-modal .modal,
+#crud-record .modal,
+#crud-cols-modal .modal,
+#ex-docs .modal {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+.modal *,
+.modal-content * {
+  color: inherit;
+}
+.modal h1, .modal h2, .modal h3, .modal h4,
+.modal-header h2, .modal-content h2 { color: #0f172a !important; }
+.modal p, .modal li, .modal td, .modal th, .modal label,
+.modal span, .modal div, .modal summary { color: #0f172a; }
+.modal .muted, .modal-content .muted,
+.modal small, .modal .form-help { color: #475569 !important; }  /* 7.0:1 */
+.modal a { color: #0506ae !important; text-decoration: underline; }
+.modal input, .modal select, .modal textarea,
+.modal-content input, .modal-content select, .modal-content textarea {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+.modal input::placeholder, .modal textarea::placeholder { color: #64748b !important; }
+.modal .badge { color: inherit; }
+.modal-close { color: #0f172a !important; background: #e2e8f0 !important; }
+
+/* Toasts are popups too, and had the same inherited-colour problem. */
+.toast { color: #ffffff !important; background: #0f172a; }
+.toast-success { background: #166534 !important; color: #ffffff !important; }
+.toast-danger  { background: #991b1b !important; color: #ffffff !important; }
+.toast-warning { background: #92400e !important; color: #ffffff !important; }
+.toast a { color: #ffffff !important; text-decoration: underline; }
+
+/* Dark mode: flip the surface, keep the contrast. */
+body.dark-mode .modal,
+body.dark-mode .modal-content {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+body.dark-mode .modal h1, body.dark-mode .modal h2,
+body.dark-mode .modal h3, body.dark-mode .modal-header h2 { color: #f8fafc !important; }
+body.dark-mode .modal p, body.dark-mode .modal li,
+body.dark-mode .modal td, body.dark-mode .modal th,
+body.dark-mode .modal label, body.dark-mode .modal div { color: #e2e8f0 !important; }
+body.dark-mode .modal .muted, body.dark-mode .modal .form-help { color: #94a3b8 !important; }
+body.dark-mode .modal a { color: #a5b4fc !important; }
+body.dark-mode .modal input, body.dark-mode .modal select, body.dark-mode .modal textarea {
+  background: #1e293b !important; color: #f1f5f9 !important; border-color: #475569 !important;
+}

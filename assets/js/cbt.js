@@ -23,41 +23,80 @@ const CBT = {
     const canon = k => String(k||'').toLowerCase().replace(/[^a-z0-9]/g,'');
     const keyMap = Object.keys(q).reduce((m,k)=>{ m[canon(k)]=k; return m; }, {});
     const pick = (...names) => { for (const n of names) { const k = keyMap[canon(n)]; if (k != null && q[k] != null) return q[k]; } };
-    let type = String(pick('type','question_type','questionType') || 'mcq').toLowerCase().replace(/[\s/\-]+/g,'_');
+    /* ---------------------------------------------------------------
+       BUG FIX 6 (reported): "the CSV we use to set a CBT in School
+       Connect should also work in Tutoring Connect."
+
+       The two products had drifted. School Connect's cbt-engine.js
+       accepts a wider set of column spellings than Tutoring Connect's
+       cbt.js did, so a CSV authored for School Connect imported here with
+       blank options or a missing answer — silently, which is worse than
+       failing. Every alias School Connect recognises is now recognised
+       here as well, and this list is a strict SUPERSET of its own, so a
+       file that works in either product works in both.
+       --------------------------------------------------------------- */
+    let type = String(pick('type','question_type','questionType') || 'mcq').toLowerCase().replace(/[\s/\\-]+/g,'_');
     if (['tf','boolean','truefalse','true_or_false','yes_no','yesno'].includes(type)) type = 'true_false';
-    if (['multiplechoice','multiple_choice','single_choice','objective'].includes(type)) type = 'mcq';
-    if (['mrq','multiple_response','multiselect','checkbox'].includes(type)) type = 'multi_select';
+    if (['multiplechoice','multiple_choice','single_choice','singlechoice','objective'].includes(type)) type = 'mcq';
+    if (['mrq','multiple_response','multiple_responses','multiple_select','multiselect','checkbox','checkboxes'].includes(type)) type = 'multi_select';
     if (['number','integer','decimal','calculation'].includes(type)) type = 'numeric';
     if (['short','text','free_text'].includes(type)) type = 'short_answer';
     if (['math','equation','latex'].includes(type)) type = 'math_equation';
-    let options = pick('options','choices','alternatives') || [];
+    let options = pick('options','choices','alternatives','answers') || [];
     if (typeof options === 'string') {
       try { const p = JSON.parse(options); if (Array.isArray(p)) options = p; }
       catch (_) { options = options.split(/[|;]/).map(s => s.trim()).filter(Boolean); }
     }
     if (!Array.isArray(options)) options = [];
+    if (options.length && typeof options[0] === 'object') {
+      options = options.map(o => (o && typeof o === 'object')
+        ? (o.text != null ? o.text : (o.label != null ? o.label : (o.value != null ? o.value : JSON.stringify(o))))
+        : String(o));
+    }
     if (!options.length) {
-      ['a','b','c','d','e'].forEach((letter, i) => {
-        const v = pick(letter, 'option_'+letter, 'option'+(i+1));
-        if (v) options.push(String(v));
+      // Every spelling School Connect accepts, plus the spreadsheet ones.
+      [['a','option_a','opt_a','choice_a','option1','optiona'],
+       ['b','option_b','opt_b','choice_b','option2','optionb'],
+       ['c','option_c','opt_c','choice_c','option3','optionc'],
+       ['d','option_d','opt_d','choice_d','option4','optiond'],
+       ['e','option_e','opt_e','choice_e','option5','optione'],
+       ['f','option_f','opt_f','choice_f','option6','optionf']
+      ].forEach(keys => {
+        const v = pick.apply(null, keys);
+        if (v != null && String(v).trim() !== '') options.push(String(v));
       });
     }
     if (type === 'true_false') options = ['True','False'];
-    let answer = pick('answer','correct','correct_answer','correctAnswer','key','correct_option');
+    let answer = pick('answer','correct','correct_answer','correctAnswer','correct answer',
+                      'answer_key','answerKey','key','correct_option','correctOption',
+                      'correctletter','correct_letter','ans','solution_key');
+    /* A CSV may give the answer as a LETTER (A/B/C/D) rather than the text.
+       School Connect resolves that at grading time; resolving it here means
+       the same file grades identically in both products. */
+    if (typeof answer === 'string' && options.length) {
+      const letter = answer.trim().toUpperCase();
+      if (/^[A-F]$/.test(letter)) {
+        const at = letter.charCodeAt(0) - 65;
+        if (options[at] != null) answer = String(options[at]);
+      }
+    }
     if (type === 'multi_select' && typeof answer === 'string') answer = answer.split(/[,;|]/).map(s => s.trim()).filter(Boolean);
     return {
       id: pick('id') || ('q'+(idx+1)),
       _orig_index: idx,
       type,
-      subject: pick('subject','section','exam_subject') || '',
-      question: pick('question','prompt','text','question_text') || '',
-      passage: pick('passage','context','case_text') || '',
+      subject: pick('subject','section','subject_section','exam_subject') || '',
+      section: pick('section','subject_section','subject','exam_subject') || '',
+      question: pick('question','prompt','text','question_text','questionText') || '',
+      passage: pick('passage','context','case_text','comprehension') || '',
+      difficulty: pick('difficulty','level') || '',
+      accepted_answers: pick('accept','accepted_answers','alternatives') || '',
       options,
       answer, correct: answer,
       mark: Number(pick('mark','marks','score','points') || 1) || 1,
       explanation: pick('explanation','reason','solution') || '',
       media_url: pick('media_url','image','audio_url','video_url','image_url') || '',
-      tolerance: pick('tolerance') || '',
+      tolerance: pick('tolerance','accept','margin') || '',
       pairs: pick('pairs','matches') || null
     };
   },
@@ -333,8 +372,18 @@ Produce EXACTLY ${count} assessment items on the topic "${topic}" for a
 ${klass || 'tutoring learner'} sitting ${examType} in ${subject}.
 
 OUTPUT CONTRACT — READ TWICE, THIS IS THE MOST IMPORTANT PART
-1. Output a SINGLE CSV code block and NOTHING else. No preamble, no commentary,
-   no markdown headings, no explanation before or after the block.
+0. OUTPUT A DOWNLOADABLE .CSV FILE — NOT RAW CSV TEXT.
+   Generate the questions and deliver them as an actual downloadable file
+   attachment named "${(topic || 'questions').toString().toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40)}.csv"
+   that the tutor can click and save. Use whatever file-producing capability you
+   have — a generated file, an attachment, or a download link. The tutor must end
+   up with a .csv FILE on their computer, ready to import, WITHOUT copying and
+   pasting anything.
+   If, and only if, you genuinely cannot emit a file, then fall back to a single
+   raw CSV code block and say so in one short line first.
+1. Whether as a file or as the fallback block, the content must be pure CSV and
+   NOTHING else. No preamble, no commentary, no markdown headings, no
+   explanation before or after.
 2. The FIRST line must be exactly this header, character for character:
 question,type,subject,a,b,c,d,answer,mark,explanation,passage,media_url,tolerance
 3. Then exactly ${count} data rows. One item per row.
@@ -348,11 +397,13 @@ question,type,subject,a,b,c,d,answer,mark,explanation,passage,media_url,toleranc
    platform NEVER accepts file uploads, only links.
 9. End your reply with the CSV block and stop.
 
-SO THE TUTOR CAN SAVE IT AS A FILE
-After the CSV block, output nothing at all. The tutor will copy the block into a
-plain text editor and save it as "${(topic || 'questions').toString().toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40)}.csv",
-or paste it straight into the Quizzes page. Both must work, which is why the
-output has to be pure CSV.
+DELIVERY — THIS IS HOW THE TUTOR ACTUALLY USES IT
+Output a DOWNLOADABLE CSV FILE, not raw CSV text on screen. The tutor will
+download that file and import it directly on the studio's Quizzes page; they
+should never have to select text, copy it, open an editor and save it by hand.
+Name the file "${(topic || 'questions').toString().toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40)}.csv".
+The same file must also open cleanly in Excel, Google Sheets and LibreOffice.
+Only if file generation is impossible for you, emit one raw CSV block instead.
 
 QUALITY BAR — a paper that fails any of these is not acceptable
 • Every stem is self-contained and unambiguous; a competent learner should never

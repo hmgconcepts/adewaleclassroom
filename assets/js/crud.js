@@ -46,7 +46,7 @@ const CRUD = {
     groups: { table: 'engagements', title: 'Group', defaultFilters: { kind: 'group' }, cols: [
       { key: 'name', label: 'Group name', type: 'text', required: true },
       { key: 'kind', label: 'Kind', type: 'select', options: ['group'] },
-      { key: 'subject', label: 'Subject', type: 'text' },
+      { key: 'subject', label: 'Subject', type: 'lookup', lookupTable: 'subjects', lookupValue: 'name', help: 'Pick a subject you teach.' },
       { key: 'capacity', label: 'Capacity', type: 'number' },
       { key: 'status', label: 'Status', type: 'select', options: ['active','paused','completed'] }
     ]},
@@ -83,11 +83,11 @@ const CRUD = {
       { key: 'level', label: 'Level', type: 'text' }
     ]},
     inquiries: { table: 'inquiries', title: 'Inquiry', cols: [
-      { key: 'parent_name', label: 'Parent name', type: 'text', required: true },
+      { key: 'parent_name', label: 'Parent name', type: 'lookup', lookupTable: 'parents', lookupValue: 'full_name', required: true, help: 'Pick from your parents list.' },
       { key: 'email', label: 'Email', type: 'email' },
       { key: 'phone', label: 'Phone', type: 'tel' },
-      { key: 'learner_name', label: 'Learner name', type: 'text' },
-      { key: 'subject', label: 'Subject wanted', type: 'text' },
+      { key: 'learner_name', label: 'Learner name', type: 'lookup', lookupTable: 'learners', lookupValue: 'full_name', help: 'Pick an existing learner, or add a new name if they are not enrolled yet.' },
+      { key: 'subject', label: 'Subject wanted', type: 'lookup', lookupTable: 'subjects', lookupValue: 'name', help: 'Pick a subject you teach.' },
       { key: 'kind', label: '1:1 or group', type: 'select', options: ['one_on_one','group','unsure'] },
       { key: 'timezone', label: 'Timezone', type: 'text' },
       { key: 'source', label: 'Source', type: 'text' },
@@ -95,15 +95,15 @@ const CRUD = {
       { key: 'status', label: 'Status', type: 'select', options: ['new','contacted','trial_booked','converted','lost'] }
     ]},
     waitlist: { table: 'waitlist', title: 'Waitlist row', cols: [
-      { key: 'learner_name', label: 'Learner', type: 'text', required: true },
-      { key: 'subject', label: 'Subject', type: 'text' },
+      { key: 'learner_name', label: 'Learner', type: 'lookup', lookupTable: 'learners', lookupValue: 'full_name', required: true, help: 'Pick from your learners — no typing needed.' },
+      { key: 'subject', label: 'Subject', type: 'lookup', lookupTable: 'subjects', lookupValue: 'name', help: 'Pick a subject you teach.' },
       { key: 'kind', label: 'Kind', type: 'select', options: ['one_on_one','group'] },
       { key: 'notes', label: 'Notes', type: 'textarea' },
       { key: 'status', label: 'Status', type: 'select', options: ['waiting','offered','placed','withdrawn'] }
     ]},
     trials: { table: 'trials', title: 'Trial', cols: [
       { key: 'engagement_id', label: 'Resulting engagement (optional)', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id' },
-      { key: 'learner_name', label: 'Learner', type: 'text', required: true },
+      { key: 'learner_name', label: 'Learner', type: 'lookup', lookupTable: 'learners', lookupValue: 'full_name', required: true, help: 'Pick from your learners — no typing needed.' },
       { key: 'scheduled_at', label: 'When', type: 'datetime-local' },
       { key: 'baseline_score', label: 'Baseline %', type: 'number' },
       { key: 'fit_notes', label: 'Fit notes', type: 'textarea' },
@@ -209,6 +209,23 @@ const CRUD = {
       { key: 'due_on', label: 'Due', type: 'date' },
       { key: 'status', label: 'Status', type: 'select', options: ['draft','sent','paid','overdue','void'] }
     ]},
+    /* BUG FIX 14 (reported): "on the class stream page one should be able
+       to edit, delete etc. a pre-existing class stream. Ensure whatever we
+       create on the platform can be edited or selected after creation."
+       stream_posts had no CRUD schema at all, so stream.html could only
+       ever append. Registering it here gives the page the full workbench:
+       edit, delete, duplicate, filter, sort, page, export and print. */
+    stream: { table: 'stream_posts', title: 'Class stream post', orderBy: 'publish_at',
+      empty: 'No stream posts yet. Post an announcement, a resource link or a reminder to the class.',
+      cols: [
+        { key: 'engagement_id', label: 'Class / engagement', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id', help: 'Pick the class this post belongs to.' },
+        { key: 'kind', label: 'Kind', type: 'select', options: ['announcement','resource','reminder','homework','celebration','question'] },
+        { key: 'title', label: 'Title', type: 'text', required: true },
+        { key: 'body', label: 'Message', type: 'textarea' },
+        { key: 'media_url', label: 'Link (Drive / YouTube / https)', help: 'Links only — this studio never accepts uploads.' },
+        { key: 'publish_at', label: 'Publish at', type: 'datetime-local', help: 'Leave as now to publish immediately, or set a future time.' },
+        { key: 'created_at', label: 'Created', type: 'datetime-local' }
+      ]},
     payments: { table: 'payments', title: 'Payment', cols: [
       { key: 'invoice_id', label: 'Invoice', type: 'ref', refTable: 'invoices', refValue: 'amount', refStore: 'id' },
       { key: 'amount', label: 'Amount', type: 'number', required: true },
@@ -216,6 +233,18 @@ const CRUD = {
       { key: 'reference', label: 'Reference', type: 'text' },
       { key: 'paid_on', label: 'Paid on', type: 'date' }
     ]},
+      /* BUG FIX 13 — a receipt is most wanted from the row the tutor has
+         just created, not from a separate panel further down the page. */
+      rowActions: [{ id: 'receipt', label: '🧾 Receipt', cls: 'btn-outline',
+                     title: 'Print a branded e-receipt for this payment' }],
+      onRowAction: function (action, r) {
+        if (action !== 'receipt' || !r) return;
+        if (!window.Receipts) {
+          if (window.toast) toast('Receipt engine not loaded on this page.', 'danger');
+          return;
+        }
+        Receipts.print(r, { description: 'Tutoring fees', paidToDate: r.amount });
+      },
     announcements: { table: 'announcements', title: 'Announcement', cols: [
       { key: 'title', label: 'Title', type: 'text', required: true },
       { key: 'body', label: 'Body', type: 'textarea' },
@@ -224,7 +253,7 @@ const CRUD = {
     ]},
     inbox: { table: 'messages', title: 'Message', cols: [
       { key: 'to_role', label: 'To role', type: 'select', options: ['admin','tutor','parent','student'] },
-      { key: 'subject', label: 'Subject', type: 'text', required: true },
+      { key: 'subject', label: 'Subject', type: 'lookup', lookupTable: 'subjects', lookupValue: 'name', required: true, help: 'Pick a subject you teach.' },
       { key: 'body', label: 'Body', type: 'textarea' }
     ]},
     complaints: { table: 'complaints', title: 'Complaint', cols: [
@@ -254,7 +283,7 @@ const CRUD = {
     ]},
     exam_targets: { table: 'exam_targets', title: 'Exam target', cols: [
       { key: 'learner_id', label: 'Learner', type: 'ref', refTable: 'learners', refValue: 'full_name', refStore: 'id', required: true },
-      { key: 'exam_name', label: 'Exam', type: 'text', required: true },
+      { key: 'exam_name', label: 'Exam', type: 'lookup', lookupTable: 'cbt_exams', lookupValue: 'title', required: true, help: 'Pick an exam you have already built.' },
       { key: 'board', label: 'Board', type: 'text' },
       { key: 'exam_on', label: 'Date', type: 'date' },
       { key: 'target_grade', label: 'Target grade', type: 'text' }
@@ -304,12 +333,12 @@ const CRUD = {
       { key: 'title', label: 'Title', type: 'text', required: true },
       { key: 'author', label: 'Author / source', type: 'text' },
       { key: 'url', label: 'Drive / web link', type: 'text', required: true },
-      { key: 'subject', label: 'Subject', type: 'text' },
+      { key: 'subject', label: 'Subject', type: 'lookup', lookupTable: 'subjects', lookupValue: 'name', help: 'Pick a subject you teach.' },
       { key: 'kind', label: 'Kind', type: 'select', options: ['book','paper','video','worksheet','other'] }
     ]},
     eresources: { table: 'eresources', title: 'E-resource', cols: [
       { key: 'title', label: 'Title', type: 'text', required: true },
-      { key: 'subject', label: 'Subject', type: 'text' },
+      { key: 'subject', label: 'Subject', type: 'lookup', lookupTable: 'subjects', lookupValue: 'name', help: 'Pick a subject you teach.' },
       { key: 'url', label: 'Link', type: 'text', required: true },
       { key: 'notes', label: 'Notes', type: 'textarea' }
     ]},
@@ -321,7 +350,7 @@ const CRUD = {
       { key: 'status', label: 'Status', type: 'select', options: ['draft','published'] }
     ]},
     leave: { table: 'leave_requests', title: 'Leave request', cols: [
-      { key: 'tutor_name', label: 'Tutor', type: 'text', required: true },
+      { key: 'tutor_name', label: 'Tutor', type: 'lookup', lookupTable: 'tutors', lookupValue: 'full_name', required: true, help: 'Pick from your tutors.' },
       { key: 'kind', label: 'Kind', type: 'select', options: ['sick','casual','earned','study','other'] },
       { key: 'starts_on', label: 'From', type: 'date' },
       { key: 'ends_on', label: 'To', type: 'date' },
@@ -329,7 +358,7 @@ const CRUD = {
       { key: 'status', label: 'Status', type: 'select', options: ['pending','approved','rejected'] }
     ]},
     payroll: { table: 'payroll', title: 'Payroll row', cols: [
-      { key: 'tutor_name', label: 'Tutor', type: 'text', required: true },
+      { key: 'tutor_name', label: 'Tutor', type: 'lookup', lookupTable: 'tutors', lookupValue: 'full_name', required: true, help: 'Pick from your tutors.' },
       { key: 'period', label: 'Period', type: 'text' },
       { key: 'hours', label: 'Hours', type: 'number' },
       { key: 'rate', label: 'Rate', type: 'number' },
@@ -351,7 +380,7 @@ const CRUD = {
     ]},
     messages: { table: 'messages', title: 'Message', cols: [
       { key: 'to_role', label: 'To role', type: 'select', options: ['admin','tutor','parent','student'] },
-      { key: 'subject', label: 'Subject', type: 'text', required: true },
+      { key: 'subject', label: 'Subject', type: 'lookup', lookupTable: 'subjects', lookupValue: 'name', required: true, help: 'Pick a subject you teach.' },
       { key: 'body', label: 'Body', type: 'textarea' }
     ]},
     announcements: { table: 'announcements', title: 'Announcement', cols: [
@@ -361,7 +390,7 @@ const CRUD = {
       { key: 'pinned', label: 'Pinned', type: 'checkbox' }
     ]},
     certificates: { table: 'certificates', title: 'Certificate', cols: [
-      { key: 'learner_name', label: 'Learner', type: 'text', required: true },
+      { key: 'learner_name', label: 'Learner', type: 'lookup', lookupTable: 'learners', lookupValue: 'full_name', required: true, help: 'Pick from your learners — no typing needed.' },
       { key: 'title', label: 'Award', type: 'text', required: true },
       { key: 'code', label: 'Verification code', type: 'text' },
       { key: 'issued_on', label: 'Issued', type: 'date' }
@@ -390,7 +419,7 @@ const CRUD = {
     ]},
     substitutions: { table: 'substitutions', title: 'Cover tutor', cols: [
       { key: 'session_id', label: 'Session', type: 'ref', refTable: 'sessions', refValue: 'starts_at', refStore: 'id' },
-      { key: 'cover_tutor', label: 'Cover tutor', type: 'text', required: true },
+      { key: 'cover_tutor', label: 'Cover tutor', type: 'lookup', lookupTable: 'tutors', lookupValue: 'full_name', required: true, help: 'Pick the tutor covering the class.' },
       { key: 'reason', label: 'Reason', type: 'text' }
     ]},
     policies: { table: 'policies', title: 'Policy', cols: [
@@ -471,7 +500,7 @@ const CRUD = {
     ]},
     idcards: { table: 'learners', title: 'Learner card', cols: [
       { key: 'full_name', label: 'Name', type: 'text' },
-      { key: 'student_no', label: 'Student ID', type: 'text' },
+      { key: 'student_no', label: 'Student ID', type: 'lookup', lookupTable: 'learners', lookupValue: 'student_no', help: 'Pick an existing learner ID.' },
       { key: 'photo_url', label: 'Photo (Drive)', type: 'text' }
     ]},
     portfolio: { table: 'resources', title: 'Portfolio item', cols: [
@@ -488,7 +517,7 @@ const CRUD = {
     transcripts: { table: 'scoresheet', title: 'Transcript row', cols: [
       { key: 'learner_id', label: 'Learner', type: 'ref', refTable: 'learners', refValue: 'full_name', refStore: 'id' },
       { key: 'title', label: 'Item', type: 'text' },
-      { key: 'subject', label: 'Subject', type: 'text' },
+      { key: 'subject', label: 'Subject', type: 'lookup', lookupTable: 'subjects', lookupValue: 'name', help: 'Pick a subject you teach.' },
       { key: 'pct', label: '%', type: 'number' },
       { key: 'taken_on', label: 'Date', type: 'date' }
     ]},
@@ -507,7 +536,7 @@ const CRUD = {
       { key: 'points', label: 'Points', type: 'number' }
     ]},
     parent_meetings: { table: 'parent_meetings', title: 'Parent conference', cols: [
-      { key: 'parent_name', label: 'Parent', type: 'text', required: true },
+      { key: 'parent_name', label: 'Parent', type: 'lookup', lookupTable: 'parents', lookupValue: 'full_name', required: true, help: 'Pick from your parents list.' },
       { key: 'learner_id', label: 'Learner', type: 'ref', refTable: 'learners', refValue: 'full_name', refStore: 'id' },
       { key: 'scheduled_at', label: 'When', type: 'datetime-local' },
       { key: 'notes', label: 'Notes', type: 'textarea' }
@@ -1185,6 +1214,57 @@ const CRUD = {
       if (c.type === 'textarea') control = `<textarea class="form-textarea" name="${c.key}">${TC.esc(row[c.key] || '')}</textarea>`;
       else if (c.type === 'checkbox') control = `<input type="checkbox" name="${c.key}" ${row[c.key] ? 'checked' : ''}>`;
       else if (c.type === 'select') control = `<select class="form-select" name="${c.key}">${(c.options||[]).map(o => `<option ${String(row[c.key])===o?'selected':''}>${o}</option>`).join('')}</select>`;
+      else if (c.type === 'lookup') {
+        /* -----------------------------------------------------------
+           BUG FIX 15 (reported): "when class, term, session, subject,
+           student, tutor etc. are created and then needed on another
+           page, they should not be typed but selected from a dropdown."
+
+           Several tables store a NAME rather than a foreign key
+           (waitlist.learner_name, payroll.tutor_name, substitutions.
+           cover_tutor, subjects.name, trials.subject ...). A 'ref'
+           control cannot be used there because ref stores an id, and
+           these columns hold text.
+
+           'lookup' fills that gap: it offers a real dropdown built from
+           live rows, but stores the TEXT the column expects. "Type your
+           own" stays available for a genuinely new value, so nobody is
+           ever blocked by a name that is not on the list yet.
+           ----------------------------------------------------------- */
+        var opts = [];
+        if (this.sb && c.lookupTable) {
+          var res = await this.sb.from(c.lookupTable).select('*').limit(500);
+          opts = (res.data || []).map(function (r) { return r[c.lookupValue]; })
+                   .filter(function (v) { return v != null && String(v).trim() !== ''; });
+        } else if (window.DEMO && c.lookupTable) {
+          opts = (window.DEMO[c.lookupTable] || []).map(function (r) { return r[c.lookupValue]; });
+        }
+        (c.extraOptions || []).forEach(function (o) { opts.push(o); });
+        // De-duplicate and keep the current value even if it has since been deleted.
+        var cur = row[c.key] == null ? '' : String(row[c.key]);
+        var uniq = [];
+        opts.concat(cur ? [cur] : []).forEach(function (o) {
+          o = String(o);
+          if (o && uniq.indexOf(o) === -1) uniq.push(o);
+        });
+        uniq.sort(function (a, b) { return a.localeCompare(b); });
+        var listId = 'lk-' + c.key + '-' + Math.random().toString(36).slice(2, 7);
+        control =
+          '<select class="form-select" data-lookup-select="' + c.key + '">' +
+            '<option value="">— choose —</option>' +
+            uniq.map(function (o) {
+              return '<option ' + (cur === o ? 'selected' : '') + '>' + TC.esc(o) + '</option>';
+            }).join('') +
+            '<option value="__other__">➕ Type a new one…</option>' +
+          '</select>' +
+          '<input class="form-input" name="' + c.key + '" list="' + listId + '" ' +
+            'value="' + TC.esc(cur) + '" ' +
+            'style="margin-top:6px;' + (uniq.indexOf(cur) === -1 && cur ? '' : 'display:none') + '" ' +
+            'placeholder="Type a new value">' +
+          '<datalist id="' + listId + '">' +
+            uniq.map(function (o) { return '<option value="' + TC.esc(o) + '">'; }).join('') +
+          '</datalist>';
+      }
       else if (c.type === 'ref' && this.sb) {
         const { data } = await this.sb.from(c.refTable).select('*').limit(200);
         const opts = (data || []).map(d => `<option value="${d[c.refStore || c.refValue]}" ${String(row[c.key])===String(d[c.refStore || c.refValue])?'selected':''}>${TC.esc(d[c.refValue])}</option>`).join('');
@@ -1196,6 +1276,29 @@ const CRUD = {
       <form class="modal-body" id="crud-form">${fields.join('')}</form>
       <div class="modal-footer"><button class="btn btn-ghost" type="button" onclick="closeModal('crud-modal')">Cancel</button><button class="btn btn-primary" type="submit" form="crud-form">Save</button></div></div>`;
     host.classList.add('show');
+
+    /* Keep each 'lookup' dropdown and its free-text box in step. Choosing
+       a name fills the hidden input (which is what actually submits);
+       choosing "Type a new one" reveals the box. */
+    host.querySelectorAll('[data-lookup-select]').forEach(function (sel) {
+      var key = sel.getAttribute('data-lookup-select');
+      var inp = host.querySelector('[name="' + key + '"]');
+      if (!inp) return;
+      sel.addEventListener('change', function () {
+        if (sel.value === '__other__') {
+          inp.style.display = '';
+          inp.value = '';
+          inp.focus();
+        } else if (sel.value === '') {
+          inp.style.display = 'none';
+          inp.value = '';
+        } else {
+          inp.style.display = 'none';
+          inp.value = sel.value;
+        }
+      });
+    });
+
     document.getElementById('crud-form').onsubmit = async (e) => {
       e.preventDefault();
       const fd = new FormData(e.target);

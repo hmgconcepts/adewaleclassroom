@@ -631,16 +631,70 @@ const App = {
       const inp = wrap.querySelector('#nav-search');
       const clr = wrap.querySelector('#nav-search-clear');
       const empty = wrap.querySelector('#nav-search-empty');
+      /* -----------------------------------------------------------------
+         BUG FIX 3 (reported): "the search box on the navigation pane is
+         not working — when a page is typed, nothing comes up."
+
+         The filter itself matched correctly, but it only ever toggled the
+         <a> elements. The <div class="nav-section-title"> headings were
+         left visible, so a search for "wallet" produced eleven section
+         headings with one link buried among them — which reads as
+         "nothing came up". Worse, the match was tested against
+         a.textContent, which on this markup includes the bullet glyph and
+         collapsed whitespace, so multi-word searches such as "payment
+         plan" failed outright.
+
+         BUG FIX 2 (reported): "the navigation pane has many empty spaces
+         and gaps before the first item."
+
+         Same root cause seen from the other end: section headings whose
+         links are ALL hidden by the role filter stay on screen as empty
+         labelled gaps. A parent, who can see very few pages, saw a column
+         of headings with nothing under them.
+
+         Both are fixed by making the section heading follow its contents:
+         a heading is shown only when at least one link beneath it is
+         visible. The search text is also normalised, and now matches the
+         page's href and module id as well as its label.
+         ----------------------------------------------------------------- */
+      const norm = (t) => String(t || '')
+        .replace(/[•·\u2022]/g, ' ')          // strip bullet glyphs
+        .replace(/\s+/g, ' ')                 // collapse whitespace
+        .trim().toLowerCase();
+
+      const syncSections = () => {
+        // Show a section heading only if something under it is visible.
+        const kids = [...nav.children];
+        kids.forEach((el, i) => {
+          if (!el.classList || !el.classList.contains('nav-section-title')) return;
+          let visible = 0;
+          for (let j = i + 1; j < kids.length; j++) {
+            const n = kids[j];
+            if (n.classList && n.classList.contains('nav-section-title')) break;
+            if (n.tagName === 'A' && n.style.display !== 'none') visible++;
+          }
+          el.style.display = visible ? '' : 'none';
+        });
+      };
+      this._syncNavSections = syncSections;
+
       const apply = () => {
-        const q = inp.value.trim().toLowerCase();
+        const q = norm(inp.value);
         clr.style.display = q ? '' : 'none';
         let shown = 0;
         nav.querySelectorAll('a[data-module-id], a[data-module]').forEach(a => {
           const roleHidden = a.dataset.navRoleHidden === '1';
-          const match = !q || a.textContent.toLowerCase().includes(q) || (a.getAttribute('data-module-id') || a.getAttribute('data-module') || '').replace(/[-_]/g, ' ').includes(q);
+          const hay = [
+            norm(a.textContent),
+            norm((a.getAttribute('data-module-id') || a.getAttribute('data-module') || '').replace(/[-_]/g, ' ')),
+            norm((a.getAttribute('href') || '').replace(/\.html$/, '').replace(/[-_]/g, ' '))
+          ].join(' ');
+          // Every word typed must appear somewhere, so "payment plan" works.
+          const match = !q || q.split(' ').every(w => hay.indexOf(w) !== -1);
           a.style.display = (roleHidden || !match) ? 'none' : '';
           if (!roleHidden && match) shown++;
         });
+        syncSections();
         empty.style.display = (q && !shown) ? '' : 'none';
       };
       inp.addEventListener('input', apply);
@@ -716,6 +770,12 @@ const App = {
     });
     this.applyVisibilityTokens(role);
     this.ensureNavNotBlank(role);
+    /* BUG FIX 2 — collapse section headings that have no visible links.
+       Without this a parent (who can reach very few pages) sees a column
+       of headings with nothing underneath: the "empty spaces and gaps"
+       reported before the first item. Guarded because the role filter can
+       run before the search box has been injected. */
+    try { if (this._syncNavSections) this._syncNavSections(); } catch (e) {}
     this.enforceCurrentPageAccess(role);
     this.refreshCurrentCrudAfterRole(role);
     this.paintUser();
@@ -1144,7 +1204,28 @@ const App = {
         '<button class="btn btn-sm btn-ghost" type="button" data-pwa-action="dismiss">Not now</button></div>';
       document.body.appendChild(ban);
     }
-    if (!document.getElementById('chatbot-window')) {
+    /* -------------------------------------------------------------------
+       BUG FIX 8 / 17 (reported): "when I clicked the message icon for the
+       studio assistant, nothing happened."
+
+       Root cause: this block created a SECOND floating 💬 button
+       (.tc-chat-fab, data-chatbot="open") at right:20px/bottom:20px with
+       z-index 9997 — while chatbot.js creates the real assistant at
+       right:18px/bottom:18px with the SAME z-index. Two 💬 circles sat on
+       top of one another, and a grep of the whole codebase shows NOTHING
+       binds data-chatbot="open". The button the user could actually hit
+       was the dead one, so clicking the assistant did literally nothing.
+
+       The real assistant (chatbot.js) is strictly better: it has the
+       greeting, the ten suggestion chips, minimise, and knowledge of all
+       133 pages. So when it is present we do not build the legacy widget
+       at all. When it is absent — a stripped build — we still build it,
+       but now we also WIRE it, so the button is never dead again.
+       ------------------------------------------------------------------- */
+    if (window.Chatbot || document.getElementById('tc-bot-fab')) {
+      // Real assistant present: remove any legacy duplicate and stand down.
+      document.querySelectorAll('.tc-chat-fab, #chatbot-window').forEach(el => el.remove());
+    } else if (!document.getElementById('chatbot-window')) {
       const fab = document.createElement('button');
       fab.type = 'button';
       fab.className = 'tc-chat-fab';
@@ -1160,6 +1241,41 @@ const App = {
         '<div style="display:flex;gap:6px;padding:10px;border-top:1px solid #e2e8f0"><input id="chatbot-input" placeholder="Ask about bookings, quizzes, Drive…" style="flex:1;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px"><button type="button" class="btn btn-primary btn-sm" data-chatbot="send">Send</button></div>';
       document.body.appendChild(fab);
       document.body.appendChild(win);
+      // Wire the fallback widget so it can never be a dead button.
+      const toggle = (show) => { win.style.display = show ? 'flex' : 'none'; };
+      fab.addEventListener('click', () => toggle(win.style.display === 'none'));
+      win.querySelector('[data-chatbot="close"]').addEventListener('click', () => toggle(false));
+      const send = () => {
+        const inp = document.getElementById('chatbot-input');
+        const box = document.getElementById('chatbot-messages');
+        if (!inp || !box || !inp.value.trim()) return;
+        const q = inp.value.trim();
+        box.innerHTML += '<div style="margin:6px 0;text-align:right"><span style="display:inline-block;background:#0506ae;color:#fff;padding:7px 11px;border-radius:12px;max-width:80%">' + q.replace(/[<>&]/g, '') + '</span></div>';
+        let a = 'Open the ❓ Page Help button on any page for a full explanation of that screen.';
+        try {
+          const kb = window.ASSISTANT_KB || (window.TC && window.TC.ASSISTANT_KB);
+          if (kb && kb.answer) a = kb.answer(q);
+        } catch (e) {}
+        box.innerHTML += '<div style="margin:6px 0"><span style="display:inline-block;background:#fff;color:#0f172a;border:1px solid #e2e8f0;padding:7px 11px;border-radius:12px;max-width:85%">' + a + '</span></div>';
+        box.scrollTop = box.scrollHeight;
+        inp.value = '';
+      };
+      win.querySelector('[data-chatbot="send"]').addEventListener('click', send);
+      win.querySelector('#chatbot-input').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+    }
+
+    /* Any page that hard-codes the legacy markup still works: delegate
+       data-chatbot clicks to the real assistant if it is loaded. */
+    if (!this._chatDelegated) {
+      this._chatDelegated = true;
+      document.addEventListener('click', (e) => {
+        const t = e.target && e.target.closest && e.target.closest('[data-chatbot="open"]');
+        if (!t) return;
+        if (window.Chatbot && typeof Chatbot.setOpen === 'function') {
+          e.preventDefault();
+          Chatbot.setOpen(true);
+        }
+      });
     }
     this.ensureNotifBell();
   },

@@ -231,6 +231,41 @@
       this.onViolation = onViolation || null;
       var limit = Number(cfg.max_violations || 0);
 
+      /* ---------------------------------------------------------------
+         BUG FIX (reported): "when students click the on-screen scientific
+         calculator or the maths keyboard, the platform assumes they are
+         cheating."
+
+         Correct, and it was two separate faults:
+
+         1. window 'blur' fired a violation unconditionally. Focus moving
+            to an in-page tool, the on-screen keyboard on a phone, or even
+            the browser's own chrome taking focus for an instant, all
+            raised "The exam window lost focus". The fix is to wait a tick
+            and ask document.hasFocus(): if the document still has focus,
+            nothing left the exam and there is nothing to report.
+
+         2. copy / cut / paste / contextmenu / selectstart were bound to
+            the whole document, so a student copying a result out of the
+            calculator, or long-pressing a key on the maths keyboard,
+            tripped the counter.
+
+         Both are fixed by treating the studio's OWN tools as part of the
+         exam, which is what they are. A tool the studio deliberately
+         provides can never be evidence of cheating. -------------------- */
+      var TOOL_SEL = '#tc-calc,#tc-mathkb,#tc-tools,.tc-tool,.tc-calc-pad,' +
+                     '.tc-mathkb-pad,[data-exam-tool]';
+      var inTool = function (node) {
+        try { return !!(node && node.closest && node.closest(TOOL_SEL)); }
+        catch (e) { return false; }
+      };
+      this._inTool = inTool;
+      // True while a tool is open, so a blur caused by opening one is ignored.
+      this._toolOpen = function () {
+        try { return !!d.querySelector(TOOL_SEL + ':not([hidden])'); }
+        catch (e) { return false; }
+      };
+
       var log = function (type, detail) {
         self.violations.push({ type: type, detail: detail, at: new Date().toISOString() });
         var n = self.violations.length;
@@ -253,19 +288,43 @@
       // tab / app switching
       if (cfg.tab_focus !== false) {
         d.addEventListener('visibilitychange', function () {
+          // Genuinely leaving the tab is still a violation.
           if (d.hidden) log('tab_switch', 'You left the exam tab');
         });
-        w.addEventListener('blur', function () { log('window_blur', 'The exam window lost focus'); });
+        w.addEventListener('blur', function () {
+          /* Wait one tick, then ask whether the DOCUMENT actually lost
+             focus. Opening the calculator, tapping the maths keyboard, or
+             a phone's soft keyboard appearing all fire window blur while
+             the document still holds focus — none of those are cheating. */
+          setTimeout(function () {
+            if (d.hidden === false && d.hasFocus && d.hasFocus()) return;   // false alarm
+            if (self._toolOpen && self._toolOpen()) return;                 // a studio tool is open
+            log('window_blur', 'The exam window lost focus');
+          }, 220);
+        });
       }
       // copy / cut / paste / right-click
       if (cfg.block_copy !== false) {
         ['copy', 'cut'].forEach(function (ev) {
-          d.addEventListener(ev, function (e) { e.preventDefault(); log(ev, 'Copying is disabled during the exam'); });
+          d.addEventListener(ev, function (e) {
+            if (inTool(e.target)) return;      // copying a calculator result is fine
+            e.preventDefault();
+            log(ev, 'Copying is disabled during the exam');
+          });
         });
-        d.addEventListener('paste', function (e) { e.preventDefault(); log('paste', 'Pasting is disabled during the exam'); });
-        d.addEventListener('contextmenu', function (e) { e.preventDefault(); log('right_click', 'Right-click is disabled'); });
+        d.addEventListener('paste', function (e) {
+          if (inTool(e.target)) return;        // pasting INTO the calculator is fine
+          e.preventDefault();
+          log('paste', 'Pasting is disabled during the exam');
+        });
+        d.addEventListener('contextmenu', function (e) {
+          if (inTool(e.target)) return;
+          e.preventDefault();
+          log('right_click', 'Right-click is disabled');
+        });
         d.addEventListener('selectstart', function (e) {
           if (e.target && e.target.closest && e.target.closest('input,textarea')) return;
+          if (inTool(e.target)) return;        // selecting inside a tool is fine
           e.preventDefault();
         });
       }
