@@ -782,3 +782,189 @@ body.dark-mode .modal a { color: #a5b4fc !important; }
 body.dark-mode .modal input, body.dark-mode .modal select, body.dark-mode .modal textarea {
   background: #1e293b !important; color: #f1f5f9 !important; border-color: #475569 !important;
 }
+
+/* =====================================================================
+   ITEM 4 (V21) — POPUP LEGIBILITY, THE PARTS A STYLESHEET CAN REACH
+   ---------------------------------------------------------------------
+   The V20 pass fixed `.modal`. It did not fix the popup users actually
+   meet on every page — ❓ Page Help — because that element carries no
+   class and is built from INLINE styles, which beat any stylesheet. That
+   is now fixed at its source in site-help.js and additionally tagged
+   `.tc-popup` so themes can reach it.
+
+   Everything below pins an explicit, theme-independent colour on every
+   remaining popup surface. Literal hex is used deliberately: a popup must
+   not depend on a CSS variable that a theme may redefine.
+   ===================================================================== */
+.tc-popup,
+.tc-popup-backdrop .tc-popup {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+.tc-popup h1, .tc-popup h2, .tc-popup h3, .tc-popup h4, .tc-popup strong, .tc-popup b { color: #0f172a !important; }
+.tc-popup p, .tc-popup li, .tc-popup ol, .tc-popup ul, .tc-popup div, .tc-popup span,
+.tc-popup td, .tc-popup th, .tc-popup label, .tc-popup summary { color: #0f172a; }
+.tc-popup .muted, .tc-popup small { color: #475569 !important; }
+.tc-popup a { color: #0506ae !important; text-decoration: underline; }
+.tc-popup hr { border-color: #e2e8f0 !important; }
+
+/* The Studio Assistant panel: it used var(--surface), which some themes
+   redefine to a dark value while the text stayed dark too. */
+#tc-bot-panel { background: #ffffff !important; color: #0f172a !important; }
+#tc-bot-panel .tc-bot-msg, #tc-bot-panel p, #tc-bot-panel li, #tc-bot-panel div { color: #0f172a; }
+#tc-bot-panel a { color: #0506ae !important; }
+#tc-bot-panel input, #tc-bot-panel textarea {
+  background: #ffffff !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important;
+}
+#tc-bot-chips button, #tc-bot-panel .tc-chip {
+  background: #eef2ff !important; color: #1e1b4b !important; border: 1px solid #c7d2fe !important;
+}
+
+/* Notification dropdown and tray. */
+#notif-dropdown, .notif-dropdown { background: #ffffff !important; color: #0f172a !important; }
+#notif-dropdown a, .notif-dropdown a { color: #0506ae !important; }
+#notif-dropdown .muted, .notif-dropdown .muted { color: #475569 !important; }
+
+/* Banners injected by the guards — these sit above everything. */
+#tc-license-bar, #tc-schema-doctor, #tc-quota-bar, #tc-keepalive-bar, #tc-drive-bar {
+  color: #0f172a;
+}
+#tc-license-bar a, #tc-schema-doctor a, #tc-quota-bar a { color: inherit; text-decoration: underline; }
+
+/* Dark mode: flip the surface, never lose the contrast. */
+body.dark-mode .tc-popup,
+body.dark-mode #tc-bot-panel,
+body.dark-mode #notif-dropdown { background: #0f172a !important; color: #f1f5f9 !important; }
+body.dark-mode .tc-popup h1, body.dark-mode .tc-popup h2, body.dark-mode .tc-popup h3,
+body.dark-mode .tc-popup strong, body.dark-mode .tc-popup b { color: #f8fafc !important; }
+body.dark-mode .tc-popup p, body.dark-mode .tc-popup li,
+body.dark-mode .tc-popup div, body.dark-mode .tc-popup span { color: #e2e8f0; }
+body.dark-mode .tc-popup .muted { color: #94a3b8 !important; }
+body.dark-mode .tc-popup a, body.dark-mode #tc-bot-panel a { color: #a5b4fc !important; }
+
+/* =====================================================================
+   V21 — ADVANCED QUESTION-TYPE UI  (assets/js/cbt-types.js)
+   ---------------------------------------------------------------------
+   Modelled on HMG Academy CBT Pro's student portal, which gives every
+   question type a purpose-built control instead of forcing all seventeen
+   through radio buttons and a text box.
+
+   Design rules applied throughout:
+   • Touch targets are at least 44px tall — most Nigerian candidates sit
+     these papers on a phone.
+   • The selected option is obvious from three cues at once (fill, border
+     and the letter badge) so it never depends on colour alone.
+   • Every colour pair here clears WCAG AA; the option text is #0f172a on
+     #ffffff (17.4:1) and the selected state is #1e1b4b on #eef2ff (13.1:1).
+   • Nothing depends on a theme variable, because an exam must look the
+     same on all 63 themes.
+   ===================================================================== */
+
+.tcq-hint{font-size:.82rem;color:#475569;background:#f1f5f9;border:1px solid #e2e8f0;
+  border-radius:10px;padding:8px 12px;margin:0 0 12px;line-height:1.55}
+.tcq-warn{color:#b91c1c;font-weight:600;background:#fef2f2;border:1px solid #fecaca;
+  border-radius:10px;padding:10px 12px}
+
+/* ---- option cards (mcq, mrq, true/false, assertion-reason, case study) ---- */
+.tcq-opts{display:flex;flex-direction:column;gap:10px;margin:0 0 6px}
+.tcq-opt{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:#fff;
+  border:2px solid #e2e8f0;border-radius:14px;cursor:pointer;transition:border-color .15s,background .15s;
+  min-height:44px;color:#0f172a;line-height:1.55;-webkit-tap-highlight-color:transparent}
+.tcq-opt:hover{border-color:#a5b4fc;background:#fafbff}
+.tcq-opt input{margin-top:3px;width:18px;height:18px;flex:0 0 auto;accent-color:#0506ae}
+.tcq-opt.is-picked{background:#eef2ff;border-color:#0506ae;color:#1e1b4b}
+.tcq-letter{flex:0 0 auto;width:28px;height:28px;border-radius:50%;background:#f1f5f9;color:#334155;
+  font-weight:800;font-size:.82rem;display:flex;align-items:center;justify-content:center}
+.tcq-opt.is-picked .tcq-letter{background:#0506ae;color:#fff}
+.tcq-optext{flex:1}
+.tcq-tf{flex-direction:row;flex-wrap:wrap}
+.tcq-tf-opt{flex:1 1 160px;justify-content:center;font-weight:700;font-size:1.02rem}
+
+/* ---- assertion / reason ---- */
+.tcq-ar{background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid #964eec;
+  border-radius:12px;padding:14px 16px;margin:0 0 14px}
+.tcq-ar-row{display:flex;gap:10px;margin:6px 0;line-height:1.6;color:#0f172a}
+.tcq-ar-tag{flex:0 0 auto;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;
+  background:#0506ae;color:#fff;border-radius:6px;padding:3px 8px;height:fit-content}
+.tcq-ar-tag.tcq-ar-reason{background:#964eec}
+
+/* ---- passage / figure ---- */
+.tcq-passage{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:14px 16px;
+  margin:0 0 14px;line-height:1.75;color:#0f172a;max-height:340px;overflow:auto}
+.tcq-passage-tag{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;
+  color:#92400e;margin-bottom:6px}
+.tcq-figure{margin:0 0 14px;text-align:center}
+.tcq-figure img{max-width:100%;max-height:360px;border:1px solid #e2e8f0;border-radius:12px;background:#fff}
+
+/* ---- typed inputs ---- */
+.tcq-input{width:100%;padding:12px 14px;border:2px solid #cbd5e1;border-radius:11px;font-size:1rem;
+  background:#fff;color:#0f172a;font-family:inherit}
+.tcq-input:focus{outline:none;border-color:#0506ae;box-shadow:0 0 0 3px rgba(5,6,174,.14)}
+.tcq-num{max-width:230px;font-variant-numeric:tabular-nums}
+.tcq-numwrap{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tcq-unit{font-weight:700;color:#334155;background:#f1f5f9;border-radius:8px;padding:8px 12px}
+.tcq-textarea{width:100%;padding:12px 14px;border:2px solid #cbd5e1;border-radius:11px;
+  font-size:1rem;background:#fff;color:#0f172a;font-family:inherit;line-height:1.6;resize:vertical}
+.tcq-textarea:focus{outline:none;border-color:#0506ae;box-shadow:0 0 0 3px rgba(5,6,174,.14)}
+.tcq-code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9rem;
+  background:#0f172a;color:#e2e8f0;border-color:#334155}
+.tcq-code:focus{border-color:#964eec}
+
+/* ---- multi-part numeric + cloze ---- */
+.tcq-parts{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+.tcq-part{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;
+  border-radius:11px;padding:10px 12px}
+.tcq-part-label{font-weight:700;font-size:.85rem;color:#334155;flex:0 0 auto;min-width:52px}
+.tcq-cloze{line-height:2.6;font-size:1.02rem;color:#0f172a}
+.tcq-blank{display:inline-block;width:150px;margin:0 4px;padding:6px 10px;font-size:.95rem;
+  border-width:0 0 2px 0;border-radius:0;background:#f8fafc}
+.tcq-blank:focus{box-shadow:none;background:#eef2ff}
+
+/* ---- matching / categorization / matrix ---- */
+.tcq-match{width:100%;border-collapse:separate;border-spacing:0 8px}
+.tcq-match-left{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px 0 0 10px;
+  padding:12px 14px;font-weight:600;font-size:.92rem;color:#0f172a;width:44%;vertical-align:middle}
+.tcq-match-arrow{padding:0 10px;text-align:center;color:#64748b;font-size:1.1rem;vertical-align:middle}
+.tcq-select{width:100%;padding:11px 12px;border:2px solid #cbd5e1;border-radius:10px;
+  background:#fff;color:#0f172a;font-size:.92rem;font-family:inherit;cursor:pointer;min-height:44px}
+.tcq-select:focus{outline:none;border-color:#0506ae}
+.tcq-matrix thead th{background:#f1f5f9;color:#0f172a;font-size:.8rem;font-weight:800;
+  padding:9px 10px;text-align:center;border-radius:8px}
+.tcq-matrix-cell{text-align:center;background:#fff;border:1px solid #e2e8f0;vertical-align:middle}
+.tcq-matrix-cell label{display:flex;align-items:center;justify-content:center;padding:12px;cursor:pointer;min-height:44px}
+.tcq-matrix-cell input{width:20px;height:20px;accent-color:#0506ae}
+.tcq-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---- ordering ---- */
+.tcq-order{list-style:none;padding:0;margin:0}
+.tcq-order-item{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f8fafc;
+  border:2px solid #e2e8f0;border-radius:12px;margin-bottom:8px;cursor:grab;min-height:44px;
+  transition:border-color .15s,opacity .15s;color:#0f172a}
+.tcq-order-item.is-dragging{opacity:.45;border-color:#0506ae}
+.tcq-order-item:hover{border-color:#a5b4fc}
+.tcq-order-handle{color:#94a3b8;font-size:1.1rem;flex:0 0 auto}
+.tcq-order-num{width:26px;height:26px;border-radius:50%;background:#eef2ff;color:#0506ae;
+  font-size:.75rem;font-weight:800;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.tcq-order-text{flex:1;font-weight:600;font-size:.94rem;line-height:1.45}
+.tcq-order-btns{display:flex;gap:4px;flex:0 0 auto}
+.tcq-mini{width:32px;height:32px;border:1px solid #cbd5e1;background:#fff;border-radius:8px;
+  cursor:pointer;font-size:.9rem;color:#334155;line-height:1}
+.tcq-mini:hover{background:#eef2ff;border-color:#0506ae;color:#0506ae}
+
+/* ---- hot text ---- */
+.tcq-hot{display:flex;flex-wrap:wrap;gap:8px}
+.tcq-chip{padding:10px 14px;border:2px solid #cbd5e1;border-radius:999px;background:#fff;
+  color:#0f172a;font-size:.94rem;cursor:pointer;min-height:44px;font-family:inherit}
+.tcq-chip:hover{border-color:#a5b4fc}
+.tcq-chip.is-on{background:#0506ae;border-color:#0506ae;color:#fff;font-weight:700}
+
+@media (max-width:640px){
+  .tcq-match-left{width:auto;font-size:.86rem;padding:10px}
+  .tcq-match,.tcq-match tbody,.tcq-match tr,.tcq-match td{display:block;width:100%}
+  .tcq-match-arrow{display:none!important}
+  .tcq-match-left{border-radius:10px 10px 0 0;border-bottom:none}
+  .tcq-select{border-radius:0 0 10px 10px}
+  .tcq-matrix,.tcq-matrix thead,.tcq-matrix tr,.tcq-matrix td,.tcq-matrix th{display:revert}
+  .tcq-blank{width:110px}
+  .tcq-parts{grid-template-columns:1fr}
+}

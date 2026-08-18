@@ -110,12 +110,39 @@ const SiteHelp = {
         if (a) desc = a + '<hr style="margin:14px 0;border:none;border-top:1px solid #e2e8f0">' + desc;
       }
     } catch (_) {}
+    /* -------------------------------------------------------------------
+       ITEM 4 FIX (reported): "whenever a popup shows up on any page the
+       text is not legible."
+
+       THIS is the popup that appears on every page — ❓ Page Help. The
+       previous fix added rules for `.modal`, but this element has no
+       class at all: it is built from inline styles, and inline styles beat
+       any stylesheet. It set `background:white` and NEVER set a text
+       colour, so the contents inherited `color` from the app shell. On
+       the dark-capable themes, and in dark mode, that inherited colour is
+       a near-white intended for a dark surface: white text on a white
+       card.
+
+       Fixed at source. The surface now carries the class `tc-popup` AND
+       explicit inline colours, so it is legible whether or not the
+       stylesheet loads. Contrast: #0f172a on #ffffff = 17.4:1.
+       ------------------------------------------------------------------- */
     const modal = document.createElement('div');
-    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
-    modal.innerHTML = '<div style="background:white;border-radius:16px;max-width:640px;width:100%;max-height:80vh;overflow-y:auto;padding:24px;position:relative">' +
-      '<button type="button" data-help-close style="position:absolute;top:12px;right:12px;background:none;border:none;font-size:24px;cursor:pointer;color:#64748b" aria-label="Close">×</button>' +
-      '<div style="font-size:1.05rem;line-height:1.7">' + desc.replace(/\n/g, '<br>').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') + '</div>' +
-      '<div style="margin-top:20px;padding-top:16px;border-top:1px solid #e2e8f0;font-size:.85rem;color:#64748b">Need more? Open the <a href="feature-guide.html">Feature Guide</a> or WhatsApp HMG on <a href="https://wa.me/2348100866322" target="_blank" rel="noopener">+234 810 086 6322</a>.</div></div>';
+    modal.className = 'tc-popup-backdrop';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.62);z-index:10000;' +
+      'display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.innerHTML = '<div class="tc-popup" style="background:#ffffff;color:#0f172a;border-radius:16px;' +
+        'max-width:640px;width:100%;max-height:80vh;overflow-y:auto;padding:26px;position:relative;' +
+        'box-shadow:0 24px 60px rgba(15,23,42,.35)">' +
+      '<button type="button" data-help-close style="position:absolute;top:12px;right:12px;' +
+        'background:#e2e8f0;border:none;border-radius:50%;width:34px;height:34px;font-size:20px;' +
+        'cursor:pointer;color:#0f172a;line-height:1" aria-label="Close">×</button>' +
+      '<div style="font-size:1.05rem;line-height:1.7;color:#0f172a">' +
+        desc.replace(/\n/g, '<br>').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') + '</div>' +
+      '<div style="margin-top:20px;padding-top:16px;border-top:1px solid #e2e8f0;font-size:.85rem;' +
+        'color:#475569">Need more? Open the <a href="feature-guide.html" style="color:#0506ae">Feature Guide</a> ' +
+        'or WhatsApp HMG on <a href="https://wa.me/2348100866322" target="_blank" rel="noopener" ' +
+        'style="color:#0506ae">+234 810 086 6322</a>.</div></div>';
     modal.querySelector('[data-help-close]').addEventListener('click', () => modal.remove());
     modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
     document.body.appendChild(modal);

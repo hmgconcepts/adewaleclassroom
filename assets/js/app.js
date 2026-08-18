@@ -152,7 +152,29 @@ const App = {
       if (data) {
         window.TC_SETTINGS = data;
         window.PRACTICE = window.PRACTICE || {};
-        if (data.name) window.PRACTICE.name = data.name;
+        /* -----------------------------------------------------------------
+           ITEM 3 FIX (reported): the footer showed "Lumen Tutoring Studio"
+           beneath every page, even though that string appears NOWHERE in
+           the codebase.
+
+           This line was why. practice_settings.name is read from the
+           DATABASE and copied over PRACTICE.name, and the footer renders
+           PRACTICE.name. The schema seeds that row with
+           `on conflict (id) do nothing`, so a studio whose row was created
+           by an early version keeps the OLD seeded name for ever — no
+           amount of renaming in the code could ever change it.
+
+           Two defences now:
+           1. A retired or generic seed name never overrides the studio's
+              own name from config.js. A real studio name always wins.
+           2. database/complete-schema.sql rewrites any legacy row.
+           ----------------------------------------------------------------- */
+        const PLACEHOLDER = /^(lumen tutoring studio|hmg tutoring studio|tutoring connect|my tutoring studio|studio)$/i;
+        const ownName = (window.PRACTICE.name || '').trim();
+        const dbName = (data.name || '').trim();
+        if (dbName && !(PLACEHOLDER.test(dbName) && ownName && !PLACEHOLDER.test(ownName))) {
+          window.PRACTICE.name = dbName;
+        }
         if (data.motto) window.PRACTICE.motto = data.motto;
         if (data.timezone) window.PRACTICE.timezone = data.timezone;
         if (data.currency) window.PRACTICE.currency = data.currency;

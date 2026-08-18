@@ -5444,6 +5444,21 @@ grant execute on function public.lookup_login_email(text) to anon;
 grant execute on function public.tc_license_writable() to anon;
 grant execute on function public.tc_check_promo(text, numeric) to anon;
 
+
+-- ---------------------------------------------------------------------
+-- ITEM 3 FIX — retire the legacy seeded studio name.
+-- The original seed used `on conflict (id) do nothing`, so a studio whose
+-- practice_settings row was created by an early version still holds the
+-- old name. The footer reads this row, which is why renaming the code had
+-- no effect on a live studio. This rewrites it in place.
+-- ---------------------------------------------------------------------
+update public.practice_settings
+   set name = 'HMG Tutoring Studio'
+ where id = 1
+   and (name is null or name ilike '%lumen%');
+
+select 'Legacy studio name retired ✅' as status, name from public.practice_settings where id = 1;
+
 select 'V20 CBT schema repair + 2FA + poll creation installed ✅' as status;
 
 

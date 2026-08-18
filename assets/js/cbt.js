@@ -42,6 +42,17 @@ const CBT = {
     if (['number','integer','decimal','calculation'].includes(type)) type = 'numeric';
     if (['short','text','free_text'].includes(type)) type = 'short_answer';
     if (['math','equation','latex'].includes(type)) type = 'math_equation';
+    /* ITEM 2 — HMG Academy CBT Pro type names. Their CSVs use these
+       spellings; map each to the Tutoring Connect family that renders it. */
+    if (type === 'multi_numeric')    type = 'multi_numeric';
+    if (type === 'image_mcq')        type = 'image_based';
+    if (type === 'hot_text')         type = 'hot_text';
+    if (type === 'matrix')           type = 'matrix';
+    if (type === 'categorization')   type = 'categorization';
+    if (type === 'assertion_reason') type = 'assertion_reason';
+    if (type === 'case_study')       type = 'case_study';
+    if (type === 'cloze')            type = 'cloze';
+    if (type === 'code')             type = 'code';
     let options = pick('options','choices','alternatives','answers') || [];
     if (typeof options === 'string') {
       try { const p = JSON.parse(options); if (Array.isArray(p)) options = p; }
@@ -90,19 +101,63 @@ const CBT = {
       question: pick('question','prompt','text','question_text','questionText') || '',
       passage: pick('passage','context','case_text','comprehension') || '',
       difficulty: pick('difficulty','level') || '',
-      accepted_answers: pick('accept','accepted_answers','alternatives') || '',
+      accepted_answers: pick('accept','accepted_answers','alternatives','alternates') || '',
       options,
       answer, correct: answer,
       mark: Number(pick('mark','marks','score','points') || 1) || 1,
       explanation: pick('explanation','reason','solution') || '',
       media_url: pick('media_url','image','audio_url','video_url','image_url') || '',
-      tolerance: pick('tolerance','accept','margin') || '',
-      pairs: pick('pairs','matches') || null
+      tolerance: pick('tolerance','margin') || '',
+      /* -----------------------------------------------------------------
+         ITEM 2 — the HMG Academy CBT Pro / School Connect column set.
+         Their template header is:
+           Question,A,B,C,D,CorrectAnswer,Explanation,Type,Tolerance,Unit,
+           Accept,MRQ_AON,Pairs,Items,Difficulty,Tags,Section
+         Tutoring Connect previously read none of Unit, Accept, MRQ_AON,
+         Pairs or Items, so a matching, ordering, cloze, matrix, hot-text,
+         categorization, multi-part numeric, assertion-reason, case-study
+         or code question imported as an empty shell. They are all read
+         now, and JSON in a cell is parsed rather than kept as a string.
+         ----------------------------------------------------------------- */
+      unit: pick('unit','units','si_unit') || '',
+      pairs: (function () {
+        var v = pick('pairs', 'matches');
+        if (!v) return null;
+        if (typeof v === 'object') return v;
+        try { return JSON.parse(String(v)); } catch (e) { return String(v).split(/\s*[|;]\s*/).filter(Boolean); }
+      })(),
+      items: (function () {
+        var v = pick('items', 'rows', 'parts', 'chunks', 'blanks', 'sequence');
+        if (!v) return null;
+        if (typeof v === 'object') return v;
+        try { return JSON.parse(String(v)); } catch (e) { return String(v).split(/\s*[|;]\s*/).filter(Boolean); }
+      })(),
+      all_or_nothing: (function () {
+        var v = pick('mrq_aon', 'all_or_nothing', 'aon');
+        return String(v == null ? '' : v).toLowerCase() === 'true' || v === true || v === 1;
+      })(),
+      difficulty2: pick('difficulty','level') || '',
+      tags: pick('tags','topic_tags') || '',
+      /* NOTE: `pairs` and `items` are parsed above (JSON-aware). The old
+         raw-string version that used to sit here was a DUPLICATE KEY and,
+         being later in the object literal, silently overwrote the parsed
+         value — which is why matching questions imported with their pairs
+         still a string. Removed. */
     };
   },
 
   parseCSV(text) {
-    const lines = String(text||'').replace(/^\uFEFF/,'').trim().split(/\r?\n/);
+    /* Join rows that were split by a newline INSIDE a quoted field — an
+       essay prompt or a case-study passage very often contains one. */
+    const raw = String(text || '').replace(/^\uFEFF/, '').trim().split(/\r?\n/);
+    const lines = [];
+    let buf = '';
+    raw.forEach(function (ln) {
+      buf = buf ? (buf + '\n' + ln) : ln;
+      const quotes = (buf.match(/"/g) || []).length;
+      if (quotes % 2 === 0) { lines.push(buf); buf = ''; }
+    });
+    if (buf) lines.push(buf);
     if (lines.length < 2) return [];
     const headers = this._splitCsv(lines[0]).map(h => h.trim().toLowerCase());
     return lines.slice(1).map((line, i) => {
@@ -113,14 +168,38 @@ const CBT = {
       return this.normalizeQuestion(row, i);
     });
   },
+  /* -----------------------------------------------------------------------
+     CSV FIELD SPLITTER — corrected V21.
+
+     The previous version treated ANY "" as an escaped double quote:
+
+         if (ch === '"' && line[i+1] === '"') { cur += '"'; i++; }
+
+     But "" is an escaped quote only INSIDE a quoted field. At the start of
+     a field it means the field is EMPTY. So `"a","","b"` decoded its middle
+     column as a literal `"` character instead of an empty string.
+
+     That corrupted essentially every real import, because the HMG Academy
+     and School Connect templates are fully quoted and most rows leave
+     Tolerance, Unit, Accept, MRQ_AON, Pairs and Items blank — every one of
+     those arrived as `"`. It is why a numeric question imported with
+     unit `"` and tolerance `"`.
+
+     This is the standard RFC 4180 state machine: a doubled quote is an
+     escaped quote only while the parser is inside a quoted field.
+     ----------------------------------------------------------------------- */
   _splitCsv(line) {
     const out = []; let cur = '', q = false;
     for (let i = 0; i < line.length; i++) {
       const ch = line[i];
-      if (ch === '"' && line[i+1] === '"') { cur += '"'; i++; }
-      else if (ch === '"') q = !q;
-      else if (ch === ',' && !q) { out.push(cur); cur = ''; }
-      else cur += ch;
+      if (ch === '"') {
+        if (q && line[i + 1] === '"') { cur += '"'; i++; }   // escaped quote
+        else q = !q;                                          // open or close
+      } else if (ch === ',' && !q) {
+        out.push(cur); cur = '';
+      } else {
+        cur += ch;
+      }
     }
     out.push(cur); return out;
   },
@@ -143,6 +222,18 @@ const CBT = {
 
   gradeOne(q, given) {
     const type = q.type;
+    /* V21 — partial credit. CBTTypes.grade knows how to award part marks
+       for ordering, matching, matrix, categorization, multi-part numeric,
+       cloze and hot-text, and marks essays and code transparently by
+       keyword and word count (no AI). It returns a richer object; map it
+       onto the shape the rest of this file already expects. */
+    if (window.CBTTypes && CBTTypes.supports(type)) {
+      try {
+        const r = CBTTypes.grade(q, given);
+        return { ok: r.pending ? null : r.correct, mark: r.earned,
+                 pending: !!r.pending, detail: r.detail, partial: r.earned > 0 && !r.correct };
+      } catch (e) { /* fall through to the original grader */ }
+    }
     if (['essay','case_study','oral_prompt','peer_review','true_false_justify','citation'].includes(type)) return { ok: null, mark: 0, pending: true };
     let ok = false;
     if (type === 'multi_select') ok = this.setEq(given, q.answer);
@@ -183,6 +274,30 @@ const CBT = {
       ${inner}
     </article>`;
     const dis = locked ? 'disabled' : '';
+
+    /* -------------------------------------------------------------------
+       V21 — advanced question-type UI.
+       assets/js/cbt-types.js renders a purpose-built control for each of
+       the seventeen families (matching tables, drag-to-order lists,
+       category and matrix grids, hot-text chips, inline cloze blanks,
+       assertion/reason blocks, passages, figures, word-counted essays).
+       Before this, most types fell through to a bare textarea, so a
+       matching question looked exactly like a short-answer one.
+
+       Delegation is deliberately FIRST and deliberately guarded: if
+       cbt-types.js is absent, or does not handle a type, the original
+       renderer below still runs, so no existing paper changes behaviour.
+       ------------------------------------------------------------------- */
+    if (window.CBTTypes && CBTTypes.supports(q.type)) {
+      const adv = CBTTypes.render(q, name);
+      if (adv) {
+        const html = wrap(adv);
+        // Controls that need JavaScript are wired after the card is in the DOM.
+        setTimeout(function () { try { CBTTypes.activate(document); } catch (e) {} }, 0);
+        return locked ? html.replace(/<(input|select|textarea|button)/g, '<$1 disabled') : html;
+      }
+    }
+
     if (['mcq','true_false','image_based'].includes(q.type)) {
       return wrap((q.options||[]).map((o,oi) => `<label style="display:block;padding:6px 0"><input type="radio" name="${name}" value="${TC.esc(o)}" ${dis}> ${TC.esc(o)}</label>`).join(''));
     }
@@ -230,6 +345,28 @@ const CBT = {
     const answers = {};
     root.querySelectorAll('.cbt-q').forEach(card => {
       const id = card.dataset.qid;
+      /* V21 — the advanced controls store their answer in shapes the old
+         reader cannot see: a hidden JSON input for ordering and hot-text,
+         and one indexed field per row for matching, categorization,
+         matrix, multi-part numeric and cloze. Ask CBTTypes first. */
+      if (window.CBTTypes && card._q && CBTTypes.supports(card._q.type)) {
+        answers[id] = CBTTypes.collect(card._q, 'q_' + id, card);
+        return;
+      }
+      const idxFields = card.querySelectorAll('[name^="q_' + id + '__"]');
+      if (idxFields.length) {
+        const out = [];
+        idxFields.forEach(el => {
+          if (el.type === 'radio' && !el.checked) return;
+          out[Number(el.name.split('__').pop())] = el.value;
+        });
+        answers[id] = out;
+        return;
+      }
+      const hidden = card.querySelector('input[type=hidden][name="q_' + id + '"]');
+      if (hidden && hidden.value) {
+        try { answers[id] = JSON.parse(hidden.value); return; } catch (e) { /* fall through */ }
+      }
       const radios = card.querySelectorAll('input[type=radio]:checked');
       const checks = [...card.querySelectorAll('input[type=checkbox]:checked')].map(c => c.value);
       const ta = card.querySelector('textarea');
@@ -311,7 +448,13 @@ const CBT = {
      same one School Connect emits, so CSVs move between the two products
      unchanged.
      ========================================================================== */
-  CSV_HEADERS: ['question','type','subject','a','b','c','d','answer','mark','explanation','passage','media_url','tolerance'],
+  /* ITEM 2 — the template now emits the FULL HMG / School Connect column
+     set, so a file downloaded here imports there and vice versa. */
+  CSV_HEADERS: ['question','type','subject','a','b','c','d','answer','mark','explanation',
+                'passage','media_url','tolerance','unit','accept','mrq_aon','pairs','items',
+                'difficulty','tags','section'],
+  CSV_HEADERS_HMG: ['Question','A','B','C','D','CorrectAnswer','Explanation','Type','Tolerance',
+                    'Unit','Accept','MRQ_AON','Pairs','Items','Difficulty','Tags','Section'],
 
   _csvCell: function (v) {
     var s = (v == null) ? '' : String(v);
@@ -355,201 +498,275 @@ const CBT = {
       .join('\n');
   },
 
+  /* =======================================================================
+     promptPack — V21 REWRITE, modelled on HMG Academy CBT Pro's
+     PROMPT_TEMPLATE.md.
+
+     What their template does better, now adopted here:
+       1. An explicit QUESTION TYPE DISTRIBUTION summing to the requested
+          count. Without one, a model returns sixty MCQs and calls it varied.
+       2. PER-TYPE COLUMN RULES, by column number, for every type. This is
+          the part that makes output importable rather than merely plausible.
+       3. The FULL 17-column header, so structured types survive the trip.
+       4. Worked JSON shapes for the Pairs and Items columns.
+       5. An explicit instruction to escape inner JSON quotes as "".
+
+     Kept from before: the examiner persona, the quality bar, the studio and
+     exam context, links-only, and the demand for a DOWNLOADABLE .csv file.
+     ======================================================================= */
   promptPack(level, topic, count, klass, extra) {
     extra = extra || {};
-    const types17 = this.QUESTION_TYPES_17.join(', ');
-    const typesAll = this.allTypes().join(', ');
     const studio = (window.PRACTICE && window.PRACTICE.name) || 'this tutoring studio';
     const subject = extra.subject || '[SUBJECT]';
     const examType = extra.examType || extra.board || 'general classwork';
-    const head = `ROLE
-You are a veteran Chief Examiner and question-bank author with 20+ years setting
-papers for ${examType} in ${subject}. You write for ${studio}, a tutoring studio
-serving Nigerian and international learners.
+    const n = Number(count) || 20;
+    const fname = (topic || 'questions').toString().toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'questions';
 
-TASK
-Produce EXACTLY ${count} assessment items on the topic "${topic}" for a
-${klass || 'tutoring learner'} sitting ${examType} in ${subject}.
+    /* Scale a 60-question reference mix to the requested count, then push the
+       rounding remainder onto MCQ. This is why it always sums exactly to n. */
+    const base = { mcq: 14, tf: 6, mrq: 6, short: 6, numeric: 6, matching: 4,
+                   ordering: 4, cloze: 4, categorization: 2, multi_numeric: 2,
+                   essay: 1, assertion_reason: 2, case_study: 2, matrix: 1, hot_text: 1 };
+    const baseTotal = Object.keys(base).reduce(function (a, k) { return a + base[k]; }, 0);
+    const mix = {}; let running = 0;
+    Object.keys(base).forEach(function (k) {
+      const v = Math.floor(base[k] * n / baseTotal);
+      if (v > 0) { mix[k] = v; running += v; }
+    });
+    mix.mcq = (mix.mcq || 0) + Math.max(0, n - running);
 
-OUTPUT CONTRACT — READ TWICE, THIS IS THE MOST IMPORTANT PART
-0. OUTPUT A DOWNLOADABLE .CSV FILE — NOT RAW CSV TEXT.
-   Generate the questions and deliver them as an actual downloadable file
-   attachment named "${(topic || 'questions').toString().toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40)}.csv"
-   that the tutor can click and save. Use whatever file-producing capability you
-   have — a generated file, an attachment, or a download link. The tutor must end
-   up with a .csv FILE on their computer, ready to import, WITHOUT copying and
-   pasting anything.
-   If, and only if, you genuinely cannot emit a file, then fall back to a single
-   raw CSV code block and say so in one short line first.
-1. Whether as a file or as the fallback block, the content must be pure CSV and
-   NOTHING else. No preamble, no commentary, no markdown headings, no
-   explanation before or after.
-2. The FIRST line must be exactly this header, character for character:
-question,type,subject,a,b,c,d,answer,mark,explanation,passage,media_url,tolerance
-3. Then exactly ${count} data rows. One item per row.
-4. Any field containing a comma, quote or line break MUST be wrapped in double
-   quotes, and any internal double quote MUST be doubled ("" ). This is what
-   makes the file open cleanly in Excel, Google Sheets and LibreOffice.
-5. Never leave the "answer" column blank for an objective item.
-6. "subject" must be exactly: ${subject}
-7. Put a whole number in "mark". Use "tolerance" only for numeric items.
-8. media_url must be a public https, Google Drive or YouTube link — this
-   platform NEVER accepts file uploads, only links.
-9. End your reply with the CSV block and stop.
-
-DELIVERY — THIS IS HOW THE TUTOR ACTUALLY USES IT
-Output a DOWNLOADABLE CSV FILE, not raw CSV text on screen. The tutor will
-download that file and import it directly on the studio's Quizzes page; they
-should never have to select text, copy it, open an editor and save it by hand.
-Name the file "${(topic || 'questions').toString().toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40)}.csv".
-The same file must also open cleanly in Excel, Google Sheets and LibreOffice.
-Only if file generation is impossible for you, emit one raw CSV block instead.
-
-QUALITY BAR — a paper that fails any of these is not acceptable
-• Every stem is self-contained and unambiguous; a competent learner should never
-  have to guess what is being asked.
-• Distractors are PLAUSIBLE and diagnostic — each wrong option should correspond
-  to a real error a learner makes, never filler like "none of the above".
-• Vary the position of the correct option; do not let the key sit on "a".
-• Use the local context where it helps (Naira, Nigerian place names, WAEC/NECO
-  phrasing) but keep the science and mathematics internationally correct.
-• Command words must match the assessment level: state/define for recall,
-  explain/describe for comprehension, calculate/apply for application,
-  analyse/evaluate/justify for higher order.
-• Spread difficulty roughly 30% recall, 45% application, 25% higher order, and
-  order the rows from easier to harder.
-• Every "explanation" must teach: give the reasoning or the working, not just
-  "Option B is correct". A parent should be able to read it and understand.
-• No duplicated stems, no two items testing the identical fact.`;
-    const packs = {
-      simple: `${head}
-Use ONLY these SIMPLE types: mcq (4 options) and true_false.
-answer is the exact option text or True/False.`,
-      intermediate: `${head}
-Mix INTERMEDIATE types: mcq, true_false, numeric, short_answer, multi_select, fill_blank.
-For numeric set tolerance. For multi_select join keys with |.`,
-      advanced: `${head}
-ADVANCED mix for [CLASS/LEVEL]=${klass || '[CLASS/LEVEL]'}: mcq, multi_select, numeric, matching, ordering, comprehension, case_study, assertion_reason, error_spotting, cloze.
-Put long stems in passage. Every objective row needs a key.`,
-      enterprise: `${head}
-ENTERPRISE CBT Pro pack — use as many of these 17 core types as the topic allows: ${types17}.
-Plus these studio extras where useful: ${this.QUESTION_TYPES_PLUS.join(', ')}.
-Matching answer: left=right|left=right. Ordering answer: a|b|c.
-Comprehension/case_study: passage column. Image/audio/video: Drive or YouTube URL in media_url.`,
-      self: `${head}
-SELF-QUIZ (practice, not graded). Start easy and climb. Include 1 worked-example short_answer.
-Types: mcq, true_false, numeric, fill_blank, short_answer.`,
-      review: `${head}
-REVIEW-QUIZ after a taught lesson on "${topic}". Include 2 misconception traps.
-Types: mcq, true_false, short_answer, numeric, comprehension, assertion_reason.`,
-      graded: `${head}
-GRADED-QUIZ — exhaustive, official, will be pushed to the scoresheet.
-Use at least 8 different types from: ${typesAll}.
-Every objective item MUST have a correct key. Essays may leave answer blank.`,
-      reading_article: `${head}
-The learner just READ this material (link, do not invent a paywall):
-${extra.source || '[PASTE ARTICLE OR DRIVE LINK]'}
-Write questions that can ONLY be answered by someone who actually read it.
-Use: comprehension, short_answer, mcq, assertion_reason, citation, cloze.
-Put the source URL in media_url on every row.`,
-      reading_video: `${head}
-The learner just WATCHED this video:
-${extra.source || '[PASTE YOUTUBE OR DRIVE VIDEO LINK]'}
-Ask about timestamps, claims, worked examples on screen, and what to try next.
-Use: video_based, short_answer, mcq, true_false, scenario_mcq.
-Put the video URL in media_url. Mention a timestamp in the question where useful.`,
-      /* ---- School Connect parity packs (V11) ---- */
-      mcq_only: `${head}
-MCQ-ONLY STRICT PACK. Every single row MUST be type=mcq with EXACTLY four
-options a,b,c,d and one unambiguous key. No essays, no numeric, no blanks.
-answer must be the FULL TEXT of the correct option, copied character-for-character
-from the matching column. Reject any distractor that could also be argued correct.
-Vary the position of the key so it is not always "a".`,
-
-      exam_board: `${head}
-EXAM-BOARD PAPER in the house style of ${extra.board || '[WAEC / NECO / UTME / IGCSE / IELTS / SAT]'}.
-Mirror that board's real conventions: command words (state, explain, evaluate,
-calculate), mark weighting, and the balance of objective to theory items.
-Where the board uses a passage or data table, put it in the passage column.
-Sequence from easiest to hardest exactly as a real paper does.`,
-
-      /* ---- Tutoring Connect enhancements beyond School Connect ---- */
-      marking_scheme: `ROLE
-You are a Chief Examiner writing the official MARK SCHEME (not the questions)
-for ${subject} at ${examType} level, topic "${topic}", for a ${klass || 'tutoring learner'}.
-
-OUTPUT CONTRACT
-Output a SINGLE CSV code block and nothing else. First line exactly:
-question_ref,criterion,descriptor,marks,common_error,feedback_if_missed
-Then one row per AWARDABLE POINT, in the order a marker awards them.
-Quote any field containing a comma or quote; double any internal quote.
-The tutor will save this block as "${(topic||'mark-scheme').toString().toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40)}-mark-scheme.csv".
-
-QUALITY BAR
-• "criterion" names the skill being credited (e.g. "Correct substitution").
-• "descriptor" states precisely what earns the mark, in examiner language, so
-  two different markers would award identically.
-• Award method marks separately from accuracy marks, as a real board does.
-• "common_error" names the specific mistake that loses this mark.
-• "feedback_if_missed" must be a warm, plain-English sentence a tutor can paste
-  straight to a parent — no jargon, no blame, and it must say what to practise.
-• Include follow-through (error carried forward) rows where a real scheme would.
-
-FINAL CHECK
-□ Header exact. □ Marks are whole numbers. □ Nothing but the CSV block.`,
-
-      differentiated: `${head}
-DIFFERENTIATED THREE-TIER SET on "${topic}". Produce ${count} rows split evenly:
-one third SUPPORT (scaffolded, smaller numbers, a hint inside the passage column),
-one third CORE (grade-level), one third STRETCH (multi-step, exam-standard).
-Begin every question text with [SUPPORT], [CORE] or [STRETCH] so the tutor can
-filter, and keep the CSV otherwise identical in shape.`,
-
-      misconception: `${head}
-DIAGNOSTIC MISCONCEPTION SET on "${topic}".
-Every row must be mcq where EACH WRONG OPTION encodes a specific, named
-misconception a real learner holds — not filler. In the explanation column,
-name the misconception each distractor represents and how to correct it.
-This produces a quiz whose wrong answers are as informative as the right one.`,
-
-      multi_subject: `${head}
-MULTI-SUBJECT PAPER covering: ${extra.subjects || '[LIST THE SUBJECTS]'}.
-Produce ${count} rows TOTAL, split as evenly as possible across those subjects.
-The "subject" column is mandatory on every row and must exactly match one of the
-listed subject names — Tutoring Connect uses it to build the subject tabs and to
-write one scoresheet row per subject.
-Never let a question from one subject reference another.`,
-
-      past_paper: `${head}
-Work from this PAST PAPER / resource link (do not invent its contents beyond what
-is reasonable for the stated topic):
-${extra.source || '[PASTE THE PAST-PAPER OR DRIVE LINK]'}
-Produce fresh questions in the SAME STYLE and difficulty as that paper — do not
-copy it verbatim. Put the source in media_url so the learner can compare after.`,
-
-      oral_practice: `${head}
-SPEAKING / ORAL PRACTICE set for "${topic}" (IELTS-style or language oral).
-Use type=oral_prompt for each row. The question is the prompt the learner speaks
-to; the explanation column holds the assessor's checklist of what a strong
-response contains. Put a model-answer video link in media_url where useful.`,
-
-      reading_pack: `${head}
-The learner completed a READING ASSIGNMENT pack titled "${topic}" with these links:
-${extra.source || '[LIST THE ARTICLE + VIDEO LINKS]'}
-Write a mixed Self-Quiz that checks they did the reading AND are ready for the next live class.
-Use: comprehension, video_based, short_answer, mcq, fill_blank.
-media_url should rotate across the pack links.`
+    /* -------------------------------------------------------------------
+       THE 18 PROMPT PACKS — restored and kept.
+       `level` doubles as a pack id. The V21 rewrite initially ignored it,
+       which silently dropped mcq_only, exam_board, reading_*, multi_subject
+       and the rest. They are pre-existing features and must not be lost, so
+       each pack now RESHAPES the distribution and APPENDS its own briefing
+       on top of the new, richer base contract rather than replacing it.
+       ------------------------------------------------------------------- */
+    const pack = String(level || '').toLowerCase();
+    const only = function (type) {
+      Object.keys(mix).forEach(function (k) { delete mix[k]; });
+      mix[type] = n;
     };
-    var chosen = packs[level] || packs.enterprise;
-    return chosen + `
+    let addendum = '';
 
-FINAL CHECK BEFORE YOU ANSWER
-□ Exactly ${count} data rows, plus the one header row.
-□ Header matches the contract character for character.
-□ Every objective row has a non-empty, unambiguous key.
-□ Every field containing a comma or quote is properly quoted.
-□ "subject" is "${subject}" on every row.
-□ Nothing but the CSV block in your reply.`;
+    if (pack === 'mcq_only') {
+      only('mcq');
+      addendum = '\n\nMCQ-ONLY PACK — STRICT\n' +
+        'Every single one of the ' + n + ' items must be type "mcq" with exactly four\n' +
+        'options. Do not emit any other type under any circumstances. Each distractor\n' +
+        'must correspond to a specific, nameable error a learner makes.';
+    } else if (pack === 'exam_board') {
+      addendum = '\n\nEXAM-BOARD PACK — ' + (extra.board || examType) + '\n' +
+        'Mirror the house style of ' + (extra.board || examType) + ': its command words, its\n' +
+        'mark allocations, its phrasing conventions and its typical stem length. A\n' +
+        'candidate should not be able to tell these from real past questions.';
+    } else if (pack === 'reading_video') {
+      addendum = '\n\nREADING PACK — VIDEO SOURCE\n' +
+        'Base every item on this video: ' + (extra.source || '[VIDEO LINK]') + '\n' +
+        'Questions must be answerable ONLY by someone who watched it. Where a specific\n' +
+        'moment matters, cite the timestamp in the Explanation column.';
+    } else if (pack === 'reading_article') {
+      addendum = '\n\nREADING PACK — ARTICLE / TEXT SOURCE\n' +
+        'Base every item on this material: ' + (extra.source || '[MATERIAL LINK]') + '\n' +
+        'Test comprehension, inference and vocabulary in context — not recall of facts\n' +
+        'the learner could already know without reading it.';
+    } else if (pack === 'reading_pack') {
+      addendum = '\n\nREADING PACK — COMPREHENSION SET\n' +
+        'Source: ' + (extra.source || '[SOURCE LINK]') + '\n' +
+        'Weight the paper towards case_study items that share one passage, then a few\n' +
+        'short-answer items on vocabulary in context.';
+    } else if (pack === 'multi_subject') {
+      addendum = '\n\nMULTI-SUBJECT PACK\n' +
+        'Cover these subjects: ' + (extra.subjects || subject) + '\n' +
+        'Divide the ' + n + ' items as evenly as possible between them and put the subject\n' +
+        'name in Col17 (Section) on every row — that column drives the subject tabs the\n' +
+        'candidate sees, so it must be exact and consistent.';
+    } else if (pack === 'differentiated') {
+      addendum = '\n\nDIFFERENTIATED PACK\n' +
+        'Produce three visible tiers: one third foundation, one third core, one third\n' +
+        'stretch. Put "easy", "moderate" or "demanding" in Col15 on every row so the\n' +
+        'tutor can filter by tier.';
+    } else if (pack === 'misconception') {
+      addendum = '\n\nMISCONCEPTION-HUNTING PACK\n' +
+        'Every distractor must be a REAL misconception, and the Explanation must name it\n' +
+        'explicitly ("chose B because they added the indices instead of multiplying").\n' +
+        'This paper exists to diagnose, not merely to score.';
+    } else if (pack === 'past_paper') {
+      addendum = '\n\nPAST-PAPER STYLE PACK\n' +
+        'Write in the register of a real ' + (extra.board || examType) + ' paper: same command\n' +
+        'words, same mark weighting, same ordering from accessible to demanding.';
+    } else if (pack === 'marking_scheme') {
+      addendum = '\n\nMARKING-SCHEME PACK\n' +
+        'The Explanation column must read as a marking scheme: the acceptable answers,\n' +
+        'where each mark is earned, and what earns no credit. Populate Col11 (Accept)\n' +
+        'generously so alternative correct wordings are not marked wrong.';
+    } else if (pack === 'oral_practice') {
+      addendum = '\n\nORAL-PRACTICE PACK\n' +
+        'Favour essay and short items that a learner answers aloud, then records. Media\n' +
+        'must be a LINK (Drive or YouTube) — never an upload. State in the Explanation\n' +
+        'what a strong spoken answer contains.';
+    } else if (pack === 'self') {
+      addendum = '\n\nSELF-QUIZ PACK\n' +
+        'This is practice, not assessment. Explanations must be generous and teach the\n' +
+        'idea from first principles, because the learner meets them immediately.';
+    } else if (pack === 'review') {
+      addendum = '\n\nREVIEW-QUIZ PACK\n' +
+        'Sat straight after a lesson to find gaps. Spread items evenly across everything\n' +
+        'taught, and make each Explanation say which sub-topic to revisit.';
+    } else if (pack === 'graded') {
+      addendum = '\n\nGRADED-QUIZ PACK\n' +
+        'This counts and is pushed to the scoresheet. Be exhaustive, unambiguous and\n' +
+        'defensible: every key must survive a parent querying the mark.';
+    } else if (pack === 'simple') {
+      addendum = '\n\nSIMPLE PACK\nKeep language plain and stems short. Favour mcq and tf.';
+    } else if (pack === 'intermediate') {
+      addendum = '\n\nINTERMEDIATE PACK\nMix recall with application. Include some numeric and short items.';
+    } else if (pack === 'advanced') {
+      addendum = '\n\nADVANCED PACK\n' +
+        'Favour multi-step reasoning: multi_numeric, assertion_reason, case_study and\n' +
+        'matrix items should dominate.';
+    } else if (pack === 'enterprise') {
+      addendum = '\n\nENTERPRISE PACK\n' +
+        'Use the FULL range of seventeen types, including matching, ordering, cloze,\n' +
+        'categorization, matrix, hot_text and code. This is the showcase paper.';
+    }
+
+    const distribution = Object.keys(mix).map(function (k) { return k + '=' + mix[k]; }).join(', ');
+
+    return 'ROLE\n' +
+'You are a veteran Chief Examiner and question-bank author with 20+ years setting\n' +
+examType + ' papers in ' + subject + '. You write for ' + studio + ', a tutoring studio\n' +
+'serving Nigerian and international learners.\n\n' +
+'TASK\n' +
+'Produce EXACTLY ' + n + ' assessment items on "' + topic + '" for a ' +
+(klass || level || 'tutoring learner') + '\nsitting ' + examType + ' in ' + subject + '.\n\n' +
+'===================================================================\n' +
+'OUTPUT CONTRACT - READ THIS TWICE. IT IS THE MOST IMPORTANT PART.\n' +
+'===================================================================\n\n' +
+'0. OUTPUT A DOWNLOADABLE .CSV FILE - NOT RAW CSV TEXT.\n' +
+'   Produce a real, clickable file attachment named "' + fname + '.csv" that the\n' +
+'   tutor can download and import directly. Use whatever file-generating\n' +
+'   capability you have. The tutor must end up with a .csv FILE, without\n' +
+'   copying or pasting anything.\n' +
+'   Only if you genuinely cannot emit a file, say so in ONE short line, then\n' +
+'   output a single raw CSV code block instead.\n\n' +
+'1. The file contains the CSV and nothing else - no preamble, no commentary,\n' +
+'   no markdown table, no notes afterwards.\n\n' +
+'2. The FIRST line must be exactly this header, character for character:\n' +
+'Question,A,B,C,D,CorrectAnswer,Explanation,Type,Tolerance,Unit,Accept,MRQ_AON,Pairs,Items,Difficulty,Tags,Section\n\n' +
+'3. Then EXACTLY ' + n + ' data rows - one item per row.\n\n' +
+'4. Wrap EVERY field in double quotes. Escape any inner double quote by\n' +
+'   doubling it (""). This is what lets JSON live inside a CSV cell and still\n' +
+'   open cleanly in Excel, Google Sheets and LibreOffice.\n\n' +
+'5. Use correct UTF-8 for scientific notation: H2O as H\u2082O, CO\u2082, \u03c0, \u03a9, \u2264, \u2265, \u00b0C.\n\n' +
+'6. "Section" must be exactly: ' + subject + '\n\n' +
+'7. Never leave "CorrectAnswer" empty on an objective item.\n\n' +
+'8. Any media must be a public https, Google Drive or YouTube LINK. This\n' +
+'   platform NEVER accepts file uploads - links only.\n\n' +
+'===================================================================\n' +
+'QUESTION TYPE DISTRIBUTION - MUST SUM TO EXACTLY ' + n + '\n' +
+'===================================================================\n' +
+distribution + '\n\n' +
+'===================================================================\n' +
+'PER-TYPE COLUMN RULES\n' +
+'Columns: 1 Question | 2 A | 3 B | 4 C | 5 D | 6 CorrectAnswer |\n' +
+'7 Explanation | 8 Type | 9 Tolerance | 10 Unit | 11 Accept |\n' +
+'12 MRQ_AON | 13 Pairs | 14 Items | 15 Difficulty | 16 Tags | 17 Section\n' +
+'===================================================================\n\n' +
+'mcq - one correct option\n' +
+'  Col2-5: four plausible options. Col6: the ANSWER TEXT or the letter A/B/C/D.\n' +
+'  Col8: mcq\n\n' +
+'tf - true/false\n' +
+'  Col2: True   Col3: False   Col4-5: blank\n' +
+'  Col6: True or False. Col8: tf\n\n' +
+'mrq - several correct options\n' +
+'  Col2-5: options. Col6: correct options separated by | (e.g. Iron|Copper).\n' +
+'  Col12: true for all-or-nothing marking, false for partial credit.\n' +
+'  Col8: mrq\n\n' +
+'short - typed short answer\n' +
+'  Col6: the primary answer.\n' +
+'  Col11: accepted alternatives separated by | (e.g. H\u2082O|water|h2o).\n' +
+'  Col8: short\n\n' +
+'numeric - a number\n' +
+'  Col6: the number only. Col9: tolerance (0, 0.05, 0.5). Col10: unit.\n' +
+'  Col8: numeric\n\n' +
+'multi_numeric - several numeric sub-parts, part marks\n' +
+'  Col14: [{"label":"x","answer":3,"tolerance":0},{"label":"y","answer":2,"tolerance":0}]\n' +
+'  Col8: multi_numeric\n\n' +
+'matching - pair left with right\n' +
+'  Col13: [{"left":"Na","right":"Sodium"},{"left":"K","right":"Potassium"}]\n' +
+'  Col11 may add distractors separated by | to make it harder.\n' +
+'  Col8: matching\n\n' +
+'ordering - arrange in sequence\n' +
+'  Col14: the items IN THE CORRECT ORDER, e.g. ["Mercury","Venus","Earth"]\n' +
+'  Col8: ordering\n\n' +
+'cloze - fill several blanks\n' +
+'  Col1: the sentence, each blank written as ___ (three underscores).\n' +
+'  Col14: accepted answers per blank in order, alternatives with |,\n' +
+'         e.g. ["mass|m","acceleration|a"]\n' +
+'  Col8: cloze\n\n' +
+'categorization - sort items into groups\n' +
+'  Col14: [{"item":"Sodium","category":"Metal"},{"item":"Oxygen","category":"Non-metal"}]\n' +
+'  Col8: categorization\n\n' +
+'matrix - several rows sharing one set of options\n' +
+'  Col11: the shared options separated by |, e.g. True|False\n' +
+'  Col14: [{"statement":"Water boils at 100 C at sea level","answer":"True"}]\n' +
+'  Col8: matrix\n\n' +
+'hot_text - tap the correct parts\n' +
+'  Col14: [{"text":"2","correct":true},{"text":"4","correct":false},{"text":"5","correct":true}]\n' +
+'  Col8: hot_text\n\n' +
+'assertion_reason - WAEC/JAMB/Cambridge logic item\n' +
+'  Col14: {"assertion":"Metals conduct electricity","reason":"Metals have free electrons"}\n' +
+'  Col6: A, B, C, D or E, where\n' +
+'        A = both true and the Reason explains the Assertion\n' +
+'        B = both true but the Reason does not explain it\n' +
+'        C = Assertion true, Reason false\n' +
+'        D = Assertion false, Reason true\n' +
+'        E = both false\n' +
+'  Col8: assertion_reason\n\n' +
+'case_study - passage or scenario, then a question\n' +
+'  Col14: {"passage":"Write the full passage or data here."}\n' +
+'  Col1: the question asked about it. Col2-5: options. Col6: the answer.\n' +
+'  Col8: case_study\n\n' +
+'image_mcq - diagram question\n' +
+'  Col11 or Col14: {"image":"https://..."} - a public https or Drive LINK only.\n' +
+'  With no real image, describe the diagram fully in Col1 and leave it blank.\n' +
+'  Col8: image_mcq\n\n' +
+'essay - extended response, marked WITHOUT AI\n' +
+'  Col14: {"min_words":40,"keywords":["photosynthesis","chlorophyll","glucose"]}\n' +
+'  Col7 should state that tutor review is recommended.\n' +
+'  Col8: essay\n\n' +
+'code - code, pseudocode or SQL\n' +
+'  Col14: {"language":"JavaScript","keywords":["function","return","Math.max"]}\n' +
+'  Col8: code\n\n' +
+'===================================================================\n' +
+'QUALITY BAR - a paper failing any of these is not acceptable\n' +
+'===================================================================\n' +
+'- Every stem is self-contained and unambiguous. A competent learner should\n' +
+'  never have to guess what is being asked.\n' +
+'- Distractors are PLAUSIBLE and DIAGNOSTIC - each wrong option should match a\n' +
+'  real misconception. Never "none of the above" or obvious filler.\n' +
+'- Explanations TEACH: why the right answer is right, and why the attractive\n' +
+'  wrong one is wrong.\n' +
+'- Spread the difficulty: about 30% easy, 50% moderate, 20% demanding. Put that\n' +
+'  word in Col15.\n' +
+'- Numeric items producing decimals MUST carry a tolerance in Col9.\n' +
+'- Essay and code keywords must be objectively checkable without AI.\n' +
+'- Cover the sub-areas of the topic rather than repeating one idea ' + n + ' times.\n' +
+'- Match the command words and mark weightings of ' + examType + '.\n\n' +
+'===================================================================\n' +
+'FINAL CHECK BEFORE YOU ANSWER\n' +
+'===================================================================\n' +
+'[ ] Output is a DOWNLOADABLE .csv FILE named "' + fname + '.csv".\n' +
+'[ ] Exactly ' + n + ' data rows, plus the one header row.\n' +
+'[ ] Header matches the contract character for character (17 columns).\n' +
+'[ ] Type counts match the distribution above and sum to ' + n + '.\n' +
+'[ ] Every JSON cell has inner quotes doubled ("") and the whole cell quoted.\n' +
+'[ ] Every objective row has a non-empty, unambiguous key in Col6.\n' +
+'[ ] Col17 is "' + subject + '" on every row.\n' +
+'[ ] Nothing in your reply but the file (or, as a fallback, one CSV block).' + addendum;
   }
 };
 window.CBT = CBT;
