@@ -1,0 +1,179 @@
+# ============================================================================
+# Keep-Alive Watchdog — Tutoring Connect V9
+# ----------------------------------------------------------------------------
+# The keep-alive workflow can fail silently in ways it cannot detect itself:
+#   * GitHub skips the scheduled run entirely (documented, happens under load)
+#   * the repository owner disables Actions
+#   * the secrets are rotated or deleted
+#   * the project is ALREADY paused, so nothing can write to it
+#
+# This second, independent workflow runs DAILY and only READS the health state.
+# It is deliberately cheap and deliberately separate: if the writer breaks, the
+# watcher still runs and tells you. If both are skipped on the same day, the
+# 7-day budget still leaves ample margin.
+#
+# It also performs the one thing an internal ping can never do: it notices when
+# the project is already paused (the REST endpoint stops answering) and raises
+# an issue telling you to press Restore.
+#
+# Needs the same two secrets as the main workflow. No extra setup.
+# ============================================================================
+name: Keep-Alive Watchdog
+
+on:
+  schedule:
+    - cron: '41 7 * * *'   # daily, 07:41 UTC (off-peak minute)
+  workflow_dispatch: {}
+
+permissions:
+  issues: write
+
+concurrency:
+  group: keepalive-watchdog
+  cancel-in-progress: true
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      verdict: ${{ steps.check.outputs.verdict }}
+      detail: ${{ steps.check.outputs.detail }}
+    steps:
+      - name: Read keep-alive health
+        id: check
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -uo pipefail
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ]; then
+            echo "verdict=unconfigured" >> "$GITHUB_OUTPUT"
+            echo "detail=Secrets are not set." >> "$GITHUB_OUTPUT"
+            echo "::warning::Secrets not configured; watchdog cannot check."
+            exit 0
+          fi
+
+          code=$(curl -s -o /tmp/s.json -w '%{http_code}' \
+            -X POST "${SUPABASE_URL}/rest/v1/rpc/tc_keep_alive_status" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "Content-Type: application/json" \
+            --max-time 30 -d '{}') || code=000
+
+          echo "HTTP $code"
+          cat /tmp/s.json 2>/dev/null || true
+
+          # A paused project stops answering entirely: connection failure,
+          # 5xx, or a "project is paused" body.
+          if [ "$code" = "000" ] || [ "$code" -ge 500 ] 2>/dev/null; then
+            echo "verdict=unreachable" >> "$GITHUB_OUTPUT"
+            echo "detail=HTTP $code — the project may already be PAUSED." >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$code" != "200" ]; then
+            echo "verdict=error" >> "$GITHUB_OUTPUT"
+            echo "detail=HTTP $code from the status RPC." >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          state=$(grep -o '"state"[ ]*:[ ]*"[a-z]*"' /tmp/s.json | head -1 | sed 's/.*"\([a-z]*\)"$/\1/')
+          days=$(grep -o '"days_since"[ ]*:[ ]*[0-9.]*' /tmp/s.json | head -1 | sed 's/.*: *//')
+          echo "verdict=${state:-unknown}" >> "$GITHUB_OUTPUT"
+          echo "detail=${days:-?} day(s) since the last database heartbeat." >> "$GITHUB_OUTPUT"
+
+          case "${state:-}" in
+            healthy) echo "✅ Healthy — ${days} day(s) since last ping." ;;
+            warning) echo "::warning::Stale — ${days} day(s) since last ping." ;;
+            *)       echo "::error::Critical — ${days} day(s) since last ping." ;;
+          esac
+
+      - name: Self-heal — write a heartbeat if the project is drifting
+        if: steps.check.outputs.verdict == 'warning' || steps.check.outputs.verdict == 'critical'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -uo pipefail
+          echo "Writing a recovery heartbeat…"
+          curl -s -X POST "${SUPABASE_URL}/rest/v1/rpc/tc_keep_alive" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "Content-Type: application/json" \
+            --max-time 30 -d '{"src":"watchdog-selfheal"}' && echo " ✅ recovered"
+
+      - name: Alert (open or update an issue)
+        if: steps.check.outputs.verdict == 'critical' || steps.check.outputs.verdict == 'unreachable'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const verdict = '${{ steps.check.outputs.verdict }}';
+            const detail  = '${{ steps.check.outputs.detail }}';
+            const paused  = verdict === 'unreachable';
+            const title = paused
+              ? '🛑 Supabase project appears to be PAUSED'
+              : '⚠️ Supabase keep-alive is critical';
+            const body = [
+              `**Watchdog verdict:** \`${verdict}\``,
+              `**Detail:** ${detail}`,
+              '',
+              paused
+                ? ['The project did not answer. It has most likely been paused for inactivity.',
+                   '',
+                   '**Fix now (2 minutes)**',
+                   '1. Open https://supabase.com/dashboard',
+                   '2. Select the project → click **Restore project**',
+                   '3. Wait 2–5 minutes for it to boot',
+                   '4. Re-run the *Keep Supabase Alive* workflow manually',
+                   '5. Work out which scheduler stopped — see `docs/KEEP-ALIVE-GUIDE.md`',
+                   '',
+                   '⏳ **A project left paused is eventually deleted (~90 days). Do not ignore this.**'
+                  ].join('\n')
+                : ['No database heartbeat has landed for too long. A pause is imminent.',
+                   '',
+                   '**Check, in order**',
+                   '1. Actions tab → is *Keep Supabase Alive* still enabled and green?',
+                   '2. Are the `SUPABASE_URL` / `SUPABASE_ANON_KEY` secrets still valid?',
+                   '3. Is your external scheduler (cron-job.org / UptimeRobot) still running?',
+                   '4. Trigger *Keep Supabase Alive* manually right now.'
+                  ].join('\n'),
+              '',
+              `_Checked ${new Date().toISOString()} by the keep-alive watchdog._`
+            ].join('\n');
+
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'keep-alive'
+            });
+            if (open.data.length) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: open.data[0].number, body
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner, repo: context.repo.repo,
+                title, body, labels: ['keep-alive']
+              });
+            }
+
+      - name: Close the alert once healthy again
+        if: steps.check.outputs.verdict == 'healthy'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const open = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'keep-alive'
+            });
+            for (const issue of open.data) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number,
+                body: '✅ Keep-alive is healthy again — ${{ steps.check.outputs.detail }} Closing automatically.'
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issue.number, state: 'closed'
+              });
+            }
