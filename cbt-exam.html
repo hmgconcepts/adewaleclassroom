@@ -20,6 +20,7 @@
 <script src="assets/js/catalog.js"></script>
 <script src="assets/js/license.js"></script>
 <script src="assets/js/cbt.js"></script>
+<script src="assets/js/cbt-types.js"></script>
 <script src="assets/js/proctor.js"></script>
 <script src="assets/js/cbt-exam-kit.js"></script>
 <script src="assets/js/assistant-kb.js"></script>
@@ -209,6 +210,16 @@ document.getElementById('start').onclick = async () => {
 
   // Item 14 — calculator + maths keyboard.
   ExamKit.mountToolbar({ calculator: exam.calculator !== false, mathkb: exam.math_keyboard !== false });
+
+  /* V21 — attach each question object to its card so CBT.collectAnswers can
+     hand the card to CBTTypes.collect(), which knows the storage shape of the
+     advanced controls (hidden JSON for ordering/hot-text, indexed fields for
+     matching/matrix/categorization/cloze/multi-part numeric). */
+  (function attachQ(){
+    const cards = document.querySelectorAll('#qbox .cbt-q');
+    cards.forEach((el, i) => { el._q = state.questions[i]; });
+    if (window.CBTTypes) { try { CBTTypes.activate(document.getElementById('qbox')); } catch (e) {} }
+  })();
 
   // Item 20 — numbered question tabs, so a candidate can jump anywhere.
   const answersNow = () => CBT.collectAnswers(document.getElementById('qbox'));
