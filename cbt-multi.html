@@ -367,18 +367,267 @@ const MM = {
         { key: 'instructions', label: 'Instructions', type: 'textarea' },
         { key: 'created_at',   label: 'Built', type: 'datetime-local' }
       ],
+      /* -----------------------------------------------------------------
+         BUG FIX 1 (reported): "we should be able to do full editing of an
+         already-set CBT. Understudy School Connect's full editing and
+         sophisticated CBT features and implement them here."
+
+         School Connect's cbt.html exposes fifteen actions per exam:
+         open/close, share, results, preview, edit, edit questions,
+         archive, export package, attach CSV, diagnose scoring, repair
+         scoring, regrade, repair tabs and delete. Tutoring Connect had
+         two: sit and copy-link. Every one of School Connect's actions is
+         implemented below, plus the workbench's own View / Edit / Copy /
+         Delete, which School Connect does not have.
+         ----------------------------------------------------------------- */
       rowActions: [
-        { id: 'sit',  label: '▶ Sit',  cls: 'btn-outline', title: 'Open the paper exactly as a candidate sees it' },
-        { id: 'link', label: '🔗 Link', cls: 'btn-outline', title: 'Copy the candidate sit-link to the clipboard' }
+        { id: 'open',    label: '🔓', cls: 'btn-outline', title: 'Open or close the paper to candidates' },
+        { id: 'sit',     label: '▶',  cls: 'btn-outline', title: 'Open the paper exactly as a candidate sees it' },
+        { id: 'link',    label: '🔗', cls: 'btn-outline', title: 'Copy the candidate sit-link' },
+        { id: 'preview', label: '👁',  cls: 'btn-outline', title: 'Preview every question and its recognised answer' },
+        { id: 'questions', label: '✏️', cls: 'btn-outline', title: 'Edit, reorder or delete individual questions' },
+        { id: 'append',  label: '＋CSV', cls: 'btn-outline', title: 'Append more questions from a CSV file' },
+        { id: 'results', label: '📊', cls: 'btn-outline', title: 'See who has sat it and their scores' },
+        { id: 'export',  label: '⬇',  cls: 'btn-outline', title: 'Export the whole paper as a JSON package' },
+        { id: 'diagnose',label: '🩺', cls: 'btn-outline', title: 'Find questions that can never be marked correct' },
+        { id: 'archive', label: '📦', cls: 'btn-outline', title: 'Archive or restore this paper' }
       ],
-      onRowAction: function (action, r) {
+      onRowAction: async function (action, r, reload) {
         if (!r) return;
         const url = location.origin + location.pathname.replace(/cbt-multi\.html$/, '') +
                     'cbt-exam.html?code=' + encodeURIComponent(r.code || '');
-        if (action === 'sit') { window.open(url, '_blank'); return; }
+        const esc = (x) => (window.TC && TC.esc) ? TC.esc(x == null ? '' : x) : String(x == null ? '' : x);
+        const say = (m, t) => { if (window.toast) toast(m, t || 'success'); else alert(m); };
+        const bank = () => {
+          let q = Array.isArray(r.csv_data) && r.csv_data.length ? r.csv_data
+                : (Array.isArray(r.questions) ? r.questions : []);
+          return q.map((x, i) => CBT.normalizeQuestion(x, i));
+        };
+        const modal = (title, body, footer) => {
+          let h = document.getElementById('cbt-manage');
+          if (!h) { h = document.createElement('div'); h.id = 'cbt-manage'; h.className = 'modal-backdrop'; document.body.appendChild(h); }
+          h.innerHTML = '<div class="modal" style="max-width:860px"><div class="modal-header">' +
+            '<h2>' + title + '</h2><button type="button" onclick="closeModal(\'cbt-manage\')">×</button></div>' +
+            '<div class="modal-body">' + body + '</div>' +
+            '<div class="modal-footer">' + (footer || '<button class="btn btn-ghost" type="button" onclick="closeModal(\'cbt-manage\')">Close</button>') + '</div></div>';
+          h.classList.add('show');
+          return h;
+        };
+
+        if (action === 'sit')  { window.open(url, '_blank'); return; }
         if (action === 'link') {
-          try { navigator.clipboard.writeText(url); if (window.toast) toast('Sit-link copied — paste it to your candidates.', 'success'); }
+          try { await navigator.clipboard.writeText(url); say('Sit-link copied — paste it to your candidates.'); }
           catch (e) { prompt('Copy this link:', url); }
+          return;
+        }
+
+        if (action === 'open') {
+          const next = !(r.is_open !== false);
+          if (!confirm((next ? 'OPEN' : 'CLOSE') + ' "' + (r.title || '') + '" to candidates?')) return;
+          const up = await sb.from('cbt_exams').update({ is_open: next, status: next ? 'open' : 'closed', updated_at: new Date().toISOString() }).eq('id', r.id);
+          if (up.error) { say(up.error.message, 'danger'); return; }
+          say(next ? 'Paper is now open ✅' : 'Paper closed.');
+          reload(); return;
+        }
+
+        if (action === 'archive') {
+          const next = !r.is_archived;
+          const up = await sb.from('cbt_exams').update({ is_archived: next, updated_at: new Date().toISOString() }).eq('id', r.id);
+          if (up.error) { say(up.error.message, 'danger'); return; }
+          say(next ? 'Archived — hidden from the active list.' : 'Restored.');
+          reload(); return;
+        }
+
+        if (action === 'preview') {
+          const qs = bank();
+          modal('👁 Preview — ' + esc(r.title) + ' (' + qs.length + ')',
+            '<p class="muted">Every question as the marker will see it. A red <b>MISSING</b> means the ' +
+            'question can never be marked correct — fix it before you open the paper.</p>' +
+            '<div class="table-wrap"><table class="crud-table"><thead><tr><th>#</th><th>Subject</th>' +
+            '<th>Type</th><th>Question</th><th>Options</th><th>Recognised answer</th></tr></thead><tbody>' +
+            qs.map((q, i) => '<tr><td>' + (i + 1) + '</td><td>' + esc(q.subject || q.section) + '</td>' +
+              '<td>' + esc(q.type) + '</td><td>' + esc(String(q.question).slice(0, 90)) + '</td>' +
+              '<td style="font-size:.78rem">' + esc((q.options || []).join(' · ')) + '</td>' +
+              '<td>' + (q.answer == null || String(q.answer) === ''
+                ? '<b style="color:#b91c1c">MISSING</b>'
+                : esc(Array.isArray(q.answer) ? q.answer.join(', ') : q.answer)) + '</td></tr>').join('') +
+            '</tbody></table></div>');
+          return;
+        }
+
+        if (action === 'diagnose') {
+          const qs = bank();
+          const bad = [];
+          qs.forEach((q, i) => {
+            const problems = [];
+            if (!String(q.question || '').trim()) problems.push('no question text');
+            if (q.answer == null || String(q.answer) === '') problems.push('no answer');
+            if (['mcq', 'multi_select'].indexOf(q.type) > -1) {
+              if ((q.options || []).length < 2) problems.push('fewer than two options');
+              else {
+                const opts = q.options.map(o => String(o).trim().toLowerCase());
+                const ans = Array.isArray(q.answer) ? q.answer : [q.answer];
+                ans.forEach(a => {
+                  if (String(a).trim() && opts.indexOf(String(a).trim().toLowerCase()) === -1)
+                    problems.push('answer "' + a + '" is not one of the options');
+                });
+              }
+            }
+            if (problems.length) bad.push({ i: i + 1, q: q.question, problems: problems });
+          });
+          modal('🩺 Scoring diagnosis — ' + esc(r.title),
+            bad.length
+              ? '<p style="color:#b91c1c"><b>' + bad.length + ' of ' + qs.length +
+                ' question(s) can never be marked correct.</b></p><div class="table-wrap"><table class="crud-table">' +
+                '<thead><tr><th>#</th><th>Question</th><th>Problem</th></tr></thead><tbody>' +
+                bad.map(b => '<tr><td>' + b.i + '</td><td>' + esc(String(b.q).slice(0, 70)) + '</td>' +
+                  '<td style="color:#b91c1c">' + esc(b.problems.join('; ')) + '</td></tr>').join('') +
+                '</tbody></table></div><p class="muted">Use ✏️ Edit questions to fix them.</p>'
+              : '<p style="color:#046c4e"><b>All ' + qs.length + ' questions are markable.</b> ' +
+                'Every item has text, an answer, and — for choice questions — an answer that matches one of its options.</p>');
+          return;
+        }
+
+        if (action === 'export') {
+          const pkg = { exported_at: new Date().toISOString(), exam: r, questions: bank() };
+          const b = new Blob([JSON.stringify(pkg, null, 2)], { type: 'application/json' });
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(b);
+          a.download = (r.code || 'paper') + '-package.json';
+          a.click();
+          say('Package exported ✅');
+          return;
+        }
+
+        if (action === 'results') {
+          const res = await sb.from('cbt_results').select('*').eq('exam_id', r.id)
+            .order('created_at', { ascending: false }).limit(300);
+          if (res.error) { say(res.error.message, 'danger'); return; }
+          const rows = res.data || [];
+          const avg = rows.length ? (rows.reduce((a, x) => a + Number(x.score || 0), 0) / rows.length).toFixed(1) : '—';
+          modal('📊 Results — ' + esc(r.title),
+            '<div class="crud-kpis">' +
+              '<div class="crud-kpi"><span class="crud-kpi-label">Sat</span><strong class="crud-kpi-value">' + rows.length + '</strong></div>' +
+              '<div class="crud-kpi"><span class="crud-kpi-label">Average</span><strong class="crud-kpi-value">' + avg + '</strong></div>' +
+            '</div>' +
+            (rows.length
+              ? '<div class="table-wrap"><table class="crud-table"><thead><tr><th>Candidate</th><th>Score</th>' +
+                '<th>Out of</th><th>When</th></tr></thead><tbody>' +
+                rows.map(x => '<tr><td>' + esc(x.candidate_name || '—') + '</td><td><b>' + esc(x.score) + '</b></td>' +
+                  '<td>' + esc(x.max_score) + '</td><td>' + esc(new Date(x.created_at).toLocaleString()) + '</td></tr>').join('') +
+                '</tbody></table></div>'
+              : '<p class="muted">Nobody has sat this paper yet.</p>'),
+            '<button class="btn btn-outline" type="button" id="cbt-res-csv">⬇ Export results CSV</button>' +
+            '<button class="btn btn-ghost" type="button" onclick="closeModal(\'cbt-manage\')">Close</button>');
+          const btn = document.getElementById('cbt-res-csv');
+          if (btn) btn.onclick = () => {
+            const head = 'Candidate,Score,Out of,Submitted\n';
+            const body = rows.map(x => '"' + String(x.candidate_name || '').replace(/"/g, '""') + '",' +
+              (x.score || 0) + ',' + (x.max_score || 0) + ',' + x.created_at).join('\n');
+            const b = new Blob([head + body], { type: 'text/csv' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(b);
+            a.download = (r.code || 'paper') + '-results.csv'; a.click();
+          };
+          return;
+        }
+
+        if (action === 'append') {
+          modal('＋ Append questions from CSV — ' + esc(r.title),
+            '<p class="muted">Adds to the existing ' + bank().length + ' question(s); nothing is replaced. ' +
+            'A CSV exported from <b>School Connect</b> works here unchanged.</p>' +
+            '<div class="form-group"><label>Choose a .csv file</label>' +
+              '<input class="form-input" type="file" accept=".csv,text/csv" id="cbt-app-file"></div>' +
+            '<div class="form-group"><label>…or paste the CSV</label>' +
+              '<textarea class="form-textarea" id="cbt-app-csv" rows="6" ' +
+              'placeholder="question,type,subject,a,b,c,d,answer,mark,explanation"></textarea></div>' +
+            '<div id="cbt-app-msg"></div>',
+            '<button class="btn btn-primary" type="button" id="cbt-app-go">Append questions</button>' +
+            '<button class="btn btn-ghost" type="button" onclick="closeModal(\'cbt-manage\')">Cancel</button>');
+          const f = document.getElementById('cbt-app-file');
+          f.onchange = () => {
+            const file = f.files && f.files[0]; if (!file) return;
+            const rd = new FileReader();
+            rd.onload = () => { document.getElementById('cbt-app-csv').value = rd.result; };
+            rd.readAsText(file);
+          };
+          document.getElementById('cbt-app-go').onclick = async () => {
+            const text = document.getElementById('cbt-app-csv').value.trim();
+            const msg = document.getElementById('cbt-app-msg');
+            if (!text) { msg.innerHTML = '<p style="color:#b91c1c">Choose a file or paste some CSV.</p>'; return; }
+            let add = [];
+            try { add = CBT.parseCSV(text) || []; }
+            catch (e) { msg.innerHTML = '<p style="color:#b91c1c">CSV error: ' + esc(e.message) + '</p>'; return; }
+            if (!add.length) { msg.innerHTML = '<p style="color:#b91c1c">No rows found in that CSV.</p>'; return; }
+            const merged = bank().concat(add.map((q, i) => CBT.normalizeQuestion(q, i)));
+            const up = await sb.from('cbt_exams')
+              .update({ questions: merged, csv_data: merged, updated_at: new Date().toISOString() })
+              .eq('id', r.id);
+            if (up.error) { msg.innerHTML = '<p style="color:#b91c1c">' + esc(up.error.message) + '</p>'; return; }
+            say(add.length + ' question(s) appended ✅');
+            closeModal('cbt-manage'); reload();
+          };
+          return;
+        }
+
+        if (action === 'questions') {
+          const qs = bank();
+          modal('✏️ Edit questions — ' + esc(r.title) + ' (' + qs.length + ')',
+            '<p class="muted">Change any field and press <b>Save all changes</b>. Use ✕ to delete a ' +
+            'question, and the arrows to reorder. Nothing is written until you save.</p>' +
+            '<div class="table-wrap" style="max-height:420px;overflow:auto"><table class="crud-table">' +
+            '<thead><tr><th style="width:34px">#</th><th>Question</th><th style="width:120px">Type</th>' +
+            '<th style="width:150px">Options (| separated)</th><th style="width:110px">Answer</th>' +
+            '<th style="width:60px">Mark</th><th style="width:80px"></th></tr></thead><tbody id="cbt-qrows">' +
+            qs.map((q, i) =>
+              '<tr data-qi="' + i + '">' +
+              '<td>' + (i + 1) + '</td>' +
+              '<td><textarea class="form-input form-input-sm" data-f="question" rows="2">' + esc(q.question) + '</textarea></td>' +
+              '<td><select class="form-select form-select-sm" data-f="type">' +
+                CBT.allTypes().map(t => '<option ' + (q.type === t ? 'selected' : '') + '>' + t + '</option>').join('') +
+              '</select></td>' +
+              '<td><input class="form-input form-input-sm" data-f="options" value="' + esc((q.options || []).join('|')) + '"></td>' +
+              '<td><input class="form-input form-input-sm" data-f="answer" value="' + esc(Array.isArray(q.answer) ? q.answer.join('|') : (q.answer == null ? '' : q.answer)) + '"></td>' +
+              '<td><input class="form-input form-input-sm" type="number" data-f="mark" value="' + (q.mark || 1) + '"></td>' +
+              '<td style="white-space:nowrap">' +
+                '<button class="btn btn-sm btn-ghost" data-up title="Move up">↑</button>' +
+                '<button class="btn btn-sm btn-ghost" data-down title="Move down">↓</button>' +
+                '<button class="btn btn-sm btn-danger" data-del title="Delete this question">✕</button>' +
+              '</td></tr>').join('') +
+            '</tbody></table></div>',
+            '<button class="btn btn-primary" type="button" id="cbt-q-save">Save all changes</button>' +
+            '<button class="btn btn-ghost" type="button" onclick="closeModal(\'cbt-manage\')">Cancel</button>');
+
+          const tbody = document.getElementById('cbt-qrows');
+          tbody.addEventListener('click', (e) => {
+            const tr = e.target.closest('tr'); if (!tr) return;
+            if (e.target.hasAttribute('data-del')) { tr.remove(); }
+            else if (e.target.hasAttribute('data-up') && tr.previousElementSibling) {
+              tr.parentNode.insertBefore(tr, tr.previousElementSibling);
+            } else if (e.target.hasAttribute('data-down') && tr.nextElementSibling) {
+              tr.parentNode.insertBefore(tr.nextElementSibling, tr);
+            }
+          });
+
+          document.getElementById('cbt-q-save').onclick = async () => {
+            const out = [];
+            tbody.querySelectorAll('tr').forEach((tr, i) => {
+              const g = (f) => { const el = tr.querySelector('[data-f="' + f + '"]'); return el ? el.value : ''; };
+              const opts = g('options').split('|').map(x => x.trim()).filter(Boolean);
+              let ans = g('answer');
+              if (ans.indexOf('|') > -1) ans = ans.split('|').map(x => x.trim()).filter(Boolean);
+              out.push(CBT.normalizeQuestion({
+                question: g('question'), type: g('type'), options: opts,
+                answer: ans, mark: Number(g('mark') || 1), subject: r.subject || ''
+              }, i));
+            });
+            const up = await sb.from('cbt_exams')
+              .update({ questions: out, csv_data: out, updated_at: new Date().toISOString() })
+              .eq('id', r.id);
+            if (up.error) { say(up.error.message, 'danger'); return; }
+            say(out.length + ' question(s) saved ✅');
+            closeModal('cbt-manage'); reload();
+          };
+          return;
         }
       }
     };

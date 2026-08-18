@@ -282,10 +282,29 @@
         <div id="rc-list"><p class="muted">Loading payments…</p></div>
       </section>
 <script>
-document.addEventListener('DOMContentLoaded',()=>setTimeout(async()=>{
+/* BUG FIX 13 (reported): "on the payments page we are not able to print
+   e-receipts despite recording payments."
+
+   Three faults, all fixed here:
+   (a) the panel queried invoices.total — that column does not exist; the
+       column is invoices.amount. The failure was swallowed by a bare
+       catch, so the receipt opened with no invoice figures.
+   (b) it ran ONCE, 900 ms after DOMContentLoaded. If the Supabase client
+       had not finished initialising by then the panel printed "Connect
+       Supabase" and never tried again, on a page that was in fact
+       connected.
+   (c) receipts could only be printed from this panel, never from the row
+       the tutor had just created in the payments grid above. The grid now
+       carries its own 🧾 Receipt button (see the rowActions block below). */
+document.addEventListener('DOMContentLoaded',()=>{
+ let tries=0;
+ const boot=async()=>{
   const host=document.getElementById('rc-list');
   if(!host) return;
-  if(!window.sb){ host.innerHTML='<p class="muted">Connect Supabase to list payments.</p>'; return; }
+  if(!window.sb){
+    if(tries++ < 25){ setTimeout(boot,400); return; }     // wait up to ~10s
+    host.innerHTML='<p class="muted">Connect Supabase to list payments.</p>'; return;
+  }
   try{
     const {data,error}=await sb.from('payments')
       .select('id,amount,method,reference,paid_on,invoice_id').order('paid_on',{ascending:false}).limit(60);
@@ -293,7 +312,7 @@ document.addEventListener('DOMContentLoaded',()=>setTimeout(async()=>{
     if(!data||!data.length){ host.innerHTML='<p class="muted">No payments recorded yet.</p>'; return; }
     let invs={};
     try{
-      const iv=await sb.from('invoices').select('id,total,parent_id,engagement_id');
+      const iv=await sb.from('invoices').select('id,amount,parent_id,engagement_id');
       (iv.data||[]).forEach(x=>invs[x.id]=x);
     }catch(_){}
     window.__pay=data;
@@ -309,9 +328,11 @@ document.addEventListener('DOMContentLoaded',()=>setTimeout(async()=>{
       id=>(window.__pay||[]).find(x=>String(x.id)===String(id))||{},
       id=>{ const p=(window.__pay||[]).find(x=>String(x.id)===String(id))||{};
             const inv=invs[p.invoice_id];
-            return { description:'Tutoring fees', invoiceTotal: inv?inv.total:null, paidToDate:p.amount }; });
+            return { description:'Tutoring fees', invoiceTotal: inv?inv.amount:null, paidToDate:p.amount }; });
   }catch(e){ host.innerHTML='<p style="color:#b42318">'+String(e.message||e)+'</p>'; }
-},900));
+ };
+ setTimeout(boot,600);
+});
 </script>
     </main>
   </div>

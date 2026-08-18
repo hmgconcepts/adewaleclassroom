@@ -185,9 +185,18 @@ document.getElementById('start').onclick = async () => {
     ${tabs}
     <div id="qpalette" style="margin:12px 0"></div>
     <div id="qbox">${state.questions.map((q,i) => CBT.renderQuestion(q,i)).join('')}</div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
-      <button class="btn btn-primary" type="button" id="submit">Submit paper</button>
+    <!-- BUG FIX 4 — one question per page.
+         Previously every question was painted at once and the candidate
+         scrolled. Now exactly one card is visible and the paper is
+         navigated with Prev / Next or the number map, matching School
+         Connect. Every card stays in the DOM so answers are never lost
+         when moving about, and collectAnswers() is unchanged. -->
+    <div id="qnav" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:14px">
+      <button class="btn btn-outline" type="button" id="prevq">‹ Previous</button>
+      <span id="qprogress" class="muted" style="font-weight:700;min-width:130px;text-align:center"></span>
+      <button class="btn btn-outline" type="button" id="nextq">Next ›</button>
       <button class="btn btn-outline" type="button" id="flagq">🚩 Flag this question</button>
+      <button class="btn btn-primary" type="button" id="submit" style="margin-left:auto">Submit paper</button>
     </div>`;
 
   // Item 13 — the studio name, bold and centred, at the head of the paper.
@@ -205,22 +214,69 @@ document.getElementById('start').onclick = async () => {
   const answersNow = () => CBT.collectAnswers(document.getElementById('qbox'));
   const cards = () => document.querySelectorAll('#qbox .cbt-q');
   state.current = 0;
+  /* Which questions belong to the subject tab currently on screen.
+     With one card visible at a time, "next" must skip questions that
+     belong to a different subject tab, or the candidate would be thrown
+     into another paper mid-flow. */
+  state.visible = () => state.questions
+    .map((q, i) => i)
+    .filter(i => !state.subject || (state.questions[i].subject || 'General') === state.subject);
+
+  const showOnly = (idx) => {
+    const list = cards();
+    list.forEach((el, i) => { el.style.display = (i === idx) ? '' : 'none'; });
+    const el = list[idx];
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el.setAttribute('aria-current', 'true');
+    }
+    list.forEach((e2, i) => { if (i !== idx) e2.removeAttribute('aria-current'); });
+  };
+
   const paint = () => {
+    const vis = state.visible();
+    if (vis.indexOf(state.current) === -1) state.current = vis.length ? vis[0] : 0;
+    showOnly(state.current);
+
     ExamKit.renderPalette(document.getElementById('qpalette'), {
       questions: state.questions, answers: answersNow(), flags: state.flags,
       current: state.current,
-      onJump: (i) => {
-        state.current = i;
-        const el = cards()[i];
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          el.style.outline = '3px solid var(--accent)';
-          setTimeout(() => { el.style.outline = ''; }, 1400);
-        }
-        paint();
-      }
+      onJump: (i) => { state.current = i; paint(); }
     });
+
+    // Progress and button state.
+    const pos = vis.indexOf(state.current);
+    const prog = document.getElementById('qprogress');
+    if (prog) prog.textContent = 'Question ' + (pos + 1) + ' of ' + vis.length;
+    const pv = document.getElementById('prevq');
+    const nx = document.getElementById('nextq');
+    if (pv) pv.disabled = pos <= 0;
+    if (nx) nx.disabled = pos >= vis.length - 1;
+    const fl = document.getElementById('flagq');
+    if (fl) fl.className = 'btn btn-outline' + (state.flags[state.current] ? ' btn-warning' : '');
   };
+
+  const step = (delta) => {
+    const vis = state.visible();
+    const pos = vis.indexOf(state.current);
+    const next = pos + delta;
+    if (next < 0 || next >= vis.length) return;
+    state.current = vis[next];
+    paint();
+  };
+  document.getElementById('prevq').onclick = () => step(-1);
+  document.getElementById('nextq').onclick = () => step(1);
+
+  /* Keyboard navigation. Arrow keys are ignored while the candidate is
+     typing into a short-answer box, or they could not use the arrows to
+     edit their own text. */
+  document.addEventListener('keydown', (e) => {
+    const t = e.target;
+    if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && t.type !== 'radio' && t.type !== 'checkbox') return;
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); step(1); }
+    if (e.key === 'ArrowLeft'  || e.key === 'PageUp')   { e.preventDefault(); step(-1); }
+  });
+
   paint();
   document.getElementById('qbox').addEventListener('input', () => paint());
   document.getElementById('qbox').addEventListener('change', () => paint());
@@ -230,13 +286,15 @@ document.getElementById('start').onclick = async () => {
   };
   if (Object.keys(bySub).length > 1) {
     const show = (sub) => {
-      document.querySelectorAll('#qbox .cbt-q').forEach((el, i) => {
-        const q = state.questions[i];
-        el.style.display = (!sub || (q.subject || 'General') === sub) ? '' : 'none';
-      });
+      // One-question-per-page: record the tab, then let paint() decide
+      // which single card is visible. Never toggle display here or the
+      // two mechanisms fight and every question reappears at once.
+      state.subject = sub;
+      state.current = -1;                 // forces paint() to jump to the tab's first question
       document.querySelectorAll('#sub-tabs button').forEach(b => {
         b.className = 'btn btn-sm ' + (b.dataset.sub === sub ? 'btn-primary' : 'btn-outline');
       });
+      paint();
     };
     document.getElementById('sub-tabs').onclick = (e) => {
       const b = e.target.closest('[data-sub]'); if (b) show(b.dataset.sub);
