@@ -514,259 +514,510 @@ const CBT = {
      Kept from before: the examiner persona, the quality bar, the studio and
      exam context, links-only, and the demand for a DOWNLOADABLE .csv file.
      ======================================================================= */
+  /* =======================================================================
+     promptPack — V22. EVERY PACK IS NOW A DIFFERENT PROMPT.
+
+     The V21 version was wrong, and the user was right to call it out: all
+     eighteen packs shared one base prompt with a short paragraph bolted on
+     the end. Two packs that should ask for completely different papers were
+     98% identical text. A "misconception hunting" pack and a "marking
+     scheme" pack are not the same job, and a model given nearly the same
+     instructions returns nearly the same paper.
+
+     Each pack now supplies its OWN:
+        role      — who the model is being asked to be
+        mission   — what this specific paper is FOR
+        mix       — its own type distribution, scaled to the requested count
+        sections  — briefing sections unique to the pack
+        quality   — its own quality bar, not a generic one
+        checks    — its own final checklist items
+
+     The shared machinery is only the CSV OUTPUT CONTRACT and the per-type
+     column rules, which must be byte-identical across packs or the files
+     stop importing. Sharing those is correct; sharing the thinking was not.
+     ======================================================================= */
+
+  /* The column rules, emitted only for the types a pack actually uses, so a
+     20-item MCQ pack is not padded with eight pages of irrelevant rules. */
+  _typeRules(types) {
+    const R = {
+      mcq: 'mcq — one correct option\n' +
+        '  Col2-5: four plausible options. Col6: the ANSWER TEXT or the letter A/B/C/D.\n  Col8: mcq',
+      tf: 'tf — true/false\n' +
+        '  Col2: True   Col3: False   Col4-5: blank.  Col6: True or False.  Col8: tf',
+      mrq: 'mrq — several correct options\n' +
+        '  Col2-5: options. Col6: correct ones separated by | (e.g. Iron|Copper).\n' +
+        '  Col12: true for all-or-nothing, false for partial credit.  Col8: mrq',
+      short: 'short — typed short answer\n' +
+        '  Col6: the primary answer.  Col11: accepted alternatives separated by |.\n  Col8: short',
+      numeric: 'numeric — a number\n' +
+        '  Col6: the number only.  Col9: tolerance.  Col10: unit.  Col8: numeric',
+      multi_numeric: 'multi_numeric — several numeric sub-parts, part marks\n' +
+        '  Col14: [{"label":"x","answer":3,"tolerance":0},{"label":"y","answer":2,"tolerance":0}]\n  Col8: multi_numeric',
+      matching: 'matching — pair left with right\n' +
+        '  Col13: [{"left":"Na","right":"Sodium"},{"left":"K","right":"Potassium"}]\n' +
+        '  Col11 may add distractors separated by |.  Col8: matching',
+      ordering: 'ordering — arrange in sequence\n' +
+        '  Col14: the items IN THE CORRECT ORDER, e.g. ["Mercury","Venus","Earth"]\n  Col8: ordering',
+      cloze: 'cloze — fill several blanks\n' +
+        '  Col1: the sentence, each blank written as ___ (three underscores).\n' +
+        '  Col14: accepted answers per blank in order, alternatives with |,\n' +
+        '         e.g. ["mass|m","acceleration|a"]\n  Col8: cloze',
+      categorization: 'categorization — sort items into groups\n' +
+        '  Col14: [{"item":"Sodium","category":"Metal"},{"item":"Oxygen","category":"Non-metal"}]\n  Col8: categorization',
+      matrix: 'matrix — several rows sharing one set of options\n' +
+        '  Col11: the shared options separated by |, e.g. True|False\n' +
+        '  Col14: [{"statement":"Water boils at 100 C at sea level","answer":"True"}]\n  Col8: matrix',
+      hot_text: 'hot_text — tap the correct parts\n' +
+        '  Col14: [{"text":"2","correct":true},{"text":"4","correct":false}]\n  Col8: hot_text',
+      assertion_reason: 'assertion_reason — WAEC/JAMB/Cambridge logic item\n' +
+        '  Col14: {"assertion":"...","reason":"..."}\n' +
+        '  Col6: A/B/C/D/E where A = both true and Reason explains Assertion,\n' +
+        '        B = both true but Reason does not explain it, C = Assertion true only,\n' +
+        '        D = Reason true only, E = both false.  Col8: assertion_reason',
+      case_study: 'case_study — passage or scenario, then a question\n' +
+        '  Col14: {"passage":"Write the full passage or data here."}\n' +
+        '  Col1: the question. Col2-5: options. Col6: the answer.  Col8: case_study',
+      image_mcq: 'image_mcq — diagram question\n' +
+        '  Col14: {"image":"https://..."} — a public https or Drive LINK only.\n' +
+        '  With no real image, describe the diagram fully in Col1.  Col8: image_mcq',
+      essay: 'essay — extended response, marked WITHOUT AI\n' +
+        '  Col14: {"min_words":40,"keywords":["photosynthesis","chlorophyll"]}\n' +
+        '  Col7 must say tutor review is recommended.  Col8: essay',
+      code: 'code — code, pseudocode or SQL\n' +
+        '  Col14: {"language":"JavaScript","keywords":["function","return"]}\n  Col8: code'
+    };
+    return types.map(function (t) { return R[t]; }).filter(Boolean).join('\n\n');
+  },
+
+  /* Scale a pack's reference mix to the requested count. The remainder is
+     pushed onto the pack's own dominant type, so the total is always exact. */
+  _mix(ref, n, dominant, minOne) {
+    const keys = Object.keys(ref);
+    const total = keys.reduce(function (a, k) { return a + ref[k]; }, 0);
+    const out = {}; let running = 0;
+
+    /* `minOne` guarantees every declared type survives the scaling. Without
+       it the enterprise pack — which promises all seventeen types — silently
+       dropped image_mcq, essay and code whenever the requested count was
+       small, because floor(1 * 20 / 33) is 0. A pack that promises breadth
+       must deliver it. */
+    keys.forEach(function (k) {
+      let v = Math.floor(ref[k] * n / total);
+      if (minOne && v < 1) v = 1;
+      if (v > 0) { out[k] = v; running += v; }
+    });
+
+    const d = dominant || keys[0];
+    if (running > n) {
+      // Over-allocated by the minimums: shave the dominant type back down.
+      out[d] = Math.max(minOne ? 1 : 0, (out[d] || 0) - (running - n));
+      running = keys.reduce(function (a, k) { return a + (out[k] || 0); }, 0);
+      // Still over? Trim the largest buckets one at a time, never below 1.
+      let guard = 0;
+      while (running > n && guard++ < 500) {
+        const biggest = keys.filter(function (k) { return (out[k] || 0) > 1; })
+          .sort(function (a, b) { return out[b] - out[a]; })[0];
+        if (!biggest) break;
+        out[biggest] -= 1; running -= 1;
+      }
+    } else {
+      out[d] = (out[d] || 0) + Math.max(0, n - running);
+    }
+    return out;
+  },
+
+  PACKS: {
+    simple: {
+      label: 'Simple recall',
+      role: 'a patient classroom teacher who writes clear, confidence-building questions for learners who are still finding their feet',
+      mission: 'Build fluency and confidence. This paper should reward a learner who has done the reading, and should never punish them for misreading a convoluted stem.',
+      ref: { mcq: 12, tf: 6, short: 2 }, dominant: 'mcq',
+      sections: [
+        ['LANGUAGE', 'Use the shortest sentence that asks the question. No subordinate clauses.\nNo negatives ("which is NOT..."). No double negatives ever. A learner\nreading at two years below the nominal level should still understand the task.'],
+        ['SCOPE', 'One idea per question. Never combine two skills in one item — if a\nlearner gets it wrong you must be able to say exactly which idea they missed.']
+      ],
+      quality: [
+        'Every stem is under 25 words.',
+        'Options are similar in length; the longest option is not always the answer.',
+        'Explanations restate the rule in one plain sentence.',
+        'No trick questions. This paper builds confidence.'
+      ]
+    },
+
+    intermediate: {
+      label: 'Recall + application',
+      role: 'an experienced subject teacher balancing recall against application',
+      mission: 'Check that knowledge has become usable. Roughly half the paper should ask the learner to APPLY a rule to a situation they have not seen before.',
+      ref: { mcq: 8, tf: 2, short: 3, numeric: 4, mrq: 2, matching: 1 }, dominant: 'mcq',
+      sections: [
+        ['SPLIT', 'About 40% straight recall, 60% application to an unfamiliar context.\nMark the recall items "easy" and the application items "moderate" in Col15.'],
+        ['CONTEXTS', 'Application items must use realistic Nigerian and international contexts —\nmarket prices, transport, rainfall, phone data plans, exam timetables — not\nabstract "object A and object B".']
+      ],
+      quality: [
+        'Every application item names a concrete situation.',
+        'Numeric answers use realistic magnitudes a learner can sanity-check.',
+        'At least one item per sub-topic.'
+      ]
+    },
+
+    advanced: {
+      label: 'Multi-step reasoning',
+      role: 'a chief examiner who sets the discriminating questions at the top end of a paper',
+      mission: 'Separate the strong candidates from the merely competent. Almost every item should need two or more linked steps.',
+      ref: { multi_numeric: 4, assertion_reason: 4, case_study: 4, matrix: 3, mcq: 3, ordering: 2 }, dominant: 'multi_numeric',
+      sections: [
+        ['DEPTH', 'A candidate who knows the definitions but cannot reason should score poorly.\nEvery item must require synthesis, inference or a chain of at least two steps.'],
+        ['PART MARKS', 'Prefer multi_numeric and matrix over single mcq, because they award part\nmarks and show WHERE the reasoning broke down.']
+      ],
+      quality: [
+        'No item is answerable by recognition alone.',
+        'Each assertion_reason item is genuinely subtle — the B case (both true, no causal link) must appear at least once.',
+        'Explanations set out the reasoning chain step by step.'
+      ]
+    },
+
+    enterprise: {
+      label: 'Full showcase — all 17 types',
+      role: 'an assessment architect building a reference paper that demonstrates every question format the platform supports',
+      mission: 'Exercise the FULL range of seventeen types. This paper is used to train tutors and to show families what the studio can do, so breadth matters more than balance.',
+      ref: { mcq: 3, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2,
+             categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2,
+             case_study: 2, image_mcq: 1, essay: 1, code: 1 },
+      dominant: 'mcq',
+      minOne: true,            // every one of the 17 types must appear
+      sections: [
+        ['COVERAGE', 'Every one of the seventeen types must appear at least once, even if that\nmeans an unusual fit for the topic. Breadth is the point of this pack.'],
+        ['SELF-DOCUMENTING', 'Because tutors read this paper to learn the formats, each Explanation should\nalso note in one clause why that TYPE suited that question.']
+      ],
+      quality: [
+        'All seventeen types present.',
+        'Each structured type has valid, complete JSON in Col13/Col14.',
+        'The paper still reads as a coherent assessment, not a format catalogue.'
+      ]
+    },
+
+    self: {
+      label: 'Self-quiz (practice)',
+      role: 'a supportive tutor writing practice a learner will work through alone, with nobody to ask',
+      mission: 'This is PRACTICE, not assessment. Nobody sees the score but the learner. The Explanation is the most important column in the file.',
+      ref: { mcq: 10, tf: 4, short: 3, numeric: 3 }, dominant: 'mcq',
+      sections: [
+        ['EXPLANATIONS ARE THE PRODUCT', 'The learner meets the Explanation immediately after answering, alone. Each\none must teach the idea from first principles in 2-4 sentences — not merely\nassert which letter was right. Assume nobody is there to ask.'],
+        ['SEQUENCE', 'Order the items so they build: the easiest first, each one leaning on the\nidea before it. A learner should feel progress by item ten.']
+      ],
+      quality: [
+        'Every Explanation would make sense to a learner who got the item wrong.',
+        'Explanations name the misconception behind the tempting wrong option.',
+        'No item depends on having seen an earlier item\'s answer.'
+      ]
+    },
+
+    review: {
+      label: 'Review quiz (find the gaps)',
+      role: 'a diagnostician mapping exactly what a class did and did not absorb in the lesson just taught',
+      mission: 'This is sat straight after teaching. Its job is to locate gaps precisely, not to produce a grade.',
+      ref: { mcq: 8, tf: 3, short: 3, matching: 2, cloze: 2, numeric: 2 }, dominant: 'mcq',
+      sections: [
+        ['EVEN COVERAGE', 'Spread the items EVENLY across every sub-topic taught. Two items per\nsub-topic minimum, so one careless slip does not look like a knowledge gap.'],
+        ['DIAGNOSTIC TAGGING', 'Col16 (Tags) must name the specific sub-skill each item tests, e.g.\n"balancing-equations" or "unit-conversion". The tutor filters by that tag to\ndecide what to reteach.'],
+        ['NO CURVEBALLS', 'Nothing beyond what was actually taught in the lesson. An item testing\nunseen material tells the tutor nothing useful.']
+      ],
+      quality: [
+        'Every sub-topic has at least two items.',
+        'Col16 carries a specific, machine-filterable tag on every row.',
+        'Each Explanation says which part of the lesson to revisit.'
+      ]
+    },
+
+    graded: {
+      label: 'Graded assessment (counts)',
+      role: 'a chief examiner producing a paper whose marks will be defended to a parent',
+      mission: 'This counts and is pushed to the scoresheet. Every key must survive a challenge.',
+      ref: { mcq: 10, mrq: 3, numeric: 3, short: 2, multi_numeric: 2, case_study: 2, essay: 1 }, dominant: 'mcq',
+      sections: [
+        ['DEFENSIBILITY', 'Assume a parent will query a mark. Every item must have exactly one\ndefensible answer, and Col11 (Accept) must list every legitimate alternative\nwording so a correct answer is never marked wrong on a technicality.'],
+        ['WEIGHTING', 'Marks must reflect effort: a one-step recall item is 1 mark, a multi-step\ncalculation is 3-5. State the mark clearly and consistently.'],
+        ['NO AMBIGUITY', 'Reject any item where two options could both be argued correct. If in doubt,\nrewrite the item rather than the explanation.']
+      ],
+      quality: [
+        'No item has an arguable second answer.',
+        'Col11 is populated for every short and numeric item.',
+        'Mark values are proportional to the work required.',
+        'Explanations read as a marking rationale.'
+      ]
+    },
+
+    reading_article: {
+      label: 'Reading — article / text',
+      role: 'a comprehension examiner who sets papers on unseen texts',
+      mission: 'Test whether the learner actually READ and UNDERSTOOD the specific material, not whether they already knew the topic.',
+      ref: { case_study: 6, short: 5, mcq: 4, cloze: 3, hot_text: 2 }, dominant: 'case_study',
+      sections: [
+        ['SOURCE', 'Base EVERY item on this material: {{SOURCE}}\nA learner who has not read it must not be able to answer from general knowledge.'],
+        ['SKILL MIX', 'Cover the four comprehension skills: literal retrieval, inference,\nvocabulary-in-context, and author purpose or tone. Name which skill each\nitem tests in Col16.'],
+        ['QUOTE ANCHORING', 'Where an answer turns on a specific line, quote that line in the Explanation\nso the tutor can point at it.']
+      ],
+      quality: [
+        'No item is answerable without the source.',
+        'At least one inference item and one vocabulary-in-context item.',
+        'Col16 names the comprehension skill on every row.'
+      ]
+    },
+
+    reading_video: {
+      label: 'Reading — video source',
+      role: 'a media-literacy examiner setting questions on a specific recording',
+      mission: 'Confirm the learner watched attentively and can reason about what they saw and heard.',
+      ref: { case_study: 5, mcq: 6, short: 4, ordering: 3, tf: 2 }, dominant: 'mcq',
+      sections: [
+        ['SOURCE', 'Base EVERY item on this video: {{SOURCE}}\nQuestions must be answerable ONLY by someone who watched it.'],
+        ['TIMESTAMPS', 'Where a specific moment matters, cite the timestamp in the Explanation\n(e.g. "see 04:12"). This lets the tutor replay the exact clip.'],
+        ['SEQUENCE ITEMS', 'Include ordering items that ask for the sequence of steps or events as shown.\nThat tests attention in a way multiple choice cannot.']
+      ],
+      quality: [
+        'Every item cites what was shown or said, not general knowledge.',
+        'At least two items carry a timestamp in the Explanation.',
+        'No item depends on video quality or on reading small on-screen text.'
+      ]
+    },
+
+    reading_pack: {
+      label: 'Reading — full comprehension set',
+      role: 'an examiner building a complete comprehension section around one shared passage',
+      mission: 'Produce a coherent comprehension SET, not scattered questions: one shared stimulus, then a graded ladder of questions on it.',
+      ref: { case_study: 10, short: 5, cloze: 3, hot_text: 2 }, dominant: 'case_study',
+      sections: [
+        ['SOURCE', 'Shared stimulus: {{SOURCE}}\nRepeat the SAME passage in Col14 of every case_study row so each question\nstands alone if shuffled.'],
+        ['LADDER', 'Order from literal retrieval, through inference, to evaluation. The last\nthree items should be the most demanding in the set.']
+      ],
+      quality: [
+        'Every case_study row carries the full passage in Col14.',
+        'The difficulty ladder is visible in Col15.',
+        'Vocabulary items quote the sentence the word appears in.'
+      ]
+    },
+
+    mcq_only: {
+      label: 'MCQ only (strict)',
+      role: 'a multiple-choice specialist who writes items for standardised, machine-marked papers',
+      mission: 'Produce a clean, uniform four-option multiple-choice paper. Nothing else.',
+      ref: { mcq: 20 }, dominant: 'mcq',
+      sections: [
+        ['STRICT FORMAT', 'EVERY item is type "mcq" with EXACTLY four options in Col2-Col5.\nDo not emit any other type under any circumstances, for any reason.'],
+        ['DISTRACTOR DISCIPLINE', 'Each of the three wrong options must correspond to a specific, nameable\nerror — a sign slip, a unit confusion, an off-by-one, a common misreading.\nState which error in the Explanation.'],
+        ['KEY BALANCE', 'Spread the correct answers roughly evenly across A, B, C and D. Do not let\nany letter carry more than a third of the keys.']
+      ],
+      quality: [
+        'Exactly four options on every row; Col6 is a single letter or the exact option text.',
+        'No "all of the above" or "none of the above".',
+        'Options are grammatically parallel and similar in length.',
+        'Key distribution across A-D is roughly even.'
+      ]
+    },
+
+    exam_board: {
+      label: 'Exam-board house style',
+      role: 'a former {{BOARD}} question setter who knows the board\'s house style intimately',
+      mission: 'Produce items indistinguishable from real {{BOARD}} questions in register, command words and mark weighting.',
+      ref: { mcq: 10, short: 3, numeric: 3, case_study: 2, assertion_reason: 2 }, dominant: 'mcq',
+      sections: [
+        ['HOUSE STYLE — {{BOARD}}', 'Mirror the board precisely: its command words (state, define, explain,\ndescribe, calculate, justify), its stem length, its option phrasing, its\nordering from accessible to demanding, and its mark allocations.'],
+        ['SYLLABUS ANCHORING', 'Every item must map to a stated syllabus objective for {{BOARD}}. Put the\nobjective reference in Col16 where you can identify it.'],
+        ['AUTHENTICITY TEST', 'A candidate should not be able to tell these apart from past questions.\nIf an item reads like a textbook exercise rather than an exam question,\nrewrite it.']
+      ],
+      quality: [
+        'Command words match {{BOARD}} conventions exactly.',
+        'Mark values match how {{BOARD}} weights that kind of task.',
+        'Col16 carries a syllabus reference wherever one can be identified.'
+      ]
+    },
+
+    differentiated: {
+      label: 'Differentiated (three tiers)',
+      role: 'an inclusion lead building one paper that works for a mixed-ability group',
+      mission: 'One paper, three visible tiers, so every learner in the room meets questions at the edge of their ability.',
+      ref: { mcq: 8, short: 3, numeric: 3, multi_numeric: 2, case_study: 2, tf: 2 }, dominant: 'mcq',
+      sections: [
+        ['THREE TIERS', 'Exactly one third foundation, one third core, one third stretch.\nCol15 must read "easy", "moderate" or "demanding" — the tutor filters on it.'],
+        ['SAME CONTENT, DIFFERENT DEMAND', 'The tiers must test the SAME sub-topics at different depths, so a foundation\nlearner and a stretch learner can discuss the same lesson afterwards.'],
+        ['SCAFFOLDING', 'Foundation items may include a hint inside the stem (a formula, a worked\nfirst step). Stretch items must not.']
+      ],
+      quality: [
+        'The three tiers are exactly equal in number.',
+        'Each sub-topic appears at all three tiers.',
+        'Col15 is populated on every single row.'
+      ]
+    },
+
+    misconception: {
+      label: 'Misconception hunting',
+      role: 'a researcher in learner error patterns who designs items to expose specific wrong models',
+      mission: 'This paper exists to DIAGNOSE, not to score. Every wrong option is a hypothesis about how the learner is thinking.',
+      ref: { mcq: 12, mrq: 3, matrix: 2, short: 2, assertion_reason: 1 }, dominant: 'mcq',
+      sections: [
+        ['EVERY DISTRACTOR IS A DIAGNOSIS', 'Each wrong option must be the answer a learner reaches by a SPECIFIC faulty\nmethod. Never filler. If you cannot name the error a distractor represents,\nreplace it.'],
+        ['NAME THE ERROR', 'The Explanation must name the misconception explicitly, e.g. "chose B by\nadding the indices instead of multiplying" or "chose C by treating weight and\nmass as the same quantity."'],
+        ['TAG IT', 'Col16 must carry a short slug for the misconception, e.g. "index-addition",\nso the tutor can count how often each error appears across the class.']
+      ],
+      quality: [
+        'Every distractor maps to a named, plausible error.',
+        'Every Explanation names the error behind the most tempting wrong option.',
+        'Col16 carries a misconception slug on every row.',
+        'No distractor is absurd — an obviously silly option diagnoses nothing.'
+      ]
+    },
+
+    multi_subject: {
+      label: 'Multi-subject paper',
+      role: 'an examinations officer assembling a combined paper across several subjects',
+      mission: 'Build one sitting that covers several subjects cleanly, with the subject tabs the candidate sees driven correctly by the data.',
+      ref: { mcq: 12, short: 3, numeric: 3, tf: 2 }, dominant: 'mcq',
+      sections: [
+        ['SUBJECTS', 'Cover these subjects: {{SUBJECTS}}\nDivide the items as evenly as possible between them.'],
+        ['SECTION COLUMN IS CRITICAL', 'Col17 (Section) must contain the SUBJECT NAME for that row, spelled\nidentically every time. This column drives the subject tabs in the exam\nplayer — an inconsistent spelling creates a phantom extra tab.'],
+        ['NO CROSS-CONTAMINATION', 'A Mathematics item must not require Biology knowledge, and vice versa.\nEach item belongs to exactly one subject.']
+      ],
+      quality: [
+        'Item counts per subject differ by at most one.',
+        'Col17 spellings are identical within each subject, with no stray spaces.',
+        'No item requires knowledge from another subject in the set.'
+      ]
+    },
+
+    past_paper: {
+      label: 'Past-paper style',
+      role: 'an archivist reconstructing a paper in the authentic style of previous {{BOARD}} sittings',
+      mission: 'Recreate the feel of a real past paper, including its structure and its progression.',
+      ref: { mcq: 11, short: 3, numeric: 3, case_study: 2, essay: 1 }, dominant: 'mcq',
+      sections: [
+        ['AUTHENTIC PROGRESSION', 'Real papers ramp. Open with accessible items, build steadily, and place the\nmost demanding items in the final quarter. Col15 should show that curve.'],
+        ['PERIOD REGISTER', 'Use the phrasing conventions of {{BOARD}} papers — including their habitual\nstems ("Which of the following...", "Calculate, correct to 2 decimal places...").'],
+        ['TOPIC WEIGHTING', 'Weight sub-topics the way the board historically does, not evenly.']
+      ],
+      quality: [
+        'Difficulty rises across the paper rather than jumping about.',
+        'Phrasing is idiomatic to the board, not generic.',
+        'The topic weighting is defensible against real past papers.'
+      ]
+    },
+
+    marking_scheme: {
+      label: 'With full marking scheme',
+      role: 'a chief examiner writing both the paper AND the marking scheme that accompanies it',
+      mission: 'Produce a paper a second marker could mark identically without speaking to you.',
+      ref: { short: 6, numeric: 4, multi_numeric: 3, essay: 2, mcq: 3, case_study: 2 }, dominant: 'short',
+      sections: [
+        ['COL7 IS A MARKING SCHEME', 'The Explanation column must read as a marking scheme, not a hint: the\nacceptable answers, where each mark is earned, and what earns no credit.\nUse the convention "M1 — method mark for ...; A1 — accuracy mark for ...".'],
+        ['ACCEPT GENEROUSLY', 'Col11 must list every legitimate alternative wording, spelling and form,\nseparated by |. This is what prevents a correct answer being marked wrong.'],
+        ['TOLERANCES', 'Every numeric item MUST carry a tolerance in Col9. State in Col7 whether\nfollow-through marks apply after an earlier error.']
+      ],
+      quality: [
+        'Every row\'s Col7 identifies where each mark is earned.',
+        'Col11 is populated for every non-objective item.',
+        'Every numeric item has an explicit tolerance.',
+        'A second marker would award the same marks.'
+      ]
+    },
+
+    oral_practice: {
+      label: 'Oral / spoken practice',
+      role: 'a speaking examiner preparing prompts for spoken assessment',
+      mission: 'Give the learner things to SAY, and give the tutor a clear basis for judging what they hear.',
+      ref: { essay: 8, short: 6, case_study: 4, mcq: 2 }, dominant: 'essay',
+      sections: [
+        ['SPOKEN, NOT WRITTEN', 'Every prompt must be answerable aloud in 30-120 seconds. Avoid anything\nrequiring notation, diagrams or long calculation.'],
+        ['WHAT A STRONG ANSWER CONTAINS', 'For each item, the Explanation must describe what a strong spoken answer\ncontains — the points, the structure, the register — so the tutor can judge\nconsistently. Put the checkable points in Col14 keywords.'],
+        ['RECORDINGS ARE LINKS', 'If a learner records themselves, it is submitted as a Drive or YouTube LINK.\nThis platform never accepts uploads. Say so in the Explanation where relevant.']
+      ],
+      quality: [
+        'Every prompt is genuinely speakable in under two minutes.',
+        'Col14 keywords are things an assessor can actually listen for.',
+        'No prompt requires the learner to read a long text aloud first.'
+      ]
+    }
+  },
+
   promptPack(level, topic, count, klass, extra) {
     extra = extra || {};
     const studio = (window.PRACTICE && window.PRACTICE.name) || 'this tutoring studio';
     const subject = extra.subject || '[SUBJECT]';
     const examType = extra.examType || extra.board || 'general classwork';
+    const board = extra.board || examType;
+    const source = extra.source || '[SOURCE LINK]';
+    const subjects = extra.subjects || subject;
     const n = Number(count) || 20;
     const fname = (topic || 'questions').toString().toLowerCase()
       .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'questions';
 
-    /* Scale a 60-question reference mix to the requested count, then push the
-       rounding remainder onto MCQ. This is why it always sums exactly to n. */
-    const base = { mcq: 14, tf: 6, mrq: 6, short: 6, numeric: 6, matching: 4,
-                   ordering: 4, cloze: 4, categorization: 2, multi_numeric: 2,
-                   essay: 1, assertion_reason: 2, case_study: 2, matrix: 1, hot_text: 1 };
-    const baseTotal = Object.keys(base).reduce(function (a, k) { return a + base[k]; }, 0);
-    const mix = {}; let running = 0;
-    Object.keys(base).forEach(function (k) {
-      const v = Math.floor(base[k] * n / baseTotal);
-      if (v > 0) { mix[k] = v; running += v; }
-    });
-    mix.mcq = (mix.mcq || 0) + Math.max(0, n - running);
+    const key = String(level || '').toLowerCase();
+    const P = this.PACKS[key] || this.PACKS.intermediate;
 
-    /* -------------------------------------------------------------------
-       THE 18 PROMPT PACKS — restored and kept.
-       `level` doubles as a pack id. The V21 rewrite initially ignored it,
-       which silently dropped mcq_only, exam_board, reading_*, multi_subject
-       and the rest. They are pre-existing features and must not be lost, so
-       each pack now RESHAPES the distribution and APPENDS its own briefing
-       on top of the new, richer base contract rather than replacing it.
-       ------------------------------------------------------------------- */
-    const pack = String(level || '').toLowerCase();
-    const only = function (type) {
-      Object.keys(mix).forEach(function (k) { delete mix[k]; });
-      mix[type] = n;
-    };
-    let addendum = '';
+    const fill = (s) => String(s)
+      .replace(/\{\{BOARD\}\}/g, board)
+      .replace(/\{\{SOURCE\}\}/g, source)
+      .replace(/\{\{SUBJECTS\}\}/g, subjects);
 
-    if (pack === 'mcq_only') {
-      only('mcq');
-      addendum = '\n\nMCQ-ONLY PACK — STRICT\n' +
-        'Every single one of the ' + n + ' items must be type "mcq" with exactly four\n' +
-        'options. Do not emit any other type under any circumstances. Each distractor\n' +
-        'must correspond to a specific, nameable error a learner makes.';
-    } else if (pack === 'exam_board') {
-      addendum = '\n\nEXAM-BOARD PACK — ' + (extra.board || examType) + '\n' +
-        'Mirror the house style of ' + (extra.board || examType) + ': its command words, its\n' +
-        'mark allocations, its phrasing conventions and its typical stem length. A\n' +
-        'candidate should not be able to tell these from real past questions.';
-    } else if (pack === 'reading_video') {
-      addendum = '\n\nREADING PACK — VIDEO SOURCE\n' +
-        'Base every item on this video: ' + (extra.source || '[VIDEO LINK]') + '\n' +
-        'Questions must be answerable ONLY by someone who watched it. Where a specific\n' +
-        'moment matters, cite the timestamp in the Explanation column.';
-    } else if (pack === 'reading_article') {
-      addendum = '\n\nREADING PACK — ARTICLE / TEXT SOURCE\n' +
-        'Base every item on this material: ' + (extra.source || '[MATERIAL LINK]') + '\n' +
-        'Test comprehension, inference and vocabulary in context — not recall of facts\n' +
-        'the learner could already know without reading it.';
-    } else if (pack === 'reading_pack') {
-      addendum = '\n\nREADING PACK — COMPREHENSION SET\n' +
-        'Source: ' + (extra.source || '[SOURCE LINK]') + '\n' +
-        'Weight the paper towards case_study items that share one passage, then a few\n' +
-        'short-answer items on vocabulary in context.';
-    } else if (pack === 'multi_subject') {
-      addendum = '\n\nMULTI-SUBJECT PACK\n' +
-        'Cover these subjects: ' + (extra.subjects || subject) + '\n' +
-        'Divide the ' + n + ' items as evenly as possible between them and put the subject\n' +
-        'name in Col17 (Section) on every row — that column drives the subject tabs the\n' +
-        'candidate sees, so it must be exact and consistent.';
-    } else if (pack === 'differentiated') {
-      addendum = '\n\nDIFFERENTIATED PACK\n' +
-        'Produce three visible tiers: one third foundation, one third core, one third\n' +
-        'stretch. Put "easy", "moderate" or "demanding" in Col15 on every row so the\n' +
-        'tutor can filter by tier.';
-    } else if (pack === 'misconception') {
-      addendum = '\n\nMISCONCEPTION-HUNTING PACK\n' +
-        'Every distractor must be a REAL misconception, and the Explanation must name it\n' +
-        'explicitly ("chose B because they added the indices instead of multiplying").\n' +
-        'This paper exists to diagnose, not merely to score.';
-    } else if (pack === 'past_paper') {
-      addendum = '\n\nPAST-PAPER STYLE PACK\n' +
-        'Write in the register of a real ' + (extra.board || examType) + ' paper: same command\n' +
-        'words, same mark weighting, same ordering from accessible to demanding.';
-    } else if (pack === 'marking_scheme') {
-      addendum = '\n\nMARKING-SCHEME PACK\n' +
-        'The Explanation column must read as a marking scheme: the acceptable answers,\n' +
-        'where each mark is earned, and what earns no credit. Populate Col11 (Accept)\n' +
-        'generously so alternative correct wordings are not marked wrong.';
-    } else if (pack === 'oral_practice') {
-      addendum = '\n\nORAL-PRACTICE PACK\n' +
-        'Favour essay and short items that a learner answers aloud, then records. Media\n' +
-        'must be a LINK (Drive or YouTube) — never an upload. State in the Explanation\n' +
-        'what a strong spoken answer contains.';
-    } else if (pack === 'self') {
-      addendum = '\n\nSELF-QUIZ PACK\n' +
-        'This is practice, not assessment. Explanations must be generous and teach the\n' +
-        'idea from first principles, because the learner meets them immediately.';
-    } else if (pack === 'review') {
-      addendum = '\n\nREVIEW-QUIZ PACK\n' +
-        'Sat straight after a lesson to find gaps. Spread items evenly across everything\n' +
-        'taught, and make each Explanation say which sub-topic to revisit.';
-    } else if (pack === 'graded') {
-      addendum = '\n\nGRADED-QUIZ PACK\n' +
-        'This counts and is pushed to the scoresheet. Be exhaustive, unambiguous and\n' +
-        'defensible: every key must survive a parent querying the mark.';
-    } else if (pack === 'simple') {
-      addendum = '\n\nSIMPLE PACK\nKeep language plain and stems short. Favour mcq and tf.';
-    } else if (pack === 'intermediate') {
-      addendum = '\n\nINTERMEDIATE PACK\nMix recall with application. Include some numeric and short items.';
-    } else if (pack === 'advanced') {
-      addendum = '\n\nADVANCED PACK\n' +
-        'Favour multi-step reasoning: multi_numeric, assertion_reason, case_study and\n' +
-        'matrix items should dominate.';
-    } else if (pack === 'enterprise') {
-      addendum = '\n\nENTERPRISE PACK\n' +
-        'Use the FULL range of seventeen types, including matching, ordering, cloze,\n' +
-        'categorization, matrix, hot_text and code. This is the showcase paper.';
-    }
+    const mix = this._mix(P.ref, n, P.dominant, P.minOne);
+    const usedTypes = Object.keys(mix);
+    const distribution = usedTypes.map(function (k) { return k + '=' + mix[k]; }).join(', ');
+    const rule = '===================================================================';
 
-    const distribution = Object.keys(mix).map(function (k) { return k + '=' + mix[k]; }).join(', ');
+    const sections = (P.sections || []).map(function (s) {
+      return rule + '\n' + fill(s[0]) + '\n' + rule + '\n' + fill(s[1]);
+    }).join('\n\n');
 
-    return 'ROLE\n' +
-'You are a veteran Chief Examiner and question-bank author with 20+ years setting\n' +
-examType + ' papers in ' + subject + '. You write for ' + studio + ', a tutoring studio\n' +
-'serving Nigerian and international learners.\n\n' +
+    const quality = (P.quality || []).map(function (q) { return '- ' + fill(q); }).join('\n');
+    const checks = [
+      'Output is a DOWNLOADABLE .csv FILE named "' + fname + '.csv".',
+      'Exactly ' + n + ' data rows, plus the one header row.',
+      'Header matches the contract character for character (17 columns).',
+      'Type counts match the distribution and sum to ' + n + '.',
+      'Every JSON cell has inner quotes doubled ("") and the whole cell quoted.',
+      'Every objective row has a non-empty, unambiguous key in Col6.',
+      'Col17 is the subject on every row.'
+    ].concat(P.checks || []).map(function (c) { return '[ ] ' + fill(c); }).join('\n');
+
+    return 'PACK: ' + P.label.toUpperCase() + '\n\n' +
+'ROLE\n' +
+'You are ' + fill(P.role) + '.\n' +
+'You are writing for ' + studio + ', a tutoring studio serving Nigerian and\n' +
+'international learners.\n\n' +
+'MISSION FOR THIS PARTICULAR PAPER\n' +
+fill(P.mission) + '\n\n' +
 'TASK\n' +
 'Produce EXACTLY ' + n + ' assessment items on "' + topic + '" for a ' +
-(klass || level || 'tutoring learner') + '\nsitting ' + examType + ' in ' + subject + '.\n\n' +
-'===================================================================\n' +
-'OUTPUT CONTRACT - READ THIS TWICE. IT IS THE MOST IMPORTANT PART.\n' +
-'===================================================================\n\n' +
-'0. OUTPUT A DOWNLOADABLE .CSV FILE - NOT RAW CSV TEXT.\n' +
+(klass || 'tutoring learner') + '\nsitting ' + examType + ' in ' + subject + '.\n\n' +
+rule + '\nOUTPUT CONTRACT — READ TWICE. THIS IS THE MOST IMPORTANT PART.\n' + rule + '\n\n' +
+'0. OUTPUT A DOWNLOADABLE .CSV FILE — NOT RAW CSV TEXT.\n' +
 '   Produce a real, clickable file attachment named "' + fname + '.csv" that the\n' +
 '   tutor can download and import directly. Use whatever file-generating\n' +
-'   capability you have. The tutor must end up with a .csv FILE, without\n' +
+'   capability you have. The tutor must end up with a .csv FILE without\n' +
 '   copying or pasting anything.\n' +
 '   Only if you genuinely cannot emit a file, say so in ONE short line, then\n' +
 '   output a single raw CSV code block instead.\n\n' +
-'1. The file contains the CSV and nothing else - no preamble, no commentary,\n' +
-'   no markdown table, no notes afterwards.\n\n' +
+'1. The file contains the CSV and nothing else — no preamble, no commentary.\n\n' +
 '2. The FIRST line must be exactly this header, character for character:\n' +
 'Question,A,B,C,D,CorrectAnswer,Explanation,Type,Tolerance,Unit,Accept,MRQ_AON,Pairs,Items,Difficulty,Tags,Section\n\n' +
-'3. Then EXACTLY ' + n + ' data rows - one item per row.\n\n' +
+'3. Then EXACTLY ' + n + ' data rows — one item per row.\n\n' +
 '4. Wrap EVERY field in double quotes. Escape any inner double quote by\n' +
-'   doubling it (""). This is what lets JSON live inside a CSV cell and still\n' +
-'   open cleanly in Excel, Google Sheets and LibreOffice.\n\n' +
-'5. Use correct UTF-8 for scientific notation: H2O as H\u2082O, CO\u2082, \u03c0, \u03a9, \u2264, \u2265, \u00b0C.\n\n' +
-'6. "Section" must be exactly: ' + subject + '\n\n' +
+'   doubling it (""). This is what lets JSON live inside a CSV cell.\n\n' +
+'5. Use correct UTF-8 for scientific notation: H\u2082O, CO\u2082, \u03c0, \u03a9, \u2264, \u2265, \u00b0C.\n\n' +
+'6. "Section" (Col17) must be exactly: ' + subject + '\n\n' +
 '7. Never leave "CorrectAnswer" empty on an objective item.\n\n' +
 '8. Any media must be a public https, Google Drive or YouTube LINK. This\n' +
-'   platform NEVER accepts file uploads - links only.\n\n' +
-'===================================================================\n' +
-'QUESTION TYPE DISTRIBUTION - MUST SUM TO EXACTLY ' + n + '\n' +
-'===================================================================\n' +
+'   platform NEVER accepts file uploads — links only.\n\n' +
+rule + '\nQUESTION TYPE DISTRIBUTION — MUST SUM TO EXACTLY ' + n + '\n' + rule + '\n' +
 distribution + '\n\n' +
-'===================================================================\n' +
-'PER-TYPE COLUMN RULES\n' +
+rule + '\nCOLUMN RULES FOR THE TYPES THIS PACK USES\n' +
 'Columns: 1 Question | 2 A | 3 B | 4 C | 5 D | 6 CorrectAnswer |\n' +
 '7 Explanation | 8 Type | 9 Tolerance | 10 Unit | 11 Accept |\n' +
-'12 MRQ_AON | 13 Pairs | 14 Items | 15 Difficulty | 16 Tags | 17 Section\n' +
-'===================================================================\n\n' +
-'mcq - one correct option\n' +
-'  Col2-5: four plausible options. Col6: the ANSWER TEXT or the letter A/B/C/D.\n' +
-'  Col8: mcq\n\n' +
-'tf - true/false\n' +
-'  Col2: True   Col3: False   Col4-5: blank\n' +
-'  Col6: True or False. Col8: tf\n\n' +
-'mrq - several correct options\n' +
-'  Col2-5: options. Col6: correct options separated by | (e.g. Iron|Copper).\n' +
-'  Col12: true for all-or-nothing marking, false for partial credit.\n' +
-'  Col8: mrq\n\n' +
-'short - typed short answer\n' +
-'  Col6: the primary answer.\n' +
-'  Col11: accepted alternatives separated by | (e.g. H\u2082O|water|h2o).\n' +
-'  Col8: short\n\n' +
-'numeric - a number\n' +
-'  Col6: the number only. Col9: tolerance (0, 0.05, 0.5). Col10: unit.\n' +
-'  Col8: numeric\n\n' +
-'multi_numeric - several numeric sub-parts, part marks\n' +
-'  Col14: [{"label":"x","answer":3,"tolerance":0},{"label":"y","answer":2,"tolerance":0}]\n' +
-'  Col8: multi_numeric\n\n' +
-'matching - pair left with right\n' +
-'  Col13: [{"left":"Na","right":"Sodium"},{"left":"K","right":"Potassium"}]\n' +
-'  Col11 may add distractors separated by | to make it harder.\n' +
-'  Col8: matching\n\n' +
-'ordering - arrange in sequence\n' +
-'  Col14: the items IN THE CORRECT ORDER, e.g. ["Mercury","Venus","Earth"]\n' +
-'  Col8: ordering\n\n' +
-'cloze - fill several blanks\n' +
-'  Col1: the sentence, each blank written as ___ (three underscores).\n' +
-'  Col14: accepted answers per blank in order, alternatives with |,\n' +
-'         e.g. ["mass|m","acceleration|a"]\n' +
-'  Col8: cloze\n\n' +
-'categorization - sort items into groups\n' +
-'  Col14: [{"item":"Sodium","category":"Metal"},{"item":"Oxygen","category":"Non-metal"}]\n' +
-'  Col8: categorization\n\n' +
-'matrix - several rows sharing one set of options\n' +
-'  Col11: the shared options separated by |, e.g. True|False\n' +
-'  Col14: [{"statement":"Water boils at 100 C at sea level","answer":"True"}]\n' +
-'  Col8: matrix\n\n' +
-'hot_text - tap the correct parts\n' +
-'  Col14: [{"text":"2","correct":true},{"text":"4","correct":false},{"text":"5","correct":true}]\n' +
-'  Col8: hot_text\n\n' +
-'assertion_reason - WAEC/JAMB/Cambridge logic item\n' +
-'  Col14: {"assertion":"Metals conduct electricity","reason":"Metals have free electrons"}\n' +
-'  Col6: A, B, C, D or E, where\n' +
-'        A = both true and the Reason explains the Assertion\n' +
-'        B = both true but the Reason does not explain it\n' +
-'        C = Assertion true, Reason false\n' +
-'        D = Assertion false, Reason true\n' +
-'        E = both false\n' +
-'  Col8: assertion_reason\n\n' +
-'case_study - passage or scenario, then a question\n' +
-'  Col14: {"passage":"Write the full passage or data here."}\n' +
-'  Col1: the question asked about it. Col2-5: options. Col6: the answer.\n' +
-'  Col8: case_study\n\n' +
-'image_mcq - diagram question\n' +
-'  Col11 or Col14: {"image":"https://..."} - a public https or Drive LINK only.\n' +
-'  With no real image, describe the diagram fully in Col1 and leave it blank.\n' +
-'  Col8: image_mcq\n\n' +
-'essay - extended response, marked WITHOUT AI\n' +
-'  Col14: {"min_words":40,"keywords":["photosynthesis","chlorophyll","glucose"]}\n' +
-'  Col7 should state that tutor review is recommended.\n' +
-'  Col8: essay\n\n' +
-'code - code, pseudocode or SQL\n' +
-'  Col14: {"language":"JavaScript","keywords":["function","return","Math.max"]}\n' +
-'  Col8: code\n\n' +
-'===================================================================\n' +
-'QUALITY BAR - a paper failing any of these is not acceptable\n' +
-'===================================================================\n' +
-'- Every stem is self-contained and unambiguous. A competent learner should\n' +
-'  never have to guess what is being asked.\n' +
-'- Distractors are PLAUSIBLE and DIAGNOSTIC - each wrong option should match a\n' +
-'  real misconception. Never "none of the above" or obvious filler.\n' +
-'- Explanations TEACH: why the right answer is right, and why the attractive\n' +
-'  wrong one is wrong.\n' +
-'- Spread the difficulty: about 30% easy, 50% moderate, 20% demanding. Put that\n' +
-'  word in Col15.\n' +
-'- Numeric items producing decimals MUST carry a tolerance in Col9.\n' +
-'- Essay and code keywords must be objectively checkable without AI.\n' +
-'- Cover the sub-areas of the topic rather than repeating one idea ' + n + ' times.\n' +
-'- Match the command words and mark weightings of ' + examType + '.\n\n' +
-'===================================================================\n' +
-'FINAL CHECK BEFORE YOU ANSWER\n' +
-'===================================================================\n' +
-'[ ] Output is a DOWNLOADABLE .csv FILE named "' + fname + '.csv".\n' +
-'[ ] Exactly ' + n + ' data rows, plus the one header row.\n' +
-'[ ] Header matches the contract character for character (17 columns).\n' +
-'[ ] Type counts match the distribution above and sum to ' + n + '.\n' +
-'[ ] Every JSON cell has inner quotes doubled ("") and the whole cell quoted.\n' +
-'[ ] Every objective row has a non-empty, unambiguous key in Col6.\n' +
-'[ ] Col17 is "' + subject + '" on every row.\n' +
-'[ ] Nothing in your reply but the file (or, as a fallback, one CSV block).' + addendum;
+'12 MRQ_AON | 13 Pairs | 14 Items | 15 Difficulty | 16 Tags | 17 Section\n' + rule + '\n\n' +
+this._typeRules(usedTypes) + '\n\n' +
+sections + '\n\n' +
+rule + '\nQUALITY BAR FOR THIS PACK — an item failing any of these is rejected\n' + rule + '\n' +
+quality + '\n\n' +
+rule + '\nFINAL CHECK BEFORE YOU ANSWER\n' + rule + '\n' + checks;
   }
 };
 window.CBT = CBT;

@@ -337,9 +337,67 @@
     code_output: 'code', hotspot: 'image_based'
   };
 
+  /* -------------------------------------------------------------------------
+     ITEM 4 — ON-SCREEN GUIDANCE FOR THE UNFAMILIAR TYPES.
+
+     A learner who has only ever met multiple choice will hesitate at a
+     matching table or a drag-to-order list, and hesitation in a timed exam
+     costs marks that have nothing to do with what they know. Each type
+     therefore carries a one-line "how to answer this" note, shown inline
+     above the control, plus a full legend the candidate can open at any time
+     from the exam toolbar.
+
+     Phrased for a nervous fifteen-year-old, not for a developer.
+     ------------------------------------------------------------------------- */
+  var HOWTO = {
+    mcq: 'Tap the ONE option you think is right. Tap a different one to change your mind.',
+    multi_select: 'More than one option is correct. Tap EVERY option that applies — you get credit for each right one.',
+    true_false: 'Decide whether the statement is true or false, then tap that card.',
+    short_answer: 'Type your answer in the box. Spelling variations are usually accepted, so answer in your own words.',
+    numeric: 'Type the NUMBER only — no words and no unit unless the box asks for one.',
+    multi_numeric: 'This question has several parts. Answer each box separately: you earn a mark for every part you get right, even if another part is wrong.',
+    cloze: 'Fill in each gap in the sentence. Every gap is worth a mark on its own.',
+    matching: 'For each item on the LEFT, choose the matching item from the dropdown on the RIGHT. Some right-hand options may not be used at all.',
+    ordering: 'Put the items into the correct order. Drag them, or use the ↑ and ↓ buttons. You earn a mark for every item that ends up in the right place.',
+    categorization: 'Decide which category each item belongs to and pick it from the dropdown beside it.',
+    matrix: 'Answer every row. All rows share the same set of choices across the top.',
+    hot_text: 'Tap every part that is correct. Tap it again to unselect. Wrong picks cost you, so choose carefully.',
+    essay: 'Write in full sentences. You are marked on the points you make, and your tutor reads it afterwards.',
+    code: 'Write your code in the box. Indentation is kept exactly as you type it.',
+    assertion_reason: 'Read the Assertion and the Reason. Decide whether each is true, and whether the Reason actually EXPLAINS the Assertion. Then pick the option that describes both.',
+    case_study: 'Read the passage at the top first, then answer the question underneath it.',
+    image_based: 'Study the figure, then answer the question underneath it.'
+  };
+
+  /* The full legend, for the "How do I answer these?" button. */
+  function legendHTML() {
+    var order = ['mcq','multi_select','true_false','short_answer','numeric','multi_numeric',
+                 'cloze','matching','ordering','categorization','matrix','hot_text',
+                 'assertion_reason','case_study','image_based','essay','code'];
+    var LABEL = {
+      mcq: 'Multiple choice', multi_select: 'Multiple response', true_false: 'True / False',
+      short_answer: 'Short answer', numeric: 'Numeric', multi_numeric: 'Multi-part numeric',
+      cloze: 'Fill the gaps', matching: 'Matching', ordering: 'Put in order',
+      categorization: 'Sort into groups', matrix: 'Grid', hot_text: 'Tap the right parts',
+      assertion_reason: 'Assertion & Reason', case_study: 'Passage question',
+      image_based: 'Figure question', essay: 'Written answer', code: 'Code'
+    };
+    return '<div class="tcq-legend">' +
+      '<p class="tcq-legend-intro">This paper may use several question styles. Here is how each one ' +
+      'works. You can reopen this at any time — it does not use up your exam time.</p>' +
+      order.map(function (t) {
+        return '<div class="tcq-legend-row"><b>' + (LABEL[t] || t) + '</b><span>' + HOWTO[t] + '</span></div>';
+      }).join('') +
+      '<p class="tcq-legend-foot">Partial credit is normal: on matching, ordering, grids, gap-fills ' +
+      'and multi-part questions you earn marks for the parts you get right, so always attempt them.</p>' +
+      '</div>';
+  }
+
   var CBTTypes = {
     TYPES: TYPES,
     ALIAS: ALIAS,
+    HOWTO: HOWTO,
+    legendHTML: legendHTML,
 
     supports: function (type) {
       var t = ALIAS[type] || type;
@@ -350,7 +408,16 @@
     render: function (q, name) {
       var t = ALIAS[q.type] || q.type;
       if (!this.supports(q.type)) return '';
-      try { return TYPES[t](q, name); }
+      try {
+        var body = TYPES[t](q, name);
+        /* ITEM 4 — a one-line "how to answer this" above every control, so a
+           learner meeting a matching table for the first time is not left
+           guessing. Plain choice questions get no note: it would be noise. */
+        var tip = HOWTO[t];
+        var obvious = (t === 'mcq' || t === 'true_false');
+        return (tip && !obvious ? '<div class="tcq-howto"><span aria-hidden="true">💡</span> ' +
+                 esc(tip) + '</div>' : '') + body;
+      }
       catch (e) { return '<p class="tcq-warn">⚠️ This question could not be displayed (' + esc(e.message) + ').</p>'; }
     },
 

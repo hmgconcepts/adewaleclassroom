@@ -410,11 +410,11 @@ const App = {
       }
     }
     if (status === 'pending') {
-      document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px"><div style="max-width:440px;text-align:center;background:white;padding:40px;border-radius:16px"><h2 style="margin-bottom:12px">⏳ Account pending approval</h2><p>Your account is awaiting studio admin approval. This keeps family data closed until someone you know lets you in.</p><a href="login.html" class="btn btn-primary" style="margin-top:16px">Back to Login</a></div></div>';
+      document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px"><div style="max-width:440px;text-align:center;background:#ffffff;color:#0f172a;padding:40px;border-radius:16px"><h2 style="margin-bottom:12px">⏳ Account pending approval</h2><p>Your account is awaiting studio admin approval. This keeps family data closed until someone you know lets you in.</p><a href="login.html" class="btn btn-primary" style="margin-top:16px">Back to Login</a></div></div>';
       return;
     }
     if (status === 'suspended') {
-      document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px"><div style="max-width:440px;text-align:center;background:white;padding:40px;border-radius:16px"><h2>🚫 Account suspended</h2><p>Please contact the studio administrator.</p><a href="login.html" class="btn btn-outline" style="margin-top:16px">Back to Login</a></div></div>';
+      document.body.innerHTML = '<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px"><div style="max-width:440px;text-align:center;background:#ffffff;color:#0f172a;padding:40px;border-radius:16px"><h2>🚫 Account suspended</h2><p>Please contact the studio administrator.</p><a href="login.html" class="btn btn-outline" style="margin-top:16px">Back to Login</a></div></div>';
       return;
     }
     App.currentRole = String(role).toLowerCase();
@@ -1257,7 +1257,7 @@ const App = {
       fab.style.cssText = 'position:fixed;right:20px;bottom:20px;z-index:9997;width:52px;height:52px;border-radius:50%;border:0;background:linear-gradient(135deg,#134e4a,#0f766e);color:#fff;font-size:1.4rem;cursor:pointer;box-shadow:0 8px 20px rgba(19,78,74,.35)';
       const win = document.createElement('div');
       win.id = 'chatbot-window';
-      win.style.cssText = 'display:none;position:fixed;right:20px;bottom:80px;z-index:9998;width:min(380px,calc(100vw - 32px));height:460px;background:#fff;border-radius:18px;box-shadow:0 20px 50px rgba(15,23,42,.25);flex-direction:column;overflow:hidden;border:1px solid #e2e8f0';
+      win.style.cssText = 'display:none;position:fixed;right:20px;bottom:80px;z-index:9998;width:min(380px,calc(100vw - 32px));height:460px;background:#fff;color:#0f172a;border-radius:18px;box-shadow:0 20px 50px rgba(15,23,42,.25);flex-direction:column;overflow:hidden;border:1px solid #e2e8f0';
       win.innerHTML = '<div style="padding:12px 14px;background:linear-gradient(135deg,#134e4a,#0f766e);color:#fff;display:flex;justify-content:space-between;align-items:center"><strong>Studio Assistant</strong><button type="button" data-chatbot="close" style="border:0;background:transparent;color:#fff;font-size:1.2rem;cursor:pointer">×</button></div>' +
         '<div id="chatbot-messages" style="flex:1;overflow:auto;padding:12px;background:#f8fafc"></div>' +
         '<div style="display:flex;gap:6px;padding:10px;border-top:1px solid #e2e8f0"><input id="chatbot-input" placeholder="Ask about bookings, quizzes, Drive…" style="flex:1;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px"><button type="button" class="btn btn-primary btn-sm" data-chatbot="send">Send</button></div>';
@@ -1308,7 +1308,7 @@ const App = {
     const wrap = document.createElement('div');
     wrap.style.cssText = 'position:relative;margin-left:auto';
     wrap.innerHTML = '<button type="button" id="notif-bell" class="btn btn-sm btn-ghost" aria-label="Notifications" style="position:relative">🔔<span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;border-radius:99px;min-width:16px;height:16px;font-size:10px;align-items:center;justify-content:center;padding:0 4px"></span></button>' +
-      '<div id="notif-dropdown" class="notif-dropdown" style="display:none;position:absolute;right:0;top:40px;width:min(360px,90vw);max-height:420px;overflow:auto;background:#fff;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 16px 40px rgba(15,23,42,.18);z-index:2147483000"><div id="notif-list"></div><div style="padding:8px;text-align:center"><a href="notifications.html">Open notification centre</a></div></div>';
+      '<div id="notif-dropdown" class="notif-dropdown" style="display:none;position:absolute;right:0;top:40px;width:min(360px,90vw);max-height:420px;overflow:auto;background:#fff;color:#0f172a;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 16px 40px rgba(15,23,42,.18);z-index:2147483000"><div id="notif-list"></div><div style="padding:8px;text-align:center"><a href="notifications.html">Open notification centre</a></div></div>';
     bar.appendChild(wrap);
     const dd = wrap.querySelector('#notif-dropdown');
     const origAdd = dd.classList.add.bind(dd.classList);

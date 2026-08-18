@@ -226,6 +226,44 @@ const CRUD = {
         { key: 'publish_at', label: 'Publish at', type: 'datetime-local', help: 'Leave as now to publish immediately, or set a future time.' },
         { key: 'created_at', label: 'Created', type: 'datetime-local' }
       ]},
+    /* ITEM 6 — the scheme of work had no CRUD at all, so a term or topic
+       could be created but never corrected or removed. All three SoW tables
+       are registered here, which gives the page edit, delete, duplicate,
+       filter, sort, page, export and print for free. */
+    sow_terms: { table: 'sow_terms', title: 'Scheme of work — term', orderBy: 'created_at',
+      empty: 'No terms yet. A term groups the weekly topics you plan to teach.',
+      cols: [
+        { key: 'engagement_id', label: 'Class / engagement', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id', required: true },
+        { key: 'subject', label: 'Subject', type: 'lookup', lookupTable: 'subjects', lookupValue: 'name', required: true, help: 'Pick from the subjects you teach.' },
+        { key: 'term_label', label: 'Term', type: 'select', required: true,
+          options: ['First term','Second term','Third term','Summer','Michaelmas','Lent','Trinity','Session 1','Session 2'] },
+        { key: 'started_on', label: 'Starts', type: 'date' },
+        { key: 'ended_on', label: 'Ends', type: 'date' },
+        { key: 'status', label: 'Status', type: 'select', options: ['active','completed','archived'] },
+        { key: 'created_at', label: 'Created', type: 'datetime-local' }
+      ]},
+    sow_topics: { table: 'sow_topics', title: 'Scheme of work — topic', orderBy: 'week_no',
+      empty: 'No topics yet. Add the weekly topics that make up this term.',
+      cols: [
+        { key: 'term_id', label: 'Term', type: 'ref', refTable: 'sow_terms', refValue: 'term_label', refStore: 'id', required: true },
+        { key: 'week_no', label: 'Week', type: 'number' },
+        { key: 'topic', label: 'Topic', type: 'text', required: true },
+        { key: 'objectives', label: 'Learning objectives', type: 'textarea' },
+        { key: 'resources', label: 'Resources (links only)', help: 'Drive or https links. This studio never accepts uploads.' },
+        { key: 'status', label: 'Status', type: 'select', options: ['planned','taught','assessed','mastered'] },
+        { key: 'coverage_pct', label: 'Coverage %', type: 'number' },
+        { key: 'last_evaluated', label: 'Last evaluated', type: 'date' },
+        { key: 'notes', label: 'Notes', type: 'textarea' }
+      ]},
+    sow_evaluations: { table: 'sow_evaluations', title: 'Scheme of work — evaluation', orderBy: 'evaluated_on',
+      empty: 'No evaluations yet. Record how each learner coped with a topic.',
+      cols: [
+        { key: 'topic_id', label: 'Topic', type: 'ref', refTable: 'sow_topics', refValue: 'topic', refStore: 'id', required: true },
+        { key: 'learner_id', label: 'Learner', type: 'ref', refTable: 'learners', refValue: 'full_name', refStore: 'id', required: true },
+        { key: 'score', label: 'Score', type: 'number' },
+        { key: 'comment', label: 'Comment', type: 'textarea' },
+        { key: 'evaluated_on', label: 'Evaluated on', type: 'date' }
+      ]},
     payments: { table: 'payments', title: 'Payment', cols: [
       { key: 'invoice_id', label: 'Invoice', type: 'ref', refTable: 'invoices', refValue: 'amount', refStore: 'id' },
       { key: 'amount', label: 'Amount', type: 'number', required: true },

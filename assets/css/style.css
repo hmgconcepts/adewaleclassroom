@@ -968,3 +968,16 @@ body.dark-mode .tc-popup a, body.dark-mode #tc-bot-panel a { color: #a5b4fc !imp
   .tcq-blank{width:110px}
   .tcq-parts{grid-template-columns:1fr}
 }
+
+/* ---- V22: per-question how-to note and the full legend (item 4) ---- */
+.tcq-howto{display:flex;gap:8px;align-items:flex-start;font-size:.84rem;line-height:1.55;
+  color:#1e1b4b;background:#eef2ff;border:1px solid #c7d2fe;border-left:4px solid #0506ae;
+  border-radius:10px;padding:9px 12px;margin:0 0 12px}
+.tcq-legend{font-size:.9rem;line-height:1.6;color:#0f172a}
+.tcq-legend-intro,.tcq-legend-foot{background:#f1f5f9;border-radius:10px;padding:10px 12px;
+  color:#334155;margin:0 0 12px}
+.tcq-legend-foot{margin:12px 0 0;background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46}
+.tcq-legend-row{display:grid;grid-template-columns:170px 1fr;gap:12px;padding:8px 0;
+  border-bottom:1px solid #eef2f7}
+.tcq-legend-row b{color:#0506ae}
+@media (max-width:640px){ .tcq-legend-row{grid-template-columns:1fr;gap:2px} }

@@ -203,3 +203,121 @@
   if (d.readyState === 'loading') d.addEventListener('DOMContentLoaded', function () { UX.init(); });
   else UX.init();
 })(window, document);
+
+/* ============================================================================
+   ITEM 5 (V22) — AUTO-DROPDOWNS FOR ANYTHING ALREADY IN THE DATABASE
+   ----------------------------------------------------------------------------
+   "When class, term, session, subject, student, tutor etc. are created, and
+   are needed on other pages, they should not be typed but selected."
+
+   crud.js already covers the 125 workbench pages, via `ref` (stores an id)
+   and `lookup` (stores the text). What it cannot reach is a hand-written
+   form on a bespoke page — and every new bespoke page can reintroduce the
+   problem.
+
+   This closes that gap structurally. Any text input whose id or name names a
+   known entity is upgraded IN PLACE into a datalist-backed picker fed from
+   the live database. The user can still type a genuinely new value, so
+   nothing is ever blocked; they simply no longer HAVE to.
+
+   It is idempotent, runs after the shell has booted, and re-runs when new
+   markup appears, so a form built by JavaScript is upgraded too.
+   ========================================================================== */
+(function (w, d) {
+  'use strict';
+
+  // entity -> [table, column]. Order matters: the first pattern that matches wins.
+  var MAP = [
+    [/\b(learner|student)s?_?(name|no|id)?\b/i, ['learners', 'full_name']],
+    [/\b(tutor|teacher)s?_?(name|id)?\b/i,      ['tutors', 'full_name']],
+    [/\b(parent|guardian)s?_?(name|id)?\b/i,    ['parents', 'full_name']],
+    [/\bsubjects?\b/i,                          ['subjects', 'name']],
+    [/\b(engagement|class|group)s?\b/i,         ['engagements', 'name']],
+    [/\b(term|session)s?\b/i,                   ['sow_terms', 'term_label']],
+    [/\broom s?\b/i,                            ['rooms', 'name']],
+    [/\bexams?\b/i,                             ['cbt_exams', 'title']]
+  ];
+
+  var cache = {};
+
+  async function values(table, col) {
+    var key = table + '.' + col;
+    if (cache[key]) return cache[key];
+    var sb = w.sb || w.SB || (w.App && w.App.sb);
+    if (!sb) return [];
+    try {
+      var r = await sb.from(table).select(col).limit(500);
+      if (r.error) { cache[key] = []; return []; }
+      var seen = {}, out = [];
+      (r.data || []).forEach(function (row) {
+        var v = row[col];
+        if (v == null || String(v).trim() === '' || seen[v]) return;
+        seen[v] = 1; out.push(String(v));
+      });
+      out.sort(function (a, b) { return a.localeCompare(b); });
+      cache[key] = out;
+      return out;
+    } catch (e) { cache[key] = []; return []; }
+  }
+
+  async function upgrade(el) {
+    if (!el || el.dataset.tcPicker === '1') return;
+    if (el.tagName !== 'INPUT') return;
+    var t = (el.type || 'text').toLowerCase();
+    if (['text', 'search', ''].indexOf(t) === -1) return;
+    if (el.getAttribute('list')) { el.dataset.tcPicker = '1'; return; }   // already has one
+
+    var hay = ((el.id || '') + ' ' + (el.name || '') + ' ' +
+               (el.getAttribute('placeholder') || '')).replace(/[-_]/g, ' ');
+    var found = null;
+    for (var i = 0; i < MAP.length; i++) {
+      if (MAP[i][0].test(hay)) { found = MAP[i][1]; break; }
+    }
+    if (!found) return;
+
+    el.dataset.tcPicker = '1';
+    var list = await values(found[0], found[1]);
+    if (!list.length) return;
+
+    var id = 'tcpick-' + found[0] + '-' + Math.random().toString(36).slice(2, 7);
+    var dl = d.createElement('datalist');
+    dl.id = id;
+    dl.innerHTML = list.map(function (v) {
+      return '<option value="' + String(v).replace(/"/g, '&quot;') + '">';
+    }).join('');
+    el.parentNode.insertBefore(dl, el.nextSibling);
+    el.setAttribute('list', id);
+    el.setAttribute('autocomplete', 'off');
+
+    if (!el.placeholder || /type|enter/i.test(el.placeholder)) {
+      el.placeholder = 'Choose from your ' + found[0].replace(/_/g, ' ') + ', or type a new one';
+    }
+    // A quiet cue that this field now offers choices.
+    if (!el.title) el.title = list.length + ' existing ' + found[0].replace(/_/g, ' ') + ' to choose from';
+  }
+
+  function sweep(root) {
+    try {
+      var els = (root || d).querySelectorAll('input:not([data-tc-picker])');
+      for (var i = 0; i < els.length; i++) upgrade(els[i]);
+    } catch (e) {}
+  }
+
+  function start() {
+    setTimeout(function () { sweep(d); }, 900);   // after the shell has a client
+    if (w.MutationObserver) {
+      new MutationObserver(function (muts) {
+        for (var i = 0; i < muts.length; i++) {
+          for (var j = 0; j < muts[i].addedNodes.length; j++) {
+            var n = muts[i].addedNodes[j];
+            if (n.nodeType === 1) sweep(n);
+          }
+        }
+      }).observe(d.documentElement, { childList: true, subtree: true });
+    }
+    w.TCPickers = { sweep: sweep, _values: values, MAP: MAP };
+  }
+
+  if (d.readyState === 'loading') d.addEventListener('DOMContentLoaded', start);
+  else start();
+})(window, document);

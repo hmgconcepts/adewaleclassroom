@@ -52,9 +52,9 @@
    "activity-log",
    "admin-data",
    "approvals",
+   "cbt-results",
    "change-password",
-   "contact",
-   "dashboard"
+   "contact"
   ],
   "actions": [
    "Sign out",
@@ -179,14 +179,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, admin-data, approvals, change-password, contact, dashboard. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, admin-data, approvals, cbt-results, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "admin-data",
    "approvals",
+   "cbt-results",
    "change-password",
-   "contact",
-   "dashboard"
+   "contact"
   ],
   "actions": [
    "Sign out",
@@ -258,14 +258,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, approvals, change-password, contact, dashboard. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, approvals, cbt-results, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "activity-log",
    "approvals",
+   "cbt-results",
    "change-password",
-   "contact",
-   "dashboard"
+   "contact"
   ],
   "actions": [
    "Sign out",
@@ -584,14 +584,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, change-password, contact, dashboard. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, cbt-results, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "activity-log",
    "admin-data",
+   "cbt-results",
    "change-password",
-   "contact",
-   "dashboard"
+   "contact"
   ],
   "actions": [
    "Reinstate",
@@ -1130,8 +1130,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [],
   "tabs": []
@@ -1314,7 +1314,7 @@
   ],
   "faqs": [],
   "purpose": "Learner runtime: code entry, timer, navigator. Open or rostered.",
-  "detail": "Learner runtime: code entry, timer, navigator. Open or rostered. The main actions available here are: <b>Save / print PDF</b>, <b>Start quiz</b>, <b>Submit paper</b>. Reachable without a portal password, but useless without a valid quiz code plus the learner's student ID. The code is the gate.",
+  "detail": "Learner runtime: code entry, timer, navigator. Open or rostered. The main actions available here are: <b>Got it</b>, <b>Save / print PDF</b>, <b>Start quiz</b>, <b>Submit paper</b>. Reachable without a portal password, but useless without a valid quiz code plus the learner's student ID. The code is the gate.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -1333,6 +1333,7 @@
    "certificates"
   ],
   "actions": [
+   "Got it",
    "Save / print PDF",
    "Start quiz",
    "Submit paper"
@@ -1381,7 +1382,7 @@
   "tasks": [],
   "faqs": [],
   "purpose": "One sitting, subject tabs (UTME-style). Shared timer, per-subject breakdown, same anti-cheat.",
-  "detail": "One sitting, subject tabs (UTME-style). Shared timer, per-subject breakdown, same anti-cheat. The main actions available here are: <b>Generate</b>, <b>Remove</b>. Reachable without a portal password, but useless without a valid quiz code plus the learner's student ID. The code is the gate.",
+  "detail": "One sitting, subject tabs (UTME-style). Shared timer, per-subject breakdown, same anti-cheat. The main actions available here are: <b>Append questions</b>, <b>Generate</b>, <b>Remove</b>, <b>Save all changes</b>. Reachable without a portal password, but useless without a valid quiz code plus the learner's student ID. The code is the gate.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -1400,8 +1401,10 @@
    "certificates"
   ],
   "actions": [
+   "Append questions",
    "Generate",
-   "Remove"
+   "Remove",
+   "Save all changes"
   ],
   "tabs": []
  },
@@ -1468,6 +1471,77 @@
   "actions": [
    "Build prompt",
    "Copy",
+   "Sign out",
+   "Theme"
+  ],
+  "tabs": []
+ },
+ "cbt-results": {
+  "page": "cbt-results",
+  "file": "cbt-results.html",
+  "title": "CBT results &amp; audit",
+  "group": "Platform",
+  "access": "staff",
+  "archetype": "list",
+  "sections": [
+   {
+    "name": "Page header",
+    "what": "The title, a one-line purpose, and the ? Page Help button that opens this same explanation inside the app."
+   },
+   {
+    "name": "Toolbar / filters",
+    "what": "Search box, status and date filters, and the Add / New button. Filters narrow the list below without reloading the page."
+   },
+   {
+    "name": "Records table",
+    "what": "Every record you are allowed to see. Parents and learners are filtered to their own rows by the database itself, not by hiding buttons."
+   },
+   {
+    "name": "Row actions",
+    "what": "Open, edit, duplicate or delete a record. Deleting asks for confirmation and is written to the activity log."
+   },
+   {
+    "name": "Record form (modal)",
+    "what": "Opens over the list. Required fields are marked; everything else can be completed later."
+   },
+   {
+    "name": "Export",
+    "what": "Download the current view as CSV. Your data is always portable — nothing is locked in."
+   }
+  ],
+  "roleViews": {
+   "owner": "Full configuration control.",
+   "tutor": "No access.",
+   "parent": "No access.",
+   "learner": "No access."
+  },
+  "tasks": [],
+  "faqs": [],
+  "purpose": "Every quiz and exam the studio has set, each with a Results button. Open one and you see who sat it — registered learners and anonymous candidates who used only a code — what they scored, how long they took, and any integrity flags. Open a single sitting and you see exactly what that candidate did: every question, the answer given, the answer expected, the mark awarded, and a timeline of anything the anti-cheat layer noticed.",
+  "detail": "Every quiz and exam the studio has set, each with a Results button. Open one and you see who sat it — registered learners and anonymous candidates who used only a code — what they scored, how long they took, and any integrity flags. Open a single sitting and you see exactly what that candidate did: every question, the answer given, the answer expected, the mark awarded, and a timeline of anything the anti-cheat layer noticed. The main actions available here are: <b>Save review</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "audience": "Owner, admin and tutors. Families never reach this page; the database refuses it by role rather than merely hiding the link.",
+  "why": "A score on its own tells you almost nothing. Item analysis tells you whether the class failed a question or the question failed the class — a facility below 25% usually means a wrong answer key, not thirty confused learners. Catching that before you publish a grade is the difference between a defensible mark and an argument with a parent.",
+  "how": [
+   "The table lists every paper with sittings, how many are unreviewed, and the class average.",
+   "Press <b>📊 Results</b> beside a paper to open its results.",
+   "Scan the summary strip: sat, average, highest, lowest, flagged, unreviewed, median time.",
+   "Press <b>🔍 Audit</b> on any row to see that candidate's full paper, question by question, with their answer beside the expected one.",
+   "Use <b>🧪 Item analysis</b> to find questions the whole class failed. Anything marked <b>CHECK THE KEY</b> should be verified before you release marks.",
+   "Override a mark with <b>✏️ Review</b> — essays and code are marked by keyword and always need a human eye. The original machine score is kept beside yours.",
+   "Live submissions appear automatically every 30 seconds; each links straight to the result.",
+   "Export any result set to CSV for a mark book or a parent meeting."
+  ],
+  "connects": "Papers are built in cbt-multi.html and sat in cbt-exam.html. Learners see their own review in cbt-review.html. Graded results push to scoresheet.html. Submission alerts also appear in notifications.html.",
+  "related": [
+   "about",
+   "activity-log",
+   "admin-data",
+   "approvals",
+   "change-password",
+   "contact"
+  ],
+  "actions": [
+   "Save review",
    "Sign out",
    "Theme"
   ],
@@ -1653,8 +1727,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "contact",
-   "dashboard"
+   "cbt-results",
+   "contact"
   ],
   "actions": [
    "Sign out",
@@ -1908,8 +1982,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "dashboard"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [
    "Sign out",
@@ -2040,8 +2114,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [
    "Sign out",
@@ -2096,8 +2170,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [
    "Sign out",
@@ -2754,8 +2828,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [
    "Sign out",
@@ -2806,14 +2880,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, cbt-results, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [
    "Sign out",
@@ -3125,8 +3199,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [
    "Sign out",
@@ -3876,8 +3950,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [],
   "tabs": []
@@ -4065,8 +4139,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [
    "Install now",
@@ -4581,14 +4655,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, cbt-results, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [
    "Run write test",
@@ -4715,8 +4789,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [
    "Request access",
@@ -5178,8 +5252,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [
    "Sign out",
@@ -5302,8 +5376,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [
    "Sign out",
@@ -5703,8 +5777,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [
    "Generate schedule",
@@ -5900,14 +5974,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, cbt-results, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [
    "Sign out",
@@ -6369,14 +6443,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, cbt-results, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [
    "Save profile",
@@ -7228,7 +7302,7 @@
   "tasks": [],
   "faqs": [],
   "purpose": "The studio's safety console. It shows what an anonymous stranger can reach, who has been touching learner records, failed sign-in attempts, the consent you hold and the data requests families have made. It also produces the two documents a regulator or a worried parent will ask for: a complete export of everything held on one learner, and an anonymised export for analytics.",
-  "detail": "The studio's safety console. It shows what an anonymous stranger can reach, who has been touching learner records, failed sign-in attempts, the consent you hold and the data requests families have made. It also produces the two documents a regulator or a worried parent will ask for: a complete export of everything held on one learner, and an anonymised export for analytics. The main actions available here are: <b>Download anonymised data</b>, <b>Download full record</b>, <b>Run security scan</b>, <b>Show audit trail</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "The studio's safety console. It shows what an anonymous stranger can reach, who has been touching learner records, failed sign-in attempts, the consent you hold and the data requests families have made. It also produces the two documents a regulator or a worried parent will ask for: a complete export of everything held on one learner, and an anonymised export for analytics. The main actions available here are: <b>Download anonymised data</b>, <b>Download full record</b>, <b>Refresh status</b>, <b>Run security scan</b>, <b>Show audit trail</b>, <b>Sign out</b>, <b>Start enrolment</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and administrator only. Every function behind this page re-checks your role inside the database, so it cannot be reached by editing the page in a browser.",
   "why": "You hold children's names, dates of birth, guardian phone numbers, addresses, exam scores and safeguarding notes. Nigeria's NDPA 2023 gives families the right to see and correct that data, and the same duty exists under GDPR and FERPA elsewhere. The control every one of those regimes names first is an immutable audit trail — a record of who accessed what that the accessor cannot edit or delete.",
   "how": [
@@ -7246,15 +7320,17 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [
    "Download anonymised data",
    "Download full record",
+   "Refresh status",
    "Run security scan",
    "Show audit trail",
    "Sign out",
+   "Start enrolment",
    "Theme"
   ],
   "tabs": []
@@ -7505,14 +7581,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, cbt-results, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [
    "Save discount rules",
@@ -7571,8 +7647,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [],
   "tabs": []
@@ -7684,14 +7760,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, cbt-results, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [
    "Sign out",
@@ -7750,14 +7826,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, cbt-results, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
   "related": [
    "about",
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [
    "Sign out",
@@ -8463,7 +8539,7 @@
   "tasks": [],
   "faqs": [],
   "purpose": "Anonymous or named studio polls with live tally. Multi-channel notify when a poll opens. Free, no AI.",
-  "detail": "Anonymous or named studio polls with live tally. Multi-channel notify when a poll opens. Free, no AI. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "Anonymous or named studio polls with live tally. Multi-channel notify when a poll opens. Free, no AI. The main actions available here are: <b>Create poll</b>, <b>Days of the week</b>, <b>Sign out</b>, <b>Theme</b>, <b>Yes / No</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -8482,8 +8558,11 @@
    "messages"
   ],
   "actions": [
+   "Create poll",
+   "Days of the week",
    "Sign out",
-   "Theme"
+   "Theme",
+   "Yes / No"
   ],
   "tabs": []
  },
@@ -8613,8 +8692,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "change-password",
-   "contact"
+   "cbt-results",
+   "change-password"
   ],
   "actions": [
    "Add credit",
