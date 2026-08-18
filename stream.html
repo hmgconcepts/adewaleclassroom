@@ -251,6 +251,20 @@
         <button class="btn btn-primary" type="button" id="post">Post to stream</button>
       </div>
       <div id="feed" style="margin-top:12px"></div>
+      <!-- BUG FIX 14 — full management of existing stream posts.
+           Previously this page could only append: there was no way to
+           correct a typo, retime a post or remove one. It now uses the
+           same data workbench as every other page, so a post can be
+           viewed, edited, duplicated, deleted, filtered, sorted, paged,
+           exported and printed. -->
+      <section class="card" style="margin-top:16px">
+        <h2 style="margin-top:0">🗂️ Manage stream posts</h2>
+        <p class="muted" style="margin-top:0">Everything already posted to the class stream. Edit a
+          post to fix a typo, change its publish time, or swap the link. Select several and delete
+          them together. Nothing you create on this platform is write-once.</p>
+        <div id="stream-crud"></div>
+      </section>
+
     </main>
   </div>
 </div>
@@ -272,6 +286,17 @@ document.getElementById('post').onclick=async()=>{
 };
 document.addEventListener('DOMContentLoaded', boot);
 
+</script>
+<script>
+/* Render the stream workbench once the shell is ready. */
+(function(){
+  function boot(){
+    if(!window.CRUD){ setTimeout(boot,300); return; }
+    CRUD.renderList('stream','stream-crud');
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(boot,500);});
+  else setTimeout(boot,500);
+})();
 </script>
 </body>
 </html>

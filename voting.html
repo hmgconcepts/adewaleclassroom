@@ -238,6 +238,101 @@
         <p class="page-intro-rel"><b>Related:</b> <a href="announcements.html">announcements</a> · <a href="broadcasts.html">broadcasts</a> · <a href="complaints.html">complaints</a> · <a href="forum.html">forum</a> · <a href="inbox.html">inbox</a> · <a href="messages.html">messages</a></p>
       </section>
       <div id="voting-root"></div>
+      <!-- ==============================================================
+           BUG FIX 12 (reported): "ensure Voting & Polls is rich and
+           robust... on the voting & polls page there is no feature to
+           create voting."
+
+           Correct — the page could list and vote, but there was no create
+           path anywhere on it, so a poll could only be made by inserting a
+           row by hand. This section adds the full School Connect feature
+           set: unlimited options, single or multi-choice with a cap, an
+           explicit audience, a closing time, a quorum, and control over
+           when results become visible.
+           =============================================================== -->
+      <section class="card" style="margin-top:16px">
+        <h2 style="margin-top:0">🗳️ Create a poll or a vote</h2>
+        <p class="muted" style="margin-top:0">A <b>poll</b> gathers an opinion; a <b>vote</b> decides
+          something. They behave identically here — the label simply tells families how seriously to
+          take it. Everything below is optional except the question and two options.</p>
+
+        <div class="grid grid-2">
+          <div class="form-group" style="grid-column:1/-1"><label>Question <span style="color:#b91c1c">•</span></label>
+            <input class="form-input" id="vc-q" placeholder="Which Saturday slot suits your family best?"></div>
+
+          <div class="form-group" style="grid-column:1/-1"><label>Explanation (optional)</label>
+            <textarea class="form-textarea" id="vc-desc" rows="2"
+              placeholder="Give context so families can answer sensibly."></textarea></div>
+
+          <div class="form-group"><label>Kind</label>
+            <select class="form-select" id="vc-kind">
+              <option value="poll">Poll — gathering opinion</option>
+              <option value="vote">Vote — a decision</option>
+            </select></div>
+
+          <div class="form-group"><label>Who may respond</label>
+            <select class="form-select" id="vc-aud">
+              <option value="all">Everyone in the studio</option>
+              <option value="parents">Parents only</option>
+              <option value="learners">Learners only</option>
+              <option value="tutors">Tutors only</option>
+              <option value="staff">Staff only</option>
+            </select></div>
+
+          <div class="form-group"><label>Closes at</label>
+            <input class="form-input" type="datetime-local" id="vc-close">
+            <div class="form-help">Leave blank to keep it open until you close it by hand.</div></div>
+
+          <div class="form-group"><label>Quorum</label>
+            <input class="form-input" type="number" min="0" id="vc-quorum" value="0">
+            <div class="form-help">Minimum responses before the result counts. 0 = no quorum.</div></div>
+
+          <div class="form-group"><label>Choices allowed</label>
+            <select class="form-select" id="vc-multi">
+              <option value="single">Pick exactly one</option>
+              <option value="multi">Pick several</option>
+            </select></div>
+
+          <div class="form-group" id="vc-max-wrap" style="display:none"><label>Maximum picks</label>
+            <input class="form-input" type="number" min="2" id="vc-max" value="2"></div>
+
+          <div class="form-group"><label>When results become visible</label>
+            <select class="form-select" id="vc-vis">
+              <option value="after_close">After the poll closes</option>
+              <option value="always">Immediately, to everyone</option>
+              <option value="after_vote">After the person has voted</option>
+            </select></div>
+
+          <div class="form-group"><label>Anonymous</label>
+            <select class="form-select" id="vc-anon">
+              <option value="yes">Yes — do not record who voted</option>
+              <option value="no">No — record who voted</option>
+            </select>
+            <div class="form-help">Anonymous is the safer default for anything about a child.</div></div>
+        </div>
+
+        <label style="font-weight:700;display:block;margin:10px 0 6px">Options</label>
+        <div id="vc-options"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+          <button class="btn btn-outline btn-sm" type="button" id="vc-add">＋ Add option</button>
+          <button class="btn btn-outline btn-sm" type="button" data-preset="yesno">Yes / No</button>
+          <button class="btn btn-outline btn-sm" type="button" data-preset="days">Days of the week</button>
+          <button class="btn btn-outline btn-sm" type="button" data-preset="rating">Very good → Poor</button>
+        </div>
+
+        <div style="margin-top:14px">
+          <button class="btn btn-primary" type="button" id="vc-create">Create poll</button>
+        </div>
+        <div id="vc-msg" style="margin-top:10px"></div>
+      </section>
+
+      <section class="card" style="margin-top:16px">
+        <h2 style="margin-top:0">📋 All polls and votes</h2>
+        <p class="muted" style="margin-top:0">Every poll ever created. Edit the wording, change the
+          closing time, reopen a closed poll, or delete one — nothing here is write-once.</p>
+        <div id="vc-crud"></div>
+      </section>
+
     </main>
   </div>
 </div>
@@ -249,6 +344,91 @@ document.addEventListener('DOMContentLoaded', () => {
   else if (window.CRUD) CRUD.renderList('polls');
 });
 
+</script>
+<script>
+/* Poll creation — BUG FIX 12. Posts through tc_create_poll(), which
+   validates staff role, requires two options and stores the option list in
+   the shape polls.options actually uses. */
+(function(){
+  'use strict';
+  var sb = window.sb || window.SB || (window.App && App.sb) || null;
+  function $(i){return document.getElementById(i);}
+  function esc(s){return window.TC&&TC.esc?TC.esc(s==null?'':s):String(s==null?'':s);}
+  function say(m,t){if(window.toast)toast(m,t||'success');else alert(m);}
+
+  var PRESETS = {
+    yesno:  ['Yes','No'],
+    days:   ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'],
+    rating: ['Very good','Good','Acceptable','Poor']
+  };
+
+  function optionRow(v){
+    var wrap=document.createElement('div');
+    wrap.style.cssText='display:flex;gap:6px;margin-bottom:6px';
+    wrap.innerHTML='<input class="form-input" data-opt value="'+esc(v||'')+'" placeholder="Option text">'+
+      '<button class="btn btn-sm btn-ghost" type="button" title="Remove this option">✕</button>';
+    wrap.querySelector('button').onclick=function(){
+      if($('vc-options').children.length<=2){say('A poll needs at least two options.','warning');return;}
+      wrap.remove();
+    };
+    return wrap;
+  }
+  function setOptions(list){
+    var host=$('vc-options'); host.innerHTML='';
+    (list&&list.length?list:['','']).forEach(function(v){host.appendChild(optionRow(v));});
+  }
+  setOptions();
+
+  $('vc-add').onclick=function(){$('vc-options').appendChild(optionRow(''));};
+  Array.prototype.forEach.call(document.querySelectorAll('[data-preset]'),function(b){
+    b.onclick=function(){setOptions(PRESETS[b.dataset.preset]);};
+  });
+  $('vc-multi').onchange=function(){
+    $('vc-max-wrap').style.display = this.value==='multi' ? '' : 'none';
+  };
+
+  $('vc-create').onclick=async function(){
+    var q=$('vc-q').value.trim();
+    var opts=[].map.call(document.querySelectorAll('#vc-options [data-opt]'),function(i){return i.value.trim();})
+                .filter(Boolean);
+    if(!q){say('Enter the question.','danger');return;}
+    if(opts.length<2){say('Give voters at least two options.','danger');return;}
+    if(!sb){say('Connect Supabase to create a poll.','warning');return;}
+
+    var payload={
+      question:q,
+      description:$('vc-desc').value.trim()||null,
+      options:opts,
+      kind:$('vc-kind').value,
+      audience:$('vc-aud').value,
+      closes_at:$('vc-close').value||null,
+      quorum:Number($('vc-quorum').value||0),
+      multi_choice:$('vc-multi').value==='multi',
+      max_choices:$('vc-multi').value==='multi'?Number($('vc-max').value||2):1,
+      results_visible:$('vc-vis').value,
+      anonymous:$('vc-anon').value==='yes'
+    };
+    var r=await sb.rpc('tc_create_poll',{p:payload});
+    if(r.error){
+      $('vc-msg').innerHTML='<p style="color:#b45309"><b>Could not create the poll.</b> '+
+        'If this says the function does not exist, run <code>database/complete-schema.sql</code> (V20).'+
+        '</p><p class="muted" style="font-size:.8rem">'+esc(r.error.message)+'</p>';
+      return;
+    }
+    if(r.data&&r.data.ok===false){say(r.data.error,'danger');return;}
+    say('Poll created ✅');
+    $('vc-q').value=''; $('vc-desc').value=''; setOptions();
+    if(window.CRUD) CRUD.renderList('polls','vc-crud');
+    if(typeof window.loadPolls==='function'){try{window.loadPolls();}catch(e){}}
+  };
+
+  function boot(){
+    if(!window.CRUD){setTimeout(boot,300);return;}
+    CRUD.renderList('polls','vc-crud');
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(boot,500);});
+  else setTimeout(boot,500);
+})();
 </script>
 </body>
 </html>

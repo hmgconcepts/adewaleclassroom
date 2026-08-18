@@ -164,9 +164,9 @@ Built after a deep study of **School Connect** (`hmgschoolconnect.vercel.app`) a
 the **GOSA portal** (`gosaportal.vercel.app`).
 
 ### Brand
-* **"Lumen Teal & Copper" is retired.** The house theme is now **HMG Tutoring
+* **"HMG Tutoring Studio" is retired.** The house theme is now **HMG Tutoring
   Studio**, carrying the HMG palette `#0506ae` / `#964eec`. Generator fallbacks
-  and SEO defaults updated; no "Lumen" naming remains anywhere.
+  and SEO defaults updated; no "HMG" naming remains anywhere.
 * **ADEWALE CLASSROOM now matches the GOSA portal exactly** — same primary,
   accent, gradient and **Plus Jakarta Sans**, applied through the *same
   mechanism GOSA uses*: an inline `<style id="tc-brand">:root{…}</style>` baked
