@@ -601,6 +601,17 @@ const CRUD = {
   },
 
   canWrite(moduleId) {
+    /* ITEMS 7/10/11 — a role with READ access must not be offered Add, Edit,
+       Copy or Delete. Before this, "can see the page" and "can change the
+       page" were the same thing, so a parent who could read the attendance
+       register could also edit it. RBAC decides; this just obeys. */
+    if (window.RBAC && window.App) {
+      var _r = App.currentRole || App.role || '';
+      if (_r && _r !== 'admin' && _r !== 'owner') {
+        var lvl = RBAC.level(location.pathname, _r);
+        if (lvl !== 'write') return false;
+      }
+    }
     if (!window.App || App.isAdmin()) return true;
     const r = (window.App && (App.currentRole || App.role)) || '';
     if (window.App && App.canWriteModule) return App.canWriteModule(moduleId, r);

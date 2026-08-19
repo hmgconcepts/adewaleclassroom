@@ -792,6 +792,11 @@ const App = {
     });
     this.applyVisibilityTokens(role);
     this.ensureNavNotBlank(role);
+    /* Tell rbac.js the role is known, so it can hide pages this role may not
+       reach and drop read-only pages into view-only mode. */
+    try {
+      document.dispatchEvent(new CustomEvent('tc:role', { detail: role }));
+    } catch (e) {}
     /* BUG FIX 2 — collapse section headings that have no visible links.
        Without this a parent (who can reach very few pages) sees a column
        of headings with nothing underneath: the "empty spaces and gaps"

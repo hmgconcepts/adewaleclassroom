@@ -5619,7 +5619,24 @@ begin
       'reviewed_at', r.reviewed_at, 'tutor_comment', r.tutor_comment),
     -- The two trails that answer "what did they do".
     'answers',     coalesce(r.answers, '{}'::jsonb),
-    'per_question',coalesce(r.per_question, r.review, r.detail, '[]'::jsonb),
+    /* ITEM 3 FIX — this used to be
+         coalesce(r.per_question, r.review, r.detail, '[]')
+       but per_question was declared `default '[]'::jsonb`, so it is never
+       NULL — it is an EMPTY ARRAY. coalesce returns the first non-null, so
+       it always returned that empty default and never fell through to
+       `review`, which is where the exam runner actually stored the trail.
+       The audit therefore showed "question by question" with nothing in it.
+       Pick the first source that actually HAS rows. */
+    'per_question', case
+       when jsonb_typeof(r.per_question) = 'array' and jsonb_array_length(r.per_question) > 0
+         then r.per_question
+       when jsonb_typeof(r.review) = 'array' and jsonb_array_length(r.review) > 0
+         then r.review
+       when jsonb_typeof(r.detail) = 'array' and jsonb_array_length(r.detail) > 0
+         then r.detail
+       when jsonb_typeof(r.detail) = 'object' and jsonb_typeof(r.detail->'detail') = 'array'
+         then r.detail->'detail'
+       else '[]'::jsonb end,
     'violations',  coalesce(r.violations, '[]'::jsonb),
     'subject_scores', coalesce(r.subject_scores, '{}'::jsonb));
 end $$;
@@ -5647,7 +5664,17 @@ begin
   end if;
 
   with rows as (
-    select jsonb_array_elements(coalesce(r.per_question, r.review, r.detail, '[]'::jsonb)) as q
+    select jsonb_array_elements(
+             case
+               when jsonb_typeof(r.per_question) = 'array' and jsonb_array_length(r.per_question) > 0
+                 then r.per_question
+               when jsonb_typeof(r.review) = 'array' and jsonb_array_length(r.review) > 0
+                 then r.review
+               when jsonb_typeof(r.detail) = 'array' and jsonb_array_length(r.detail) > 0
+                 then r.detail
+               when jsonb_typeof(r.detail) = 'object' and jsonb_typeof(r.detail->'detail') = 'array'
+                 then r.detail->'detail'
+               else '[]'::jsonb end) as q
       from public.cbt_results r where r.exam_id = p_exam
   ), tally as (
     select coalesce(q->>'question', q->>'id', 'item') as question,

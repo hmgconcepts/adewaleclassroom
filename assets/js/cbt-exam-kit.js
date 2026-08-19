@@ -391,10 +391,24 @@
         groups[s].push(i);
       });
 
+      /* BUG FIX — "x of y questions answered" counted an untouched paper as
+         partly answered. The old test was `a !== ''`, and an empty ARRAY is
+         not equal to '' — so every multi-select, ordering, matching, matrix,
+         categorization, cloze and hot-text question counted as answered the
+         moment its (empty) control existed. Arrays and objects need a real
+         emptiness check, which CBTTypes.isBlank provides. */
+      var blank = (w.CBTTypes && w.CBTTypes.isBlank) ? w.CBTTypes.isBlank : function (v) {
+        if (v == null) return true;
+        if (typeof v === 'string') return v.trim() === '';
+        if (Array.isArray(v)) return v.length === 0 || v.every(function (x) {
+          return x == null || String(x).trim() === ''; });
+        if (typeof v === 'object') return Object.keys(v).length === 0;
+        return false;
+      };
       var answered = 0;
       qs.forEach(function (q, i) {
         var a = answers[q.id] !== undefined ? answers[q.id] : answers[i];
-        if (a !== undefined && a !== null && a !== '') answered++;
+        if (!blank(a)) answered++;
       });
 
       host.innerHTML =

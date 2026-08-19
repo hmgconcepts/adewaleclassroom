@@ -981,3 +981,16 @@ body.dark-mode .tc-popup a, body.dark-mode #tc-bot-panel a { color: #a5b4fc !imp
   border-bottom:1px solid #eef2f7}
 .tcq-legend-row b{color:#0506ae}
 @media (max-width:640px){ .tcq-legend-row{grid-template-columns:1fr;gap:2px} }
+.tcq-legend-more{margin:16px 0 4px;font-size:.86rem;color:#475569;text-transform:uppercase;
+  letter-spacing:.04em;border-top:1px solid #e2e8f0;padding-top:12px}
+/* ---- item 8: password strength meter ---- */
+.cp-meter{height:8px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin:8px 0 4px;position:relative}
+.cp-meter span{display:block;height:100%;width:0;border-radius:999px;transition:width .2s,background .2s}
+.cp-meter::after{content:attr(data-label);position:absolute;right:0;top:12px;font-size:.74rem;font-weight:700;color:#475569}
+
+/* ---- items 7/10: the read-only banner and its visual cue ---- */
+.tc-ro-note{background:#eff6ff;border:1px solid #bfdbfe;border-left:4px solid #0506ae;
+  border-radius:12px;padding:11px 14px;margin:0 0 16px;color:#1e3a8a;font-size:.88rem;line-height:1.6}
+.tc-ro-note a{color:#0506ae;font-weight:700}
+body.tc-readonly .crud-toolbar-actions .btn-primary{display:none}
+body.tc-readonly .crud-actions .btn-danger{display:none}

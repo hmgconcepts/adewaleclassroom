@@ -369,6 +369,38 @@
     image_based: 'Study the figure, then answer the question underneath it.'
   };
 
+  /* ITEM 2 FIX — the legend listed only the 17 base families, so a learner
+     meeting a `likert`, `drag_drop`, `timeline`, `error_spotting` or
+     `map_label` question found nothing about it. It now covers EVERY type the
+     platform declares (32 of them), by resolving each alias to the family
+     that actually renders it and naming the alias explicitly. */
+  var ALIAS_NOTE = {
+    mrq: 'Behaves like Multiple response — tap every option that applies.',
+    tf: 'Behaves like True / False.',
+    short: 'Behaves like Short answer.',
+    fill_blank: 'Behaves like Fill the gaps.',
+    image_mcq: 'Behaves like a Figure question.',
+    scenario_mcq: 'A short scenario, then a normal multiple-choice question.',
+    comprehension: 'A passage to read, then questions on it.',
+    data_interpretation: 'A table, chart or set of data to read, then questions on it.',
+    graph_read: 'Read values off a graph or chart, then answer.',
+    math_equation: 'Type the expression or value. The maths keyboard has the symbols you need.',
+    oral_prompt: 'Speak your answer and submit a recording LINK (Drive or YouTube). Never a file upload.',
+    peer_review: 'Write a short, constructive comment on the work shown.',
+    true_false_justify: 'Choose True or False, then justify it in the box.',
+    classification: 'Behaves like Sort into groups.',
+    likert: 'Choose the point on the scale that best matches your view. There is no wrong answer.',
+    drag_drop: 'Drag the items into place, or use the ↑ ↓ buttons.',
+    timeline: 'Put the events into the order they happened.',
+    error_spotting: 'Tap the parts that contain the mistake.',
+    map_label: 'Study the map or diagram, then answer.',
+    citation: 'Give the source or reference in the box.',
+    audio_based: 'Listen to the clip, then answer.',
+    video_based: 'Watch the clip, then answer.',
+    code_output: 'Say what the code prints, or write the code asked for.',
+    hotspot: 'Study the figure and answer the question about the marked area.'
+  };
+
   /* The full legend, for the "How do I answer these?" button. */
   function legendHTML() {
     var order = ['mcq','multi_select','true_false','short_answer','numeric','multi_numeric',
@@ -388,8 +420,15 @@
       order.map(function (t) {
         return '<div class="tcq-legend-row"><b>' + (LABEL[t] || t) + '</b><span>' + HOWTO[t] + '</span></div>';
       }).join('') +
+      // Every remaining named type, so nothing a paper can contain is unexplained.
+      '<h4 class="tcq-legend-more">Other styles you may meet</h4>' +
+      Object.keys(ALIAS_NOTE).map(function (t) {
+        var pretty = t.replace(/_/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+        return '<div class="tcq-legend-row"><b>' + pretty + '</b><span>' + ALIAS_NOTE[t] + '</span></div>';
+      }).join('') +
       '<p class="tcq-legend-foot">Partial credit is normal: on matching, ordering, grids, gap-fills ' +
-      'and multi-part questions you earn marks for the parts you get right, so always attempt them.</p>' +
+      'and multi-part questions you earn marks for the parts you get right, so always attempt them. ' +
+      'An unanswered question always scores zero, so a sensible attempt is never worse than a blank.</p>' +
       '</div>';
   }
 
@@ -536,6 +575,61 @@
       return el ? el.value : '';
     },
 
+    /** Is a response genuinely blank? Arrays and objects need a length check;
+        `[] !== ''` is true, which is what made an untouched paper report
+        "3 of 20 answered". */
+    isBlank: function (v) {
+      if (v == null) return true;
+      if (typeof v === 'string') return v.trim() === '';
+      if (Array.isArray(v)) {
+        return v.length === 0 || v.every(function (x) {
+          return x == null || String(x).trim() === '';
+        });
+      }
+      if (typeof v === 'object') return Object.keys(v).length === 0;
+      return false;
+    },
+
+    /** Does this question have a usable answer key at all? */
+    hasKey: function (q) {
+      var t = ALIAS[q.type] || q.type;
+      if (t === 'essay' || t === 'code') return true;            // marked by rubric
+      if (t === 'matching' || t === 'categorization' || t === 'matrix' ||
+          t === 'multi_numeric' || t === 'cloze' || t === 'ordering' || t === 'hot_text') {
+        var rows = parseList(q.items || q.pairs);
+        if (!rows.length && (t === 'cloze' || t === 'ordering')) rows = parseList(q.answer);
+        return rows.length > 0;
+      }
+      var a = q.answer;
+      if (Array.isArray(a)) return a.filter(function (x) { return String(x).trim() !== ''; }).length > 0;
+      return a != null && String(a).trim() !== '';
+    },
+
+    /* -------------------------------------------------------------------
+       BUG FIX (reported): "I attempted a CBT as a guest, answered nothing,
+       and the system awarded me marks. The review then claimed I had picked
+       some answers correctly."
+
+       Reproduced exactly. The final fallback of this function was:
+
+           return res(norm(given) === norm(ans) ? max : 0);
+
+       With no answer given, norm(given) is ''. With a question whose key is
+       missing or blank — which is what a CSV with an empty CorrectAnswer
+       column produces — norm(ans) is ALSO ''. So '' === '' was true and the
+       question scored full marks. A blank paper of twenty questions scored
+       3/20 in testing purely from questions with no key.
+
+       Two guards now, in this order:
+
+         1. A BLANK RESPONSE ALWAYS SCORES ZERO. No exceptions, no type. If
+            the candidate did not answer, they cannot be right. This alone
+            fixes the reported bug.
+         2. A QUESTION WITH NO KEY IS NEVER MARKED CORRECT. It is returned
+            as `unmarkable` with zero earned, and surfaces in the tutor's
+            item analysis so the paper can be repaired — silently awarding
+            or silently failing are both wrong.
+       ------------------------------------------------------------------- */
     /** Mark one question. Returns { earned, max, correct, detail }. */
     grade: function (q, given) {
       var t = ALIAS[q.type] || q.type;
@@ -545,6 +639,18 @@
         earned = Math.max(0, Math.min(max, earned));
         return { earned: earned, max: max, correct: earned >= max - 1e-9, detail: detail || '' };
       };
+
+      // GUARD 1 — nothing answered, nothing earned.
+      if (this.isBlank(given)) {
+        return { earned: 0, max: max, correct: false, blank: true,
+                 detail: 'no answer given' };
+      }
+
+      // GUARD 2 — a question with no key cannot be marked either way.
+      if (!this.hasKey(q)) {
+        return { earned: 0, max: max, correct: false, pending: true, unmarkable: true,
+                 detail: 'this question has no answer key — it needs repairing before it can be marked' };
+      }
 
       // MULTI-SELECT — partial credit unless all-or-nothing is set.
       if (t === 'multi_select') {

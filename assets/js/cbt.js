@@ -235,6 +235,22 @@ const CBT = {
       } catch (e) { /* fall through to the original grader */ }
     }
     if (['essay','case_study','oral_prompt','peer_review','true_false_justify','citation'].includes(type)) return { ok: null, mark: 0, pending: true };
+    /* Same guard as CBTTypes: a blank response can never be correct, and a
+       question with no key must not be silently marked right. This path is
+       only reached when CBTTypes does not handle the type, but it had the
+       identical '' === '' flaw and would have reintroduced the bug. */
+    const _blank = (v) => {
+      if (v == null) return true;
+      if (typeof v === 'string') return v.trim() === '';
+      if (Array.isArray(v)) return v.length === 0 || v.every(x => x == null || String(x).trim() === '');
+      if (typeof v === 'object') return Object.keys(v).length === 0;
+      return false;
+    };
+    if (_blank(given)) return { ok: false, mark: 0, pending: false, blank: true };
+    if (q.answer == null || String(q.answer).trim() === '') {
+      return { ok: false, mark: 0, pending: true, unmarkable: true };
+    }
+
     let ok = false;
     if (type === 'multi_select') ok = this.setEq(given, q.answer);
     else if (type === 'numeric' || type === 'math_equation') ok = this.numEq(given, q.answer, q.tolerance);
@@ -874,7 +890,7 @@ const CBT = {
       mission: 'Build one sitting that covers several subjects cleanly, with the subject tabs the candidate sees driven correctly by the data.',
       ref: { mcq: 12, short: 3, numeric: 3, tf: 2 }, dominant: 'mcq',
       sections: [
-        ['SUBJECTS', 'Cover these subjects: {{SUBJECTS}}\nDivide the items as evenly as possible between them.'],
+        ['SUBJECTS AND THEIR TOPICS', 'Cover these subjects: {{SUBJECTS}}\n{{SUBJECT_TOPICS}}\nDivide the items as evenly as possible between them.'],
         ['SECTION COLUMN IS CRITICAL', 'Col17 (Section) must contain the SUBJECT NAME for that row, spelled\nidentically every time. This column drives the subject tabs in the exam\nplayer — an inconsistent spelling creates a phantom extra tab.'],
         ['NO CROSS-CONTAMINATION', 'A Mathematics item must not require Biology knowledge, and vice versa.\nEach item belongs to exactly one subject.']
       ],
@@ -953,9 +969,19 @@ const CBT = {
     const key = String(level || '').toLowerCase();
     const P = this.PACKS[key] || this.PACKS.intermediate;
 
+    /* ITEM 5 — each subject may carry its own topic. Without this every
+       subject in a multi-subject paper inherited one shared topic, which is
+       nonsensical: "Quadratic equations" is not a topic in English. */
+    const st = extra.subjectTopics || {};
+    const stLines = Object.keys(st).length
+      ? 'Use these topics, one per subject — do NOT apply one topic to all:\n' +
+        Object.keys(st).map(function (k) { return '  - ' + k + ': ' + st[k]; }).join('\n')
+      : 'No per-subject topic was given, so choose a representative core topic for each subject.';
+
     const fill = (s) => String(s)
       .replace(/\{\{BOARD\}\}/g, board)
       .replace(/\{\{SOURCE\}\}/g, source)
+      .replace(/\{\{SUBJECT_TOPICS\}\}/g, stLines)
       .replace(/\{\{SUBJECTS\}\}/g, subjects);
 
     const mix = this._mix(P.ref, n, P.dominant, P.minOne);
