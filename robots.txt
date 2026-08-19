@@ -19,6 +19,7 @@ Allow: /flyer.html
 Allow: /install.html
 Allow: /developer.html
 Allow: /site-index.html
+Allow: /free-register.html
 
 Disallow: /accommodations.html
 Disallow: /activity-log.html
@@ -62,6 +63,7 @@ Disallow: /finance.html
 Disallow: /flashcards.html
 Disallow: /forgot-password.html
 Disallow: /forum.html
+Disallow: /free-classes.html
 Disallow: /gallery.html
 Disallow: /gamification.html
 Disallow: /goals.html
