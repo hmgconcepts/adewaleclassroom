@@ -32,15 +32,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access, and can edit the content behind it in Settings.",
+   "tutor": "Full access — it is a public page.",
+   "parent": "Full access — it is a public page.",
+   "learner": "Full access — it is a public page."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Explains who runs the studio, the teaching philosophy and the track record. A credibility page for a parent comparing two or three tutors before committing.",
-  "detail": "Explains who runs the studio, the teaching philosophy and the track record. A credibility page for a parent comparing two or three tutors before committing. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
+  "detail": "Explains who runs the studio, the teaching philosophy and the track record. A credibility page for a parent comparing two or three tutors before committing. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
   "audience": "Public.",
   "why": "Tutoring is a trust purchase. Parents read this page before they read your prices.",
   "how": [
@@ -49,17 +49,13 @@
   ],
   "connects": "Linked from the landing page and every footer; indexed for search.",
   "related": [
-   "activity-log",
-   "admin-data",
-   "approvals",
-   "cbt-results",
-   "change-password",
-   "contact"
+   "feature-guide",
+   "site-index",
+   "contact",
+   "developer",
+   "flyer"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "accommodations": {
@@ -96,15 +92,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Extra time, reader, rest breaks, large print. Printed onto practice tests and reports.",
-  "detail": "Extra time, reader, rest breaks, large print. Printed onto practice tests and reports. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Extra time, reader, rest breaks, large print. Printed onto practice tests and reports. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -113,19 +109,16 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review, certificates. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Teaching</b> in the menu, next to curriculum, sow, lesson-plans, methodologies. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review",
-   "certificates"
+   "curriculum",
+   "sow",
+   "lesson-plans",
+   "methodologies",
+   "diagnostics",
+   "goals"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "activity-log": {
@@ -162,15 +155,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "No access — this page controls money, audit or configuration.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Who created, edited, deleted, signed in.",
-  "detail": "Who created, edited, deleted, signed in. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
+  "purpose": "Every create, edit, delete and sign-in in the studio, in one immutable list with who did it, when, from where, and what changed. Rows cannot be edited or deleted, including by the owner — an audit trail somebody can tidy up is not an audit trail. Filter by person, by table, by date range, or search the change itself.",
+  "detail": "Every create, edit, delete and sign-in in the studio, in one immutable list with who did it, when, from where, and what changed. Rows cannot be edited or deleted, including by the owner — an audit trail somebody can tidy up is not an audit trail. Filter by person, by table, by date range, or search the change itself. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -179,19 +172,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, admin-data, approvals, cbt-results, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Records & compliance</b> in the menu, next to documents, policies, compliance, safeguarding. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "about",
-   "admin-data",
-   "approvals",
-   "cbt-results",
-   "change-password",
-   "contact"
+   "documents",
+   "policies",
+   "compliance",
+   "safeguarding",
+   "security-centre",
+   "approvals"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "admin-data": {
@@ -228,8 +218,8 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "No access — this page controls money, audit or configuration.",
    "parent": "No access.",
    "learner": "No access."
   },
@@ -248,28 +238,27 @@
     "a": "No. It uses the free Google Identity Services flow and the drive.file scope, which can only see files this app created."
    }
   ],
-  "purpose": "Backup, restore, CSV export, table browser. SHA-256 sealed JSON archive.",
-  "detail": "Backup, restore, CSV export, table browser. SHA-256 sealed JSON archive. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
-  "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
-  "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
+  "purpose": "The studio's data-custody desk. Take a sealed, checksummed backup of every table to your own device; restore one; sync a copy to your own Google Drive folder; export a single table as CSV; export an anonymised dataset for research; answer a data-subject request; and see how much of the free-tier database and storage quota is actually in use.",
+  "detail": "The studio's data-custody desk. Take a sealed, checksummed backup of every table to your own device; restore one; sync a copy to your own Google Drive folder; export a single table as CSV; export an anonymised dataset for research; answer a data-subject request; and see how much of the free-tier database and storage quota is actually in use. What you can do here: <b>Record and action the request</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
+  "audience": "Owner and administrators only. This page can read every table in the studio.",
+  "why": "The studio's data belongs to the studio, not to the platform it happens to run on. A backup you have never restored is not a backup, so the restore path is on the same page as the export, and every archive carries a SHA-256 checksum you can verify.",
   "how": [
-   "Only an owner or admin should change anything on this page.",
-   "Read the note beside each setting before you touch it.",
-   "Save, then reload any normal page to confirm the change took effect.",
-   "If something looks wrong afterwards, the activity log records who changed what and when."
+   "Press <b>Download full backup</b> — a single JSON archive with a checksum lands on your device.",
+   "Connect your own Google Drive if you want an off-device copy. Only files this app creates are ever visible to it.",
+   "Use the per-table CSV export when you want one table in a spreadsheet.",
+   "Use <b>Restore</b> to load an archive back. You are shown exactly what will change before anything is written.",
+   "Watch the quota panel: the free tier gives 500 MB of database and 1 GB of storage, and this page tells you how close you are."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, approvals, cbt-results, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Reads every table the studio has. Related to Storage manager, Platform health and the Security centre.",
   "related": [
-   "about",
-   "activity-log",
-   "approvals",
-   "cbt-results",
-   "change-password",
-   "contact"
+   "settings",
+   "storage",
+   "platform-health",
+   "status-manager",
+   "license"
   ],
   "actions": [
-   "Sign out",
-   "Theme"
+   "Record and action the request"
   ],
   "tabs": []
  },
@@ -303,36 +292,34 @@
    }
   ],
   "roleViews": {
-   "owner": "Studio-wide analysis and at-risk board.",
-   "tutor": "Their own learners.",
-   "parent": "The same analysis narrowed to their own child.",
-   "learner": "Their own progress only."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Studio-wide KPIs: utilisation, revenue, conversion, value-added distribution, retention.",
-  "detail": "Studio-wide KPIs: utilisation, revenue, conversion, value-added distribution, retention. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
-  "audience": "Owner, admin and tutors see the full picture. A parent sees the same analysis narrowed to their own child.",
-  "why": "Parents pay for visible progress. These pages turn raw scores into an argument a parent can read, audit and trust.",
+  "purpose": "Two things on one page. The top half is the studio's automatic analysis — score bands, new learners, attendance, the enquiry funnel and fee collection, all computed from live rows. The bottom half is a practice desk where a tutor records work done OFF the platform: past papers, worksheets, weekend problem sets and anything set by a school.",
+  "detail": "Two things on one page. The top half is the studio's automatic analysis — score bands, new learners, attendance, the enquiry funnel and fee collection, all computed from live rows. The bottom half is a practice desk where a tutor records work done OFF the platform: past papers, worksheets, weekend problem sets and anything set by a school. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "audience": "Tutors and administrators. A tutor's figures cover only their own learners.",
+  "why": "For an exam-preparation studio, most practice does not happen in a browser. Counting only platform quizzes understates what a learner has done, sometimes by a factor of five, and makes the analytics an argument nobody can win.",
   "how": [
-   "Select the learner, group or period you want to examine.",
-   "Read the headline numbers first, then open the charts underneath.",
-   "Every figure is a published formula, never a black box — open the methodology note to see the arithmetic.",
-   "Print or export the view and take it into a parent conference."
+   "Read the eight headline figures first — they are counts, not estimates.",
+   "Open the charts underneath for the shape behind each figure.",
+   "Scroll to the practice desk and log any off-platform work: subject, topic, where it came from, questions set and questions correct.",
+   "Accuracy is computed by the database from those two numbers, so it can never disagree with them.",
+   "Export to CSV when you want the numbers in a spreadsheet."
   ],
-  "connects": "Sits in the <b>Analytics</b> group, alongside at-risk, exam-targets, group-insights, insights, learner-360, predictions. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Shares its source data with Insights Lab, Group insights and Learner 360. Practice records feed the practice totals shown on a learner's 360 view.",
   "related": [
-   "at-risk",
-   "exam-targets",
-   "group-insights",
-   "insights",
+   "scoresheet",
+   "progress-reports",
    "learner-360",
-   "predictions"
+   "insights",
+   "group-insights",
+   "at-risk"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "announcements": {
@@ -369,15 +356,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Practice-wide or engagement-scoped notices.",
-  "detail": "Practice-wide or engagement-scoped notices. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "Practice-wide or engagement-scoped notices. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -386,19 +373,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Comms</b> group, alongside broadcasts, complaints, forum, inbox, messages, notifications. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Communication</b> in the menu, next to broadcasts, forum, polls, voting. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "broadcasts",
-   "complaints",
    "forum",
-   "inbox",
-   "messages",
-   "notifications"
+   "polls",
+   "voting",
+   "surveys",
+   "complaints"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "application-links": {
@@ -435,15 +419,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full pipeline and conversion figures.",
-   "tutor": "Usually read-only; may add notes after a trial.",
+   "owner": "Full access.",
+   "tutor": "No access — this page controls money, audit or configuration.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Generate robust, expiring, limited-use application URLs for a subject, 1:1 or group. Each code has its own form copy and use counter.",
-  "detail": "Generate robust, expiring, limited-use application URLs for a subject, 1:1 or group. Each code has its own form copy and use counter. The main actions available here are: <b>Create link</b>, <b>Sign out</b>, <b>Theme</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
+  "detail": "Generate robust, expiring, limited-use application URLs for a subject, 1:1 or group. Each code has its own form copy and use counter. What you can do here: <b>Create link</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
   "audience": "Owner and admin — this is business development. Families never see the pipeline.",
   "why": "Tutoring income is won or lost at the top of the funnel. Recording every enquiry means you can see which channel actually produces paying families.",
   "how": [
@@ -452,19 +436,17 @@
    "Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.",
    "Watch the funnel counts at the top — they show you exactly where prospects go cold."
   ],
-  "connects": "Sits in the <b>Growth</b> group, alongside apply, exam-links, exam-register, flyer, inquiries, onboarding. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to apply, inquiries, trials, waitlist. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "apply",
-   "exam-links",
-   "exam-register",
-   "flyer",
    "inquiries",
-   "onboarding"
+   "trials",
+   "waitlist",
+   "onboarding",
+   "referrals"
   ],
   "actions": [
-   "Create link",
-   "Sign out",
-   "Theme"
+   "Create link"
   ],
   "tabs": []
  },
@@ -494,10 +476,10 @@
    }
   ],
   "roleViews": {
-   "owner": "Full pipeline and conversion figures.",
-   "tutor": "Usually read-only; may add notes after a trial.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access, and can edit the content behind it in Settings.",
+   "tutor": "Full access — it is a public page.",
+   "parent": "Full access — it is a public page.",
+   "learner": "Full access — it is a public page."
   },
   "tasks": [
    "request a place",
@@ -505,7 +487,7 @@
   ],
   "faqs": [],
   "purpose": "Public page parents use to request tutoring. Also opens shareable application links (?code=).",
-  "detail": "Public page parents use to request tutoring. Also opens shareable application links (?code=). The main actions available here are: <b>Sign out</b>, <b>Submit application</b>, <b>Theme</b>. It is form-driven — you fill a form and save; the record appears in the list immediately. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
+  "detail": "Public page parents use to request tutoring. Also opens shareable application links (?code=). What you can do here: <b>Submit application</b>. It is form-driven — you fill a form and save; the record appears in the list immediately. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
   "audience": "Owner and admin — this is business development. Families never see the pipeline.",
   "why": "Tutoring income is won or lost at the top of the funnel. Recording every enquiry means you can see which channel actually produces paying families.",
   "how": [
@@ -514,19 +496,17 @@
    "Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.",
    "Watch the funnel counts at the top — they show you exactly where prospects go cold."
   ],
-  "connects": "Sits in the <b>Growth</b> group, alongside application-links, exam-links, exam-register, flyer, inquiries, onboarding. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to application-links, inquiries, trials, waitlist. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "application-links",
-   "exam-links",
-   "exam-register",
-   "flyer",
    "inquiries",
-   "onboarding"
+   "trials",
+   "waitlist",
+   "onboarding",
+   "referrals"
   ],
   "actions": [
-   "Sign out",
-   "Submit application",
-   "Theme"
+   "Submit application"
   ],
   "tabs": []
  },
@@ -564,8 +544,8 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "No access — this page controls money, audit or configuration.",
    "parent": "No access.",
    "learner": "No access."
   },
@@ -575,7 +555,7 @@
   ],
   "faqs": [],
   "purpose": "Approve parent/learner/tutor self-signups.",
-  "detail": "Approve parent/learner/tutor self-signups. The main actions available here are: <b>Reinstate</b>, <b>Sign out</b>, <b>Suspend</b>, <b>Theme</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
+  "detail": "Approve parent/learner/tutor self-signups. What you can do here: <b>Reinstate</b>, <b>Suspend</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -584,20 +564,18 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, cbt-results, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Records & compliance</b> in the menu, next to documents, policies, compliance, safeguarding. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "about",
-   "activity-log",
-   "admin-data",
-   "cbt-results",
-   "change-password",
-   "contact"
+   "documents",
+   "policies",
+   "compliance",
+   "safeguarding",
+   "security-centre",
+   "activity-log"
   ],
   "actions": [
    "Reinstate",
-   "Sign out",
-   "Suspend",
-   "Theme"
+   "Suspend"
   ],
   "tabs": []
  },
@@ -635,15 +613,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Set, collect (Drive link), mark, and score. Completion rate feeds insights.",
-  "detail": "Set, collect (Drive link), mark, and score. Completion rate feeds insights. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Set, collect (Drive link), mark, and score. Completion rate feeds insights. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -652,19 +630,16 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, cbt-exam, cbt-multi, cbt-prompts, cbt-review, certificates. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Teaching</b> in the menu, next to curriculum, sow, lesson-plans, methodologies. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review",
-   "certificates"
+   "curriculum",
+   "sow",
+   "lesson-plans",
+   "methodologies",
+   "diagnostics",
+   "goals"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "at-risk": {
@@ -697,36 +672,34 @@
    }
   ],
   "roleViews": {
-   "owner": "Studio-wide analysis and at-risk board.",
-   "tutor": "Their own learners.",
-   "parent": "The same analysis narrowed to their own child.",
-   "learner": "Their own progress only."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Rule engine: falling scores, low attendance, missing homework, idle 14+ days, hours < 2. No AI.",
-  "detail": "Rule engine: falling scores, low attendance, missing homework, idle 14+ days, hours < 2. No AI. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
-  "audience": "Owner, admin and tutors see the full picture. A parent sees the same analysis narrowed to their own child.",
-  "why": "Parents pay for visible progress. These pages turn raw scores into an argument a parent can read, audit and trust.",
+  "purpose": "A board of learners the studio is worried about, and — the part that was missing — what was decided about each one. The rule engine raises a flag from falling scores, attendance below 80%, missing homework, no activity for 14 days or fewer than two hours taught. The desk below the board is where a tutor records the evidence, the action agreed, whether the parent has been told and when the case will be looked at again.",
+  "detail": "A board of learners the studio is worried about, and — the part that was missing — what was decided about each one. The rule engine raises a flag from falling scores, attendance below 80%, missing homework, no activity for 14 days or fewer than two hours taught. The desk below the board is where a tutor records the evidence, the action agreed, whether the parent has been told and when the case will be looked at again. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "audience": "Tutors and administrators. A tutor sees only the learners assigned to them; an administrator sees everyone. Families never open this page.",
+  "why": "A flag with no recorded action is a complaint waiting to happen. When a parent asks \"you knew in March — what did you do?\", this page is the answer. It is also the earliest point at which a learner can be saved, which is cheaper than replacing them.",
   "how": [
-   "Select the learner, group or period you want to examine.",
-   "Read the headline numbers first, then open the charts underneath.",
-   "Every figure is a published formula, never a black box — open the methodology note to see the arithmetic.",
-   "Print or export the view and take it into a parent conference."
+   "Read the summary strip: how many cases are open, how many are urgent, how many are overdue for review, and how many parents have not been told yet.",
+   "Pick the learner and record what you actually observed, with dates and numbers.",
+   "Write the action agreed. \"Monitor\" is not an action; \"extra 30-minute clinic on Thursdays for four weeks\" is.",
+   "Set a review date, and tick <b>Parent informed</b> once you have made the call.",
+   "When the concern has passed, tick <b>Resolved</b> and write the outcome — that is what builds the studio's evidence base."
   ],
-  "connects": "Sits in the <b>Analytics</b> group, alongside analytics, exam-targets, group-insights, insights, learner-360, predictions. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Reads the same session, attendance and score data as Learner 360 and the Scoresheet. Cases raised here usually end up in a Progress report or a Parent conference.",
   "related": [
-   "analytics",
-   "exam-targets",
-   "group-insights",
-   "insights",
+   "scoresheet",
+   "progress-reports",
    "learner-360",
-   "predictions"
+   "insights",
+   "analytics",
+   "group-insights"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "attendance": {
@@ -763,10 +736,10 @@
    }
   ],
   "roleViews": {
-   "owner": "Every session in the studio.",
-   "tutor": "Their own timetable, attendance and notes.",
-   "parent": "Their child's classes, dates, times and amounts.",
-   "learner": "Their own upcoming and past classes."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [
    "mark attendance",
@@ -775,7 +748,7 @@
   ],
   "faqs": [],
   "purpose": "Present / late / absent / excused per learner, even inside a group. Feeds at-risk rules.",
-  "detail": "Present / late / absent / excused per learner, even inside a group. Feeds at-risk rules. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Present / late / absent / excused per learner, even inside a group. Feeds at-risk rules. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors run this day to day. Parents and learners see their own sessions and nothing else.",
   "why": "Attendance is what deducts hours from the hour bank, which is what justifies the invoice. Get this right and billing disputes disappear.",
   "how": [
@@ -784,19 +757,16 @@
    "Mark attendance — this is the step that deducts hours from the hour bank.",
    "Write session notes so the parent has a permanent record of what was actually taught."
   ],
-  "connects": "Sits in the <b>Sessions</b> group, alongside availability, bookings, calendar, cancellations, events, makeup-credits. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Scheduling</b> in the menu, next to calendar, sessions, bookings, public-book. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "availability",
-   "bookings",
    "calendar",
-   "cancellations",
-   "events",
-   "makeup-credits"
+   "sessions",
+   "bookings",
+   "public-book",
+   "availability",
+   "session-complete"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "availability": {
@@ -833,15 +803,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Every session in the studio.",
-   "tutor": "Their own timetable, attendance and notes.",
-   "parent": "Their child's classes, dates, times and amounts.",
-   "learner": "Their own upcoming and past classes."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Weekly tutor availability in the tutor’s timezone. Used by self-booking and conflict checks.",
-  "detail": "Weekly tutor availability in the tutor’s timezone. Used by self-booking and conflict checks. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Weekly tutor availability in the tutor’s timezone. Used by self-booking and conflict checks. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors run this day to day. Parents and learners see their own sessions and nothing else.",
   "why": "Attendance is what deducts hours from the hour bank, which is what justifies the invoice. Get this right and billing disputes disappear.",
   "how": [
@@ -850,19 +820,16 @@
    "Mark attendance — this is the step that deducts hours from the hour bank.",
    "Write session notes so the parent has a permanent record of what was actually taught."
   ],
-  "connects": "Sits in the <b>Sessions</b> group, alongside attendance, bookings, calendar, cancellations, events, makeup-credits. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Scheduling</b> in the menu, next to calendar, sessions, bookings, public-book. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "attendance",
-   "bookings",
    "calendar",
-   "cancellations",
-   "events",
-   "makeup-credits"
+   "sessions",
+   "bookings",
+   "public-book",
+   "attendance",
+   "session-complete"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "birthdays": {
@@ -899,15 +866,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Upcoming learner and tutor birthdays.",
-  "detail": "Upcoming learner and tutor birthdays. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "purpose": "Upcoming birthdays for learners, parents and tutors, ordered by how soon they fall rather than by date of birth, so today is always at the top. Shows the age being reached, the engagement the learner belongs to, and a one-tap WhatsApp message. Nothing here is decoration: a remembered birthday is one of the cheapest things a studio can do to keep a family.",
+  "detail": "Upcoming birthdays for learners, parents and tutors, ordered by how soon they fall rather than by date of birth, so today is always at the top. Shows the age being reached, the engagement the learner belongs to, and a one-tap WhatsApp message. Nothing here is decoration: a remembered birthday is one of the cheapest things a studio can do to keep a family. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -916,16 +883,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Media</b> group, alongside directory, gallery, idcards. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>People</b> in the menu, next to learners, parents, tutors, groups. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "directory",
-   "gallery",
-   "idcards"
+   "learners",
+   "parents",
+   "tutors",
+   "groups",
+   "engagements",
+   "subjects"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "bookings": {
@@ -962,10 +929,10 @@
    }
   ],
   "roleViews": {
-   "owner": "Every session in the studio.",
-   "tutor": "Their own timetable, attendance and notes.",
-   "parent": "Their child's classes, dates, times and amounts.",
-   "learner": "Their own upcoming and past classes."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [
    "create a booking",
@@ -983,7 +950,7 @@
    }
   ],
   "purpose": "A full booking is 4 cycles of 7 days. Times per cycle × 4 = total classes. Hourly rate × duration × classes = invoice. Visible to tutor, parent and learner.",
-  "detail": "A full booking is 4 cycles of 7 days. Times per cycle × 4 = total classes. Hourly rate × duration × classes = invoice. Visible to tutor, parent and learner. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "A full booking is 4 cycles of 7 days. Times per cycle × 4 = total classes. Hourly rate × duration × classes = invoice. Visible to tutor, parent and learner. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Tutors run this day to day. Parents and learners see their own sessions and nothing else.",
   "why": "Attendance is what deducts hours from the hour bank, which is what justifies the invoice. Get this right and billing disputes disappear.",
   "how": [
@@ -992,19 +959,16 @@
    "Mark attendance — this is the step that deducts hours from the hour bank.",
    "Write session notes so the parent has a permanent record of what was actually taught."
   ],
-  "connects": "Sits in the <b>Sessions</b> group, alongside attendance, availability, calendar, cancellations, events, makeup-credits. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Scheduling</b> in the menu, next to calendar, sessions, public-book, availability. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "attendance",
-   "availability",
    "calendar",
-   "cancellations",
-   "events",
-   "makeup-credits"
+   "sessions",
+   "public-book",
+   "availability",
+   "attendance",
+   "session-complete"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "broadcasts": {
@@ -1041,15 +1005,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "One-click share of a score or report via free channels.",
-  "detail": "One-click share of a score or report via free channels. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "purpose": "Send a score, a report, a class change or a term announcement to many families at once through free channels — WhatsApp click-to-chat, email and browser push. Choose the audience by engagement, group, year or attendance, preview exactly what each family will receive with their own child's figures merged in, and see who has been sent what so nobody is messaged twice.",
+  "detail": "Send a score, a report, a class change or a term announcement to many families at once through free channels — WhatsApp click-to-chat, email and browser push. Choose the audience by engagement, group, year or attendance, preview exactly what each family will receive with their own child's figures merged in, and see who has been sent what so nobody is messaged twice. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -1058,19 +1022,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Comms</b> group, alongside announcements, complaints, forum, inbox, messages, notifications. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Communication</b> in the menu, next to announcements, forum, polls, voting. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "announcements",
-   "complaints",
    "forum",
-   "inbox",
-   "messages",
-   "notifications"
+   "polls",
+   "voting",
+   "surveys",
+   "complaints"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "builder": {
@@ -1107,8 +1068,8 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
@@ -1170,15 +1131,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Every session in the studio.",
-   "tutor": "Their own timetable, attendance and notes.",
-   "parent": "Their child's classes, dates, times and amounts.",
-   "learner": "Their own upcoming and past classes."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Timezone-aware calendar for 1:1 and group sessions. Conflict detection on tutor and learner.",
-  "detail": "Timezone-aware calendar for 1:1 and group sessions. Conflict detection on tutor and learner. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "Timezone-aware calendar for 1:1 and group sessions. Conflict detection on tutor and learner. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Tutors run this day to day. Parents and learners see their own sessions and nothing else.",
   "why": "Attendance is what deducts hours from the hour bank, which is what justifies the invoice. Get this right and billing disputes disappear.",
   "how": [
@@ -1187,19 +1148,16 @@
    "Mark attendance — this is the step that deducts hours from the hour bank.",
    "Write session notes so the parent has a permanent record of what was actually taught."
   ],
-  "connects": "Sits in the <b>Sessions</b> group, alongside attendance, availability, bookings, cancellations, events, makeup-credits. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Scheduling</b> in the menu, next to sessions, bookings, public-book, availability. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "attendance",
-   "availability",
+   "sessions",
    "bookings",
-   "cancellations",
-   "events",
-   "makeup-credits"
+   "public-book",
+   "availability",
+   "attendance",
+   "session-complete"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "cancellations": {
@@ -1236,15 +1194,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Every session in the studio.",
-   "tutor": "Their own timetable, attendance and notes.",
-   "parent": "Their child's classes, dates, times and amounts.",
-   "learner": "Their own upcoming and past classes."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Who cancelled, notice hours, fee applied, hours returned. Transparent for parents.",
-  "detail": "Who cancelled, notice hours, fee applied, hours returned. Transparent for parents. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Who cancelled, notice hours, fee applied, hours returned. Transparent for parents. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors run this day to day. Parents and learners see their own sessions and nothing else.",
   "why": "Attendance is what deducts hours from the hour bank, which is what justifies the invoice. Get this right and billing disputes disappear.",
   "how": [
@@ -1253,19 +1211,16 @@
    "Mark attendance — this is the step that deducts hours from the hour bank.",
    "Write session notes so the parent has a permanent record of what was actually taught."
   ],
-  "connects": "Sits in the <b>Sessions</b> group, alongside attendance, availability, bookings, calendar, events, makeup-credits. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Scheduling</b> in the menu, next to calendar, sessions, bookings, public-book. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "attendance",
-   "availability",
-   "bookings",
    "calendar",
-   "events",
-   "makeup-credits"
+   "sessions",
+   "bookings",
+   "public-book",
+   "availability",
+   "attendance"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "cbt-exam": {
@@ -1302,10 +1257,10 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Can open any paper and see every candidate.",
+   "tutor": "Can open the papers assigned to them.",
+   "parent": "No access — a parent does not sit the paper.",
+   "learner": "Opens their own paper with the quiz code and their student ID."
   },
   "tasks": [
    "take a quiz",
@@ -1314,7 +1269,7 @@
   ],
   "faqs": [],
   "purpose": "Learner runtime: code entry, timer, navigator. Open or rostered.",
-  "detail": "Learner runtime: code entry, timer, navigator. Open or rostered. The main actions available here are: <b>Got it</b>, <b>Save / print PDF</b>, <b>Start quiz</b>, <b>Submit paper</b>. Reachable without a portal password, but useless without a valid quiz code plus the learner's student ID. The code is the gate.",
+  "detail": "Learner runtime: code entry, timer, navigator. Open or rostered. What you can do here: <b>Got it</b>, <b>Save / print PDF</b>, <b>Start quiz</b>, <b>Submit paper</b>. Reachable without a portal password, but useless without a valid quiz code plus the learner's student ID. The code is the gate.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -1323,14 +1278,14 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-multi, cbt-prompts, cbt-review, certificates. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Quizzes & CBT</b> in the menu, next to practice, cbt-review, cbt-multi, cbt-prompts. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
+   "practice",
+   "cbt-review",
    "cbt-multi",
    "cbt-prompts",
-   "cbt-review",
-   "certificates"
+   "cbt-results",
+   "exam-targets"
   ],
   "actions": [
    "Got it",
@@ -1374,15 +1329,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Can open any paper and see every candidate.",
+   "tutor": "Can open the papers assigned to them.",
+   "parent": "No access — a parent does not sit the paper.",
+   "learner": "Opens their own paper with the quiz code and their student ID."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "One sitting, subject tabs (UTME-style). Shared timer, per-subject breakdown, same anti-cheat.",
-  "detail": "One sitting, subject tabs (UTME-style). Shared timer, per-subject breakdown, same anti-cheat. The main actions available here are: <b>Append questions</b>, <b>Generate</b>, <b>Remove</b>, <b>Save all changes</b>. Reachable without a portal password, but useless without a valid quiz code plus the learner's student ID. The code is the gate.",
+  "detail": "One sitting, subject tabs (UTME-style). Shared timer, per-subject breakdown, same anti-cheat. What you can do here: <b>Append questions</b>, <b>Generate</b>, <b>Remove</b>, <b>Save all changes</b>. Reachable without a portal password, but useless without a valid quiz code plus the learner's student ID. The code is the gate.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -1391,14 +1346,14 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-prompts, cbt-review, certificates. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Quizzes & CBT</b> in the menu, next to practice, cbt-exam, cbt-review, cbt-prompts. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
+   "practice",
    "cbt-exam",
-   "cbt-prompts",
    "cbt-review",
-   "certificates"
+   "cbt-prompts",
+   "cbt-results",
+   "exam-targets"
   ],
   "actions": [
    "Append questions",
@@ -1442,15 +1397,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Copy-paste prompts for any free external chat to emit CSV questions. The platform never calls a paid AI.",
-  "detail": "Copy-paste prompts for any free external chat to emit CSV questions. The platform never calls a paid AI. The main actions available here are: <b>Build prompt</b>, <b>Copy</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Copy-paste prompts for any free external chat to emit CSV questions. The platform never calls a paid AI. What you can do here: <b>Build prompt</b>, <b>Copy</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -1459,20 +1414,18 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-review, certificates. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Quizzes & CBT</b> in the menu, next to practice, cbt-exam, cbt-review, cbt-multi. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
+   "practice",
    "cbt-exam",
-   "cbt-multi",
    "cbt-review",
-   "certificates"
+   "cbt-multi",
+   "cbt-results",
+   "exam-targets"
   ],
   "actions": [
    "Build prompt",
-   "Copy",
-   "Sign out",
-   "Theme"
+   "Copy"
   ],
   "tabs": []
  },
@@ -1510,15 +1463,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Every quiz and exam the studio has set, each with a Results button. Open one and you see who sat it — registered learners and anonymous candidates who used only a code — what they scored, how long they took, and any integrity flags. Open a single sitting and you see exactly what that candidate did: every question, the answer given, the answer expected, the mark awarded, and a timeline of anything the anti-cheat layer noticed.",
-  "detail": "Every quiz and exam the studio has set, each with a Results button. Open one and you see who sat it — registered learners and anonymous candidates who used only a code — what they scored, how long they took, and any integrity flags. Open a single sitting and you see exactly what that candidate did: every question, the answer given, the answer expected, the mark awarded, and a timeline of anything the anti-cheat layer noticed. The main actions available here are: <b>Save review</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Every quiz and exam the studio has set, each with a Results button. Open one and you see who sat it — registered learners and anonymous candidates who used only a code — what they scored, how long they took, and any integrity flags. Open a single sitting and you see exactly what that candidate did: every question, the answer given, the answer expected, the mark awarded, and a timeline of anything the anti-cheat layer noticed. What you can do here: <b>Save review</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner, admin and tutors. Families never reach this page; the database refuses it by role rather than merely hiding the link.",
   "why": "A score on its own tells you almost nothing. Item analysis tells you whether the class failed a question or the question failed the class — a facility below 25% usually means a wrong answer key, not thirty confused learners. Catching that before you publish a grade is the difference between a defensible mark and an argument with a parent.",
   "how": [
@@ -1533,17 +1486,15 @@
   ],
   "connects": "Papers are built in cbt-multi.html and sat in cbt-exam.html. Learners see their own review in cbt-review.html. Graded results push to scoresheet.html. Submission alerts also appear in notifications.html.",
   "related": [
-   "about",
-   "activity-log",
-   "admin-data",
-   "approvals",
-   "change-password",
-   "contact"
+   "practice",
+   "cbt-exam",
+   "cbt-review",
+   "cbt-multi",
+   "cbt-prompts",
+   "exam-targets"
   ],
   "actions": [
-   "Save review",
-   "Sign out",
-   "Theme"
+   "Save review"
   ],
   "tabs": []
  },
@@ -1581,15 +1532,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Can open any paper and see every candidate.",
+   "tutor": "Can open the papers assigned to them.",
+   "parent": "No access — a parent does not sit the paper.",
+   "learner": "Opens their own paper with the quiz code and their student ID."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "After a quiz the learner sees every item, their answer, the key and the explanation, then saves a study PDF.",
-  "detail": "After a quiz the learner sees every item, their answer, the key and the explanation, then saves a study PDF. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Reachable without a portal password, but useless without a valid quiz code plus the learner's student ID. The code is the gate.",
+  "detail": "After a quiz the learner sees every item, their answer, the key and the explanation, then saves a study PDF. Reachable without a portal password, but useless without a valid quiz code plus the learner's student ID. The code is the gate.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -1598,19 +1549,16 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, certificates. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Quizzes & CBT</b> in the menu, next to practice, cbt-exam, cbt-multi, cbt-prompts. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
+   "practice",
    "cbt-exam",
    "cbt-multi",
    "cbt-prompts",
-   "certificates"
+   "cbt-results",
+   "exam-targets"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "certificates": {
@@ -1647,36 +1595,35 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Printable milestone certificates with a verification code.",
-  "detail": "Printable milestone certificates with a verification code. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
-  "audience": "Tutors author the content, learners work through it, parents watch the progress.",
-  "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
+  "purpose": "A certificate studio, not a name-and-a-code. Six designed layouts — premium gold, classic, modern, elegant, minimal and diploma — with your own colours, fonts, border, logo, seal text and a signature pulled from a link. Every certificate carries a unique verification code, the design is stored with the award so a reprint in two years looks identical, and awards can be issued one at a time or in a batch from a quiz result.",
+  "detail": "A certificate studio, not a name-and-a-code. Six designed layouts — premium gold, classic, modern, elegant, minimal and diploma — with your own colours, fonts, border, logo, seal text and a signature pulled from a link. Every certificate carries a unique verification code, the design is stored with the award so a reprint in two years looks identical, and awards can be issued one at a time or in a batch from a quiz result. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "audience": "Tutors and administrators issue certificates. A learner and their parent can view and print their own.",
+  "why": "A certificate is the most-shared artefact a studio produces — it goes on a wall, into a WhatsApp status and into a school file. The old one-line design undersold the work behind it. A verification code also means the certificate can be checked rather than merely believed.",
   "how": [
-   "Pick the engagement, and the learner if it is a group.",
-   "Add or import the items you need — topics, tasks, questions or reading links.",
-   "Publish, so the learner sees it on their own dashboard.",
-   "Track completion and scores as the work comes back in."
+   "Choose a saved design, or build one and save it as the studio's house style.",
+   "Pick the recipient from the learner list, or type a name for someone outside the roll.",
+   "Choose the kind of award and edit the body text — the live preview updates as you type.",
+   "Paste a signature image link if you have one. Nothing is uploaded; it is a link, which is what keeps the studio inside the free tier.",
+   "Press <b>Issue &amp; print</b>. The verification code is generated, the award is recorded, and the design is stored with it.",
+   "Use <b>Batch from a quiz</b> to issue to everyone who passed a paper in one pass."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Can issue from a CBT result or a Free class cohort. Issued certificates appear on Learner portfolio and Transcripts, and can be checked by code.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "scoresheet",
+   "progress-reports",
+   "learner-360",
+   "insights",
+   "analytics",
+   "group-insights"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "change-password": {
@@ -1705,15 +1652,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access.",
+   "tutor": "Full access.",
+   "parent": "Their own view of it.",
+   "learner": "Their own view of it."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Change your password while signed in, with a live strength meter that scores length, case mixing, digits and symbols.",
-  "detail": "Change your password while signed in, with a live strength meter that scores length, case mixing, digits and symbols. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "Change your password while signed in, with a live strength meter that scores length, case mixing, digits and symbols. What you can do here: <b>Change password</b>, <b>Sign out everywhere</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Every signed-in user.",
   "why": "Shared family devices are common. A periodic password change, plus the idle auto-lock, is what keeps a portal safe on a household laptop.",
   "how": [
@@ -1723,16 +1670,16 @@
   ],
   "connects": "The security guard records the change in the login audit trail.",
   "related": [
-   "about",
-   "activity-log",
-   "admin-data",
-   "approvals",
-   "cbt-results",
-   "contact"
+   "dashboard",
+   "profile",
+   "notifications",
+   "inbox",
+   "messages",
+   "install"
   ],
   "actions": [
-   "Sign out",
-   "Theme"
+   "Change password",
+   "Sign out everywhere"
   ],
   "tabs": []
  },
@@ -1770,15 +1717,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Work organised by topic. Assignments, quizzes, materials, comment-only return, skills tags.",
-  "detail": "Work organised by topic. Assignments, quizzes, materials, comment-only return, skills tags. The main actions available here are: <b>Add classwork</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "Work organised by topic. Assignments, quizzes, materials, comment-only return, skills tags. What you can do here: <b>Add classwork</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -1787,19 +1734,17 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Teaching</b> in the menu, next to curriculum, sow, lesson-plans, methodologies. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "curriculum",
+   "sow",
+   "lesson-plans",
+   "methodologies",
+   "diagnostics",
+   "goals"
   ],
   "actions": [
-   "Add classwork",
-   "Sign out",
-   "Theme"
+   "Add classwork"
   ],
   "tabs": []
  },
@@ -1837,15 +1782,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Submit → route → resolve. Evidence as Drive links.",
-  "detail": "Submit → route → resolve. Evidence as Drive links. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "purpose": "The formal route for a concern, from the moment it is raised to the moment it is closed. A parent or learner submits it, the studio routes it to an owner, and every step is timestamped. Evidence is attached as a Drive or web link rather than an upload. The audit trail matters more than the form: it is what you produce when a complaint escalates.",
+  "detail": "The formal route for a concern, from the moment it is raised to the moment it is closed. A parent or learner submits it, the studio routes it to an owner, and every step is timestamped. Evidence is attached as a Drive or web link rather than an upload. The audit trail matters more than the form: it is what you produce when a complaint escalates. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -1854,19 +1799,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Comms</b> group, alongside announcements, broadcasts, forum, inbox, messages, notifications. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Communication</b> in the menu, next to announcements, broadcasts, forum, polls. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "announcements",
    "broadcasts",
    "forum",
-   "inbox",
-   "messages",
-   "notifications"
+   "polls",
+   "voting",
+   "surveys"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "compliance": {
@@ -1903,15 +1845,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "No access — this page controls money, audit or configuration.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "DBS/background checks, insurance, data-protection tasks.",
-  "detail": "DBS/background checks, insurance, data-protection tasks. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
+  "purpose": "The register of the checks a tutoring studio has to be able to produce on demand — background and DBS checks, insurance, safeguarding training, data-protection tasks and policy reviews — each with an owner, a due date and an expiry. Overdue items are shown in red at the top, because the whole value of this page is that nothing quietly lapses.",
+  "detail": "The register of the checks a tutoring studio has to be able to produce on demand — background and DBS checks, insurance, safeguarding training, data-protection tasks and policy reviews — each with an owner, a due date and an expiry. Overdue items are shown in red at the top, because the whole value of this page is that nothing quietly lapses. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -1920,19 +1862,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Ops</b> group, alongside documents, helpdesk, leave, policies, rooms, safeguarding. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Records & compliance</b> in the menu, next to documents, policies, safeguarding, security-centre. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "documents",
-   "helpdesk",
-   "leave",
    "policies",
-   "rooms",
-   "safeguarding"
+   "safeguarding",
+   "security-centre",
+   "approvals",
+   "activity-log"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "contact": {
@@ -1961,33 +1900,33 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access, and can edit the content behind it in Settings.",
+   "tutor": "Full access — it is a public page.",
+   "parent": "Full access — it is a public page.",
+   "learner": "Full access — it is a public page."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Every way to reach the studio — WhatsApp, email, phone and social — plus an enquiry form that lands directly in the staff CRM.",
-  "detail": "Every way to reach the studio — WhatsApp, email, phone and social — plus an enquiry form that lands directly in the staff CRM. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
-  "audience": "Public.",
-  "why": "A parent who cannot reach you in under a minute contacts the next tutor on their list.",
+  "purpose": "How to reach the studio, and a form that actually delivers. Shows the studio's phone, WhatsApp, email, address and teaching hours in the visitor's own time zone, a map link, the response time to expect, and a message form that writes into the studio's inbox so nothing depends on an email client being configured.",
+  "detail": "How to reach the studio, and a form that actually delivers. Shows the studio's phone, WhatsApp, email, address and teaching hours in the visitor's own time zone, a map link, the response time to expect, and a message form that writes into the studio's inbox so nothing depends on an email client being configured. What you can do here: <b>Send the message</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
+  "audience": "Anyone. No sign-in needed.",
+  "why": "For a tutoring studio the contact page is a sales page. A parent who cannot see a phone number, cannot tell whether you are open, and gets no acknowledgement after writing, contacts the next tutor instead.",
   "how": [
-   "Choose the channel you prefer; WhatsApp and email open your own device app.",
-   "Or submit the form and the studio replies from the Inquiries board."
+   "Use the WhatsApp or call button for anything urgent — both are one tap on a phone.",
+   "Check the teaching hours: they are shown converted into your own time zone, not the studio's.",
+   "Use the form for anything that needs a written record. You get a reference number back.",
+   "Choose the right subject on the form — it routes the message to the right person and sets the response time you are promised."
   ],
-  "connects": "Writes to the inquiries table, which staff triage in the Inquiries/CRM module.",
+  "connects": "Messages land in the studio Inbox and, when they are an enquiry, on the Inquiries page. Linked from every footer and from the public landing page.",
   "related": [
+   "feature-guide",
+   "site-index",
    "about",
-   "activity-log",
-   "admin-data",
-   "approvals",
-   "cbt-results",
-   "change-password"
+   "developer",
+   "flyer"
   ],
   "actions": [
-   "Sign out",
-   "Theme"
+   "Send the message"
   ],
   "tabs": []
  },
@@ -2025,15 +1964,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Independent scheme of work per engagement — not a shared school class list. Tick coverage weekly.",
-  "detail": "Independent scheme of work per engagement — not a shared school class list. Tick coverage weekly. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Independent scheme of work per engagement — not a shared school class list. Tick coverage weekly. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -2042,19 +1981,16 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Teaching</b> in the menu, next to sow, lesson-plans, methodologies, diagnostics. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "sow",
+   "lesson-plans",
+   "methodologies",
+   "diagnostics",
+   "goals",
+   "mastery"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "dashboard": {
@@ -2091,15 +2027,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access.",
+   "tutor": "Full access.",
+   "parent": "Their own view of it.",
+   "learner": "Their own view of it."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Your personalised home screen, and the most role-aware page in the studio. An owner sees studio-wide KPIs, cash position and at-risk learners. A tutor sees today's classes, attendance to mark and work to grade. A parent sees the next class, the latest scores and the balance owing. A learner sees homework, reading and quizzes due.",
-  "detail": "Your personalised home screen, and the most role-aware page in the studio. An owner sees studio-wide KPIs, cash position and at-risk learners. A tutor sees today's classes, attendance to mark and work to grade. A parent sees the next class, the latest scores and the balance owing. A learner sees homework, reading and quizzes due. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "Your personalised home screen, and the most role-aware page in the studio. An owner sees studio-wide KPIs, cash position and at-risk learners. A tutor sees today's classes, attendance to mark and work to grade. A parent sees the next class, the latest scores and the balance owing. A learner sees homework, reading and quizzes due. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Every signed-in role — the same URL renders a completely different page per role.",
   "why": "It is the daily habit that keeps families engaged. A parent who opens this page each week and sees movement is a parent who renews.",
   "how": [
@@ -2110,17 +2046,14 @@
   ],
   "connects": "The hub of the entire studio — it links to every module that has been enabled.",
   "related": [
-   "about",
-   "activity-log",
-   "admin-data",
-   "approvals",
-   "cbt-results",
-   "change-password"
+   "profile",
+   "notifications",
+   "inbox",
+   "messages",
+   "change-password",
+   "install"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "developer": {
@@ -2149,34 +2082,32 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access, and can edit the content behind it in Settings.",
+   "tutor": "Full access — it is a public page.",
+   "parent": "Full access — it is a public page.",
+   "learner": "Full access — it is a public page."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Credits the build, documents the technology stack and the design constraints, and links to HMG Technologies for studios wanting bespoke work.",
-  "detail": "Credits the build, documents the technology stack and the design constraints, and links to HMG Technologies for studios wanting bespoke work. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
-  "audience": "Public, and technically-minded readers.",
-  "why": "Transparency about the stack is part of the pitch: no vendor lock-in, no recurring platform fee, and the client owns the source.",
+  "purpose": "Who built and maintains this platform: HMG Concepts, the product family it belongs to, the technology it runs on, the support and licensing position, and how to commission a build of your own.",
+  "detail": "Who built and maintains this platform: HMG Concepts, the product family it belongs to, the technology it runs on, the support and licensing position, and how to commission a build of your own. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
+  "audience": "Anyone. Public and indexed.",
+  "why": "A parent handing over a child's data, and a school considering a licence, both want to know who is behind the software and whether it will still be maintained next year. Vagueness here costs sales.",
   "how": [
-   "Read the architecture and constraint summary.",
-   "Follow the ecosystem links to the wider HMG network."
+   "Read who maintains the platform and how to reach them.",
+   "Check the technology and hosting statement if you are doing due diligence.",
+   "Follow the ecosystem links to the other products.",
+   "Use the commission link if you want a build for your own organisation."
   ],
-  "connects": "Part of the HMG Concepts ecosystem link graph, which is also how the sites reinforce each other for search.",
+  "connects": "Links to HMG Digital Products, HMG Ecosystem and the studio's Contact page.",
   "related": [
+   "feature-guide",
+   "site-index",
    "about",
-   "activity-log",
-   "admin-data",
-   "approvals",
-   "cbt-results",
-   "change-password"
+   "contact",
+   "flyer"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "diagnostics": {
@@ -2213,15 +2144,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Baseline tests at the start of an engagement. Locks the value-added starting point.",
-  "detail": "Baseline tests at the start of an engagement. Locks the value-added starting point. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Baseline tests at the start of an engagement. Locks the value-added starting point. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -2230,19 +2161,16 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Teaching</b> in the menu, next to curriculum, sow, lesson-plans, methodologies. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "curriculum",
+   "sow",
+   "lesson-plans",
+   "methodologies",
+   "goals",
+   "mastery"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "directory": {
@@ -2279,15 +2207,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Searchable people directory, role-filtered.",
-  "detail": "Searchable people directory, role-filtered. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "purpose": "A searchable directory of everyone connected to the studio — learners, parents, tutors and staff — filtered by what your role is allowed to see. A tutor finds the parent of a child they teach; a parent finds the studio's contacts; nobody sees another family's details. Search matches names, subjects, groups and roles at once.",
+  "detail": "A searchable directory of everyone connected to the studio — learners, parents, tutors and staff — filtered by what your role is allowed to see. A tutor finds the parent of a child they teach; a parent finds the studio's contacts; nobody sees another family's details. Search matches names, subjects, groups and roles at once. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -2296,16 +2224,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Media</b> group, alongside birthdays, gallery, idcards. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>People</b> in the menu, next to learners, parents, tutors, groups. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "birthdays",
-   "gallery",
-   "idcards"
+   "learners",
+   "parents",
+   "tutors",
+   "groups",
+   "engagements",
+   "subjects"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "documents": {
@@ -2342,15 +2270,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Service agreement, safeguarding consent, recording consent — Drive links + status.",
-  "detail": "Service agreement, safeguarding consent, recording consent — Drive links + status. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Service agreement, safeguarding consent, recording consent — Drive links + status. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -2359,19 +2287,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Ops</b> group, alongside compliance, helpdesk, leave, policies, rooms, safeguarding. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Records & compliance</b> in the menu, next to policies, compliance, safeguarding, security-centre. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "compliance",
-   "helpdesk",
-   "leave",
    "policies",
-   "rooms",
-   "safeguarding"
+   "compliance",
+   "safeguarding",
+   "security-centre",
+   "approvals",
+   "activity-log"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "engagements": {
@@ -2408,10 +2333,10 @@
    }
   ],
   "roleViews": {
-   "owner": "Full read/write across every record.",
-   "tutor": "Read/write for the engagements they teach.",
-   "parent": "Only their own children appear.",
-   "learner": "Only their own record appears."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [
    "create a 1:1 contract",
@@ -2420,7 +2345,7 @@
   ],
   "faqs": [],
   "purpose": "The atomic unit. Each one-on-one student or group is a fully independent teaching engagement with its own curriculum, hours, goals, fees and analytics. Nothing leaks between engagements.",
-  "detail": "The atomic unit. Each one-on-one student or group is a fully independent teaching engagement with its own curriculum, hours, goals, fees and analytics. Nothing leaks between engagements. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "The atomic unit. Each one-on-one student or group is a fully independent teaching engagement with its own curriculum, hours, goals, fees and analytics. Nothing leaks between engagements. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner, admin and tutors do the data entry. Parents and learners only ever see their own linked records.",
   "why": "This is master data. If it is wrong here it is wrong everywhere downstream — bookings, invoices, analytics and reports all read from it.",
   "how": [
@@ -2429,18 +2354,16 @@
    "Click any row to open the full record, edit it inline, and save.",
    "Use <b>Export CSV</b> whenever you want a copy — the data belongs to the studio, not the platform."
   ],
-  "connects": "Sits in the <b>Core</b> group, alongside groups, learners, parents, subjects, tutors. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>People</b> in the menu, next to learners, parents, tutors, groups. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "groups",
    "learners",
    "parents",
+   "tutors",
+   "groups",
    "subjects",
-   "tutors"
+   "family-links"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "eresources": {
@@ -2477,15 +2400,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Study materials as Drive or web links, organised by subject and engagement.",
-  "detail": "Study materials as Drive or web links, organised by subject and engagement. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Study materials as Drive or web links, organised by subject and engagement. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -2494,19 +2417,13 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Resources</b> in the menu, next to resources, library, lms. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "resources",
+   "library",
+   "lms"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "events": {
@@ -2543,15 +2460,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Every session in the studio.",
-   "tutor": "Their own timetable, attendance and notes.",
-   "parent": "Their child's classes, dates, times and amounts.",
-   "learner": "Their own upcoming and past classes."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "One-off workshops, bootcamps, exam clinics. Optional public RSVP.",
-  "detail": "One-off workshops, bootcamps, exam clinics. Optional public RSVP. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "One-off workshops, bootcamps, exam clinics. Optional public RSVP. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors run this day to day. Parents and learners see their own sessions and nothing else.",
   "why": "Attendance is what deducts hours from the hour bank, which is what justifies the invoice. Get this right and billing disputes disappear.",
   "how": [
@@ -2560,19 +2477,16 @@
    "Mark attendance — this is the step that deducts hours from the hour bank.",
    "Write session notes so the parent has a permanent record of what was actually taught."
   ],
-  "connects": "Sits in the <b>Sessions</b> group, alongside attendance, availability, bookings, calendar, cancellations, makeup-credits. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Scheduling</b> in the menu, next to calendar, sessions, bookings, public-book. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "attendance",
-   "availability",
-   "bookings",
    "calendar",
-   "cancellations",
-   "makeup-credits"
+   "sessions",
+   "bookings",
+   "public-book",
+   "availability",
+   "attendance"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "exam-links": {
@@ -2609,15 +2523,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full pipeline and conversion figures.",
-   "tutor": "Usually read-only; may add notes after a trial.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Shareable links for WAEC, NECO, UTME, IGCSE, IELTS, SAT and more. Passport as Drive link only.",
-  "detail": "Shareable links for WAEC, NECO, UTME, IGCSE, IELTS, SAT and more. Passport as Drive link only. The main actions available here are: <b>Create link</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Shareable links for WAEC, NECO, UTME, IGCSE, IELTS, SAT and more. Passport as Drive link only. What you can do here: <b>Create link</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin — this is business development. Families never see the pipeline.",
   "why": "Tutoring income is won or lost at the top of the funnel. Recording every enquiry means you can see which channel actually produces paying families.",
   "how": [
@@ -2626,19 +2540,17 @@
    "Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.",
    "Watch the funnel counts at the top — they show you exactly where prospects go cold."
   ],
-  "connects": "Sits in the <b>Growth</b> group, alongside application-links, apply, exam-register, flyer, inquiries, onboarding. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Quizzes & CBT</b> in the menu, next to practice, cbt-exam, cbt-review, cbt-multi. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "application-links",
-   "apply",
-   "exam-register",
-   "flyer",
-   "inquiries",
-   "onboarding"
+   "practice",
+   "cbt-exam",
+   "cbt-review",
+   "cbt-multi",
+   "cbt-prompts",
+   "cbt-results"
   ],
   "actions": [
-   "Create link",
-   "Sign out",
-   "Theme"
+   "Create link"
   ],
   "tabs": []
  },
@@ -2668,34 +2580,34 @@
    }
   ],
   "roleViews": {
-   "owner": "Full pipeline and conversion figures.",
-   "tutor": "Usually read-only; may add notes after a trial.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access, and can edit the content behind it in Settings.",
+   "tutor": "Full access — it is a public page.",
+   "parent": "Full access — it is a public page.",
+   "learner": "Full access — it is a public page."
   },
   "tasks": [
    "register for WAEC or IGCSE",
    "upload a passport photo link"
   ],
   "faqs": [],
-  "purpose": "Candidate form opened by an exam link. Local and international boards.",
-  "detail": "Candidate form opened by an exam link. Local and international boards. The main actions available here are: <b>Acknowledgement</b>, <b>Certificate</b>, <b>Check my status</b>, <b>Copy exam number</b>, <b>Exam docket</b>, <b>Outcome letter</b>, <b>Register another candidate</b>, <b>Result slip</b>. It is form-driven — you fill a form and save; the record appears in the list immediately. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
-  "audience": "Owner and admin — this is business development. Families never see the pipeline.",
-  "why": "Tutoring income is won or lost at the top of the funnel. Recording every enquiry means you can see which channel actually produces paying families.",
+  "purpose": "Registers a candidate for an examination and issues a sequential examination number the moment it is accepted. Works for a candidate who has no portal account — the studio also registers external candidates — and produces four printable documents: the acknowledgement, the examination slip with the number and seat, the candidate register and the invigilator's attendance sheet.",
+  "detail": "Registers a candidate for an examination and issues a sequential examination number the moment it is accepted. Works for a candidate who has no portal account — the studio also registers external candidates — and produces four printable documents: the acknowledgement, the examination slip with the number and seat, the candidate register and the invigilator's attendance sheet. What you can do here: <b>Acknowledgement</b>, <b>Certificate</b>, <b>Check my status</b>, <b>Copy exam number</b>, <b>Exam docket</b>, <b>Outcome letter</b>, <b>Register another candidate</b>, <b>Result slip</b>. It is form-driven — you fill a form and save; the record appears in the list immediately. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
+  "audience": "Two audiences on one page. A candidate or a parent opens it from a registration link and sees only the form. Staff signed in see the full console below it: the roll, the lifecycle controls and the printable documents.",
+  "why": "An examination number generated in the browser races: two candidates registering at the same second get the same number. It comes from a PostgreSQL sequence instead, so it cannot. The printable documents matter because an examination hall runs on paper whatever the software does.",
   "how": [
-   "New enquiries land here automatically from the public Apply form and the contact form.",
-   "Triage each one: assign an owner, set a status, add a note about what was discussed.",
-   "Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.",
-   "Watch the funnel counts at the top — they show you exactly where prospects go cold."
+   "Candidates: open the link, complete the form and keep the examination number you are shown.",
+   "Staff: work the roll below — accept, decline, or advance a registration through its lifecycle.",
+   "Print the register and the attendance sheet the day before the sitting.",
+   "Nothing is uploaded anywhere on this page: supporting documents are links."
   ],
-  "connects": "Sits in the <b>Growth</b> group, alongside application-links, apply, exam-links, flyer, inquiries, onboarding. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Quizzes & CBT</b> in the menu, next to practice, cbt-exam, cbt-review, cbt-multi. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "application-links",
-   "apply",
-   "exam-links",
-   "flyer",
-   "inquiries",
-   "onboarding"
+   "practice",
+   "cbt-exam",
+   "cbt-review",
+   "cbt-multi",
+   "cbt-prompts",
+   "cbt-results"
   ],
   "actions": [
    "Acknowledgement",
@@ -2739,15 +2651,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Studio-wide analysis and at-risk board.",
-   "tutor": "Their own learners.",
-   "parent": "The same analysis narrowed to their own child.",
-   "learner": "Their own progress only."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Target exam, date, board, predicted vs target grade. Countdown on the learner dashboard.",
-  "detail": "Target exam, date, board, predicted vs target grade. Countdown on the learner dashboard. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Target exam, date, board, predicted vs target grade. Countdown on the learner dashboard. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner, admin and tutors see the full picture. A parent sees the same analysis narrowed to their own child.",
   "why": "Parents pay for visible progress. These pages turn raw scores into an argument a parent can read, audit and trust.",
   "how": [
@@ -2756,19 +2668,16 @@
    "Every figure is a published formula, never a black box — open the methodology note to see the arithmetic.",
    "Print or export the view and take it into a parent conference."
   ],
-  "connects": "Sits in the <b>Analytics</b> group, alongside analytics, at-risk, group-insights, insights, learner-360, predictions. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Quizzes & CBT</b> in the menu, next to practice, cbt-exam, cbt-review, cbt-multi. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "analytics",
-   "at-risk",
-   "group-insights",
-   "insights",
-   "learner-360",
-   "predictions"
+   "practice",
+   "cbt-exam",
+   "cbt-review",
+   "cbt-multi",
+   "cbt-prompts",
+   "cbt-results"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "family-links": {
@@ -2805,15 +2714,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Connect a parent to the child or children they are responsible for. This single mapping is what switches the family portal on: once linked, a parent sees that child's classes, scores, reading, invoices and messages — and nothing about anyone else's child.",
-  "detail": "Connect a parent to the child or children they are responsible for. This single mapping is what switches the family portal on: once linked, a parent sees that child's classes, scores, reading, invoices and messages — and nothing about anyone else's child. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Connect a parent to the child or children they are responsible for. This single mapping is what switches the family portal on: once linked, a parent sees that child's classes, scores, reading, invoices and messages — and nothing about anyone else's child. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner, admin and tutors who handle enrolment.",
   "why": "An unlinked child is invisible to their parent, and a parent record with no portal login cannot sign in at all. Those two gaps are the reason almost every family says \"I can't see anything\", and this page finds both for you automatically.",
   "how": [
@@ -2824,17 +2733,14 @@
   ],
   "connects": "Writes parent_learner, which is what the is_parent_of() database rule reads. Pairs with My children, Approvals and Learners.",
   "related": [
-   "about",
-   "activity-log",
-   "admin-data",
-   "approvals",
-   "cbt-results",
-   "change-password"
+   "learners",
+   "parents",
+   "tutors",
+   "groups",
+   "engagements",
+   "subjects"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "feature-guide": {
@@ -2863,15 +2769,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access, and can edit the content behind it in Settings.",
+   "tutor": "Full access — it is a public page.",
+   "parent": "Full access — it is a public page.",
+   "learner": "Full access — it is a public page."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "In-app explanation of every module.",
-  "detail": "In-app explanation of every module. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
+  "purpose": "The complete catalogue of what this studio can do: every module, what it is for, who can reach it and which pages it connects to, generated from the platform itself so it can never drift out of date. Search it, filter it by role, and open any page straight from its entry. This is the fastest way for a new tutor to learn the studio, and the fastest way for an owner to discover a feature they are paying for and not using.",
+  "detail": "The complete catalogue of what this studio can do: every module, what it is for, who can reach it and which pages it connects to, generated from the platform itself so it can never drift out of date. Search it, filter it by role, and open any page straight from its entry. This is the fastest way for a new tutor to learn the studio, and the fastest way for an owner to discover a feature they are paying for and not using. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -2880,19 +2786,15 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, cbt-results, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Help & information</b> in the menu, next to site-index, about, contact, developer. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
+   "site-index",
    "about",
-   "activity-log",
-   "admin-data",
-   "approvals",
-   "cbt-results",
-   "change-password"
+   "contact",
+   "developer",
+   "flyer"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "fees": {
@@ -2929,15 +2831,15 @@
    }
   ],
   "roleViews": {
-   "owner": "All money: invoices, payments, payroll, totals.",
-   "tutor": "Their own payroll only.",
-   "parent": "Their own invoices, payments and receipts.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Rate cards: 1:1 vs group, subject premiums, weekend rates, trial fees.",
-  "detail": "Rate cards: 1:1 vs group, subject premiums, weekend rates, trial fees. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Rate cards: 1:1 vs group, subject premiums, weekend rates, trial fees. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. A parent sees only their own invoices, payments and receipts.",
   "why": "Cash flow keeps the studio alive. Because hours, rates and sessions are already in the system, the money side is arithmetic rather than guesswork.",
   "how": [
@@ -2946,19 +2848,16 @@
    "Record each payment as it arrives and issue the receipt.",
    "Reconcile the totals at month end against your bank."
   ],
-  "connects": "Sits in the <b>Finance</b> group, alongside finance, invoices, packages, payment-history, payments, payroll. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Money</b> in the menu, next to invoices, payments, payment-history, payment-plans. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "finance",
    "invoices",
-   "packages",
-   "payment-history",
    "payments",
-   "payroll"
+   "payment-history",
+   "payment-plans",
+   "wallet",
+   "packages"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "finance": {
@@ -2995,15 +2894,15 @@
    }
   ],
   "roleViews": {
-   "owner": "All money: invoices, payments, payroll, totals.",
-   "tutor": "Their own payroll only.",
-   "parent": "Their own invoices, payments and receipts.",
+   "owner": "Full access.",
+   "tutor": "No access — this page controls money, audit or configuration.",
+   "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Income / expense ledger and simple P&L. Free-tier safe.",
-  "detail": "Income / expense ledger and simple P&L. Free-tier safe. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
+  "purpose": "The studio's income and expenditure in one ledger, with a simple profit-and-loss view by month, category and engagement. Fee income arrives automatically from invoices and payments; expenses are entered here. Shows what the studio actually earned after tutor cost, which is the number a solo tutor almost never has and most needs.",
+  "detail": "The studio's income and expenditure in one ledger, with a simple profit-and-loss view by month, category and engagement. Fee income arrives automatically from invoices and payments; expenses are entered here. Shows what the studio actually earned after tutor cost, which is the number a solo tutor almost never has and most needs. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
   "audience": "Owner and admin. A parent sees only their own invoices, payments and receipts.",
   "why": "Cash flow keeps the studio alive. Because hours, rates and sessions are already in the system, the money side is arithmetic rather than guesswork.",
   "how": [
@@ -3012,19 +2911,16 @@
    "Record each payment as it arrives and issue the receipt.",
    "Reconcile the totals at month end against your bank."
   ],
-  "connects": "Sits in the <b>Finance</b> group, alongside fees, invoices, packages, payment-history, payments, payroll. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Money</b> in the menu, next to invoices, payments, payment-history, payment-plans. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "fees",
    "invoices",
-   "packages",
-   "payment-history",
    "payments",
-   "payroll"
+   "payment-history",
+   "payment-plans",
+   "wallet",
+   "packages"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "flashcards": {
@@ -3061,15 +2957,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "SM-2 spaced repetition (classic free algorithm). Cards belong to a learner, not a group.",
-  "detail": "SM-2 spaced repetition (classic free algorithm). Cards belong to a learner, not a group. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "SM-2 spaced repetition (classic free algorithm). Cards belong to a learner, not a group. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -3078,19 +2974,16 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Teaching</b> in the menu, next to curriculum, sow, lesson-plans, methodologies. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "curriculum",
+   "sow",
+   "lesson-plans",
+   "methodologies",
+   "diagnostics",
+   "goals"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "flyer": {
@@ -3119,15 +3012,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full pipeline and conversion figures.",
-   "tutor": "Usually read-only; may add notes after a trial.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access, and can edit the content behind it in Settings.",
+   "tutor": "Full access — it is a public page.",
+   "parent": "Full access — it is a public page.",
+   "learner": "Full access — it is a public page."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Printable admissions flyer. Free lead-gen.",
-  "detail": "Printable admissions flyer. Free lead-gen. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
+  "purpose": "A printable, brand-matched one-page flyer for the studio, built from the details in Settings so it can never disagree with the website. Subjects, exam boards, timetable, price position and contact details, with a QR code to the application page. Print it, or export it as an image for WhatsApp status. Free lead generation that costs one click.",
+  "detail": "A printable, brand-matched one-page flyer for the studio, built from the details in Settings so it can never disagree with the website. Subjects, exam boards, timetable, price position and contact details, with a QR code to the application page. Print it, or export it as an image for WhatsApp status. Free lead generation that costs one click. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
   "audience": "Owner and admin — this is business development. Families never see the pipeline.",
   "why": "Tutoring income is won or lost at the top of the funnel. Recording every enquiry means you can see which channel actually produces paying families.",
   "how": [
@@ -3136,19 +3029,15 @@
    "Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.",
    "Watch the funnel counts at the top — they show you exactly where prospects go cold."
   ],
-  "connects": "Sits in the <b>Growth</b> group, alongside application-links, apply, exam-links, exam-register, inquiries, onboarding. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Help & information</b> in the menu, next to feature-guide, site-index, about, contact. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "application-links",
-   "apply",
-   "exam-links",
-   "exam-register",
-   "inquiries",
-   "onboarding"
+   "feature-guide",
+   "site-index",
+   "about",
+   "contact",
+   "developer"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "forgot-password": {
@@ -3177,15 +3066,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access, and can edit the content behind it in Settings.",
+   "tutor": "Full access — it is a public page.",
+   "parent": "Full access — it is a public page.",
+   "learner": "Full access — it is a public page."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Sends a secure password-reset link by email through Supabase Auth. Nobody at the studio can see or set your password.",
-  "detail": "Sends a secure password-reset link by email through Supabase Auth. Nobody at the studio can see or set your password. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
+  "detail": "Sends a secure password-reset link by email through Supabase Auth. Nobody at the studio can see or set your password. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
   "audience": "Anyone locked out of their account.",
   "why": "Self-service recovery keeps the admin out of the credential business entirely, which is both safer and less work.",
   "how": [
@@ -3202,10 +3091,7 @@
    "cbt-results",
    "change-password"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "forum": {
@@ -3242,15 +3128,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Discussion threads scoped to a group engagement. Tutor or learner can open a thread; everyone in that group can reply.",
-  "detail": "Discussion threads scoped to a group engagement. Tutor or learner can open a thread; everyone in that group can reply. The main actions available here are: <b>Open thread</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "Discussion threads scoped to a group engagement. Tutor or learner can open a thread; everyone in that group can reply. What you can do here: <b>Open thread</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -3259,20 +3145,136 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Comms</b> group, alongside announcements, broadcasts, complaints, inbox, messages, notifications. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Communication</b> in the menu, next to announcements, broadcasts, polls, voting. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "announcements",
    "broadcasts",
-   "complaints",
-   "inbox",
-   "messages",
-   "notifications"
+   "polls",
+   "voting",
+   "surveys",
+   "complaints"
   ],
   "actions": [
-   "Open thread",
-   "Sign out",
-   "Theme"
+   "Open thread"
   ],
+  "tabs": []
+ },
+ "free-classes": {
+  "page": "free-classes",
+  "file": "free-classes.html",
+  "title": "Free class cohorts",
+  "group": "Platform",
+  "access": "staff",
+  "archetype": "list",
+  "sections": [
+   {
+    "name": "Page header",
+    "what": "The title, a one-line purpose, and the ? Page Help button that opens this same explanation inside the app."
+   },
+   {
+    "name": "Toolbar / filters",
+    "what": "Search box, status and date filters, and the Add / New button. Filters narrow the list below without reloading the page."
+   },
+   {
+    "name": "Records table",
+    "what": "Every record you are allowed to see. Parents and learners are filtered to their own rows by the database itself, not by hiding buttons."
+   },
+   {
+    "name": "Row actions",
+    "what": "Open, edit, duplicate or delete a record. Deleting asks for confirmation and is written to the activity log."
+   },
+   {
+    "name": "Record form (modal)",
+    "what": "Opens over the list. Required fields are marked; everything else can be completed later."
+   },
+   {
+    "name": "Export",
+    "what": "Download the current view as CSV. Your data is always portable — nothing is locked in."
+   }
+  ],
+  "roleViews": {
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
+  },
+  "tasks": [],
+  "faqs": [],
+  "purpose": "Runs the studio's free outreach programmes — the JAMB bootcamp on YouTube, the WAEC clinic on Zoom, the IELTS drop-in on Google Meet — end to end. Create a cohort, attach the meeting link, the replay link and the WhatsApp or Telegram group, generate a shareable registration link, and then track attendance, quiz results and who is worth converting into a paying learner.",
+  "detail": "Runs the studio's free outreach programmes — the JAMB bootcamp on YouTube, the WAEC clinic on Zoom, the IELTS drop-in on Google Meet — end to end. Create a cohort, attach the meeting link, the replay link and the WhatsApp or Telegram group, generate a shareable registration link, and then track attendance, quiz results and who is worth converting into a paying learner. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "audience": "Tutors and administrators. Registrants themselves never see this page; they see the public sign-up page.",
+  "why": "Free students are not paying clients and must never touch invoices, payroll or the fee ledger — but they still have to be registered, tracked, assessed and evaluated, and the strongest of them are the studio's best source of paying enrolments.",
+  "how": [
+   "Create the cohort: name it, choose the exam board and the platform, and paste the meeting, replay and group-chat links. Nothing is uploaded — links only.",
+   "Generate a registration link. Give each channel its own link (Instagram, WhatsApp status, a school) so you can see which one actually works.",
+   "Share the link. Anyone can register without an account; they receive a registration number immediately.",
+   "Work the roll: approve registrations, record attendance and quiz results, and note who is engaging.",
+   "Press <b>Convert</b> on a strong registrant to create a real learner record, keeping the whole free-class history attached."
+  ],
+  "connects": "Cohorts can be attached to a CBT paper so free students sit the same quizzes. Converted registrants become Learners and can be given an Engagement.",
+  "related": [
+   "free-register"
+  ],
+  "actions": [],
+  "tabs": []
+ },
+ "free-register": {
+  "page": "free-register",
+  "file": "free-register.html",
+  "title": "Register for a free class",
+  "group": "Platform",
+  "access": "staff",
+  "archetype": "list",
+  "sections": [
+   {
+    "name": "Page header",
+    "what": "The title, a one-line purpose, and the ? Page Help button that opens this same explanation inside the app."
+   },
+   {
+    "name": "Toolbar / filters",
+    "what": "Search box, status and date filters, and the Add / New button. Filters narrow the list below without reloading the page."
+   },
+   {
+    "name": "Records table",
+    "what": "Every record you are allowed to see. Parents and learners are filtered to their own rows by the database itself, not by hiding buttons."
+   },
+   {
+    "name": "Row actions",
+    "what": "Open, edit, duplicate or delete a record. Deleting asks for confirmation and is written to the activity log."
+   },
+   {
+    "name": "Record form (modal)",
+    "what": "Opens over the list. Required fields are marked; everything else can be completed later."
+   },
+   {
+    "name": "Export",
+    "what": "Download the current view as CSV. Your data is always portable — nothing is locked in."
+   }
+  ],
+  "roleViews": {
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
+  },
+  "tasks": [],
+  "faqs": [],
+  "purpose": "The public sign-up page for a free class. Opened with a registration link, it shows what the class is, when it runs and on which platform, then collects the few details needed to register and issues a registration number on the spot, together with the joining links.",
+  "detail": "The public sign-up page for a free class. Opened with a registration link, it shows what the class is, when it runs and on which platform, then collects the few details needed to register and issues a registration number on the spot, together with the joining links. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "audience": "Anyone with the link. No account and no sign-in are required.",
+  "why": "A free class advertised on WhatsApp converts badly if the first step is \"create an account\". This page asks for a name and a way to reach the student, and nothing else that is not needed.",
+  "how": [
+   "Open the link you were given.",
+   "Read what the class covers, when it runs and where it happens.",
+   "Fill in your details. A parent or guardian must consent when the class is for minors.",
+   "Press <b>Register</b> and save the registration number you are shown.",
+   "Use the joining links on the confirmation to reach the class and the group chat."
+  ],
+  "connects": "Writes into the cohort roll on Free class cohorts. A registrant who is later converted becomes a Learner.",
+  "related": [
+   "free-classes"
+  ],
+  "actions": [],
   "tabs": []
  },
  "gallery": {
@@ -3309,15 +3311,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Drive photos and YouTube recaps. No base64 in the database.",
-  "detail": "Drive photos and YouTube recaps. No base64 in the database. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Drive photos and YouTube recaps. No base64 in the database. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -3326,16 +3328,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Media</b> group, alongside birthdays, directory, idcards. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Communication</b> in the menu, next to announcements, broadcasts, forum, polls. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "birthdays",
-   "directory",
-   "idcards"
+   "announcements",
+   "broadcasts",
+   "forum",
+   "polls",
+   "voting",
+   "surveys"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "gamification": {
@@ -3372,15 +3374,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Homework streaks, mastery badges. Transparent point log.",
-  "detail": "Homework streaks, mastery badges. Transparent point log. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "purpose": "Streaks, points and badges for homework completion, attendance and topic mastery — with a completely transparent point log, so a learner can always see exactly why they have the score they have. Nothing is random and nothing is hidden, because a reward system a child does not understand stops motivating them within a fortnight.",
+  "detail": "Streaks, points and badges for homework completion, attendance and topic mastery — with a completely transparent point log, so a learner can always see exactly why they have the score they have. Nothing is random and nothing is hidden, because a reward system a child does not understand stops motivating them within a fortnight. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -3389,19 +3391,16 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Teaching</b> in the menu, next to curriculum, sow, lesson-plans, methodologies. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "curriculum",
+   "sow",
+   "lesson-plans",
+   "methodologies",
+   "diagnostics",
+   "goals"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "goals": {
@@ -3438,15 +3437,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "SMART goals and a living plan per engagement and per learner. Review dates, owners, status.",
-  "detail": "SMART goals and a living plan per engagement and per learner. Review dates, owners, status. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "SMART goals and a living plan per engagement and per learner. Review dates, owners, status. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -3455,19 +3454,16 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Teaching</b> in the menu, next to curriculum, sow, lesson-plans, methodologies. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "curriculum",
+   "sow",
+   "lesson-plans",
+   "methodologies",
+   "diagnostics",
+   "mastery"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "group-insights": {
@@ -3500,36 +3496,34 @@
    }
   ],
   "roleViews": {
-   "owner": "Studio-wide analysis and at-risk board.",
-   "tutor": "Their own learners.",
-   "parent": "The same analysis narrowed to their own child.",
-   "learner": "Their own progress only."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Shared-session analytics plus a fairness view: who is being left behind inside the group.",
-  "detail": "Shared-session analytics plus a fairness view: who is being left behind inside the group. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
-  "audience": "Owner, admin and tutors see the full picture. A parent sees the same analysis narrowed to their own child.",
-  "why": "Parents pay for visible progress. These pages turn raw scores into an argument a parent can read, audit and trust.",
+  "purpose": "Observations that belong to a whole group rather than to any one child: the topic the entire set has not met, the slot that loses a third of the room, the week homework collapsed. Each entry carries the period, the headline numbers for the group, the observation, the action for the next cycle and a review date.",
+  "detail": "Observations that belong to a whole group rather than to any one child: the topic the entire set has not met, the slot that loses a third of the room, the week homework collapsed. Each entry carries the period, the headline numbers for the group, the observation, the action for the next cycle and a review date. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "audience": "Tutors and administrators. A group's families see an entry only if it is published.",
+  "why": "Recorded against a learner, a group-level observation is simply wrong — it attributes to one child something that is true of eleven. Group teaching also fails in group-shaped ways, and those patterns are invisible in per-learner analytics.",
   "how": [
-   "Select the learner, group or period you want to examine.",
-   "Read the headline numbers first, then open the charts underneath.",
-   "Every figure is a published formula, never a black box — open the methodology note to see the arithmetic.",
-   "Print or export the view and take it into a parent conference."
+   "Choose the group and the period.",
+   "Fill the headline numbers: headcount, average score, attendance and homework completion.",
+   "Name the strongest and weakest topics — this is what shapes the next scheme of work.",
+   "Write the observation and the action. Both are required, because an observation with no action changes nothing.",
+   "Set a review date and publish if the families should see it."
   ],
-  "connects": "Sits in the <b>Analytics</b> group, alongside analytics, at-risk, exam-targets, insights, learner-360, predictions. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Sits alongside Practice analytics and the At-risk board. Actions recorded here normally end up in the Scheme of work or a Lesson plan.",
   "related": [
-   "analytics",
-   "at-risk",
-   "exam-targets",
-   "insights",
+   "scoresheet",
+   "progress-reports",
    "learner-360",
-   "predictions"
+   "insights",
+   "analytics",
+   "at-risk"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "groups": {
@@ -3566,15 +3560,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full read/write across every record.",
-   "tutor": "Read/write for the engagements they teach.",
-   "parent": "Only their own children appear.",
-   "learner": "Only their own record appears."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Named group engagements (2–12 learners). Shared sessions, individual mastery and scores. Group insights never overwrite personal insight.",
-  "detail": "Named group engagements (2–12 learners). Shared sessions, individual mastery and scores. Group insights never overwrite personal insight. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Named group engagements (2–12 learners). Shared sessions, individual mastery and scores. Group insights never overwrite personal insight. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner, admin and tutors do the data entry. Parents and learners only ever see their own linked records.",
   "why": "This is master data. If it is wrong here it is wrong everywhere downstream — bookings, invoices, analytics and reports all read from it.",
   "how": [
@@ -3583,18 +3577,16 @@
    "Click any row to open the full record, edit it inline, and save.",
    "Use <b>Export CSV</b> whenever you want a copy — the data belongs to the studio, not the platform."
   ],
-  "connects": "Sits in the <b>Core</b> group, alongside engagements, learners, parents, subjects, tutors. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>People</b> in the menu, next to learners, parents, tutors, engagements. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "engagements",
    "learners",
    "parents",
+   "tutors",
+   "engagements",
    "subjects",
-   "tutors"
+   "family-links"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "helpdesk": {
@@ -3631,15 +3623,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access.",
+   "tutor": "Full access.",
+   "parent": "Their own view of it.",
+   "learner": "Their own view of it."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "IT / scheduling / billing tickets.",
-  "detail": "IT / scheduling / billing tickets. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "purpose": "Tickets for the things that are not teaching: a portal login that will not work, a class time that clashes, a payment that has not shown up. Anyone signed in can raise one; staff triage, assign and resolve them, and the requester can see the status without having to ask. Keeps operational noise out of the complaints process, which should be reserved for real concerns.",
+  "detail": "Tickets for the things that are not teaching: a portal login that will not work, a class time that clashes, a payment that has not shown up. Anyone signed in can raise one; staff triage, assign and resolve them, and the requester can see the status without having to ask. Keeps operational noise out of the complaints process, which should be reserved for real concerns. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -3648,19 +3640,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Ops</b> group, alongside compliance, documents, leave, policies, rooms, safeguarding. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Communication</b> in the menu, next to announcements, broadcasts, forum, polls. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "compliance",
-   "documents",
-   "leave",
-   "policies",
-   "rooms",
-   "safeguarding"
+   "announcements",
+   "broadcasts",
+   "forum",
+   "polls",
+   "voting",
+   "surveys"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "hmg-ecosystem": {
@@ -3689,15 +3678,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access, and can edit the content behind it in Settings.",
+   "tutor": "Full access — it is a public page.",
+   "parent": "Full access — it is a public page.",
+   "learner": "Full access — it is a public page."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "HMG Concepts, Technologies, Academy, Media, Gospel. Visible on every generated studio.",
-  "detail": "HMG Concepts, Technologies, Academy, Media, Gospel. Visible on every generated studio. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
+  "purpose": "A map of the wider HMG Concepts family — HMG Technologies, HMG Academy, HMG Media, HMG Gospel and the founder's own site. Present on every generated studio, and deliberately so: the cross-links help search engines understand that these sites belong together, which lifts all of them, and it gives a visitor a route to a product that fits them better than this one.",
+  "detail": "A map of the wider HMG Concepts family — HMG Technologies, HMG Academy, HMG Media, HMG Gospel and the founder's own site. Present on every generated studio, and deliberately so: the cross-links help search engines understand that these sites belong together, which lifts all of them, and it gives a visitor a route to a product that fits them better than this one. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -3706,14 +3695,11 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>HMG Concepts</b> group, alongside hmg-products. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>HMG Concepts</b> in the menu, next to hmg-products. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "hmg-products"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "hmg-products": {
@@ -3742,30 +3728,33 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access, and can edit the content behind it in Settings.",
+   "tutor": "Full access — it is a public page.",
+   "parent": "Full access — it is a public page.",
+   "learner": "Full access — it is a public page."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Product catalogue and contact paths for the ecosystem.",
-  "detail": "Product catalogue and contact paths for the ecosystem. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
-  "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
-  "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
+  "purpose": "The catalogue of HMG Concepts software — School Connect, GOSA Portal, HMG Academy CBT Pro, Tutoring Connect itself and the rest — with what each one does, who it is for, a live demo link, the source repository and how to obtain a licence.",
+  "detail": "The catalogue of HMG Concepts software — School Connect, GOSA Portal, HMG Academy CBT Pro, Tutoring Connect itself and the rest — with what each one does, who it is for, a live demo link, the source repository and how to obtain a licence. What you can do here: <b>Everything</b>, <b>For a school</b>, <b>For a tutor</b>, <b>For an association</b>, <b>For examinations</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
+  "audience": "Anyone. The page is public and indexed, because it is also how a visitor discovers the rest of the ecosystem.",
+  "why": "A studio running Tutoring Connect is frequently asked by a school, a church or an association whether something similar exists for them. This page answers that without a phone call, and links the sites together for search engines.",
   "how": [
-   "Only an owner or admin should change anything on this page.",
-   "Read the note beside each setting before you touch it.",
-   "Save, then reload any normal page to confirm the change took effect.",
-   "If something looks wrong afterwards, the activity log records who changed what and when."
+   "Browse the catalogue, or filter by the kind of organisation you are.",
+   "Open a live demo to see a product working before asking about it.",
+   "Follow the enquiry link on any product to start a conversation about a licence.",
+   "Use the comparison table when two products look similar — it says plainly which one fits which situation."
   ],
-  "connects": "Sits in the <b>HMG Concepts</b> group, alongside hmg-ecosystem. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Links to HMG Ecosystem, to each product's live site and repository, and to the studio's own Contact page.",
   "related": [
    "hmg-ecosystem"
   ],
   "actions": [
-   "Sign out",
-   "Theme"
+   "Everything",
+   "For a school",
+   "For a tutor",
+   "For an association",
+   "For examinations"
   ],
   "tabs": []
  },
@@ -3803,15 +3792,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Printable branded cards with QR for in-person check-in.",
-  "detail": "Printable branded cards with QR for in-person check-in. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "purpose": "Printable, brand-matched identity cards for learners and tutors, with a photograph pulled from a link, the studio crest, an expiry date and a QR code that opens that person's record for in-person check-in. Print one, or a whole sheet at a time. Photographs are linked, never uploaded, which is what keeps the studio inside the free storage quota.",
+  "detail": "Printable, brand-matched identity cards for learners and tutors, with a photograph pulled from a link, the studio crest, an expiry date and a QR code that opens that person's record for in-person check-in. Print one, or a whole sheet at a time. Photographs are linked, never uploaded, which is what keeps the studio inside the free storage quota. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -3820,16 +3809,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Media</b> group, alongside birthdays, directory, gallery. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>People</b> in the menu, next to learners, parents, tutors, groups. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "birthdays",
-   "directory",
-   "gallery"
+   "learners",
+   "parents",
+   "tutors",
+   "groups",
+   "engagements",
+   "subjects"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "inbox": {
@@ -3866,10 +3855,10 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access.",
+   "tutor": "Full access.",
+   "parent": "Their own view of it.",
+   "learner": "Their own view of it."
   },
   "tasks": [
    "message a parent",
@@ -3877,7 +3866,7 @@
   ],
   "faqs": [],
   "purpose": "Private tutor ↔ parent ↔ learner threads with read state.",
-  "detail": "Private tutor ↔ parent ↔ learner threads with read state. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "Private tutor ↔ parent ↔ learner threads with read state. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -3886,19 +3875,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Comms</b> group, alongside announcements, broadcasts, complaints, forum, messages, notifications. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>My studio</b> in the menu, next to dashboard, profile, notifications, messages. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "announcements",
-   "broadcasts",
-   "complaints",
-   "forum",
+   "dashboard",
+   "profile",
+   "notifications",
    "messages",
-   "notifications"
+   "change-password",
+   "install"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "index": {
@@ -3927,10 +3913,10 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access, and can edit the content behind it in Settings.",
+   "tutor": "Full access — it is a public page.",
+   "parent": "Full access — it is a public page.",
+   "learner": "Full access — it is a public page."
   },
   "tasks": [],
   "faqs": [],
@@ -3990,15 +3976,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full pipeline and conversion figures.",
-   "tutor": "Usually read-only; may add notes after a trial.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Parent-requested tutoring pipeline: new → contacted → trial booked → converted / lost. Source, subject, preferred mode.",
-  "detail": "Parent-requested tutoring pipeline: new → contacted → trial booked → converted / lost. Source, subject, preferred mode. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Parent-requested tutoring pipeline: new → contacted → trial booked → converted / lost. Source, subject, preferred mode. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin — this is business development. Families never see the pipeline.",
   "why": "Tutoring income is won or lost at the top of the funnel. Recording every enquiry means you can see which channel actually produces paying families.",
   "how": [
@@ -4007,19 +3993,16 @@
    "Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.",
    "Watch the funnel counts at the top — they show you exactly where prospects go cold."
   ],
-  "connects": "Sits in the <b>Growth</b> group, alongside application-links, apply, exam-links, exam-register, flyer, onboarding. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to apply, application-links, trials, waitlist. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "application-links",
    "apply",
-   "exam-links",
-   "exam-register",
-   "flyer",
-   "onboarding"
+   "application-links",
+   "trials",
+   "waitlist",
+   "onboarding",
+   "referrals"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "insights": {
@@ -4052,39 +4035,37 @@
    }
   ],
   "roleViews": {
-   "owner": "Studio-wide analysis and at-risk board.",
-   "tutor": "Their own learners.",
-   "parent": "The same analysis narrowed to their own child.",
-   "learner": "Their own progress only."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [
    "prove progress to a parent",
    "check who is at risk"
   ],
   "faqs": [],
-  "purpose": "The differentiator. Graphs and methodologies for one learner, one group, or the whole practice. Rule-based, not AI.",
-  "detail": "The differentiator. Graphs and methodologies for one learner, one group, or the whole practice. Rule-based, not AI. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
-  "audience": "Owner, admin and tutors see the full picture. A parent sees the same analysis narrowed to their own child.",
-  "why": "Parents pay for visible progress. These pages turn raw scores into an argument a parent can read, audit and trust.",
+  "purpose": "A working notebook for the studio. The charts at the top show a learner's score trajectory and the flags the rule engine has raised. The desk below is where a hypothesis is written down BEFORE it is acted on — with the evidence, the proposed action, how you will know whether it worked, and eventually what actually happened.",
+  "detail": "A working notebook for the studio. The charts at the top show a learner's score trajectory and the flags the rule engine has raised. The desk below is where a hypothesis is written down BEFORE it is acted on — with the evidence, the proposed action, how you will know whether it worked, and eventually what actually happened. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "audience": "Tutors and administrators. Notes are visible to their author, to the tutor of the learner or group concerned, and to administrators.",
+  "why": "Teaching decisions are made on hunches all the time. Writing the hunch down with a measurable test is the difference between a studio that improves and one that merely has opinions. The outcome field is the point of the page.",
   "how": [
-   "Select the learner, group or period you want to examine.",
-   "Read the headline numbers first, then open the charts underneath.",
-   "Every figure is a published formula, never a black box — open the methodology note to see the arithmetic.",
-   "Print or export the view and take it into a parent conference."
+   "Give the note a title and say what it is about: a learner, a group, a subject or the studio as a whole.",
+   "Write the observation and the evidence — numbers and dates, or it is an opinion.",
+   "State how you will know it worked. This field is required on purpose.",
+   "Move the status along as you go: open → testing → confirmed or rejected.",
+   "Record the outcome. A rejected hypothesis with a written outcome is worth as much as a confirmed one."
   ],
-  "connects": "Sits in the <b>Analytics</b> group, alongside analytics, at-risk, exam-targets, group-insights, learner-360, predictions. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Draws on the same flags as the At-risk board and the same scores as Practice analytics. Confirmed findings usually change the Scheme of work or the Methodologies page.",
   "related": [
-   "analytics",
-   "at-risk",
-   "exam-targets",
-   "group-insights",
+   "scoresheet",
+   "progress-reports",
    "learner-360",
-   "predictions"
+   "analytics",
+   "group-insights",
+   "at-risk"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "install": {
@@ -4113,10 +4094,10 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access, and can edit the content behind it in Settings.",
+   "tutor": "Full access — it is a public page.",
+   "parent": "Full access — it is a public page.",
+   "learner": "Full access — it is a public page."
   },
   "tasks": [
    "install the app",
@@ -4124,7 +4105,7 @@
   ],
   "faqs": [],
   "purpose": "A complete, illustrated walkthrough for installing the studio as a real app on iPhone, Android, Windows, macOS and Chromebook — including what you gain by doing it.",
-  "detail": "A complete, illustrated walkthrough for installing the studio as a real app on iPhone, Android, Windows, macOS and Chromebook — including what you gain by doing it. The main actions available here are: <b>Install now</b>, <b>Sign out</b>, <b>Theme</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
+  "detail": "A complete, illustrated walkthrough for installing the studio as a real app on iPhone, Android, Windows, macOS and Chromebook — including what you gain by doing it. What you can do here: <b>Install now</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
   "audience": "Everyone.",
   "why": "Installed users open the portal far more often, and only an installed app can deliver class reminders when the browser tab is closed.",
   "how": [
@@ -4135,17 +4116,15 @@
   ],
   "connects": "Backed by manifest.json and sw.js, and reinforced by the install banner that appears across the platform.",
   "related": [
-   "about",
-   "activity-log",
-   "admin-data",
-   "approvals",
-   "cbt-results",
+   "dashboard",
+   "profile",
+   "notifications",
+   "inbox",
+   "messages",
    "change-password"
   ],
   "actions": [
-   "Install now",
-   "Sign out",
-   "Theme"
+   "Install now"
   ],
   "tabs": []
  },
@@ -4183,10 +4162,10 @@
    }
   ],
   "roleViews": {
-   "owner": "All money: invoices, payments, payroll, totals.",
-   "tutor": "Their own payroll only.",
-   "parent": "Their own invoices, payments and receipts.",
-   "learner": "No access."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [
    "raise an invoice",
@@ -4195,7 +4174,7 @@
   ],
   "faqs": [],
   "purpose": "Generate from sessions or from packages. Printable. Multi-currency.",
-  "detail": "Generate from sessions or from packages. Printable. Multi-currency. The main actions available here are: <b>Build statement</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "Generate from sessions or from packages. Printable. Multi-currency. What you can do here: <b>Build statement</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Owner and admin. A parent sees only their own invoices, payments and receipts.",
   "why": "Cash flow keeps the studio alive. Because hours, rates and sessions are already in the system, the money side is arithmetic rather than guesswork.",
   "how": [
@@ -4204,19 +4183,17 @@
    "Record each payment as it arrives and issue the receipt.",
    "Reconcile the totals at month end against your bank."
   ],
-  "connects": "Sits in the <b>Finance</b> group, alongside fees, finance, packages, payment-history, payments, payroll. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Money</b> in the menu, next to payments, payment-history, payment-plans, wallet. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "fees",
-   "finance",
-   "packages",
-   "payment-history",
    "payments",
-   "payroll"
+   "payment-history",
+   "payment-plans",
+   "wallet",
+   "packages",
+   "fees"
   ],
   "actions": [
-   "Build statement",
-   "Sign out",
-   "Theme"
+   "Build statement"
   ],
   "tabs": []
  },
@@ -4250,15 +4227,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Studio-wide analysis and at-risk board.",
-   "tutor": "Their own learners.",
-   "parent": "The same analysis narrowed to their own child.",
-   "learner": "Their own progress only."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "One page: identity, engagements, hours, scores over time, mastery heatmap, at-risk flags, notes, invoices.",
-  "detail": "One page: identity, engagements, hours, scores over time, mastery heatmap, at-risk flags, notes, invoices. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "One page: identity, engagements, hours, scores over time, mastery heatmap, at-risk flags, notes, invoices. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Owner, admin and tutors see the full picture. A parent sees the same analysis narrowed to their own child.",
   "why": "Parents pay for visible progress. These pages turn raw scores into an argument a parent can read, audit and trust.",
   "how": [
@@ -4267,19 +4244,16 @@
    "Every figure is a published formula, never a black box — open the methodology note to see the arithmetic.",
    "Print or export the view and take it into a parent conference."
   ],
-  "connects": "Sits in the <b>Analytics</b> group, alongside analytics, at-risk, exam-targets, group-insights, insights, predictions. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Progress & analytics</b> in the menu, next to scoresheet, progress-reports, insights, analytics. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "analytics",
-   "at-risk",
-   "exam-targets",
-   "group-insights",
+   "scoresheet",
+   "progress-reports",
    "insights",
-   "predictions"
+   "analytics",
+   "group-insights",
+   "at-risk"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "learners": {
@@ -4316,10 +4290,10 @@
    }
   ],
   "roleViews": {
-   "owner": "Full read/write across every record.",
-   "tutor": "Read/write for the engagements they teach.",
-   "parent": "Only their own children appear.",
-   "learner": "Only their own record appears."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [
    "add a new learner",
@@ -4329,7 +4303,7 @@
   ],
   "faqs": [],
   "purpose": "Learner records: identity, timezone, exam board, learning style, accommodations, guardian, Drive photo. A learner may sit in one or many engagements independently.",
-  "detail": "Learner records: identity, timezone, exam board, learning style, accommodations, guardian, Drive photo. A learner may sit in one or many engagements independently. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Learner records: identity, timezone, exam board, learning style, accommodations, guardian, Drive photo. A learner may sit in one or many engagements independently. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner, admin and tutors do the data entry. Parents and learners only ever see their own linked records.",
   "why": "This is master data. If it is wrong here it is wrong everywhere downstream — bookings, invoices, analytics and reports all read from it.",
   "how": [
@@ -4338,18 +4312,16 @@
    "Click any row to open the full record, edit it inline, and save.",
    "Use <b>Export CSV</b> whenever you want a copy — the data belongs to the studio, not the platform."
   ],
-  "connects": "Sits in the <b>Core</b> group, alongside engagements, groups, parents, subjects, tutors. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>People</b> in the menu, next to parents, tutors, groups, engagements. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "engagements",
-   "groups",
    "parents",
+   "tutors",
+   "groups",
+   "engagements",
    "subjects",
-   "tutors"
+   "family-links"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "learning-styles": {
@@ -4386,15 +4358,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Observed notes (visual, verbal, worked-example first…). Not a quiz religion — a working memory for the tutor.",
-  "detail": "Observed notes (visual, verbal, worked-example first…). Not a quiz religion — a working memory for the tutor. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Observed notes (visual, verbal, worked-example first…). Not a quiz religion — a working memory for the tutor. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -4403,19 +4375,16 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Teaching</b> in the menu, next to curriculum, sow, lesson-plans, methodologies. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "curriculum",
+   "sow",
+   "lesson-plans",
+   "methodologies",
+   "diagnostics",
+   "goals"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "leave": {
@@ -4452,15 +4421,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Tutors request leave. Only an administrator can approve or reject.",
-  "detail": "Tutors request leave. Only an administrator can approve or reject. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Tutors request leave. Only an administrator can approve or reject. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -4469,19 +4438,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Ops</b> group, alongside compliance, documents, helpdesk, policies, rooms, safeguarding. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Records & compliance</b> in the menu, next to documents, policies, compliance, safeguarding. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "compliance",
    "documents",
-   "helpdesk",
    "policies",
-   "rooms",
-   "safeguarding"
+   "compliance",
+   "safeguarding",
+   "security-centre",
+   "approvals"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "lesson-plans": {
@@ -4518,15 +4484,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Objectives, resources, checks for understanding. Linked to a session and a methodology.",
-  "detail": "Objectives, resources, checks for understanding. Linked to a session and a methodology. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Objectives, resources, checks for understanding. Linked to a session and a methodology. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -4535,19 +4501,16 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Teaching</b> in the menu, next to curriculum, sow, methodologies, diagnostics. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "curriculum",
+   "sow",
+   "methodologies",
+   "diagnostics",
+   "goals",
+   "mastery"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "library": {
@@ -4584,15 +4547,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Catalogued reading / past-paper links with optional comprehension score.",
-  "detail": "Catalogued reading / past-paper links with optional comprehension score. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Catalogued reading / past-paper links with optional comprehension score. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -4601,19 +4564,13 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Resources</b> in the menu, next to resources, lms, eresources. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "resources",
+   "lms",
+   "eresources"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "license": {
@@ -4638,15 +4595,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "No access — this page controls money, audit or configuration.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Lifetime or subscription lock. Same idea as School Connect, adapted.",
-  "detail": "Lifetime or subscription lock. Same idea as School Connect, adapted. The main actions available here are: <b>Run write test</b>, <b>Sign out</b>, <b>Theme</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
+  "detail": "Lifetime or subscription lock. Same idea as School Connect, adapted. What you can do here: <b>Run write test</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -4655,19 +4612,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, cbt-results, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Administration</b> in the menu, next to settings, admin-data, storage, platform-health. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "about",
-   "activity-log",
+   "settings",
    "admin-data",
-   "approvals",
-   "cbt-results",
-   "change-password"
+   "storage",
+   "platform-health",
+   "status-manager"
   ],
   "actions": [
-   "Run write test",
-   "Sign out",
-   "Theme"
+   "Run write test"
   ],
   "tabs": []
  },
@@ -4705,15 +4659,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Courses, lessons, completion — scoped to an engagement.",
-  "detail": "Courses, lessons, completion — scoped to an engagement. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "purpose": "A small learning-management space scoped to one engagement: courses, lessons in order, linked material, and a completion tick per learner. Deliberately small — it is for structuring a course of tutoring, not for replacing a school's platform. Content is linked from Drive, YouTube or the open web rather than uploaded.",
+  "detail": "A small learning-management space scoped to one engagement: courses, lessons in order, linked material, and a completion tick per learner. Deliberately small — it is for structuring a course of tutoring, not for replacing a school's platform. Content is linked from Drive, YouTube or the open web rather than uploaded. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -4722,19 +4676,13 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Resources</b> in the menu, next to resources, library, eresources. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "resources",
+   "library",
+   "eresources"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "login": {
@@ -4763,10 +4711,10 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access, and can edit the content behind it in Settings.",
+   "tutor": "Full access — it is a public page.",
+   "parent": "Full access — it is a public page.",
+   "learner": "Full access — it is a public page."
   },
   "tasks": [
    "sign in",
@@ -4774,7 +4722,7 @@
   ],
   "faqs": [],
   "purpose": "The single entry point to the private portal. It signs in parents, learners, tutors and admins, and offers password recovery and a route to apply.",
-  "detail": "The single entry point to the private portal. It signs in parents, learners, tutors and admins, and offers password recovery and a route to apply. The main actions available here are: <b>Request access</b>, <b>Sign in</b>. It is form-driven — you fill a form and save; the record appears in the list immediately. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
+  "detail": "The single entry point to the private portal. It signs in parents, learners, tutors and admins, and offers password recovery and a route to apply. What you can do here: <b>Request access</b>, <b>Sign in</b>. It is form-driven — you fill a form and save; the record appears in the list immediately. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
   "audience": "Everyone who has an account.",
   "why": "Every privacy guarantee in the product begins here. The role attached to your account decides what the database will and will not return for the rest of your session.",
   "how": [
@@ -4832,15 +4780,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Every session in the studio.",
-   "tutor": "Their own timetable, attendance and notes.",
-   "parent": "Their child's classes, dates, times and amounts.",
-   "learner": "Their own upcoming and past classes."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "When the studio cancels, the family earns a credit on that engagement. Spent on a makeup. Never smeared across siblings.",
-  "detail": "When the studio cancels, the family earns a credit on that engagement. Spent on a makeup. Never smeared across siblings. The main actions available here are: <b>Post to ledger</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "When the studio cancels, the family earns a credit on that engagement. Spent on a makeup. Never smeared across siblings. What you can do here: <b>Post to ledger</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Tutors run this day to day. Parents and learners see their own sessions and nothing else.",
   "why": "Attendance is what deducts hours from the hour bank, which is what justifies the invoice. Get this right and billing disputes disappear.",
   "how": [
@@ -4849,19 +4797,17 @@
    "Mark attendance — this is the step that deducts hours from the hour bank.",
    "Write session notes so the parent has a permanent record of what was actually taught."
   ],
-  "connects": "Sits in the <b>Sessions</b> group, alongside attendance, availability, bookings, calendar, cancellations, events. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Scheduling</b> in the menu, next to calendar, sessions, bookings, public-book. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "attendance",
-   "availability",
-   "bookings",
    "calendar",
-   "cancellations",
-   "events"
+   "sessions",
+   "bookings",
+   "public-book",
+   "availability",
+   "attendance"
   ],
   "actions": [
-   "Post to ledger",
-   "Sign out",
-   "Theme"
+   "Post to ledger"
   ],
   "tabs": []
  },
@@ -4899,15 +4845,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Every session in the studio.",
-   "tutor": "Their own timetable, attendance and notes.",
-   "parent": "Their child's classes, dates, times and amounts.",
-   "learner": "Their own upcoming and past classes."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Policy-aware make-ups. Hours can be restored or consumed depending on who cancelled.",
-  "detail": "Policy-aware make-ups. Hours can be restored or consumed depending on who cancelled. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Policy-aware make-ups. Hours can be restored or consumed depending on who cancelled. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors run this day to day. Parents and learners see their own sessions and nothing else.",
   "why": "Attendance is what deducts hours from the hour bank, which is what justifies the invoice. Get this right and billing disputes disappear.",
   "how": [
@@ -4916,19 +4862,16 @@
    "Mark attendance — this is the step that deducts hours from the hour bank.",
    "Write session notes so the parent has a permanent record of what was actually taught."
   ],
-  "connects": "Sits in the <b>Sessions</b> group, alongside attendance, availability, bookings, calendar, cancellations, events. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Scheduling</b> in the menu, next to calendar, sessions, bookings, public-book. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "attendance",
-   "availability",
-   "bookings",
    "calendar",
-   "cancellations",
-   "events"
+   "sessions",
+   "bookings",
+   "public-book",
+   "availability",
+   "attendance"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "mastery": {
@@ -4965,15 +4908,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Topic-by-topic heatmap (0–100) per learner. Independent even when the learner sits in a group.",
-  "detail": "Topic-by-topic heatmap (0–100) per learner. Independent even when the learner sits in a group. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Topic-by-topic heatmap (0–100) per learner. Independent even when the learner sits in a group. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -4982,19 +4925,16 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Teaching</b> in the menu, next to curriculum, sow, lesson-plans, methodologies. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "curriculum",
+   "sow",
+   "lesson-plans",
+   "methodologies",
+   "diagnostics",
+   "goals"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "meetings": {
@@ -5031,15 +4971,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Every session in the studio.",
-   "tutor": "Their own timetable, attendance and notes.",
-   "parent": "Their child's classes, dates, times and amounts.",
-   "learner": "Their own upcoming and past classes."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Jitsi (free), Google Meet or Zoom links stored per session or as a standing room. No paid classroom required.",
-  "detail": "Jitsi (free), Google Meet or Zoom links stored per session or as a standing room. No paid classroom required. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Jitsi (free), Google Meet or Zoom links stored per session or as a standing room. No paid classroom required. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors run this day to day. Parents and learners see their own sessions and nothing else.",
   "why": "Attendance is what deducts hours from the hour bank, which is what justifies the invoice. Get this right and billing disputes disappear.",
   "how": [
@@ -5048,19 +4988,16 @@
    "Mark attendance — this is the step that deducts hours from the hour bank.",
    "Write session notes so the parent has a permanent record of what was actually taught."
   ],
-  "connects": "Sits in the <b>Sessions</b> group, alongside attendance, availability, bookings, calendar, cancellations, events. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Scheduling</b> in the menu, next to calendar, sessions, bookings, public-book. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "attendance",
-   "availability",
-   "bookings",
    "calendar",
-   "cancellations",
-   "events"
+   "sessions",
+   "bookings",
+   "public-book",
+   "availability",
+   "attendance"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "messages": {
@@ -5097,15 +5034,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access.",
+   "tutor": "Full access.",
+   "parent": "Their own view of it.",
+   "learner": "Their own view of it."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Free device-native WhatsApp, email BCC and SMS links. No Twilio bill.",
-  "detail": "Free device-native WhatsApp, email BCC and SMS links. No Twilio bill. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Free device-native WhatsApp, email BCC and SMS links. No Twilio bill. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -5114,19 +5051,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Comms</b> group, alongside announcements, broadcasts, complaints, forum, inbox, notifications. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>My studio</b> in the menu, next to dashboard, profile, notifications, inbox. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "announcements",
-   "broadcasts",
-   "complaints",
-   "forum",
+   "dashboard",
+   "profile",
+   "notifications",
    "inbox",
-   "notifications"
+   "change-password",
+   "install"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "methodologies": {
@@ -5163,15 +5097,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Your teaching methods library (spaced retrieval, worked examples, CRA, exam-technique drills…). Attach one to each engagement.",
-  "detail": "Your teaching methods library (spaced retrieval, worked examples, CRA, exam-technique drills…). Attach one to each engagement. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Your teaching methods library (spaced retrieval, worked examples, CRA, exam-technique drills…). Attach one to each engagement. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -5180,19 +5114,16 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Teaching</b> in the menu, next to curriculum, sow, lesson-plans, diagnostics. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "curriculum",
+   "sow",
+   "lesson-plans",
+   "diagnostics",
+   "goals",
+   "mastery"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "my-children": {
@@ -5229,15 +5160,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "A parent's home page: one card per child showing the next class with date, time and duration, the latest scores by subject, attendance, hours left in the bank, and the reading set before the next lesson.",
-  "detail": "A parent's home page: one card per child showing the next class with date, time and duration, the latest scores by subject, attendance, hours left in the bank, and the reading set before the next lesson. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "A parent's home page: one card per child showing the next class with date, time and duration, the latest scores by subject, attendance, hours left in the bank, and the reading set before the next lesson. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Parents and guardians. Staff see the same layout for the learners they teach.",
   "why": "This is the page that delivers the studio's promise — independent progress a parent can actually see. A parent who opens this weekly and sees movement renews.",
   "how": [
@@ -5248,17 +5179,14 @@
   ],
   "connects": "Reads learners, scoresheet, sessions, attendance and reading, all filtered by Row Level Security. Fed by Family links.",
   "related": [
-   "about",
-   "activity-log",
-   "admin-data",
-   "approvals",
-   "cbt-results",
-   "change-password"
+   "learners",
+   "parents",
+   "tutors",
+   "groups",
+   "engagements",
+   "subjects"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "notifications": {
@@ -5295,15 +5223,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access.",
+   "tutor": "Full access.",
+   "parent": "Their own view of it.",
+   "learner": "Their own view of it."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "In-app bell + browser push after PWA install.",
-  "detail": "In-app bell + browser push after PWA install. The main actions available here are: <b>Enable browser push</b>, <b>Mark all read</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "In-app bell + browser push after PWA install. What you can do here: <b>Enable browser push</b>, <b>Mark all read</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -5312,20 +5240,18 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Comms</b> group, alongside announcements, broadcasts, complaints, forum, inbox, messages. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>My studio</b> in the menu, next to dashboard, profile, inbox, messages. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "announcements",
-   "broadcasts",
-   "complaints",
-   "forum",
+   "dashboard",
+   "profile",
    "inbox",
-   "messages"
+   "messages",
+   "change-password",
+   "install"
   ],
   "actions": [
    "Enable browser push",
-   "Mark all read",
-   "Sign out",
-   "Theme"
+   "Mark all read"
   ],
   "tabs": []
  },
@@ -5355,15 +5281,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access, and can edit the content behind it in Settings.",
+   "tutor": "Full access — it is a public page.",
+   "parent": "Full access — it is a public page.",
+   "learner": "Full access — it is a public page."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "The friendly page the service worker serves when the device loses connection, so a family on poor mobile data never sees a raw browser error.",
-  "detail": "The friendly page the service worker serves when the device loses connection, so a family on poor mobile data never sees a raw browser error. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
+  "detail": "The friendly page the service worker serves when the device loses connection, so a family on poor mobile data never sees a raw browser error. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
   "audience": "Everyone.",
   "why": "Intermittent connectivity is normal for the studio's audience. Failing gracefully is the difference between 'the network dropped' and 'this app is broken'.",
   "how": [
@@ -5379,10 +5305,7 @@
    "cbt-results",
    "change-password"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "onboarding": {
@@ -5419,15 +5342,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full pipeline and conversion figures.",
-   "tutor": "Usually read-only; may add notes after a trial.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Consent, goals interview, diagnostic, first package, first session — tracked per engagement.",
-  "detail": "Consent, goals interview, diagnostic, first package, first session — tracked per engagement. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Consent, goals interview, diagnostic, first package, first session — tracked per engagement. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin — this is business development. Families never see the pipeline.",
   "why": "Tutoring income is won or lost at the top of the funnel. Recording every enquiry means you can see which channel actually produces paying families.",
   "how": [
@@ -5436,19 +5359,16 @@
    "Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.",
    "Watch the funnel counts at the top — they show you exactly where prospects go cold."
   ],
-  "connects": "Sits in the <b>Growth</b> group, alongside application-links, apply, exam-links, exam-register, flyer, inquiries. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to apply, application-links, inquiries, trials. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "application-links",
    "apply",
-   "exam-links",
-   "exam-register",
-   "flyer",
-   "inquiries"
+   "application-links",
+   "inquiries",
+   "trials",
+   "waitlist",
+   "referrals"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "packages": {
@@ -5485,15 +5405,15 @@
    }
   ],
   "roleViews": {
-   "owner": "All money: invoices, payments, payroll, totals.",
-   "tutor": "Their own payroll only.",
-   "parent": "Their own invoices, payments and receipts.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Prepaid hours or lesson packs (TutorCruncher/Tutorbase parity). Each engagement has its own bank.",
-  "detail": "Prepaid hours or lesson packs (TutorCruncher/Tutorbase parity). Each engagement has its own bank. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Prepaid hours or lesson packs (TutorCruncher/Tutorbase parity). Each engagement has its own bank. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. A parent sees only their own invoices, payments and receipts.",
   "why": "Cash flow keeps the studio alive. Because hours, rates and sessions are already in the system, the money side is arithmetic rather than guesswork.",
   "how": [
@@ -5502,19 +5422,16 @@
    "Record each payment as it arrives and issue the receipt.",
    "Reconcile the totals at month end against your bank."
   ],
-  "connects": "Sits in the <b>Finance</b> group, alongside fees, finance, invoices, payment-history, payments, payroll. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Money</b> in the menu, next to invoices, payments, payment-history, payment-plans. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "fees",
-   "finance",
    "invoices",
-   "payment-history",
    "payments",
-   "payroll"
+   "payment-history",
+   "payment-plans",
+   "wallet",
+   "fees"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "parent-meetings": {
@@ -5551,15 +5468,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Book a review slot, attach the latest 360 and report.",
-  "detail": "Book a review slot, attach the latest 360 and report. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "purpose": "Booking, running and recording the parent conference. A parent picks a slot from the tutor's real availability; the meeting opens with the learner's latest 360 view and progress report already attached, so nobody spends the first ten minutes looking for numbers; and what was agreed is written down at the end and visible to both sides afterwards.",
+  "detail": "Booking, running and recording the parent conference. A parent picks a slot from the tutor's real availability; the meeting opens with the learner's latest 360 view and progress report already attached, so nobody spends the first ten minutes looking for numbers; and what was agreed is written down at the end and visible to both sides afterwards. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -5568,19 +5485,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Comms</b> group, alongside announcements, broadcasts, complaints, forum, inbox, messages. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Communication</b> in the menu, next to announcements, broadcasts, forum, polls. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "announcements",
    "broadcasts",
-   "complaints",
    "forum",
-   "inbox",
-   "messages"
+   "polls",
+   "voting",
+   "surveys"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "parents": {
@@ -5617,10 +5531,10 @@
    }
   ],
   "roleViews": {
-   "owner": "Full read/write across every record.",
-   "tutor": "Read/write for the engagements they teach.",
-   "parent": "Only their own children appear.",
-   "learner": "Only their own record appears."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [
    "link a parent to a child",
@@ -5628,7 +5542,7 @@
   ],
   "faqs": [],
   "purpose": "Parent registry and parent–learner mapping. A parent only ever sees their own children. Siblings remain independent engagements.",
-  "detail": "Parent registry and parent–learner mapping. A parent only ever sees their own children. Siblings remain independent engagements. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Parent registry and parent–learner mapping. A parent only ever sees their own children. Siblings remain independent engagements. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner, admin and tutors do the data entry. Parents and learners only ever see their own linked records.",
   "why": "This is master data. If it is wrong here it is wrong everywhere downstream — bookings, invoices, analytics and reports all read from it.",
   "how": [
@@ -5637,18 +5551,16 @@
    "Click any row to open the full record, edit it inline, and save.",
    "Use <b>Export CSV</b> whenever you want a copy — the data belongs to the studio, not the platform."
   ],
-  "connects": "Sits in the <b>Core</b> group, alongside engagements, groups, learners, subjects, tutors. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>People</b> in the menu, next to learners, tutors, groups, engagements. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "engagements",
-   "groups",
    "learners",
+   "tutors",
+   "groups",
+   "engagements",
    "subjects",
-   "tutors"
+   "family-links"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "payment-history": {
@@ -5685,15 +5597,15 @@
    }
   ],
   "roleViews": {
-   "owner": "All money: invoices, payments, payroll, totals.",
-   "tutor": "Their own payroll only.",
-   "parent": "Their own invoices, payments and receipts.",
-   "learner": "No access."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Family-safe history and printable receipts.",
-  "detail": "Family-safe history and printable receipts. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "Family-safe history and printable receipts. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Owner and admin. A parent sees only their own invoices, payments and receipts.",
   "why": "Cash flow keeps the studio alive. Because hours, rates and sessions are already in the system, the money side is arithmetic rather than guesswork.",
   "how": [
@@ -5702,19 +5614,16 @@
    "Record each payment as it arrives and issue the receipt.",
    "Reconcile the totals at month end against your bank."
   ],
-  "connects": "Sits in the <b>Finance</b> group, alongside fees, finance, invoices, packages, payments, payroll. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Money</b> in the menu, next to invoices, payments, payment-plans, wallet. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "fees",
-   "finance",
    "invoices",
-   "packages",
    "payments",
-   "payroll"
+   "payment-plans",
+   "wallet",
+   "packages",
+   "fees"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "payment-plans": {
@@ -5751,15 +5660,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Splits a large fee into an instalment schedule and tracks every part of it. You enter the total, the number of instalments and how often they fall due; every date and amount is generated for you.",
-  "detail": "Splits a large fee into an instalment schedule and tracks every part of it. You enter the total, the number of instalments and how often they fall due; every date and amount is generated for you. The main actions available here are: <b>Generate schedule</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Splits a large fee into an instalment schedule and tracks every part of it. You enter the total, the number of instalments and how often they fall due; every date and amount is generated for you. What you can do here: <b>Generate schedule</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner, admin and staff. A parent sees their own plan in the family portal, read-only.",
   "why": "Termly fees are routinely paid in parts, and a family who cannot pay ₦180,000 at once will happily pay ₦60,000 three times. Every serious competitor offers instalments; without this the conversation happened in WhatsApp and the tracking lived in somebody's head. The arrears list replaces that.",
   "how": [
@@ -5773,17 +5682,15 @@
   ],
   "connects": "Sits alongside invoices.html and payments.html. Families with a wallet can draw instalments from wallet.html. Sibling discounts configured in settings.html apply to the family statement.",
   "related": [
-   "about",
-   "activity-log",
-   "admin-data",
-   "approvals",
-   "cbt-results",
-   "change-password"
+   "invoices",
+   "payments",
+   "payment-history",
+   "wallet",
+   "packages",
+   "fees"
   ],
   "actions": [
-   "Generate schedule",
-   "Sign out",
-   "Theme"
+   "Generate schedule"
   ],
   "tabs": []
  },
@@ -5821,9 +5728,9 @@
    }
   ],
   "roleViews": {
-   "owner": "All money: invoices, payments, payroll, totals.",
-   "tutor": "Their own payroll only.",
-   "parent": "Their own invoices, payments and receipts.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [
@@ -5832,7 +5739,7 @@
   ],
   "faqs": [],
   "purpose": "Record bank transfer / cash / Paystack / Flutterwave / Stripe checkout links. No forced processor fee to us.",
-  "detail": "Record bank transfer / cash / Paystack / Flutterwave / Stripe checkout links. No forced processor fee to us. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Record bank transfer / cash / Paystack / Flutterwave / Stripe checkout links. No forced processor fee to us. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. A parent sees only their own invoices, payments and receipts.",
   "why": "Cash flow keeps the studio alive. Because hours, rates and sessions are already in the system, the money side is arithmetic rather than guesswork.",
   "how": [
@@ -5841,19 +5748,16 @@
    "Record each payment as it arrives and issue the receipt.",
    "Reconcile the totals at month end against your bank."
   ],
-  "connects": "Sits in the <b>Finance</b> group, alongside fees, finance, invoices, packages, payment-history, payroll. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Money</b> in the menu, next to invoices, payment-history, payment-plans, wallet. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "fees",
-   "finance",
    "invoices",
-   "packages",
    "payment-history",
-   "payroll"
+   "payment-plans",
+   "wallet",
+   "packages",
+   "fees"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "payroll": {
@@ -5890,15 +5794,15 @@
    }
   ],
   "roleViews": {
-   "owner": "All money: invoices, payments, payroll, totals.",
-   "tutor": "Their own payroll only.",
-   "parent": "Their own invoices, payments and receipts.",
+   "owner": "Full access.",
+   "tutor": "No access — this page controls money, audit or configuration.",
+   "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Hours × rate, bonuses, deductions. Solo tutors can ignore this.",
-  "detail": "Hours × rate, bonuses, deductions. Solo tutors can ignore this. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
+  "purpose": "Tutor pay worked out from hours actually taught rather than hours planned — attendance times rate, plus bonuses, minus deductions — with a payslip you can print and a running total per period. A solo tutor can ignore this page entirely. A studio with associate tutors cannot: this is where the margin either exists or does not.",
+  "detail": "Tutor pay worked out from hours actually taught rather than hours planned — attendance times rate, plus bonuses, minus deductions — with a payslip you can print and a running total per period. A solo tutor can ignore this page entirely. A studio with associate tutors cannot: this is where the margin either exists or does not. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
   "audience": "Owner and admin. A parent sees only their own invoices, payments and receipts.",
   "why": "Cash flow keeps the studio alive. Because hours, rates and sessions are already in the system, the money side is arithmetic rather than guesswork.",
   "how": [
@@ -5907,19 +5811,16 @@
    "Record each payment as it arrives and issue the receipt.",
    "Reconcile the totals at month end against your bank."
   ],
-  "connects": "Sits in the <b>Finance</b> group, alongside fees, finance, invoices, packages, payment-history, payments. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Money</b> in the menu, next to invoices, payments, payment-history, payment-plans. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "fees",
-   "finance",
    "invoices",
-   "packages",
+   "payments",
    "payment-history",
-   "payments"
+   "payment-plans",
+   "wallet",
+   "packages"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "platform-health": {
@@ -5944,8 +5845,8 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "No access — this page controls money, audit or configuration.",
    "parent": "No access.",
    "learner": "No access."
   },
@@ -5964,8 +5865,8 @@
     "a": "Open the Supabase dashboard and press Restore. Data is safe — but a project left paused is eventually deleted."
    }
   ],
-  "purpose": "Keep-alive heartbeat, DB size, Drive backup, license, idle lock.",
-  "detail": "Keep-alive heartbeat, DB size, Drive backup, license, idle lock. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
+  "purpose": "One screen that answers \"is the studio still working?\": the keep-alive heartbeat that stops Supabase pausing a free project after seven idle days, database size against the 500 MB limit, when the last backup was taken, the licence position, and the idle-lock setting. Anything amber or red here is something that will become an outage if it is ignored.",
+  "detail": "One screen that answers \"is the studio still working?\": the keep-alive heartbeat that stops Supabase pausing a free project after seven idle days, database size against the 500 MB limit, when the last backup was taken, the licence position, and the idle-lock setting. Anything amber or red here is something that will become an outage if it is ignored. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -5974,19 +5875,15 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, cbt-results, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Administration</b> in the menu, next to settings, admin-data, storage, status-manager. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "about",
-   "activity-log",
+   "settings",
    "admin-data",
-   "approvals",
-   "cbt-results",
-   "change-password"
+   "storage",
+   "status-manager",
+   "license"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "policies": {
@@ -6023,15 +5920,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Cancellation, refund, safeguarding, late policy. Shown on parent portal.",
-  "detail": "Cancellation, refund, safeguarding, late policy. Shown on parent portal. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Cancellation, refund, safeguarding, late policy. Shown on parent portal. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -6040,19 +5937,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Ops</b> group, alongside compliance, documents, helpdesk, leave, rooms, safeguarding. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Records & compliance</b> in the menu, next to documents, compliance, safeguarding, security-centre. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "compliance",
    "documents",
-   "helpdesk",
-   "leave",
-   "rooms",
-   "safeguarding"
+   "compliance",
+   "safeguarding",
+   "security-centre",
+   "approvals",
+   "activity-log"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "polls": {
@@ -6089,15 +5983,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Schedule votes, topic votes, anonymous parent polls.",
-  "detail": "Schedule votes, topic votes, anonymous parent polls. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "purpose": "Ask families and learners a question and get a countable answer — a class time, a topic to revise next, a date for a workshop. Single or multiple choice, open or anonymous, with a closing time and a live result chart. Anonymous polls genuinely are: the vote and the voter are stored separately so even the owner cannot reconstruct who chose what.",
+  "detail": "Ask families and learners a question and get a countable answer — a class time, a topic to revise next, a date for a workshop. Single or multiple choice, open or anonymous, with a closing time and a live result chart. Anonymous polls genuinely are: the vote and the voter are stored separately so even the owner cannot reconstruct who chose what. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -6106,19 +6000,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Comms</b> group, alongside announcements, broadcasts, complaints, forum, inbox, messages. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Communication</b> in the menu, next to announcements, broadcasts, forum, voting. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "announcements",
    "broadcasts",
-   "complaints",
    "forum",
-   "inbox",
-   "messages"
+   "voting",
+   "surveys",
+   "complaints"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "portfolio": {
@@ -6155,15 +6046,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Best work, recordings, marked scripts — Drive links curated for applications.",
-  "detail": "Best work, recordings, marked scripts — Drive links curated for applications. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "Best work, recordings, marked scripts — Drive links curated for applications. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -6172,19 +6063,16 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Progress & analytics</b> in the menu, next to scoresheet, progress-reports, learner-360, insights. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "scoresheet",
+   "progress-reports",
+   "learner-360",
+   "insights",
+   "analytics",
+   "group-insights"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "practice": {
@@ -6221,10 +6109,10 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [
    "create a quiz",
@@ -6241,34 +6129,29 @@
     "a": "Self (unmarked practice), Review (answers plus explanations plus PDF) and Graded (auto-pushes to the scoresheet)."
    }
   ],
-  "purpose": "Three quiz kinds. Self = iterative practice. Review = diagnose after class. Graded = exhaustive paper that auto-pushes to the scoresheet.",
-  "detail": "Three quiz kinds. Self = iterative practice. Review = diagnose after class. Graded = exhaustive paper that auto-pushes to the scoresheet. The main actions available here are: <b>Clear</b>, <b>Delete</b>, <b>Duplicate</b>, <b>Edit</b>, <b>Parse CSV preview</b>, <b>Save quiz</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
-  "audience": "Tutors author the content, learners work through it, parents watch the progress.",
-  "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
+  "purpose": "Where every quiz is built and managed. Three kinds: Self-quiz for unmarked practice, Review quiz for finding the gaps after a class, and Graded quiz which pushes straight to the scoresheet. Questions are pasted or imported from CSV — seventeen question families are supported — and each paper carries its own anti-cheat settings. Every saved paper has full lifecycle controls beside it: preview, questions, edit, results, share, close or re-open, archive, duplicate and delete.",
+  "detail": "Where every quiz is built and managed. Three kinds: Self-quiz for unmarked practice, Review quiz for finding the gaps after a class, and Graded quiz which pushes straight to the scoresheet. Questions are pasted or imported from CSV — seventeen question families are supported — and each paper carries its own anti-cheat settings. Every saved paper has full lifecycle controls beside it: preview, questions, edit, results, share, close or re-open, archive, duplicate and delete. What you can do here: <b>Parse CSV preview</b>, <b>Save quiz</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "audience": "Tutors and administrators build papers. A tutor manages only their own. Learners sit papers on the Take a quiz page.",
+  "why": "A paper you cannot close keeps collecting sittings after the deadline, and the only previous way to stop it was to delete the paper and lose the results with it. Closing, re-opening and archiving are separate acts for that reason, and closure is enforced by the database rather than merely by the interface.",
   "how": [
-   "Pick the engagement, and the learner if it is a group.",
-   "Add or import the items you need — topics, tasks, questions or reading links.",
-   "Publish, so the learner sees it on their own dashboard.",
-   "Track completion and scores as the work comes back in."
+   "Fill the header — title, code, kind, access mode and duration.",
+   "Import a CSV or paste one. The file is parsed in your browser and never uploaded.",
+   "Set the anti-cheat options. Tools a candidate legitimately needs, such as the calculator, are exempt from the violation counter.",
+   "Press <b>Parse CSV preview</b> before saving, to see exactly what will be stored.",
+   "Manage a saved paper from the buttons beside it: <b>Close</b> stops new sittings without touching the results, <b>Open</b> restarts it, <b>Share</b> produces a link, <b>Results</b> opens the marks, and <b>Archive</b> retires it."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Papers are sat on Take a quiz, marked into CBT results and, when graded, into the Scoresheet. Prompts for building question banks are on Question bank prompts.",
   "related": [
-   "accommodations",
-   "assignments",
    "cbt-exam",
+   "cbt-review",
    "cbt-multi",
    "cbt-prompts",
-   "cbt-review"
+   "cbt-results",
+   "exam-targets"
   ],
   "actions": [
-   "Clear",
-   "Delete",
-   "Duplicate",
-   "Edit",
    "Parse CSV preview",
-   "Save quiz",
-   "Sign out",
-   "Theme"
+   "Save quiz"
   ],
   "tabs": []
  },
@@ -6302,36 +6185,34 @@
    }
   ],
   "roleViews": {
-   "owner": "Studio-wide analysis and at-risk board.",
-   "tutor": "Their own learners.",
-   "parent": "The same analysis narrowed to their own child.",
-   "learner": "Their own progress only."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Transparent linear projection from the last N scores toward the exam date. Formula is shown to parents.",
-  "detail": "Transparent linear projection from the last N scores toward the exam date. Formula is shown to parents. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
-  "audience": "Owner, admin and tutors see the full picture. A parent sees the same analysis narrowed to their own child.",
-  "why": "Parents pay for visible progress. These pages turn raw scores into an argument a parent can read, audit and trust.",
+  "purpose": "Predicted grades on the scale that actually applies — WAEC A1–F9, GCSE 9–1, A-Level A*–E, IB 1–7, SAT 400–1600, IELTS bands — with the exam board, the sitting, the evidence behind the prediction and what would change it.",
+  "detail": "Predicted grades on the scale that actually applies — WAEC A1–F9, GCSE 9–1, A-Level A*–E, IB 1–7, SAT 400–1600, IELTS bands — with the exam board, the sitting, the evidence behind the prediction and what would change it. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "audience": "Tutors and administrators. A family sees a prediction only when it is published.",
+  "why": "A predicted grade is a professional judgement, not a percentage, and it cannot be computed. It is also the single number a parent quotes back to you, so it needs a written basis and a stated confidence attached to it from the moment it is made.",
   "how": [
-   "Select the learner, group or period you want to examine.",
-   "Read the headline numbers first, then open the charts underneath.",
-   "Every figure is a published formula, never a black box — open the methodology note to see the arithmetic.",
-   "Print or export the view and take it into a parent conference."
+   "Pick the learner, subject, exam board and grading scale — all from lists, so the data stays reportable.",
+   "Enter the grade now and the predicted grade, and the target if one was agreed.",
+   "Write the basis. \"Mean 72% over six graded papers, upward trend, full attendance\" is a basis; \"looks strong\" is not.",
+   "Record what would change the prediction, so nobody is surprised later.",
+   "Publish it when you are ready for the family to see it."
   ],
-  "connects": "Sits in the <b>Analytics</b> group, alongside analytics, at-risk, exam-targets, group-insights, insights, learner-360. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Uses marks from the Scoresheet and targets from Exam targets. Published predictions appear on Progress reports and Learner 360.",
   "related": [
-   "analytics",
-   "at-risk",
-   "exam-targets",
-   "group-insights",
+   "scoresheet",
+   "progress-reports",
+   "learner-360",
    "insights",
-   "learner-360"
+   "analytics",
+   "group-insights"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "products": {
@@ -6368,15 +6249,15 @@
    }
   ],
   "roleViews": {
-   "owner": "All money: invoices, payments, payroll, totals.",
-   "tutor": "Their own payroll only.",
-   "parent": "Their own invoices, payments and receipts.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Past papers, workbooks, kits sold alongside tutoring.",
-  "detail": "Past papers, workbooks, kits sold alongside tutoring. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "purpose": "Past papers, workbooks, revision kits and anything else the studio sells alongside the teaching. Price, stock position, and a link to the material where it is digital. Sales flow into the same invoice and payment pipeline as tuition fees, so the finance page shows one honest total rather than two partial ones.",
+  "detail": "Past papers, workbooks, revision kits and anything else the studio sells alongside the teaching. Price, stock position, and a link to the material where it is digital. Sales flow into the same invoice and payment pipeline as tuition fees, so the finance page shows one honest total rather than two partial ones. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. A parent sees only their own invoices, payments and receipts.",
   "why": "Cash flow keeps the studio alive. Because hours, rates and sessions are already in the system, the money side is arithmetic rather than guesswork.",
   "how": [
@@ -6385,19 +6266,16 @@
    "Record each payment as it arrives and issue the receipt.",
    "Reconcile the totals at month end against your bank."
   ],
-  "connects": "Sits in the <b>Finance</b> group, alongside fees, finance, invoices, packages, payment-history, payments. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Money</b> in the menu, next to invoices, payments, payment-history, payment-plans. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "fees",
-   "finance",
    "invoices",
-   "packages",
+   "payments",
    "payment-history",
-   "payments"
+   "payment-plans",
+   "wallet",
+   "packages"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "profile": {
@@ -6426,15 +6304,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access.",
+   "tutor": "Full access.",
+   "parent": "Their own view of it.",
+   "learner": "Their own view of it."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Name, phone, timezone, Drive photo, password. Family-safe.",
-  "detail": "Name, phone, timezone, Drive photo, password. Family-safe. The main actions available here are: <b>Save profile</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "Name, phone, timezone, Drive photo, password. Family-safe. What you can do here: <b>Save profile</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -6443,19 +6321,17 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, cbt-results, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>My studio</b> in the menu, next to dashboard, notifications, inbox, messages. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "about",
-   "activity-log",
-   "admin-data",
-   "approvals",
-   "cbt-results",
-   "change-password"
+   "dashboard",
+   "notifications",
+   "inbox",
+   "messages",
+   "change-password",
+   "install"
   ],
   "actions": [
-   "Save profile",
-   "Sign out",
-   "Theme"
+   "Save profile"
   ],
   "tabs": []
  },
@@ -6493,36 +6369,35 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Parent-ready branded reports: hours, attendance, mastery, value-added, next steps, methodology used.",
-  "detail": "Parent-ready branded reports: hours, attendance, mastery, value-added, next steps, methodology used. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
-  "audience": "Tutors author the content, learners work through it, parents watch the progress.",
-  "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
+  "purpose": "The parent-facing report, built and printed here. One row per subject, each with its own mark, grade, effort rating and comment, plus attendance, homework completion, hours taught, strengths, areas to improve and the tutor's comment. A report stays a DRAFT — watermarked as such when printed — until it is published.",
+  "detail": "The parent-facing report, built and printed here. One row per subject, each with its own mark, grade, effort rating and comment, plus attendance, homework completion, hours taught, strengths, areas to improve and the tutor's comment. A report stays a DRAFT — watermarked as such when printed — until it is published. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "audience": "Tutors write reports for their own learners; administrators can write and publish any. A parent sees a report only once its status is published.",
+  "why": "This is the document a family keeps, forwards to a school and judges the studio by. It is also the commonest place for a half-written comment to escape, which is why publishing is a deliberate, separate act.",
   "how": [
-   "Pick the engagement, and the learner if it is a group.",
-   "Add or import the items you need — topics, tasks, questions or reading links.",
-   "Publish, so the learner sees it on their own dashboard.",
-   "Track completion and scores as the work comes back in."
+   "Choose the learner and name the period.",
+   "Press <b>Add a subject row</b> for each subject, and fill in the mark, grade, effort and comment.",
+   "Complete attendance, homework and hours — these are the figures parents check first.",
+   "Write the strengths, the areas to improve and your comment. All three are required.",
+   "Leave the status on <b>draft</b> while you work. Use <b>🖨 Print</b> to proofread — a draft prints with a DRAFT watermark.",
+   "Change the status to <b>published</b> when it is ready. The publication time is stamped automatically."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Pulls marks from the Scoresheet, attendance from the register, and hours from the hour bank. Published reports appear on Learner 360 and in the parent's portal.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "scoresheet",
+   "learner-360",
+   "insights",
+   "analytics",
+   "group-insights",
+   "at-risk"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "public-book": {
@@ -6551,15 +6426,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full pipeline and conversion figures.",
-   "tutor": "Usually read-only; may add notes after a trial.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access, and can edit the content behind it in Settings.",
+   "tutor": "Full access — it is a public page.",
+   "parent": "Full access — it is a public page.",
+   "learner": "Full access — it is a public page."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Parents pick an open slot from tutor availability. No Calendly fee. Lands as an inquiry you confirm into a 4-cycle booking.",
-  "detail": "Parents pick an open slot from tutor availability. No Calendly fee. Lands as an inquiry you confirm into a 4-cycle booking. The main actions available here are: <b>Request this slot</b>, <b>Sign out</b>, <b>Theme</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
+  "detail": "Parents pick an open slot from tutor availability. No Calendly fee. Lands as an inquiry you confirm into a 4-cycle booking. What you can do here: <b>Request this slot</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
   "audience": "Owner and admin — this is business development. Families never see the pipeline.",
   "why": "Tutoring income is won or lost at the top of the funnel. Recording every enquiry means you can see which channel actually produces paying families.",
   "how": [
@@ -6568,19 +6443,17 @@
    "Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.",
    "Watch the funnel counts at the top — they show you exactly where prospects go cold."
   ],
-  "connects": "Sits in the <b>Growth</b> group, alongside application-links, apply, exam-links, exam-register, flyer, inquiries. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Scheduling</b> in the menu, next to calendar, sessions, bookings, availability. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "application-links",
-   "apply",
-   "exam-links",
-   "exam-register",
-   "flyer",
-   "inquiries"
+   "calendar",
+   "sessions",
+   "bookings",
+   "availability",
+   "attendance",
+   "session-complete"
   ],
   "actions": [
-   "Request this slot",
-   "Sign out",
-   "Theme"
+   "Request this slot"
   ],
   "tabs": []
  },
@@ -6618,10 +6491,10 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [
    "set reading before a class",
@@ -6629,7 +6502,7 @@
   ],
   "faqs": [],
   "purpose": "Pre-class reading and video links tied to the next SOW topic. Learners tick items as they finish.",
-  "detail": "Pre-class reading and video links tied to the next SOW topic. Learners tick items as they finish. The main actions available here are: <b>Save assignment + item</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "Pre-class reading and video links tied to the next SOW topic. Learners tick items as they finish. What you can do here: <b>Save assignment + item</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -6638,19 +6511,17 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Teaching</b> in the menu, next to curriculum, sow, lesson-plans, methodologies. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "curriculum",
+   "sow",
+   "lesson-plans",
+   "methodologies",
+   "diagnostics",
+   "goals"
   ],
   "actions": [
-   "Save assignment + item",
-   "Sign out",
-   "Theme"
+   "Save assignment + item"
   ],
   "tabs": []
  },
@@ -6688,15 +6559,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full pipeline and conversion figures.",
-   "tutor": "Usually read-only; may add notes after a trial.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Track who referred whom and the credit granted.",
-  "detail": "Track who referred whom and the credit granted. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "purpose": "Who recommended whom, and what they were given for it. Records the referrer, the family who arrived, whether they converted, and the credit or discount granted — which then applies automatically on the invoice. For most tutoring studios word of mouth is the largest single source of new business and the least measured; this page measures it.",
+  "detail": "Who recommended whom, and what they were given for it. Records the referrer, the family who arrived, whether they converted, and the credit or discount granted — which then applies automatically on the invoice. For most tutoring studios word of mouth is the largest single source of new business and the least measured; this page measures it. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin — this is business development. Families never see the pipeline.",
   "why": "Tutoring income is won or lost at the top of the funnel. Recording every enquiry means you can see which channel actually produces paying families.",
   "how": [
@@ -6705,19 +6576,16 @@
    "Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.",
    "Watch the funnel counts at the top — they show you exactly where prospects go cold."
   ],
-  "connects": "Sits in the <b>Growth</b> group, alongside application-links, apply, exam-links, exam-register, flyer, inquiries. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to apply, application-links, inquiries, trials. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "application-links",
    "apply",
-   "exam-links",
-   "exam-register",
-   "flyer",
-   "inquiries"
+   "application-links",
+   "inquiries",
+   "trials",
+   "waitlist",
+   "onboarding"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "reminders": {
@@ -6754,15 +6622,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Every session in the studio.",
-   "tutor": "Their own timetable, attendance and notes.",
-   "parent": "Their child's classes, dates, times and amounts.",
-   "learner": "Their own upcoming and past classes."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "WhatsApp/email/SMS class reminders and a standard .ics download for Google, Outlook and Apple Calendar. No paid Calendar API.",
-  "detail": "WhatsApp/email/SMS class reminders and a standard .ics download for Google, Outlook and Apple Calendar. No paid Calendar API. The main actions available here are: <b>Email reminder</b>, <b>SMS reminder</b>, <b>Sign out</b>, <b>Theme</b>, <b>WhatsApp reminder</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "WhatsApp/email/SMS class reminders and a standard .ics download for Google, Outlook and Apple Calendar. No paid Calendar API. What you can do here: <b>Email reminder</b>, <b>SMS reminder</b>, <b>WhatsApp reminder</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Tutors run this day to day. Parents and learners see their own sessions and nothing else.",
   "why": "Attendance is what deducts hours from the hour bank, which is what justifies the invoice. Get this right and billing disputes disappear.",
   "how": [
@@ -6771,20 +6639,18 @@
    "Mark attendance — this is the step that deducts hours from the hour bank.",
    "Write session notes so the parent has a permanent record of what was actually taught."
   ],
-  "connects": "Sits in the <b>Sessions</b> group, alongside attendance, availability, bookings, calendar, cancellations, events. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Scheduling</b> in the menu, next to calendar, sessions, bookings, public-book. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "attendance",
-   "availability",
-   "bookings",
    "calendar",
-   "cancellations",
-   "events"
+   "sessions",
+   "bookings",
+   "public-book",
+   "availability",
+   "attendance"
   ],
   "actions": [
    "Email reminder",
    "SMS reminder",
-   "Sign out",
-   "Theme",
    "WhatsApp reminder"
   ],
   "tabs": []
@@ -6823,15 +6689,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Drive / YouTube / PDF links scoped to an engagement or shared. No file uploads into the free database.",
-  "detail": "Drive / YouTube / PDF links scoped to an engagement or shared. No file uploads into the free database. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Drive / YouTube / PDF links scoped to an engagement or shared. No file uploads into the free database. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -6840,19 +6706,13 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Resources</b> in the menu, next to library, lms, eresources. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "library",
+   "lms",
+   "eresources"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "reviews": {
@@ -6889,15 +6749,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full pipeline and conversion figures.",
-   "tutor": "Usually read-only; may add notes after a trial.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Collect and optionally publish reviews on the public site (SEO).",
-  "detail": "Collect and optionally publish reviews on the public site (SEO). The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Collect and optionally publish reviews on the public site (SEO). Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin — this is business development. Families never see the pipeline.",
   "why": "Tutoring income is won or lost at the top of the funnel. Recording every enquiry means you can see which channel actually produces paying families.",
   "how": [
@@ -6906,19 +6766,16 @@
    "Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.",
    "Watch the funnel counts at the top — they show you exactly where prospects go cold."
   ],
-  "connects": "Sits in the <b>Growth</b> group, alongside application-links, apply, exam-links, exam-register, flyer, inquiries. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Communication</b> in the menu, next to announcements, broadcasts, forum, polls. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "application-links",
-   "apply",
-   "exam-links",
-   "exam-register",
-   "flyer",
-   "inquiries"
+   "announcements",
+   "broadcasts",
+   "forum",
+   "polls",
+   "voting",
+   "surveys"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "rooms": {
@@ -6955,15 +6812,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "In-person rooms or virtual standing rooms. Conflict check.",
-  "detail": "In-person rooms or virtual standing rooms. Conflict check. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "In-person rooms or virtual standing rooms. Conflict check. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -6972,19 +6829,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Ops</b> group, alongside compliance, documents, helpdesk, leave, policies, safeguarding. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Scheduling</b> in the menu, next to calendar, sessions, bookings, public-book. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "compliance",
-   "documents",
-   "helpdesk",
-   "leave",
-   "policies",
-   "safeguarding"
+   "calendar",
+   "sessions",
+   "bookings",
+   "public-book",
+   "availability",
+   "attendance"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "rubrics": {
@@ -7021,15 +6875,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Criteria and scale for essays and projects.",
-  "detail": "Criteria and scale for essays and projects. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "purpose": "The criteria and the scale used to mark essays, projects and spoken work, written down before the marking starts. A rubric attached to an assessment turns \"this is a good essay\" into a defensible mark a parent can read, and makes two tutors mark the same piece of work the same way.",
+  "detail": "The criteria and the scale used to mark essays, projects and spoken work, written down before the marking starts. A rubric attached to an assessment turns \"this is a good essay\" into a defensible mark a parent can read, and makes two tutors mark the same piece of work the same way. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -7038,19 +6892,16 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Teaching</b> in the menu, next to curriculum, sow, lesson-plans, methodologies. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "curriculum",
+   "sow",
+   "lesson-plans",
+   "methodologies",
+   "diagnostics",
+   "goals"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "safeguarding": {
@@ -7087,15 +6938,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "No access — this page controls money, audit or configuration.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Confidential incidents. Admin/tutor only. Never in the parent nav.",
-  "detail": "Confidential incidents. Admin/tutor only. Never in the parent nav. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
+  "detail": "Confidential incidents. Admin/tutor only. Never in the parent nav. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -7104,19 +6955,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Ops</b> group, alongside compliance, documents, helpdesk, leave, policies, rooms. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Records & compliance</b> in the menu, next to documents, policies, compliance, security-centre. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "compliance",
    "documents",
-   "helpdesk",
-   "leave",
    "policies",
-   "rooms"
+   "compliance",
+   "security-centre",
+   "approvals",
+   "activity-log"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "scholarships": {
@@ -7153,15 +7001,15 @@
    }
   ],
   "roleViews": {
-   "owner": "All money: invoices, payments, payroll, totals.",
-   "tutor": "Their own payroll only.",
-   "parent": "Their own invoices, payments and receipts.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Sibling discount, hardship, referral credit — applied per engagement.",
-  "detail": "Sibling discount, hardship, referral credit — applied per engagement. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Sibling discount, hardship, referral credit — applied per engagement. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. A parent sees only their own invoices, payments and receipts.",
   "why": "Cash flow keeps the studio alive. Because hours, rates and sessions are already in the system, the money side is arithmetic rather than guesswork.",
   "how": [
@@ -7170,19 +7018,16 @@
    "Record each payment as it arrives and issue the receipt.",
    "Reconcile the totals at month end against your bank."
   ],
-  "connects": "Sits in the <b>Finance</b> group, alongside fees, finance, invoices, packages, payment-history, payments. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Money</b> in the menu, next to invoices, payments, payment-history, payment-plans. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "fees",
-   "finance",
    "invoices",
-   "packages",
+   "payments",
    "payment-history",
-   "payments"
+   "payment-plans",
+   "wallet",
+   "packages"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "scoresheet": {
@@ -7215,10 +7060,10 @@
    }
   ],
   "roleViews": {
-   "owner": "Studio-wide analysis and at-risk board.",
-   "tutor": "Their own learners.",
-   "parent": "The same analysis narrowed to their own child.",
-   "learner": "Their own progress only."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [
    "see my child's scores",
@@ -7235,29 +7080,27 @@
     "a": "No. Row Level Security filters every query by family in the database itself, so even a typed URL returns nothing."
    }
   ],
-  "purpose": "Single ledger of graded quizzes, SOW evaluations and homework. Visible to the linked parent and the learner.",
-  "detail": "Single ledger of graded quizzes, SOW evaluations and homework. Visible to the linked parent and the learner. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
-  "audience": "Owner, admin and tutors see the full picture. A parent sees the same analysis narrowed to their own child.",
-  "why": "Parents pay for visible progress. These pages turn raw scores into an argument a parent can read, audit and trust.",
+  "purpose": "The single ledger of everything a learner has been marked on. Graded quizzes and scheme-of-work evaluations arrive automatically; the entry desk is for everything else a tutor marks — a mock, a homework set, a piece of classwork, a paper marked on paper. The percentage is computed by the database from the score and the total.",
+  "detail": "The single ledger of everything a learner has been marked on. Graded quizzes and scheme-of-work evaluations arrive automatically; the entry desk is for everything else a tutor marks — a mock, a homework set, a piece of classwork, a paper marked on paper. The percentage is computed by the database from the score and the total. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "audience": "Tutors and administrators enter marks. A parent sees only their own children, a learner only themselves, and only rows marked visible.",
+  "why": "A scoresheet with only the automatic rows in it is a partial picture, and a partial picture is the one a parent will find the hole in. Computing the percentage in the database means a hand-entered row can never contradict itself, which was previously the commonest error on this page.",
   "how": [
-   "Select the learner, group or period you want to examine.",
-   "Read the headline numbers first, then open the charts underneath.",
-   "Every figure is a published formula, never a black box — open the methodology note to see the arithmetic.",
-   "Print or export the view and take it into a parent conference."
+   "Pick the learner and the subject, then describe what the mark was for.",
+   "Enter the score and the total. Do not enter a percentage — it is worked out for you.",
+   "Set the weight if this assessment should count more than a normal one towards a term average.",
+   "Add a comment the family will read, or untick <b>Visible to the family</b> to keep the mark internal for now.",
+   "Use <b>Save &amp; add another</b> when marking a whole class — the learner, subject and date are kept."
   ],
-  "connects": "Sits in the <b>Analytics</b> group, alongside analytics, at-risk, exam-targets, group-insights, insights, learner-360. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Feeds Progress reports, Value-added, Predicted grades, Learner 360 and the At-risk rule engine.",
   "related": [
-   "analytics",
-   "at-risk",
-   "exam-targets",
-   "group-insights",
+   "progress-reports",
+   "learner-360",
    "insights",
-   "learner-360"
+   "analytics",
+   "group-insights",
+   "at-risk"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "security-centre": {
@@ -7294,15 +7137,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "The studio's safety console. It shows what an anonymous stranger can reach, who has been touching learner records, failed sign-in attempts, the consent you hold and the data requests families have made. It also produces the two documents a regulator or a worried parent will ask for: a complete export of everything held on one learner, and an anonymised export for analytics.",
-  "detail": "The studio's safety console. It shows what an anonymous stranger can reach, who has been touching learner records, failed sign-in attempts, the consent you hold and the data requests families have made. It also produces the two documents a regulator or a worried parent will ask for: a complete export of everything held on one learner, and an anonymised export for analytics. The main actions available here are: <b>Download anonymised data</b>, <b>Download full record</b>, <b>Refresh status</b>, <b>Run security scan</b>, <b>Show audit trail</b>, <b>Sign out</b>, <b>Start enrolment</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "The studio's safety console. It shows what an anonymous stranger can reach, who has been touching learner records, failed sign-in attempts, the consent you hold and the data requests families have made. It also produces the two documents a regulator or a worried parent will ask for: a complete export of everything held on one learner, and an anonymised export for analytics. What you can do here: <b>Download anonymised data</b>, <b>Download full record</b>, <b>Refresh status</b>, <b>Run security scan</b>, <b>Show audit trail</b>, <b>Start enrolment</b>, <b>Verify and finish</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and administrator only. Every function behind this page re-checks your role inside the database, so it cannot be reached by editing the page in a browser.",
   "why": "You hold children's names, dates of birth, guardian phone numbers, addresses, exam scores and safeguarding notes. Nigeria's NDPA 2023 gives families the right to see and correct that data, and the same duty exists under GDPR and FERPA elsewhere. The control every one of those regimes names first is an immutable audit trail — a record of who accessed what that the accessor cannot edit or delete.",
   "how": [
@@ -7316,12 +7159,12 @@
   ],
   "connects": "Reads the same audit trail shown in activity-log.html. Works with safeguarding.html, compliance.html and policies.html. Licence state is managed in license.html.",
   "related": [
-   "about",
-   "activity-log",
-   "admin-data",
+   "documents",
+   "policies",
+   "compliance",
+   "safeguarding",
    "approvals",
-   "cbt-results",
-   "change-password"
+   "activity-log"
   ],
   "actions": [
    "Download anonymised data",
@@ -7329,9 +7172,8 @@
    "Refresh status",
    "Run security scan",
    "Show audit trail",
-   "Sign out",
    "Start enrolment",
-   "Theme"
+   "Verify and finish"
   ],
   "tabs": []
  },
@@ -7369,15 +7211,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Every session in the studio.",
-   "tutor": "Their own timetable, attendance and notes.",
-   "parent": "Their child's classes, dates, times and amounts.",
-   "learner": "Their own upcoming and past classes."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Tutor marks a class done, writes what was taught, ticks SOW topics. Feedback lands on parent and learner dashboards and feeds insights.",
-  "detail": "Tutor marks a class done, writes what was taught, ticks SOW topics. Feedback lands on parent and learner dashboards and feeds insights. The main actions available here are: <b>Mark complete</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Tutor marks a class done, writes what was taught, ticks SOW topics. Feedback lands on parent and learner dashboards and feeds insights. What you can do here: <b>Mark complete</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors run this day to day. Parents and learners see their own sessions and nothing else.",
   "why": "Attendance is what deducts hours from the hour bank, which is what justifies the invoice. Get this right and billing disputes disappear.",
   "how": [
@@ -7386,19 +7228,17 @@
    "Mark attendance — this is the step that deducts hours from the hour bank.",
    "Write session notes so the parent has a permanent record of what was actually taught."
   ],
-  "connects": "Sits in the <b>Sessions</b> group, alongside attendance, availability, bookings, calendar, cancellations, events. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Scheduling</b> in the menu, next to calendar, sessions, bookings, public-book. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "attendance",
-   "availability",
-   "bookings",
    "calendar",
-   "cancellations",
-   "events"
+   "sessions",
+   "bookings",
+   "public-book",
+   "availability",
+   "attendance"
   ],
   "actions": [
-   "Mark complete",
-   "Sign out",
-   "Theme"
+   "Mark complete"
   ],
   "tabs": []
  },
@@ -7436,15 +7276,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Every session in the studio.",
-   "tutor": "Their own timetable, attendance and notes.",
-   "parent": "Their child's classes, dates, times and amounts.",
-   "learner": "Their own upcoming and past classes."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Per-session, optionally per-learner notes. Shareable to the parent portal. Drive recording link.",
-  "detail": "Per-session, optionally per-learner notes. Shareable to the parent portal. Drive recording link. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Per-session, optionally per-learner notes. Shareable to the parent portal. Drive recording link. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors run this day to day. Parents and learners see their own sessions and nothing else.",
   "why": "Attendance is what deducts hours from the hour bank, which is what justifies the invoice. Get this right and billing disputes disappear.",
   "how": [
@@ -7453,19 +7293,16 @@
    "Mark attendance — this is the step that deducts hours from the hour bank.",
    "Write session notes so the parent has a permanent record of what was actually taught."
   ],
-  "connects": "Sits in the <b>Sessions</b> group, alongside attendance, availability, bookings, calendar, cancellations, events. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Scheduling</b> in the menu, next to calendar, sessions, bookings, public-book. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "attendance",
-   "availability",
-   "bookings",
    "calendar",
-   "cancellations",
-   "events"
+   "sessions",
+   "bookings",
+   "public-book",
+   "availability",
+   "attendance"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "sessions": {
@@ -7502,10 +7339,10 @@
    }
   ],
   "roleViews": {
-   "owner": "Every session in the studio.",
-   "tutor": "Their own timetable, attendance and notes.",
-   "parent": "Their child's classes, dates, times and amounts.",
-   "learner": "Their own upcoming and past classes."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [
    "schedule a class",
@@ -7514,7 +7351,7 @@
   ],
   "faqs": [],
   "purpose": "Every lesson: start/end, mode (online/in-person/hybrid), meeting link, whiteboard, attendance, hours deducted.",
-  "detail": "Every lesson: start/end, mode (online/in-person/hybrid), meeting link, whiteboard, attendance, hours deducted. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Every lesson: start/end, mode (online/in-person/hybrid), meeting link, whiteboard, attendance, hours deducted. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors run this day to day. Parents and learners see their own sessions and nothing else.",
   "why": "Attendance is what deducts hours from the hour bank, which is what justifies the invoice. Get this right and billing disputes disappear.",
   "how": [
@@ -7523,19 +7360,16 @@
    "Mark attendance — this is the step that deducts hours from the hour bank.",
    "Write session notes so the parent has a permanent record of what was actually taught."
   ],
-  "connects": "Sits in the <b>Sessions</b> group, alongside attendance, availability, bookings, calendar, cancellations, events. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Scheduling</b> in the menu, next to calendar, bookings, public-book, availability. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "attendance",
-   "availability",
-   "bookings",
    "calendar",
-   "cancellations",
-   "events"
+   "bookings",
+   "public-book",
+   "availability",
+   "attendance",
+   "session-complete"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "settings": {
@@ -7560,8 +7394,8 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "No access — this page controls money, audit or configuration.",
    "parent": "No access.",
    "learner": "No access."
   },
@@ -7571,32 +7405,29 @@
    "set the timezone"
   ],
   "faqs": [],
-  "purpose": "Brand, signatures, 2FA, language, accessibility, cancellation policy, default timezone/currency.",
-  "detail": "Brand, signatures, 2FA, language, accessibility, cancellation policy, default timezone/currency. The main actions available here are: <b>Save discount rules</b>, <b>Save to database</b>, <b>Sign out</b>, <b>Theme</b>, <b>Toggle dark mode</b>, <b>Toggle high contrast</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
-  "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
-  "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
+  "purpose": "Everything about how this studio behaves, in one place: identity and branding, the studio clock and currency, cancellation and idle-lock rules, sibling discounts, booking-cycle defaults, quiz and grading defaults, notification channels, the public-page content, integrations and the data-retention position.",
+  "detail": "Everything about how this studio behaves, in one place: identity and branding, the studio clock and currency, cancellation and idle-lock rules, sibling discounts, booking-cycle defaults, quiz and grading defaults, notification channels, the public-page content, integrations and the data-retention position. What you can do here: <b>Run the check</b>, <b>Save discount rules</b>, <b>Save to database</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
+  "audience": "Owner and administrators only. Changes here affect every user of the studio.",
+  "why": "Configuration decides who sees what, what a parent is charged and what the certificates say. It is also the page a new studio fills in first, so it has to be complete — a setting that is missing here gets hard-coded somewhere worse.",
   "how": [
-   "Only an owner or admin should change anything on this page.",
-   "Read the note beside each setting before you touch it.",
-   "Save, then reload any normal page to confirm the change took effect.",
-   "If something looks wrong afterwards, the activity log records who changed what and when."
+   "Work down the cards in order; each one saves on its own, so you can stop and come back.",
+   "Set the studio identity first — the name, motto and logo appear on every printed document and certificate.",
+   "Set the timezone and currency before taking any bookings or issuing any invoice.",
+   "Review the sibling-discount bands: the highest band reached applies to the whole family, and the bands are not added together.",
+   "Use <b>Test</b> next to an integration rather than discovering it is misconfigured when a parent does."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, cbt-results, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Read by nearly every page in the studio. The studio name, logo and signature flow into Certificates, Invoices, Progress reports and ID cards.",
   "related": [
-   "about",
-   "activity-log",
    "admin-data",
-   "approvals",
-   "cbt-results",
-   "change-password"
+   "storage",
+   "platform-health",
+   "status-manager",
+   "license"
   ],
   "actions": [
+   "Run the check",
    "Save discount rules",
-   "Save to database",
-   "Sign out",
-   "Theme",
-   "Toggle dark mode",
-   "Toggle high contrast"
+   "Save to database"
   ],
   "tabs": []
  },
@@ -7626,10 +7457,10 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access, and can edit the content behind it in Settings.",
+   "tutor": "Full access — it is a public page.",
+   "parent": "Full access — it is a public page.",
+   "learner": "Full access — it is a public page."
   },
   "tasks": [],
   "faqs": [],
@@ -7643,12 +7474,11 @@
   ],
   "connects": "The human counterpart to sitemap.xml, which is the machine version search engines read.",
   "related": [
+   "feature-guide",
    "about",
-   "activity-log",
-   "admin-data",
-   "approvals",
-   "cbt-results",
-   "change-password"
+   "contact",
+   "developer",
+   "flyer"
   ],
   "actions": [],
   "tabs": []
@@ -7687,15 +7517,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "At the start of a term enter every subject topic. Follow coverage, evaluate each learner on each topic, push scores into the scoresheet.",
-  "detail": "At the start of a term enter every subject topic. Follow coverage, evaluate each learner on each topic, push scores into the scoresheet. The main actions available here are: <b>Add topic</b>, <b>Create term</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "At the start of a term enter every subject topic. Follow coverage, evaluate each learner on each topic, push scores into the scoresheet. What you can do here: <b>Add topic</b>, <b>Create term</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -7704,20 +7534,18 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Teaching</b> in the menu, next to curriculum, lesson-plans, methodologies, diagnostics. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "curriculum",
+   "lesson-plans",
+   "methodologies",
+   "diagnostics",
+   "goals",
+   "mastery"
   ],
   "actions": [
    "Add topic",
-   "Create term",
-   "Sign out",
-   "Theme"
+   "Create term"
   ],
   "tabs": []
  },
@@ -7743,15 +7571,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "No access — this page controls money, audit or configuration.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Change role/status with an audit row.",
-  "detail": "Change role/status with an audit row. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
+  "purpose": "Change what someone is and what they can do: their role, whether their account is active, suspended or pending, and which learners a parent is linked to. Every change writes an audit row naming who made it and what it was before, because a quiet role change is a privacy incident waiting to be discovered.",
+  "detail": "Change what someone is and what they can do: their role, whether their account is active, suspended or pending, and which learners a parent is linked to. Every change writes an audit row naming who made it and what it was before, because a quiet role change is a privacy incident waiting to be discovered. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -7760,19 +7588,15 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, cbt-results, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Administration</b> in the menu, next to settings, admin-data, storage, platform-health. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "about",
-   "activity-log",
+   "settings",
    "admin-data",
-   "approvals",
-   "cbt-results",
-   "change-password"
+   "storage",
+   "platform-health",
+   "license"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "storage": {
@@ -7809,15 +7633,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "No access — this page controls money, audit or configuration.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Watch the free 500 MB. Archive then purge old logs.",
-  "detail": "Watch the free 500 MB. Archive then purge old logs. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
+  "purpose": "Keeps the studio inside the free tier deliberately rather than by luck. Shows what is actually consuming the 500 MB database allowance, table by table, and lets you compress, archive or purge the things that grow without limit — activity logs, login audits, keep-alive rows and old notifications — with a dated export taken first so nothing is lost, only moved.",
+  "detail": "Keeps the studio inside the free tier deliberately rather than by luck. Shows what is actually consuming the 500 MB database allowance, table by table, and lets you compress, archive or purge the things that grow without limit — activity logs, login audits, keep-alive rows and old notifications — with a dated export taken first so nothing is lost, only moved. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -7826,19 +7650,15 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Platform</b> group, alongside about, activity-log, admin-data, approvals, cbt-results, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Administration</b> in the menu, next to settings, admin-data, platform-health, status-manager. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "about",
-   "activity-log",
+   "settings",
    "admin-data",
-   "approvals",
-   "cbt-results",
-   "change-password"
+   "platform-health",
+   "status-manager",
+   "license"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "stream": {
@@ -7875,15 +7695,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Google Classroom-style feed: announcements, questions, materials. Link previews only.",
-  "detail": "Google Classroom-style feed: announcements, questions, materials. Link previews only. The main actions available here are: <b>Post to stream</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "Google Classroom-style feed: announcements, questions, materials. Link previews only. What you can do here: <b>Post to stream</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -7892,19 +7712,17 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Comms</b> group, alongside announcements, broadcasts, complaints, forum, inbox, messages. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Teaching</b> in the menu, next to curriculum, sow, lesson-plans, methodologies. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "announcements",
-   "broadcasts",
-   "complaints",
-   "forum",
-   "inbox",
-   "messages"
+   "curriculum",
+   "sow",
+   "lesson-plans",
+   "methodologies",
+   "diagnostics",
+   "goals"
   ],
   "actions": [
-   "Post to stream",
-   "Sign out",
-   "Theme"
+   "Post to stream"
   ],
   "tabs": []
  },
@@ -7942,15 +7760,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Learner start/stop timer per subject. Minutes on task, not just class time. TutorBird study-log parity.",
-  "detail": "Learner start/stop timer per subject. Minutes on task, not just class time. TutorBird study-log parity. The main actions available here are: <b>Sign out</b>, <b>Start</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "Learner start/stop timer per subject. Minutes on task, not just class time. TutorBird study-log parity. What you can do here: <b>Start</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -7959,19 +7777,17 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Teaching</b> in the menu, next to curriculum, sow, lesson-plans, methodologies. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "curriculum",
+   "sow",
+   "lesson-plans",
+   "methodologies",
+   "diagnostics",
+   "goals"
   ],
   "actions": [
-   "Sign out",
-   "Start",
-   "Theme"
+   "Start"
   ],
   "tabs": []
  },
@@ -8009,15 +7825,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full read/write across every record.",
-   "tutor": "Read/write for the engagements they teach.",
-   "parent": "Only their own children appear.",
-   "learner": "Only their own record appears."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Maths, English, Physics, SAT, WAEC, IGCSE, IELTS… Each subject can carry a board, level and default methodology.",
-  "detail": "Maths, English, Physics, SAT, WAEC, IGCSE, IELTS… Each subject can carry a board, level and default methodology. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Maths, English, Physics, SAT, WAEC, IGCSE, IELTS… Each subject can carry a board, level and default methodology. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner, admin and tutors do the data entry. Parents and learners only ever see their own linked records.",
   "why": "This is master data. If it is wrong here it is wrong everywhere downstream — bookings, invoices, analytics and reports all read from it.",
   "how": [
@@ -8026,18 +7842,16 @@
    "Click any row to open the full record, edit it inline, and save.",
    "Use <b>Export CSV</b> whenever you want a copy — the data belongs to the studio, not the platform."
   ],
-  "connects": "Sits in the <b>Core</b> group, alongside engagements, groups, learners, parents, tutors. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>People</b> in the menu, next to learners, parents, tutors, groups. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "engagements",
-   "groups",
    "learners",
    "parents",
-   "tutors"
+   "tutors",
+   "groups",
+   "engagements",
+   "family-links"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "substitutions": {
@@ -8074,15 +7888,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Assign cover when a tutor is away. Hours still belong to the engagement.",
-  "detail": "Assign cover when a tutor is away. Hours still belong to the engagement. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Assign cover when a tutor is away. Hours still belong to the engagement. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -8091,19 +7905,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Ops</b> group, alongside compliance, documents, helpdesk, leave, policies, rooms. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Scheduling</b> in the menu, next to calendar, sessions, bookings, public-book. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "compliance",
-   "documents",
-   "helpdesk",
-   "leave",
-   "policies",
-   "rooms"
+   "calendar",
+   "sessions",
+   "bookings",
+   "public-book",
+   "availability",
+   "attendance"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "surveys": {
@@ -8140,15 +7951,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "After-trial and termly parent pulse. Feeds retention insight.",
-  "detail": "After-trial and termly parent pulse. Feeds retention insight. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "After-trial and termly parent pulse. Feeds retention insight. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -8157,19 +7968,16 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Comms</b> group, alongside announcements, broadcasts, complaints, forum, inbox, messages. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Communication</b> in the menu, next to announcements, broadcasts, forum, polls. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "announcements",
    "broadcasts",
-   "complaints",
    "forum",
-   "inbox",
-   "messages"
+   "polls",
+   "voting",
+   "complaints"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "timezones": {
@@ -8206,36 +8014,34 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "International tutoring: convert a slot across learner, parent and tutor zones.",
-  "detail": "International tutoring: convert a slot across learner, parent and tutor zones. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
-  "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
-  "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
+  "purpose": "Who is where, and when they will actually teach or learn. Live clocks for every zone the studio touches, and a desk that records the facts a conversion depends on: this tutor is in Lagos and will not start before 07:00, this family is in Toronto and observes daylight saving, this board publishes results in UTC.",
+  "detail": "Who is where, and when they will actually teach or learn. Live clocks for every zone the studio touches, and a desk that records the facts a conversion depends on: this tutor is in Lagos and will not start before 07:00, this family is in Toronto and observes daylight saving, this board publishes results in UTC. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "audience": "Tutors and administrators maintain the entries. Everyone signed in can read them — knowing when the tutor is available is the whole point.",
+  "why": "A studio teaching across continents loses classes to arithmetic. Recording each person's own working window, in their own local time, turns \"what time works for you?\" into a lookup rather than an email thread.",
   "how": [
-   "Only an owner or admin should change anything on this page.",
-   "Read the note beside each setting before you touch it.",
-   "Save, then reload any normal page to confirm the change took effect.",
-   "If something looks wrong afterwards, the activity log records who changed what and when."
+   "Add an entry for each tutor, each international family and the studio itself.",
+   "Pick the IANA time zone from the list — the UTC offset fills itself in.",
+   "Set the availability window in that person's OWN local time, and tick the days.",
+   "Use <b>Never schedule</b> for standing exclusions such as a Friday prayer window or an exam week.",
+   "The live clocks at the bottom refresh every 30 seconds and use your browser's own time-zone database, so daylight saving is always right without anyone maintaining a table."
   ],
-  "connects": "Sits in the <b>Ops</b> group, alongside compliance, documents, helpdesk, leave, policies, rooms. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Used by Availability, Sessions and Cycle bookings when a class time is proposed, and by Lesson reminders when a reminder is scheduled.",
   "related": [
-   "compliance",
-   "documents",
-   "helpdesk",
-   "leave",
-   "policies",
-   "rooms"
+   "calendar",
+   "sessions",
+   "bookings",
+   "public-book",
+   "availability",
+   "attendance"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "transcripts": {
@@ -8272,15 +8078,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Everything, plus quality oversight.",
-   "tutor": "Authors and marks the work.",
-   "parent": "Sees what was set and whether it was completed.",
-   "learner": "Does the work and sees their feedback."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Cumulative record across independent engagements.",
-  "detail": "Cumulative record across independent engagements. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "Cumulative record across independent engagements. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Tutors author the content, learners work through it, parents watch the progress.",
   "why": "This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.",
   "how": [
@@ -8289,19 +8095,16 @@
    "Publish, so the learner sees it on their own dashboard.",
    "Track completion and scores as the work comes back in."
   ],
-  "connects": "Sits in the <b>Learning</b> group, alongside accommodations, assignments, cbt-exam, cbt-multi, cbt-prompts, cbt-review. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Progress & analytics</b> in the menu, next to scoresheet, progress-reports, learner-360, insights. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "accommodations",
-   "assignments",
-   "cbt-exam",
-   "cbt-multi",
-   "cbt-prompts",
-   "cbt-review"
+   "scoresheet",
+   "progress-reports",
+   "learner-360",
+   "insights",
+   "analytics",
+   "group-insights"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "trials": {
@@ -8338,15 +8141,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full pipeline and conversion figures.",
-   "tutor": "Usually read-only; may add notes after a trial.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Free or paid diagnostic trial. Captures baseline score and fit notes before a package is sold.",
-  "detail": "Free or paid diagnostic trial. Captures baseline score and fit notes before a package is sold. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Free or paid diagnostic trial. Captures baseline score and fit notes before a package is sold. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin — this is business development. Families never see the pipeline.",
   "why": "Tutoring income is won or lost at the top of the funnel. Recording every enquiry means you can see which channel actually produces paying families.",
   "how": [
@@ -8355,19 +8158,16 @@
    "Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.",
    "Watch the funnel counts at the top — they show you exactly where prospects go cold."
   ],
-  "connects": "Sits in the <b>Growth</b> group, alongside application-links, apply, exam-links, exam-register, flyer, inquiries. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to apply, application-links, inquiries, waitlist. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "application-links",
    "apply",
-   "exam-links",
-   "exam-register",
-   "flyer",
-   "inquiries"
+   "application-links",
+   "inquiries",
+   "waitlist",
+   "onboarding",
+   "referrals"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "tutors": {
@@ -8404,15 +8204,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full read/write across every record.",
-   "tutor": "Read/write for the engagements they teach.",
-   "parent": "Only their own children appear.",
-   "learner": "Only their own record appears."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Solo or multi-tutor practice. Availability, subjects, hourly cost, timezone, specialisms.",
-  "detail": "Solo or multi-tutor practice. Availability, subjects, hourly cost, timezone, specialisms. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Solo or multi-tutor practice. Availability, subjects, hourly cost, timezone, specialisms. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner, admin and tutors do the data entry. Parents and learners only ever see their own linked records.",
   "why": "This is master data. If it is wrong here it is wrong everywhere downstream — bookings, invoices, analytics and reports all read from it.",
   "how": [
@@ -8421,18 +8221,16 @@
    "Click any row to open the full record, edit it inline, and save.",
    "Use <b>Export CSV</b> whenever you want a copy — the data belongs to the studio, not the platform."
   ],
-  "connects": "Sits in the <b>Core</b> group, alongside engagements, groups, learners, parents, subjects. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>People</b> in the menu, next to learners, parents, groups, engagements. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "engagements",
-   "groups",
    "learners",
    "parents",
-   "subjects"
+   "groups",
+   "engagements",
+   "subjects",
+   "family-links"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "value-added": {
@@ -8465,36 +8263,34 @@
    }
   ],
   "roleViews": {
-   "owner": "Studio-wide analysis and at-risk board.",
-   "tutor": "Their own learners.",
-   "parent": "The same analysis narrowed to their own child.",
-   "learner": "Their own progress only."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
-  "purpose": "Current average minus diagnostic baseline. The number parents actually buy.",
-  "detail": "Current average minus diagnostic baseline. The number parents actually buy. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
-  "audience": "Owner, admin and tutors see the full picture. A parent sees the same analysis narrowed to their own child.",
-  "why": "Parents pay for visible progress. These pages turn raw scores into an argument a parent can read, audit and trust.",
+  "purpose": "The studio's central commercial claim, recorded properly: the learner arrived at 42%, is now at 68%, and here is where each of those numbers came from. Every entry carries a baseline, the source of that baseline, a current score and optionally the score a typical learner would have reached in the same time. The value added is computed by the database, never typed.",
+  "detail": "The studio's central commercial claim, recorded properly: the learner arrived at 42%, is now at 68%, and here is where each of those numbers came from. Every entry carries a baseline, the source of that baseline, a current score and optionally the score a typical learner would have reached in the same time. The value added is computed by the database, never typed. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "audience": "Tutors and administrators enter the data. A family sees an entry only once it is ticked as published.",
+  "why": "\"They have improved\" is an opinion. \"They moved from 42% on their December school report to 68% on the March mock, against an expected 55%\" is evidence, and it is what justifies the fee at renewal time.",
   "how": [
-   "Select the learner, group or period you want to examine.",
-   "Read the headline numbers first, then open the charts underneath.",
-   "Every figure is a published formula, never a black box — open the methodology note to see the arithmetic.",
-   "Print or export the view and take it into a parent conference."
+   "Choose the learner, the subject and the period.",
+   "Enter the baseline and — this is required — say where the baseline came from. An unsourced baseline is not evidence.",
+   "Enter the current score. Add the expected score if you have a cohort figure; the value added is then measured against it rather than against the baseline.",
+   "Set your confidence honestly. A low-confidence figure you have labelled is more useful than a high-confidence figure you have not.",
+   "Tick <b>Visible to the family</b> only when you are happy for a parent to read it."
   ],
-  "connects": "Sits in the <b>Analytics</b> group, alongside analytics, at-risk, exam-targets, group-insights, insights, learner-360. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Draws on the Scoresheet for current scores and feeds Progress reports and Predicted grades.",
   "related": [
-   "analytics",
-   "at-risk",
-   "exam-targets",
-   "group-insights",
+   "scoresheet",
+   "progress-reports",
+   "learner-360",
    "insights",
-   "learner-360"
+   "analytics",
+   "group-insights"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "voting": {
@@ -8531,15 +8327,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Full access across every learner.",
+   "tutor": "Full access for the learners assigned to them.",
+   "parent": "Read-only, and only for their own children.",
+   "learner": "Read-only, and only their own record."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Anonymous or named studio polls with live tally. Multi-channel notify when a poll opens. Free, no AI.",
-  "detail": "Anonymous or named studio polls with live tally. Multi-channel notify when a poll opens. Free, no AI. The main actions available here are: <b>Create poll</b>, <b>Days of the week</b>, <b>Sign out</b>, <b>Theme</b>, <b>Yes / No</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
+  "detail": "Anonymous or named studio polls with live tally. Multi-channel notify when a poll opens. Free, no AI. What you can do here: <b>Create poll</b>, <b>Days of the week</b>, <b>Yes / No</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.",
   "audience": "Owner and admin. This is configuration and governance, not day-to-day teaching.",
   "why": "Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.",
   "how": [
@@ -8548,20 +8344,18 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Sits in the <b>Comms</b> group, alongside announcements, broadcasts, complaints, forum, inbox, messages. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Communication</b> in the menu, next to announcements, broadcasts, forum, polls. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "announcements",
    "broadcasts",
-   "complaints",
    "forum",
-   "inbox",
-   "messages"
+   "polls",
+   "surveys",
+   "complaints"
   ],
   "actions": [
    "Create poll",
    "Days of the week",
-   "Sign out",
-   "Theme",
    "Yes / No"
   ],
   "tabs": []
@@ -8600,15 +8394,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full pipeline and conversion figures.",
-   "tutor": "Usually read-only; may add notes after a trial.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Hold demand when a slot or group is full. Promote into an engagement with one click.",
-  "detail": "Hold demand when a slot or group is full. Promote into an engagement with one click. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Hold demand when a slot or group is full. Promote into an engagement with one click. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner and admin — this is business development. Families never see the pipeline.",
   "why": "Tutoring income is won or lost at the top of the funnel. Recording every enquiry means you can see which channel actually produces paying families.",
   "how": [
@@ -8617,19 +8411,16 @@
    "Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.",
    "Watch the funnel counts at the top — they show you exactly where prospects go cold."
   ],
-  "connects": "Sits in the <b>Growth</b> group, alongside application-links, apply, exam-links, exam-register, flyer, inquiries. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to apply, application-links, inquiries, trials. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "application-links",
    "apply",
-   "exam-links",
-   "exam-register",
-   "flyer",
-   "inquiries"
+   "application-links",
+   "inquiries",
+   "trials",
+   "onboarding",
+   "referrals"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  },
  "wallet": {
@@ -8666,15 +8457,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Full configuration control.",
-   "tutor": "No access.",
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
    "parent": "No access.",
    "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "A prepaid credit account for every family. A parent pays once for a block of lessons or a sum of money, and each attended session is drawn down from that balance automatically. Every movement is a permanent ledger row, so the balance is always the sum of its history and can never quietly drift.",
-  "detail": "A prepaid credit account for every family. A parent pays once for a block of lessons or a sum of money, and each attended session is drawn down from that balance automatically. Every movement is a permanent ledger row, so the balance is always the sum of its history and can never quietly drift. The main actions available here are: <b>Add credit</b>, <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "A prepaid credit account for every family. A parent pays once for a block of lessons or a sum of money, and each attended session is drawn down from that balance automatically. Every movement is a permanent ledger row, so the balance is always the sum of its history and can never quietly drift. What you can do here: <b>Add credit</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Owner, admin and staff can top up and inspect any family's wallet. A signed-in parent sees only their own balance and movements, enforced by row-level security in the database rather than by hiding a button.",
   "why": "Chasing an invoice after the lesson has already been taught is the weakest position a tutoring studio can be in. A prepaid wallet reverses the cash flow — the money arrives first and the teaching draws it down. It is the feature the market leader builds its entire billing around, and it is reported to lift monthly renewals by up to 42% because families top up before they run out instead of being chased afterwards.",
   "how": [
@@ -8688,17 +8479,15 @@
   ],
   "connects": "Deducts automatically from attendance.html. Feeds invoices.html and payment-plans.html. Balances appear to families in my-children.html. Thresholds are configured in settings.html.",
   "related": [
-   "about",
-   "activity-log",
-   "admin-data",
-   "approvals",
-   "cbt-results",
-   "change-password"
+   "invoices",
+   "payments",
+   "payment-history",
+   "payment-plans",
+   "packages",
+   "fees"
   ],
   "actions": [
-   "Add credit",
-   "Sign out",
-   "Theme"
+   "Add credit"
   ],
   "tabs": []
  },
@@ -8736,15 +8525,15 @@
    }
   ],
   "roleViews": {
-   "owner": "Every session in the studio.",
-   "tutor": "Their own timetable, attendance and notes.",
-   "parent": "Their child's classes, dates, times and amounts.",
-   "learner": "Their own upcoming and past classes."
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
+   "parent": "No access.",
+   "learner": "No access."
   },
   "tasks": [],
   "faqs": [],
   "purpose": "Free Excalidraw / Google Jamboard / FigJam links per engagement. Opens in a new tab.",
-  "detail": "Free Excalidraw / Google Jamboard / FigJam links per engagement. Opens in a new tab. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "detail": "Free Excalidraw / Google Jamboard / FigJam links per engagement. Opens in a new tab. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
   "audience": "Tutors run this day to day. Parents and learners see their own sessions and nothing else.",
   "why": "Attendance is what deducts hours from the hour bank, which is what justifies the invoice. Get this right and billing disputes disappear.",
   "how": [
@@ -8753,19 +8542,16 @@
    "Mark attendance — this is the step that deducts hours from the hour bank.",
    "Write session notes so the parent has a permanent record of what was actually taught."
   ],
-  "connects": "Sits in the <b>Sessions</b> group, alongside attendance, availability, bookings, calendar, cancellations, events. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.",
+  "connects": "Found under <b>Scheduling</b> in the menu, next to calendar, sessions, bookings, public-book. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
-   "attendance",
-   "availability",
-   "bookings",
    "calendar",
-   "cancellations",
-   "events"
+   "sessions",
+   "bookings",
+   "public-book",
+   "availability",
+   "attendance"
   ],
-  "actions": [
-   "Sign out",
-   "Theme"
-  ],
+  "actions": [],
   "tabs": []
  }
 };

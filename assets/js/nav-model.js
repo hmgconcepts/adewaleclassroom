@@ -1,0 +1,1035 @@
+/* ==========================================================================
+   nav-model.js — the canonical navigation menu.  GENERATED FILE.
+   --------------------------------------------------------------------------
+   Do not edit by hand. Edit tools/build_nav_model.py and re-run:
+
+       python3 tools/build_nav_model.py
+
+   This file is the single description of what is in the navigation pane, in
+   what order, under which heading, with which icon. assets/js/nav.js rebuilds
+   the pane from it on every role change, which is what makes the pane
+   deterministic: the same role always produces byte-identical markup.
+
+   Each item:
+     id    module id, also used by the page-access manager and saved views
+     href  the page
+     label what the user reads
+     icon  a glyph that means something (every item used to be a "•")
+     aud   pre-session audience hint: public | user | staff | admin
+           Used ONLY for the first paint, before the role is known, so the
+           pane never flashes the full administrator menu at a parent.
+           The real decision is RBAC.level(href, role).
+   ========================================================================== */
+(function (w) {
+  'use strict';
+  w.TC_NAV_MODEL = [
+  {
+    "icon": "🏠",
+    "title": "My studio",
+    "items": [
+      {
+        "id": "dashboard",
+        "href": "dashboard.html",
+        "label": "Dashboard",
+        "icon": "🏠",
+        "aud": "user"
+      },
+      {
+        "id": "profile",
+        "href": "profile.html",
+        "label": "My profile",
+        "icon": "👤",
+        "aud": "user"
+      },
+      {
+        "id": "notifications",
+        "href": "notifications.html",
+        "label": "Notifications",
+        "icon": "🔔",
+        "aud": "user"
+      },
+      {
+        "id": "inbox",
+        "href": "inbox.html",
+        "label": "Inbox",
+        "icon": "📥",
+        "aud": "user"
+      },
+      {
+        "id": "messages",
+        "href": "messages.html",
+        "label": "Messaging (WA / Email / SMS)",
+        "icon": "💬",
+        "aud": "staff"
+      },
+      {
+        "id": "change_password",
+        "href": "change-password.html",
+        "label": "Change password",
+        "icon": "🔑",
+        "aud": "user"
+      },
+      {
+        "id": "install",
+        "href": "install.html",
+        "label": "Install the app",
+        "icon": "📲",
+        "aud": "public"
+      }
+    ]
+  },
+  {
+    "icon": "👥",
+    "title": "People",
+    "items": [
+      {
+        "id": "learners",
+        "href": "learners.html",
+        "label": "Learners",
+        "icon": "🎓",
+        "aud": "staff"
+      },
+      {
+        "id": "parents",
+        "href": "parents.html",
+        "label": "Parents & guardians",
+        "icon": "👪",
+        "aud": "staff"
+      },
+      {
+        "id": "tutors",
+        "href": "tutors.html",
+        "label": "Tutors",
+        "icon": "🧑‍🏫",
+        "aud": "staff"
+      },
+      {
+        "id": "groups",
+        "href": "groups.html",
+        "label": "Groups & cohorts",
+        "icon": "👥",
+        "aud": "staff"
+      },
+      {
+        "id": "engagements",
+        "href": "engagements.html",
+        "label": "Engagements",
+        "icon": "🤝",
+        "aud": "staff"
+      },
+      {
+        "id": "subjects",
+        "href": "subjects.html",
+        "label": "Subjects",
+        "icon": "📘",
+        "aud": "staff"
+      },
+      {
+        "id": "family_links",
+        "href": "family-links.html",
+        "label": "Parent–child links",
+        "icon": "🔗",
+        "aud": "staff"
+      },
+      {
+        "id": "my_children",
+        "href": "my-children.html",
+        "label": "My children",
+        "icon": "🧒",
+        "aud": "user"
+      },
+      {
+        "id": "directory",
+        "href": "directory.html",
+        "label": "Directory",
+        "icon": "📇",
+        "aud": "staff"
+      },
+      {
+        "id": "idcards",
+        "href": "idcards.html",
+        "label": "Learner cards",
+        "icon": "🪪",
+        "aud": "staff"
+      },
+      {
+        "id": "birthdays",
+        "href": "birthdays.html",
+        "label": "Birthdays",
+        "icon": "🎂",
+        "aud": "staff"
+      }
+    ]
+  },
+  {
+    "icon": "🗓️",
+    "title": "Scheduling",
+    "items": [
+      {
+        "id": "calendar",
+        "href": "calendar.html",
+        "label": "Calendar",
+        "icon": "📅",
+        "aud": "user"
+      },
+      {
+        "id": "sessions",
+        "href": "sessions.html",
+        "label": "Sessions",
+        "icon": "🗒️",
+        "aud": "staff"
+      },
+      {
+        "id": "bookings",
+        "href": "bookings.html",
+        "label": "Cycle bookings",
+        "icon": "📆",
+        "aud": "user"
+      },
+      {
+        "id": "public_book",
+        "href": "public-book.html",
+        "label": "Public self-booking",
+        "icon": "🌍",
+        "aud": "public"
+      },
+      {
+        "id": "availability",
+        "href": "availability.html",
+        "label": "Availability",
+        "icon": "⏱️",
+        "aud": "staff"
+      },
+      {
+        "id": "attendance",
+        "href": "attendance.html",
+        "label": "Attendance",
+        "icon": "✅",
+        "aud": "staff"
+      },
+      {
+        "id": "session_complete",
+        "href": "session-complete.html",
+        "label": "Complete a class",
+        "icon": "🏁",
+        "aud": "staff"
+      },
+      {
+        "id": "session_notes",
+        "href": "session-notes.html",
+        "label": "Session notes",
+        "icon": "📝",
+        "aud": "staff"
+      },
+      {
+        "id": "makeups",
+        "href": "makeups.html",
+        "label": "Make-up sessions",
+        "icon": "🔄",
+        "aud": "staff"
+      },
+      {
+        "id": "makeup_credits",
+        "href": "makeup-credits.html",
+        "label": "Makeup credit bank",
+        "icon": "🎟️",
+        "aud": "user"
+      },
+      {
+        "id": "cancellations",
+        "href": "cancellations.html",
+        "label": "Cancellations",
+        "icon": "🚫",
+        "aud": "staff"
+      },
+      {
+        "id": "meetings",
+        "href": "meetings.html",
+        "label": "Meeting links",
+        "icon": "🔗",
+        "aud": "staff"
+      },
+      {
+        "id": "whiteboard",
+        "href": "whiteboard.html",
+        "label": "Whiteboard rooms",
+        "icon": "🖊️",
+        "aud": "staff"
+      },
+      {
+        "id": "reminders",
+        "href": "reminders.html",
+        "label": "Lesson reminders + calendar",
+        "icon": "⏰",
+        "aud": "user"
+      },
+      {
+        "id": "rooms",
+        "href": "rooms.html",
+        "label": "Rooms / locations",
+        "icon": "🏫",
+        "aud": "staff"
+      },
+      {
+        "id": "substitutions",
+        "href": "substitutions.html",
+        "label": "Cover tutors",
+        "icon": "🔁",
+        "aud": "staff"
+      },
+      {
+        "id": "timezones",
+        "href": "timezones.html",
+        "label": "Timezone desk",
+        "icon": "🌐",
+        "aud": "staff"
+      },
+      {
+        "id": "events",
+        "href": "events.html",
+        "label": "Workshops & events",
+        "icon": "🎪",
+        "aud": "staff"
+      }
+    ]
+  },
+  {
+    "icon": "📚",
+    "title": "Teaching",
+    "items": [
+      {
+        "id": "curriculum",
+        "href": "curriculum.html",
+        "label": "Curriculum maps",
+        "icon": "🗺️",
+        "aud": "staff"
+      },
+      {
+        "id": "sow",
+        "href": "sow.html",
+        "label": "Scheme of work",
+        "icon": "📋",
+        "aud": "staff"
+      },
+      {
+        "id": "lesson_plans",
+        "href": "lesson-plans.html",
+        "label": "Lesson plans",
+        "icon": "📄",
+        "aud": "staff"
+      },
+      {
+        "id": "methodologies",
+        "href": "methodologies.html",
+        "label": "Methodologies",
+        "icon": "🧭",
+        "aud": "staff"
+      },
+      {
+        "id": "diagnostics",
+        "href": "diagnostics.html",
+        "label": "Diagnostics",
+        "icon": "🩺",
+        "aud": "staff"
+      },
+      {
+        "id": "goals",
+        "href": "goals.html",
+        "label": "Goals & learning plans",
+        "icon": "🎯",
+        "aud": "staff"
+      },
+      {
+        "id": "mastery",
+        "href": "mastery.html",
+        "label": "Topic mastery",
+        "icon": "🧩",
+        "aud": "staff"
+      },
+      {
+        "id": "assignments",
+        "href": "assignments.html",
+        "label": "Homework",
+        "icon": "📌",
+        "aud": "staff"
+      },
+      {
+        "id": "classwork",
+        "href": "classwork.html",
+        "label": "Classwork",
+        "icon": "✏️",
+        "aud": "user"
+      },
+      {
+        "id": "reading",
+        "href": "reading.html",
+        "label": "Reading assignments",
+        "icon": "📖",
+        "aud": "user"
+      },
+      {
+        "id": "stream",
+        "href": "stream.html",
+        "label": "Class stream",
+        "icon": "📢",
+        "aud": "user"
+      },
+      {
+        "id": "rubrics",
+        "href": "rubrics.html",
+        "label": "Rubrics",
+        "icon": "📏",
+        "aud": "staff"
+      },
+      {
+        "id": "accommodations",
+        "href": "accommodations.html",
+        "label": "Accommodations / SEN",
+        "icon": "♿",
+        "aud": "staff"
+      },
+      {
+        "id": "learning_styles",
+        "href": "learning-styles.html",
+        "label": "Learning styles",
+        "icon": "🧠",
+        "aud": "staff"
+      },
+      {
+        "id": "study_log",
+        "href": "study-log.html",
+        "label": "Study log / timer",
+        "icon": "⏳",
+        "aud": "user"
+      },
+      {
+        "id": "flashcards",
+        "href": "flashcards.html",
+        "label": "Spaced practice",
+        "icon": "🃏",
+        "aud": "staff"
+      },
+      {
+        "id": "gamification",
+        "href": "gamification.html",
+        "label": "Streaks & badges",
+        "icon": "🏅",
+        "aud": "staff"
+      }
+    ]
+  },
+  {
+    "icon": "🧪",
+    "title": "Quizzes & CBT",
+    "items": [
+      {
+        "id": "practice",
+        "href": "practice.html",
+        "label": "Quizzes — Self / Review / Graded",
+        "icon": "🧪",
+        "aud": "user"
+      },
+      {
+        "id": "cbt_exam",
+        "href": "cbt-exam.html",
+        "label": "Take a quiz",
+        "icon": "▶️",
+        "aud": "public"
+      },
+      {
+        "id": "cbt_review",
+        "href": "cbt-review.html",
+        "label": "Review my paper",
+        "icon": "🔍",
+        "aud": "user"
+      },
+      {
+        "id": "cbt_multi",
+        "href": "cbt-multi.html",
+        "label": "Multi-subject CBT builder",
+        "icon": "🧮",
+        "aud": "staff"
+      },
+      {
+        "id": "cbt_prompts",
+        "href": "cbt-prompts.html",
+        "label": "Question bank prompts",
+        "icon": "💡",
+        "aud": "staff"
+      },
+      {
+        "id": "cbt_results",
+        "href": "cbt-results.html",
+        "label": "CBT results & audit",
+        "icon": "📊",
+        "aud": "staff"
+      },
+      {
+        "id": "exam_targets",
+        "href": "exam-targets.html",
+        "label": "Exam targets",
+        "icon": "🎯",
+        "aud": "staff"
+      },
+      {
+        "id": "exam_register",
+        "href": "exam-register.html",
+        "label": "Exam registration",
+        "icon": "🖊️",
+        "aud": "public"
+      },
+      {
+        "id": "exam_links",
+        "href": "exam-links.html",
+        "label": "Exam registration links",
+        "icon": "🔗",
+        "aud": "staff"
+      }
+    ]
+  },
+  {
+    "icon": "📈",
+    "title": "Progress & analytics",
+    "items": [
+      {
+        "id": "scoresheet",
+        "href": "scoresheet.html",
+        "label": "Scoresheet",
+        "icon": "🧾",
+        "aud": "user"
+      },
+      {
+        "id": "progress_reports",
+        "href": "progress-reports.html",
+        "label": "Progress reports",
+        "icon": "📄",
+        "aud": "user"
+      },
+      {
+        "id": "learner_360",
+        "href": "learner-360.html",
+        "label": "Learner 360",
+        "icon": "🔭",
+        "aud": "user"
+      },
+      {
+        "id": "insights",
+        "href": "insights.html",
+        "label": "Insights Lab",
+        "icon": "🔬",
+        "aud": "user"
+      },
+      {
+        "id": "analytics",
+        "href": "analytics.html",
+        "label": "Practice analytics",
+        "icon": "📈",
+        "aud": "staff"
+      },
+      {
+        "id": "group_insights",
+        "href": "group-insights.html",
+        "label": "Group insights",
+        "icon": "👨‍👩‍👧‍👦",
+        "aud": "staff"
+      },
+      {
+        "id": "at_risk",
+        "href": "at-risk.html",
+        "label": "At-risk board",
+        "icon": "⚠️",
+        "aud": "staff"
+      },
+      {
+        "id": "predictions",
+        "href": "predictions.html",
+        "label": "Predicted grades",
+        "icon": "🔮",
+        "aud": "staff"
+      },
+      {
+        "id": "value_added",
+        "href": "value-added.html",
+        "label": "Value-added",
+        "icon": "📐",
+        "aud": "staff"
+      },
+      {
+        "id": "transcripts",
+        "href": "transcripts.html",
+        "label": "Transcripts",
+        "icon": "🗃️",
+        "aud": "user"
+      },
+      {
+        "id": "certificates",
+        "href": "certificates.html",
+        "label": "Certificates",
+        "icon": "🏆",
+        "aud": "user"
+      },
+      {
+        "id": "portfolio",
+        "href": "portfolio.html",
+        "label": "Learner portfolio",
+        "icon": "🗂️",
+        "aud": "user"
+      }
+    ]
+  },
+  {
+    "icon": "📖",
+    "title": "Resources",
+    "items": [
+      {
+        "id": "resources",
+        "href": "resources.html",
+        "label": "Resource library",
+        "icon": "📚",
+        "aud": "staff"
+      },
+      {
+        "id": "library",
+        "href": "library.html",
+        "label": "Digital library",
+        "icon": "🏛️",
+        "aud": "staff"
+      },
+      {
+        "id": "lms",
+        "href": "lms.html",
+        "label": "Mini LMS",
+        "icon": "💻",
+        "aud": "staff"
+      },
+      {
+        "id": "eresources",
+        "href": "eresources.html",
+        "label": "E-resources / notes",
+        "icon": "🗒️",
+        "aud": "staff"
+      }
+    ]
+  },
+  {
+    "icon": "🎁",
+    "title": "Free & outreach classes",
+    "items": [
+      {
+        "id": "free_classes",
+        "href": "free-classes.html",
+        "label": "Free class cohorts",
+        "icon": "🎁",
+        "aud": "staff"
+      },
+      {
+        "id": "free_register",
+        "href": "free-register.html",
+        "label": "Free class sign-up",
+        "icon": "🖊️",
+        "aud": "public"
+      }
+    ]
+  },
+  {
+    "icon": "💳",
+    "title": "Money",
+    "items": [
+      {
+        "id": "invoices",
+        "href": "invoices.html",
+        "label": "Invoices",
+        "icon": "🧾",
+        "aud": "user"
+      },
+      {
+        "id": "payments",
+        "href": "payments.html",
+        "label": "Payments",
+        "icon": "💵",
+        "aud": "staff"
+      },
+      {
+        "id": "payment_history",
+        "href": "payment-history.html",
+        "label": "Payment history",
+        "icon": "🕓",
+        "aud": "user"
+      },
+      {
+        "id": "payment_plans",
+        "href": "payment-plans.html",
+        "label": "Payment plans",
+        "icon": "📑",
+        "aud": "staff"
+      },
+      {
+        "id": "wallet",
+        "href": "wallet.html",
+        "label": "Prepaid wallet",
+        "icon": "👛",
+        "aud": "user"
+      },
+      {
+        "id": "packages",
+        "href": "packages.html",
+        "label": "Hour banks",
+        "icon": "⏲️",
+        "aud": "staff"
+      },
+      {
+        "id": "fees",
+        "href": "fees.html",
+        "label": "Fee catalogue",
+        "icon": "🏷️",
+        "aud": "staff"
+      },
+      {
+        "id": "products",
+        "href": "products.html",
+        "label": "Books & materials",
+        "icon": "📦",
+        "aud": "staff"
+      },
+      {
+        "id": "scholarships",
+        "href": "scholarships.html",
+        "label": "Scholarships & discounts",
+        "icon": "🎓",
+        "aud": "staff"
+      },
+      {
+        "id": "finance",
+        "href": "finance.html",
+        "label": "Practice finance",
+        "icon": "📊",
+        "aud": "admin"
+      },
+      {
+        "id": "payroll",
+        "href": "payroll.html",
+        "label": "Tutor payroll",
+        "icon": "💼",
+        "aud": "admin"
+      }
+    ]
+  },
+  {
+    "icon": "📣",
+    "title": "Communication",
+    "items": [
+      {
+        "id": "announcements",
+        "href": "announcements.html",
+        "label": "Announcements",
+        "icon": "📣",
+        "aud": "user"
+      },
+      {
+        "id": "broadcasts",
+        "href": "broadcasts.html",
+        "label": "Result broadcasts",
+        "icon": "📡",
+        "aud": "staff"
+      },
+      {
+        "id": "forum",
+        "href": "forum.html",
+        "label": "Group forum",
+        "icon": "🗣️",
+        "aud": "user"
+      },
+      {
+        "id": "polls",
+        "href": "polls.html",
+        "label": "Polls",
+        "icon": "📊",
+        "aud": "staff"
+      },
+      {
+        "id": "voting",
+        "href": "voting.html",
+        "label": "Voting & polls",
+        "icon": "🗳️",
+        "aud": "user"
+      },
+      {
+        "id": "surveys",
+        "href": "surveys.html",
+        "label": "Surveys & CSAT",
+        "icon": "📝",
+        "aud": "user"
+      },
+      {
+        "id": "complaints",
+        "href": "complaints.html",
+        "label": "Complaints",
+        "icon": "❗",
+        "aud": "user"
+      },
+      {
+        "id": "helpdesk",
+        "href": "helpdesk.html",
+        "label": "Help desk",
+        "icon": "🎧",
+        "aud": "user"
+      },
+      {
+        "id": "parent_meetings",
+        "href": "parent-meetings.html",
+        "label": "Parent conferences",
+        "icon": "🤝",
+        "aud": "staff"
+      },
+      {
+        "id": "gallery",
+        "href": "gallery.html",
+        "label": "Gallery",
+        "icon": "🖼️",
+        "aud": "staff"
+      },
+      {
+        "id": "reviews",
+        "href": "reviews.html",
+        "label": "Reviews & testimonials",
+        "icon": "⭐",
+        "aud": "staff"
+      }
+    ]
+  },
+  {
+    "icon": "✉️",
+    "title": "Enrolment & growth",
+    "items": [
+      {
+        "id": "apply",
+        "href": "apply.html",
+        "label": "Request a place",
+        "icon": "✉️",
+        "aud": "public"
+      },
+      {
+        "id": "application_links",
+        "href": "application-links.html",
+        "label": "Application links",
+        "icon": "🔗",
+        "aud": "admin"
+      },
+      {
+        "id": "inquiries",
+        "href": "inquiries.html",
+        "label": "Inquiries",
+        "icon": "📨",
+        "aud": "staff"
+      },
+      {
+        "id": "trials",
+        "href": "trials.html",
+        "label": "Trial lessons",
+        "icon": "🎬",
+        "aud": "staff"
+      },
+      {
+        "id": "waitlist",
+        "href": "waitlist.html",
+        "label": "Waitlist",
+        "icon": "⏳",
+        "aud": "staff"
+      },
+      {
+        "id": "onboarding",
+        "href": "onboarding.html",
+        "label": "Onboarding checklists",
+        "icon": "🧳",
+        "aud": "staff"
+      },
+      {
+        "id": "referrals",
+        "href": "referrals.html",
+        "label": "Referrals",
+        "icon": "🎁",
+        "aud": "staff"
+      }
+    ]
+  },
+  {
+    "icon": "🗂️",
+    "title": "Records & compliance",
+    "items": [
+      {
+        "id": "documents",
+        "href": "documents.html",
+        "label": "Contracts & consent",
+        "icon": "📃",
+        "aud": "staff"
+      },
+      {
+        "id": "policies",
+        "href": "policies.html",
+        "label": "Policies",
+        "icon": "📕",
+        "aud": "staff"
+      },
+      {
+        "id": "compliance",
+        "href": "compliance.html",
+        "label": "Compliance",
+        "icon": "☑️",
+        "aud": "admin"
+      },
+      {
+        "id": "safeguarding",
+        "href": "safeguarding.html",
+        "label": "Safeguarding log",
+        "icon": "🛡️",
+        "aud": "admin"
+      },
+      {
+        "id": "security_centre",
+        "href": "security-centre.html",
+        "label": "Security & compliance",
+        "icon": "🔒",
+        "aud": "admin"
+      },
+      {
+        "id": "approvals",
+        "href": "approvals.html",
+        "label": "Approvals",
+        "icon": "👍",
+        "aud": "admin"
+      },
+      {
+        "id": "activity_log",
+        "href": "activity-log.html",
+        "label": "Activity log",
+        "icon": "📜",
+        "aud": "admin"
+      },
+      {
+        "id": "leave",
+        "href": "leave.html",
+        "label": "Tutor leave",
+        "icon": "🌴",
+        "aud": "staff"
+      }
+    ]
+  },
+  {
+    "icon": "⚙️",
+    "title": "Administration",
+    "items": [
+      {
+        "id": "settings",
+        "href": "settings.html",
+        "label": "Settings",
+        "icon": "⚙️",
+        "aud": "admin"
+      },
+      {
+        "id": "admin_data",
+        "href": "admin-data.html",
+        "label": "Admin data",
+        "icon": "🗄️",
+        "aud": "admin"
+      },
+      {
+        "id": "storage",
+        "href": "storage.html",
+        "label": "Storage manager",
+        "icon": "💾",
+        "aud": "admin"
+      },
+      {
+        "id": "platform_health",
+        "href": "platform-health.html",
+        "label": "Platform health",
+        "icon": "💚",
+        "aud": "admin"
+      },
+      {
+        "id": "status_manager",
+        "href": "status-manager.html",
+        "label": "Roles & status",
+        "icon": "🎚️",
+        "aud": "admin"
+      },
+      {
+        "id": "license",
+        "href": "license.html",
+        "label": "Site license",
+        "icon": "📜",
+        "aud": "admin"
+      }
+    ]
+  },
+  {
+    "icon": "🌐",
+    "title": "HMG Concepts",
+    "items": [
+      {
+        "id": "hmg_products",
+        "href": "hmg-products.html",
+        "label": "HMG Digital Products",
+        "icon": "🛍️",
+        "aud": "public"
+      },
+      {
+        "id": "hmg_ecosystem",
+        "href": "hmg-ecosystem.html",
+        "label": "HMG Ecosystem",
+        "icon": "🌐",
+        "aud": "public"
+      }
+    ]
+  },
+  {
+    "icon": "❓",
+    "title": "Help & information",
+    "items": [
+      {
+        "id": "feature_guide",
+        "href": "feature-guide.html",
+        "label": "Feature guide",
+        "icon": "📘",
+        "aud": "public"
+      },
+      {
+        "id": "site_index",
+        "href": "site-index.html",
+        "label": "All pages A–Z",
+        "icon": "🔤",
+        "aud": "public"
+      },
+      {
+        "id": "about",
+        "href": "about.html",
+        "label": "About the studio",
+        "icon": "ℹ️",
+        "aud": "public"
+      },
+      {
+        "id": "contact",
+        "href": "contact.html",
+        "label": "Contact",
+        "icon": "📞",
+        "aud": "public"
+      },
+      {
+        "id": "developer",
+        "href": "developer.html",
+        "label": "About the developer",
+        "icon": "🧑‍💻",
+        "aud": "public"
+      },
+      {
+        "id": "flyer",
+        "href": "flyer.html",
+        "label": "Printable flyer",
+        "icon": "🖨️",
+        "aud": "public"
+      }
+    ]
+  }
+];
+  w.TC_NAV_MODEL_VERSION = 'V25';
+})(window);

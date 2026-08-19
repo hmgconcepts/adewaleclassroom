@@ -817,10 +817,52 @@ const App = {
     } catch (_) {}
   },
 
+  /* ------------------------------------------------------------------
+     applyRoleNav — now a THIN WRAPPER around TCNav.render().
+
+     This method used to own the navigation pane: it appended missing links,
+     re-sorted them, injected the search box and then walked every <a> setting
+     style.display from its own rules. rbac.js did the same job from a
+     different matrix a moment later. The two disagreed, and whichever ran
+     last won — which is precisely why the reported menu "kept changing" and
+     why a public page could show a parent the administrator's links.
+
+     There is now ONE renderer (assets/js/nav.js) driven by ONE model
+     (assets/js/nav-model.js). Everything below is about the PAGE, not the
+     pane; the pane is handed over in a single call.
+     ------------------------------------------------------------------ */
   applyRoleNav(role) {
     document.body.dataset.roleReady = '1';
     document.body.dataset.currentRole = String(role || '').toLowerCase();
     document.body.dataset.role = String(role || '').toLowerCase();
+
+    if (window.TCNav) {
+      window.TCNav.rememberRole(role);
+      window.TCNav.render(role);
+    } else {
+      /* nav.js absent — a generated studio built before V25, or a page that
+         omits the script. Fall back to the legacy in-place filter so the pane
+         is still usable rather than unfiltered. */
+      this.legacyRoleNav(role);
+    }
+
+    this.applyVisibilityTokens(role);
+
+    /* Tell rbac.js the role is known, so it can block a page this role may
+       not open and drop read-only pages into view-only mode. nav.js listens
+       for the same event and re-renders the pane. */
+    try {
+      document.dispatchEvent(new CustomEvent('tc:role', { detail: role }));
+    } catch (e) {}
+
+    this.enforceCurrentPageAccess(role);
+    this.refreshCurrentCrudAfterRole(role);
+    this.paintUser();
+  },
+
+  /* Kept only for studios generated before V25. Never runs when nav.js is
+     present, because two things filtering one pane is the bug. */
+  legacyRoleNav(role) {
     this.ensureEssentialNav();
     this.normalizeNavOrder();
     this.markActiveNav();
@@ -839,30 +881,11 @@ const App = {
         const visible = navShowMap[this.normalizeModuleId(moduleId)].some(r => roles.has(r));
         if (!visible) ok = false;
       }
-      if (isAdmin) {
-        el.style.display = '';
-        el.dataset.navRoleHidden = '0';
-      } else {
-        el.style.display = ok ? '' : 'none';
-        el.dataset.navRoleHidden = ok ? '0' : '1';
-      }
+      if (isAdmin) { el.style.display = ''; el.dataset.navRoleHidden = '0'; }
+      else { el.style.display = ok ? '' : 'none'; el.dataset.navRoleHidden = ok ? '0' : '1'; }
     });
-    this.applyVisibilityTokens(role);
     this.ensureNavNotBlank(role);
-    /* Tell rbac.js the role is known, so it can hide pages this role may not
-       reach and drop read-only pages into view-only mode. */
-    try {
-      document.dispatchEvent(new CustomEvent('tc:role', { detail: role }));
-    } catch (e) {}
-    /* BUG FIX 2 — collapse section headings that have no visible links.
-       Without this a parent (who can reach very few pages) sees a column
-       of headings with nothing underneath: the "empty spaces and gaps"
-       reported before the first item. Guarded because the role filter can
-       run before the search box has been injected. */
     try { if (this._syncNavSections) this._syncNavSections(); } catch (e) {}
-    this.enforceCurrentPageAccess(role);
-    this.refreshCurrentCrudAfterRole(role);
-    this.paintUser();
   },
 
   applyVisibilityTokens(role) {
@@ -1027,7 +1050,23 @@ const App = {
     }
   },
 
+  /* Reads the canonical model, not the DOM.
+
+     The old version walked .app-nav, so the owner's Page Access manager only
+     ever listed the pages the OWNER's own pane happened to be showing at that
+     moment. Pages hidden by a previous override became unreachable: they were
+     not in the table, so the override could never be undone. */
   collectAccessRows() {
+    if (window.TCNav && window.TCNav.allItems) {
+      return window.TCNav.allItems().map(i => ({
+        id: i.id,
+        label: i.label,
+        href: i.href,
+        section: i.section,
+        allow: i.aud === 'admin' ? 'admin'
+             : i.aud === 'staff' ? 'admin tutor staff' : 'any'
+      })).sort((a, b) => (a.section + a.label).localeCompare(b.section + b.label));
+    }
     const seen = new Map();
     document.querySelectorAll('.app-nav a[data-module-id], .app-nav a[data-module]').forEach(a => {
       const id = this.normalizeModuleId(a.getAttribute('data-module-id') || a.getAttribute('data-module') || a.getAttribute('href'));
@@ -1252,6 +1291,15 @@ const App = {
   signOut() {
     const supabase = window.sb || this.sb || null;
     try { localStorage.removeItem('tc-cached-profile'); localStorage.removeItem('tc-last-role'); } catch (_) {}
+    /* Drop the cached navigation role too.
+
+       nav.js caches the resolved role so the NEXT page paints the correct menu
+       immediately instead of flashing the administrator's. That cache has to
+       die with the session, or the next person to use this browser — a shared
+       family laptop, a cyber-café machine — opens the studio and sees the
+       previous user's menu until their own session resolves. */
+    try { if (window.TCNav) window.TCNav.forgetRole(); } catch (_) {}
+    try { document.dispatchEvent(new CustomEvent('tc:signout')); } catch (_) {}
     try { if (window.SecurityGuard) SecurityGuard.audit('logout'); } catch (_) {}
     if (!supabase) { location.href = 'login.html'; return; }
     supabase.auth.signOut().then(() => { location.href = 'login.html'; });

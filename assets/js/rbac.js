@@ -81,9 +81,6 @@
     'timezones',
     'portfolio',
     'transcripts',
-    'value-added',
-    'predictions',
-    'at-risk',
     'learning-styles',
     'accommodations',
     'makeups',             // may see a rescheduled class
@@ -135,6 +132,18 @@
   /* Explicitly denied to BOTH families, whatever else happens. Named because
      these were the ones actually reported as leaking. */
   var FAMILY_DENY = [
+    /* V25 — at-risk, predictions and value-added moved here from FAMILY_READ.
+       They used to be family-readable because they were read-only analytics
+       pages. They are not any more: each now carries a staff entry desk that
+       records the EVIDENCE and the INTERNAL ACTION behind a judgement —
+       "3 no-shows, mother unreachable", "predicted a C, do not tell them yet".
+       That is a professional working note, not a parent-facing figure.
+
+       The family still gets the conclusion, and gets it deliberately: a
+       value-added entry or a predicted grade reaches a parent only when it is
+       ticked as published, at which point it appears on the Progress report
+       and on Learner 360. Publication is an act, not a side effect. */
+    'at-risk', 'predictions', 'value-added',
     'sessions', 'session-complete', 'practice', 'exam-targets', 'idcards',
     'makeup-credits',
     'learners', 'engagements', 'groups', 'tutors', 'parents', 'subjects',
@@ -297,24 +306,28 @@
 
       var d = w.document;
 
-      // 1. Navigation: hide anything this role may not reach.
-      var nav = d.querySelector('.app-nav');
-      if (nav) {
-        nav.querySelectorAll('a[href]').forEach(function (a) {
-          var href = a.getAttribute('href') || '';
-          if (!/\.html$/.test(href)) return;
-          if (!RBAC.canSee(href, role)) {
-            a.style.display = 'none';
-            a.dataset.navRoleHidden = '1';
-          } else if (RBAC.level(href, role) === 'read') {
-            // A quiet cue, so a parent is not surprised when Save is missing.
-            if (!a.dataset.roView) {
-              a.dataset.roView = '1';
-              a.setAttribute('title', 'You can view this page');
-            }
-          }
-        });
-        try { if (w.App && w.App._syncNavSections) w.App._syncNavSections(); } catch (e) {}
+      /* 1. Navigation.
+
+         This block used to walk .app-nav and hide links. It no longer does,
+         and that removal IS the fix for the reported defect "the pages on the
+         navigation pane keep changing when the pane is accessed".
+
+         Two systems were mutating the same elements from two different rule
+         sets — this one, and App.applyRoleNav. RBAC only ever hid; App re-showed
+         whatever its own rules allowed. Whichever ran last won, and which ran
+         last depended on how fast the session resolved, so the menu genuinely
+         differed between page loads for the same account.
+
+         The pane now has exactly one owner: assets/js/nav.js, which rebuilds
+         it from assets/js/nav-model.js. It calls RBAC.level() for every item,
+         so THIS matrix is still the authority on who may see what — it simply
+         is no longer a second hand reaching into the DOM.
+
+         nav.js listens for the same 'tc:role' event that got us here, so the
+         pane is already being redrawn as this runs. The call below is a
+         safety net for the polling path, where no event was dispatched. */
+      if (w.TCNav && typeof w.TCNav.render === 'function') {
+        try { w.TCNav.rememberRole(role); w.TCNav.render(role); } catch (e) {}
       }
 
       // 2. This page: block entry, or drop to read-only.
