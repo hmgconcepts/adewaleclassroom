@@ -4,9 +4,9 @@
 <script src="assets/js/auth-guard.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Makeup credit bank • ADEWALE CLASSROOM</title>
+<title>Free class cohorts • ADEWALE CLASSROOM</title>
 <meta name="robots" content="noindex,nofollow">
-<meta name="description" content="When the studio cancels, the family earns a credit on that engagement. Spent on a makeup. Never smeared across siblings.">
+<meta name="description" content="Six transparent rules. No AI.">
 <meta name="theme-color" content="#0506ae">
 <meta name="author" content="HMG Technologies · HMG Concepts">
 <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
@@ -14,8 +14,8 @@
 <link rel="apple-touch-icon" href="assets/img/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;800&display=swap" rel="stylesheet">
-<meta property="og:title" content="Makeup credit bank • ADEWALE CLASSROOM">
-<meta property="og:description" content="When the studio cancels, the family earns a credit on that engagement. Spent on a makeup. Never smeared across siblings.">
+<meta property="og:title" content="At-risk board • ADEWALE CLASSROOM">
+<meta property="og:description" content="Six transparent rules. No AI.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="assets/css/style.css">
@@ -96,7 +96,7 @@
   <div class="app-main">
     <header class="app-topbar">
       <button class="mobile-toggle" type="button" aria-label="Menu">☰</button>
-      <h1 class="app-page-title">Makeup credit bank</h1>
+      <h1 class="app-page-title">Free class cohorts</h1>
       <div class="user-chip"><strong id="user-display-name" data-user-name></strong>
         <span id="user-display-role" data-user-role></span>
         <button class="btn btn-sm btn-ghost" id="btn-dark" type="button">Theme</button>
@@ -104,53 +104,23 @@
     </header>
     <main class="app-content">
       <section class="help-card page-intro">
-        <div class="page-intro-head"><strong>Makeup credit bank</strong><span class="page-intro-badge" style="background:#0506ae">👪 Family view</span></div>
-        <p class="page-intro-what">When the studio cancels, the family earns a credit on that engagement. Spent on a makeup. Never smeared across siblings. What you can do here: <b>Post to ledger</b>. Requires sign-in. Parents see only their own children; a learner sees only themselves. Row Level Security enforces this in the database, not just in the interface.</p>
-        <p class="page-intro-who"><b>Who it is for.</b> Tutors run this day to day. Parents and learners see their own sessions and nothing else.</p>
-        <p class="page-intro-why"><b>Why it matters.</b> Attendance is what deducts hours from the hour bank, which is what justifies the invoice. Get this right and billing disputes disappear.</p>
-        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Choose the date range or the engagement you are working on.</li><li>Create or open a session and set the date, time, duration and tutor.</li><li>Mark attendance — this is the step that deducts hours from the hour bank.</li><li>Write session notes so the parent has a permanent record of what was actually taught.</li></ol></details>
-        <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access across every learner.</li><li><b>Tutor:</b> Full access for the learners assigned to them.</li><li><b>Parent:</b> Read-only, and only for their own children.</li><li><b>Learner:</b> Read-only, and only their own record.</li></ul></details>
-        <p class="page-intro-rel"><b>Related:</b> <a href="calendar.html">calendar</a> · <a href="sessions.html">sessions</a> · <a href="bookings.html">bookings</a> · <a href="public-book.html">public book</a> · <a href="availability.html">availability</a> · <a href="attendance.html">attendance</a></p>
+        <div class="page-intro-head"><strong>Free class cohorts</strong><span class="page-intro-badge" style="background:#334155">🎓 Staff only</span></div>
+        <p class="page-intro-what">Runs the studio's free outreach programmes — the JAMB bootcamp on YouTube, the WAEC clinic on Zoom, the IELTS drop-in on Google Meet — end to end. Create a cohort, attach the meeting link, the replay link and the WhatsApp or Telegram group, generate a shareable registration link, and then track attendance, quiz results and who is worth converting into a paying learner. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.</p>
+        <p class="page-intro-who"><b>Who it is for.</b> Tutors and administrators. Registrants themselves never see this page; they see the public sign-up page.</p>
+        <p class="page-intro-why"><b>Why it matters.</b> Free students are not paying clients and must never touch invoices, payroll or the fee ledger — but they still have to be registered, tracked, assessed and evaluated, and the strongest of them are the studio's best source of paying enrolments.</p>
+        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Create the cohort: name it, choose the exam board and the platform, and paste the meeting, replay and group-chat links. Nothing is uploaded — links only.</li><li>Generate a registration link. Give each channel its own link (Instagram, WhatsApp status, a school) so you can see which one actually works.</li><li>Share the link. Anyone can register without an account; they receive a registration number immediately.</li><li>Work the roll: approve registrations, record attendance and quiz results, and note who is engaging.</li><li>Press <b>Convert</b> on a strong registrant to create a real learner record, keeping the whole free-class history attached.</li></ol></details>
+        <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access.</li><li><b>Tutor:</b> Full access for the learners and groups assigned to them, and nothing else.</li><li><b>Parent:</b> No access.</li><li><b>Learner:</b> No access.</li></ul></details>
+        <p class="page-intro-rel"><b>Related:</b> <a href="free-register.html">free register</a></p>
       </section>
-
-      <div class="card">
-        <div class="grid grid-2">
-          <div class="form-group"><label>Engagement</label><select class="form-select" id="eng"></select></div>
-          <div class="form-group"><label>Delta</label>
-            <select class="form-select" id="delta"><option value="1">+1 credit (we cancelled)</option><option value="-1">−1 credit (makeup taken)</option></select></div>
-          <div class="form-group" style="grid-column:1/-1"><label>Reason</label><input class="form-input" id="reason" placeholder="Tutor ill / makeup delivered 13 Aug"></div>
-        </div>
-        <button class="btn btn-primary" type="button" id="save">Post to ledger</button>
-        <h3 style="margin-top:16px">Balance: <span id="bal">—</span></h3>
-      </div>
-      <div id="list" style="margin-top:12px"></div>
+      <div id="free-root"></div>
+      <script>document.addEventListener('DOMContentLoaded',function(){
+        if(window.FreeClasses)FreeClasses.mount('free-root');
+      });</script>
     </main>
   </div>
 </div>
 <div id="toast-container" class="toast-container"></div>
 <script>
-
-async function boot(){
-  if(!window.sb) return;
-  const e=await sb.from('engagements').select('id,name').order('name');
-  document.getElementById('eng').innerHTML=(e.data||[]).map(x=>`<option value="${x.id}">${TC.esc(x.name)}</option>`).join('');
-  list();
-}
-async function list(){
-  if(!window.sb) return;
-  const id=document.getElementById('eng').value;
-  const {data}=await sb.from('makeup_credits').select('*').eq('engagement_id',id).order('created_at',{ascending:false});
-  const bal=(data||[]).reduce((a,r)=>a+Number(r.delta||0),0);
-  document.getElementById('bal').textContent=bal;
-  document.getElementById('list').innerHTML=(data||[]).map(r=>`<div class="card" style="margin:8px 0">${r.delta>0?'+':''}${r.delta} · ${TC.esc(r.reason||'')} · ${r.created_at||''}</div>`).join('')||'<p class="muted">No credits yet on this engagement.</p>';
-}
-document.getElementById('save').onclick=async()=>{
-  if(!window.sb){toast('Connect Supabase','warning');return;}
-  const {error}=await sb.from('makeup_credits').insert({engagement_id:document.getElementById('eng').value,delta:Number(document.getElementById('delta').value),reason:document.getElementById('reason').value});
-  if(error) toast(error.message,'danger'); else { toast('Ledger updated','success'); list(); }
-};
-document.addEventListener('DOMContentLoaded', boot);
-document.getElementById('eng').onchange=list;
 
 </script>
 </body>

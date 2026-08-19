@@ -36,8 +36,14 @@
 <script src="assets/js/chatbot.js"></script>
 <script src="assets/js/record-actions.js"></script>
 <script src="assets/js/receipts.js"></script>
+<script src="assets/js/nav-model.js"></script>
 <script src="assets/js/app.js"></script>
 <script src="assets/js/rbac.js"></script>
+<script src="assets/js/free-classes.js"></script>
+<script src="assets/js/cbt-manage.js"></script>
+<script src="assets/js/cert-studio.js"></script>
+<script src="assets/js/desk-kit.js"></script>
+<script src="assets/js/nav.js"></script>
 <script src="assets/js/legibility.js" defer></script>
 <script src="assets/js/ux-enhance.js" defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -47,13 +53,14 @@
 <main class="container" style="max-width:880px;padding:28px 16px 80px">
   <p class="muted"><a href="index.html" data-practice-name>ADEWALE CLASSROOM</a> · <a href="install.html">Install app</a></p>
   <h1 class="serif">Take a quiz</h1>
-  <section class="help-card page-intro">
-        <div class="page-intro-head"><strong>Take a quiz</strong><span class="page-intro-badge" style="background:#7c3aed">🔑 Opened with a quiz code</span></div>
-        <p class="page-intro-what">Learner runtime: code entry, timer, navigator. Open or rostered. The main actions available here are: <b>Save / print PDF</b>, <b>Start quiz</b>, <b>Submit paper</b>. Reachable without a portal password, but useless without a valid quiz code plus the learner's student ID. The code is the gate.</p>
+      <section class="help-card page-intro">
+        <div class="page-intro-head"><strong>Take a quiz</strong><span class="page-intro-badge" style="background:#7c2d12">🔑 Quiz code required</span></div>
+        <p class="page-intro-what">Learner runtime: code entry, timer, navigator. Open or rostered. What you can do here: <b>Got it</b>, <b>Save / print PDF</b>, <b>Start quiz</b>, <b>Submit paper</b>. Reachable without a portal password, but useless without a valid quiz code plus the learner's student ID. The code is the gate.</p>
         <p class="page-intro-who"><b>Who it is for.</b> Tutors author the content, learners work through it, parents watch the progress.</p>
         <p class="page-intro-why"><b>Why it matters.</b> This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.</p>
         <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Pick the engagement, and the learner if it is a group.</li><li>Add or import the items you need — topics, tasks, questions or reading links.</li><li>Publish, so the learner sees it on their own dashboard.</li><li>Track completion and scores as the work comes back in.</li></ol></details>
-        <p class="page-intro-rel"><b>Related:</b> <a href="accommodations.html">accommodations</a> · <a href="assignments.html">assignments</a> · <a href="cbt-multi.html">cbt multi</a> · <a href="cbt-prompts.html">cbt prompts</a> · <a href="cbt-review.html">cbt review</a> · <a href="certificates.html">certificates</a></p>
+        <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Can open any paper and see every candidate.</li><li><b>Tutor:</b> Can open the papers assigned to them.</li><li><b>Parent:</b> No access — a parent does not sit the paper.</li><li><b>Learner:</b> Opens their own paper with the quiz code and their student ID.</li></ul></details>
+        <p class="page-intro-rel"><b>Related:</b> <a href="practice.html">practice</a> · <a href="cbt-review.html">cbt review</a> · <a href="cbt-multi.html">cbt multi</a> · <a href="cbt-prompts.html">cbt prompts</a> · <a href="cbt-results.html">cbt results</a> · <a href="exam-targets.html">exam targets</a></p>
       </section>
   <div id="gate" class="card">
     <div class="form-group"><label>Quiz code</label><input class="form-input" id="code" autocomplete="off" placeholder="ADC-MATH-01"></div>

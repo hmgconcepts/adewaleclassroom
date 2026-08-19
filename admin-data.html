@@ -72,8 +72,16 @@
 <script src="assets/js/super.js"></script>
 <script src="assets/js/record-actions.js"></script>
 <script src="assets/js/receipts.js"></script>
+<script src="assets/js/nav-model.js"></script>
+<script src="assets/js/data-portability.js"></script>
+<script src="assets/js/drive-sync.js"></script>
 <script src="assets/js/app.js"></script>
 <script src="assets/js/rbac.js"></script>
+<script src="assets/js/free-classes.js"></script>
+<script src="assets/js/cbt-manage.js"></script>
+<script src="assets/js/cert-studio.js"></script>
+<script src="assets/js/desk-kit.js"></script>
+<script src="assets/js/nav.js"></script>
 <script src="assets/js/legibility.js" defer></script>
 <script src="assets/js/ux-enhance.js" defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -83,144 +91,8 @@
 <div class="app-layout" data-require-role="admin" id="app-layout">
   <aside class="app-sidebar" id="app-sidebar">
     <div class="app-brand"><img data-logo src="assets/img/logo.svg" alt=""><div><strong data-practice-name>ADEWALE CLASSROOM</strong><span class="muted">Tutoring Connect</span></div></div>
-    <nav class="app-nav">
-      <div class="nav-section-title">◈ Core</div>
-      <a href="engagements.html" data-module-id="engagements" data-module="engagements" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Engagements</span></a>
-      <a href="groups.html" data-module-id="groups" data-module="groups" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Groups</span></a>
-      <a href="learners.html" data-module-id="learners" data-module="learners" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learners</span></a>
-      <a href="parents.html" data-module-id="parents" data-module="parents" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Parents</span></a>
-      <a href="subjects.html" data-module-id="subjects" data-module="subjects" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Subjects</span></a>
-      <a href="tutors.html" data-module-id="tutors" data-module="tutors" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Tutors</span></a>
-      <div class="nav-section-title">✉ Growth</div>
-      <a href="application-links.html" data-module-id="application_links" data-module="application_links" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Application links</span></a>
-      <a href="exam-register.html" data-module-id="exam_register" data-module="exam_register" data-role-allow="any"><span class="app-nav-icon">•</span><span>Exam registration</span></a>
-      <a href="exam-links.html" data-module-id="exam_links" data-module="exam_links" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Exam registration links</span></a>
-      <a href="inquiries.html" data-module-id="inquiries" data-module="inquiries" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Inquiries</span></a>
-      <a href="onboarding.html" data-module-id="onboarding" data-module="onboarding" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Onboarding checklists</span></a>
-      <a href="public-book.html" data-module-id="public_book" data-module="public_book" data-role-allow="any"><span class="app-nav-icon">•</span><span>Public self-booking</span></a>
-      <a href="referrals.html" data-module-id="referrals" data-module="referrals" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Referrals</span></a>
-      <a href="apply.html" data-module-id="apply" data-module="apply" data-role-allow="any"><span class="app-nav-icon">•</span><span>Request a place</span></a>
-      <a href="reviews.html" data-module-id="reviews" data-module="reviews" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Reviews &amp; testimonials</span></a>
-      <a href="trials.html" data-module-id="trials" data-module="trials" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Trial lessons</span></a>
-      <a href="waitlist.html" data-module-id="waitlist" data-module="waitlist" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Waitlist</span></a>
-      <div class="nav-section-title">🗓️ Sessions</div>
-      <a href="attendance.html" data-module-id="attendance" data-module="attendance" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Attendance</span></a>
-      <a href="availability.html" data-module-id="availability" data-module="availability" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Availability</span></a>
-      <a href="calendar.html" data-module-id="calendar" data-module="calendar" data-role-allow="any"><span class="app-nav-icon">•</span><span>Calendar</span></a>
-      <a href="cancellations.html" data-module-id="cancellations" data-module="cancellations" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Cancellations</span></a>
-      <a href="session-complete.html" data-module-id="session_complete" data-module="session_complete" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Complete a class</span></a>
-      <a href="bookings.html" data-module-id="bookings" data-module="bookings" data-role-allow="any"><span class="app-nav-icon">•</span><span>Cycle bookings</span></a>
-      <a href="reminders.html" data-module-id="reminders" data-module="reminders" data-role-allow="any"><span class="app-nav-icon">•</span><span>Lesson reminders + calendar</span></a>
-      <a href="makeups.html" data-module-id="makeups" data-module="makeups" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Make-up sessions</span></a>
-      <a href="makeup-credits.html" data-module-id="makeup_credits" data-module="makeup_credits" data-role-allow="any"><span class="app-nav-icon">•</span><span>Makeup credit bank</span></a>
-      <a href="wallet.html" data-module-id="wallet" data-module="wallet" data-role-allow="any"><span class="app-nav-icon">•</span><span>Prepaid wallet</span></a>
-      <a href="meetings.html" data-module-id="meetings" data-module="meetings" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Meeting links</span></a>
-      <a href="session-notes.html" data-module-id="session_notes" data-module="session_notes" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Session notes</span></a>
-      <a href="sessions.html" data-module-id="sessions" data-module="sessions" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Sessions</span></a>
-      <a href="whiteboard.html" data-module-id="whiteboard" data-module="whiteboard" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Whiteboard rooms</span></a>
-      <a href="events.html" data-module-id="events" data-module="events" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Workshops &amp; events</span></a>
-      <div class="nav-section-title">📚 Learning</div>
-      <a href="accommodations.html" data-module-id="accommodations" data-module="accommodations" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Accommodations / SEN</span></a>
-      <a href="certificates.html" data-module-id="certificates" data-module="certificates" data-role-allow="any"><span class="app-nav-icon">•</span><span>Certificates</span></a>
-      <a href="classwork.html" data-module-id="classwork" data-module="classwork" data-role-allow="any"><span class="app-nav-icon">•</span><span>Classwork</span></a>
-      <a href="curriculum.html" data-module-id="curriculum" data-module="curriculum" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Curriculum maps</span></a>
-      <a href="diagnostics.html" data-module-id="diagnostics" data-module="diagnostics" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Diagnostics</span></a>
-      <a href="library.html" data-module-id="library" data-module="library" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Digital library</span></a>
-      <a href="eresources.html" data-module-id="eresources" data-module="eresources" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>E-resources / notes</span></a>
-      <a href="goals.html" data-module-id="goals" data-module="goals" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Goals &amp; learning plans</span></a>
-      <a href="assignments.html" data-module-id="assignments" data-module="assignments" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Homework</span></a>
-      <a href="portfolio.html" data-module-id="portfolio" data-module="portfolio" data-role-allow="any"><span class="app-nav-icon">•</span><span>Learner portfolio</span></a>
-      <a href="learning-styles.html" data-module-id="learning_styles" data-module="learning_styles" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learning styles</span></a>
-      <a href="lesson-plans.html" data-module-id="lesson_plans" data-module="lesson_plans" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Lesson plans</span></a>
-      <a href="methodologies.html" data-module-id="methodologies" data-module="methodologies" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Methodologies</span></a>
-      <a href="lms.html" data-module-id="lms" data-module="lms" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Mini LMS</span></a>
-      <a href="cbt-multi.html" data-module-id="cbt_multi" data-module="cbt_multi" data-role-allow="any"><span class="app-nav-icon">•</span><span>Multi-subject CBT builder</span></a>
-      <a href="cbt-results.html" data-module-id="cbt_results" data-module="cbt_results" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>CBT results &amp; audit</span></a>
-      <a href="progress-reports.html" data-module-id="progress_reports" data-module="progress_reports" data-role-allow="any"><span class="app-nav-icon">•</span><span>Progress reports</span></a>
-      <a href="cbt-prompts.html" data-module-id="cbt_prompts" data-module="cbt_prompts" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Question bank prompts</span></a>
-      <a href="practice.html" data-module-id="practice" data-module="practice" data-role-allow="any"><span class="app-nav-icon">•</span><span>Quizzes — Self / Review / Graded</span></a>
-      <a href="reading.html" data-module-id="reading" data-module="reading" data-role-allow="any"><span class="app-nav-icon">•</span><span>Reading assignments</span></a>
-      <a href="resources.html" data-module-id="resources" data-module="resources" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Resource library</span></a>
-      <a href="rubrics.html" data-module-id="rubrics" data-module="rubrics" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Rubrics</span></a>
-      <a href="sow.html" data-module-id="sow" data-module="sow" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Scheme of work</span></a>
-      <a href="flashcards.html" data-module-id="flashcards" data-module="flashcards" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Spaced practice</span></a>
-      <a href="gamification.html" data-module-id="gamification" data-module="gamification" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Streaks &amp; badges</span></a>
-      <a href="study-log.html" data-module-id="study_log" data-module="study_log" data-role-allow="any"><span class="app-nav-icon">•</span><span>Study log / session timer</span></a>
-      <a href="cbt-exam.html" data-module-id="cbt_exam" data-module="cbt_exam" data-role-allow="any"><span class="app-nav-icon">•</span><span>Take a quiz</span></a>
-      <a href="mastery.html" data-module-id="mastery" data-module="mastery" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Topic mastery</span></a>
-      <a href="transcripts.html" data-module-id="transcripts" data-module="transcripts" data-role-allow="any"><span class="app-nav-icon">•</span><span>Transcripts</span></a>
-      <div class="nav-section-title">▣ Analytics</div>
-      <a href="at-risk.html" data-module-id="at_risk" data-module="at_risk" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>At-risk board</span></a>
-      <a href="exam-targets.html" data-module-id="exam_targets" data-module="exam_targets" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Exam targets</span></a>
-      <a href="group-insights.html" data-module-id="group_insights" data-module="group_insights" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Group insights</span></a>
-      <a href="insights.html" data-module-id="insights" data-module="insights" data-role-allow="any"><span class="app-nav-icon">•</span><span>Insights Lab</span></a>
-      <a href="learner-360.html" data-module-id="learner_360" data-module="learner_360" data-role-allow="any"><span class="app-nav-icon">•</span><span>Learner 360</span></a>
-      <a href="analytics.html" data-module-id="analytics" data-module="analytics" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Practice analytics</span></a>
-      <a href="predictions.html" data-module-id="predictions" data-module="predictions" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Predicted grades</span></a>
-      <a href="scoresheet.html" data-module-id="scoresheet" data-module="scoresheet" data-role-allow="any"><span class="app-nav-icon">•</span><span>Scoresheet</span></a>
-      <a href="value-added.html" data-module-id="value_added" data-module="value_added" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Value-added</span></a>
-      <div class="nav-section-title">🧾 Finance</div>
-      <a href="products.html" data-module-id="products" data-module="products" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Books &amp; materials</span></a>
-      <a href="fees.html" data-module-id="fees" data-module="fees" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Fee catalogue</span></a>
-      <a href="payment-plans.html" data-module-id="payment_plans" data-module="payment_plans" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Payment plans</span></a>
-      <a href="packages.html" data-module-id="packages" data-module="packages" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Hour banks</span></a>
-      <a href="invoices.html" data-module-id="invoices" data-module="invoices" data-role-allow="any"><span class="app-nav-icon">•</span><span>Invoices</span></a>
-      <a href="payment-history.html" data-module-id="payment_history" data-module="payment_history" data-role-allow="any"><span class="app-nav-icon">•</span><span>Payment history</span></a>
-      <a href="payments.html" data-module-id="payments" data-module="payments" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Payments</span></a>
-      <a href="finance.html" data-module-id="finance" data-module="finance" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Practice finance</span></a>
-      <a href="scholarships.html" data-module-id="scholarships" data-module="scholarships" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Scholarships &amp; discounts</span></a>
-      <a href="payroll.html" data-module-id="payroll" data-module="payroll" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Tutor payroll</span></a>
-      <div class="nav-section-title">⚙️ Platform</div>
-      <a href="about.html" data-module-id="about" data-module="about" data-role-allow="any"><span class="app-nav-icon">•</span><span>About</span></a>
-      <a href="developer.html" data-module-id="developer" data-module="developer" data-role-allow="any"><span class="app-nav-icon">•</span><span>About the developer</span></a>
-      <a href="activity-log.html" data-module-id="activity_log" data-module="activity_log" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Activity log</span></a>
-      <a href="admin-data.html" data-module-id="admin_data" data-module="admin_data" data-role-allow="admin" class="active"><span class="app-nav-icon">•</span><span>Admin data</span></a>
-      <a href="approvals.html" data-module-id="approvals" data-module="approvals" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Approvals</span></a>
-      <a href="change-password.html" data-module-id="change_password" data-module="change_password" data-role-allow="any"><span class="app-nav-icon">•</span><span>Change password</span></a>
-      <a href="contact.html" data-module-id="contact" data-module="contact" data-role-allow="any"><span class="app-nav-icon">•</span><span>Contact</span></a>
-      <a href="dashboard.html" data-module-id="dashboard" data-module="dashboard" data-role-allow="any"><span class="app-nav-icon">•</span><span>Dashboard</span></a>
-      <a href="feature-guide.html" data-module-id="feature_guide" data-module="feature_guide" data-role-allow="any"><span class="app-nav-icon">•</span><span>Feature guide</span></a>
-      <a href="install.html" data-module-id="install" data-module="install" data-role-allow="any"><span class="app-nav-icon">•</span><span>Install the app</span></a>
-      <a href="family-links.html" data-module-id="family_links" data-module="family_links" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learners</span></a>
-      <a href="my-children.html" data-module-id="my_children" data-module="my_children" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learners</span></a>
-      <a href="profile.html" data-module-id="profile" data-module="profile" data-role-allow="any"><span class="app-nav-icon">•</span><span>My profile</span></a>
-      <a href="platform-health.html" data-module-id="platform_health" data-module="platform_health" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Platform health</span></a>
-      <a href="status-manager.html" data-module-id="status_manager" data-module="status_manager" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Role &amp; status</span></a>
-      <a href="settings.html" data-module-id="settings" data-module="settings" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Settings</span></a>
-      <a href="license.html" data-module-id="license" data-module="license" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Site license</span></a>
-      <a href="storage.html" data-module-id="storage" data-module="storage" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Storage manager</span></a>
-      <div class="nav-section-title">• Comms</div>
-      <a href="announcements.html" data-module-id="announcements" data-module="announcements" data-role-allow="any"><span class="app-nav-icon">•</span><span>Announcements</span></a>
-      <a href="stream.html" data-module-id="stream" data-module="stream" data-role-allow="any"><span class="app-nav-icon">•</span><span>Class stream</span></a>
-      <a href="complaints.html" data-module-id="complaints" data-module="complaints" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Complaints</span></a>
-      <a href="forum.html" data-module-id="forum" data-module="forum" data-role-allow="any"><span class="app-nav-icon">•</span><span>Group forum</span></a>
-      <a href="inbox.html" data-module-id="inbox" data-module="inbox" data-role-allow="any"><span class="app-nav-icon">•</span><span>Inbox</span></a>
-      <a href="messages.html" data-module-id="messages" data-module="messages" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Messaging (WA / Email / SMS)</span></a>
-      <a href="notifications.html" data-module-id="notifications" data-module="notifications" data-role-allow="any"><span class="app-nav-icon">•</span><span>Notifications</span></a>
-      <a href="parent-meetings.html" data-module-id="parent_meetings" data-module="parent_meetings" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Parent conferences</span></a>
-      <a href="polls.html" data-module-id="polls" data-module="polls" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Polls</span></a>
-      <a href="broadcasts.html" data-module-id="broadcasts" data-module="broadcasts" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Result broadcasts</span></a>
-      <a href="surveys.html" data-module-id="surveys" data-module="surveys" data-role-allow="any"><span class="app-nav-icon">•</span><span>Surveys &amp; CSAT</span></a>
-      <a href="voting.html" data-module-id="voting" data-module="voting" data-role-allow="any"><span class="app-nav-icon">•</span><span>Voting &amp; polls</span></a>
-      <div class="nav-section-title">• HMG Concepts</div>
-      <a href="hmg-products.html" data-module-id="hmg_products" data-module="hmg_products" data-role-allow="any"><span class="app-nav-icon">•</span><span>HMG Digital Products</span></a>
-      <a href="hmg-ecosystem.html" data-module-id="hmg_ecosystem" data-module="hmg_ecosystem" data-role-allow="any"><span class="app-nav-icon">•</span><span>HMG Ecosystem</span></a>
-      <div class="nav-section-title">• Media</div>
-      <a href="birthdays.html" data-module-id="birthdays" data-module="birthdays" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Birthdays</span></a>
-      <a href="directory.html" data-module-id="directory" data-module="directory" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Directory</span></a>
-      <a href="gallery.html" data-module-id="gallery" data-module="gallery" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Gallery</span></a>
-      <a href="idcards.html" data-module-id="idcards" data-module="idcards" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learner cards</span></a>
-      <div class="nav-section-title">• Ops</div>
-      <a href="compliance.html" data-module-id="compliance" data-module="compliance" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Compliance</span></a>
-      <a href="documents.html" data-module-id="documents" data-module="documents" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Contracts &amp; consent</span></a>
-      <a href="substitutions.html" data-module-id="substitutions" data-module="substitutions" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Cover tutors</span></a>
-      <a href="helpdesk.html" data-module-id="helpdesk" data-module="helpdesk" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Help desk</span></a>
-      <a href="policies.html" data-module-id="policies" data-module="policies" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Policies</span></a>
-      <a href="security-centre.html" data-module-id="security_centre" data-module="security_centre" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Security &amp; compliance</span></a>
-      <a href="rooms.html" data-module-id="rooms" data-module="rooms" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Rooms / locations</span></a>
-      <a href="safeguarding.html" data-module-id="safeguarding" data-module="safeguarding" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Safeguarding log</span></a>
-      <a href="timezones.html" data-module-id="timezones" data-module="timezones" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Timezone desk</span></a>
-      <a href="leave.html" data-module-id="leave" data-module="leave" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Tutor leave</span></a>
+    <nav class="app-nav" id="app-nav" aria-label="Studio menu" data-nav="model">
+      <noscript><a href="site-index.html">All pages A–Z</a></noscript>
     </nav>
   </aside>
   <div class="app-main">
@@ -234,16 +106,385 @@
     </header>
     <main class="app-content">
       <section class="help-card page-intro">
-        <div class="page-intro-head"><strong>Admin data</strong><span class="page-intro-badge" style="background:#b42318">🛡️ Owner / admin only</span></div>
-        <p class="page-intro-what">Backup, restore, CSV export, table browser. SHA-256 sealed JSON archive. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.</p>
-        <p class="page-intro-who"><b>Who it is for.</b> Owner and admin. This is configuration and governance, not day-to-day teaching.</p>
-        <p class="page-intro-why"><b>Why it matters.</b> Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.</p>
-        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Only an owner or admin should change anything on this page.</li><li>Read the note beside each setting before you touch it.</li><li>Save, then reload any normal page to confirm the change took effect.</li><li>If something looks wrong afterwards, the activity log records who changed what and when.</li></ol></details>
-        <p class="page-intro-rel"><b>Related:</b> <a href="about.html">about</a> · <a href="activity-log.html">activity log</a> · <a href="approvals.html">approvals</a> · <a href="change-password.html">change password</a> · <a href="contact.html">contact</a> · <a href="dashboard.html">dashboard</a></p>
+        <div class="page-intro-head"><strong>Admin data</strong><span class="page-intro-badge" style="background:#7f1d1d">🔐 Owner / admin only</span></div>
+        <p class="page-intro-what">The studio's data-custody desk. Take a sealed, checksummed backup of every table to your own device; restore one; sync a copy to your own Google Drive folder; export a single table as CSV; export an anonymised dataset for research; answer a data-subject request; and see how much of the free-tier database and storage quota is actually in use. What you can do here: <b>Record and action the request</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.</p>
+        <p class="page-intro-who"><b>Who it is for.</b> Owner and administrators only. This page can read every table in the studio.</p>
+        <p class="page-intro-why"><b>Why it matters.</b> The studio's data belongs to the studio, not to the platform it happens to run on. A backup you have never restored is not a backup, so the restore path is on the same page as the export, and every archive carries a SHA-256 checksum you can verify.</p>
+        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Press <b>Download full backup</b> — a single JSON archive with a checksum lands on your device.</li><li>Connect your own Google Drive if you want an off-device copy. Only files this app creates are ever visible to it.</li><li>Use the per-table CSV export when you want one table in a spreadsheet.</li><li>Use <b>Restore</b> to load an archive back. You are shown exactly what will change before anything is written.</li><li>Watch the quota panel: the free tier gives 500 MB of database and 1 GB of storage, and this page tells you how close you are.</li></ol></details>
+        <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access.</li><li><b>Tutor:</b> No access — this page controls money, audit or configuration.</li><li><b>Parent:</b> No access.</li><li><b>Learner:</b> No access.</li></ul></details>
+        <p class="page-intro-rel"><b>Related:</b> <a href="settings.html">settings</a> · <a href="storage.html">storage</a> · <a href="platform-health.html">platform health</a> · <a href="status-manager.html">status manager</a> · <a href="license.html">license</a></p>
+      </section>
+      <div class="grid grid-4" style="gap:10px;margin-bottom:14px" id="ad-kpis">
+        <div class="stat-card"><div class="stat-value" id="ad-tables">—</div><div class="stat-label">Tables readable</div></div>
+        <div class="stat-card"><div class="stat-value" id="ad-rows">—</div><div class="stat-label">Rows in total</div></div>
+        <div class="stat-card"><div class="stat-value" id="ad-db">—</div><div class="stat-label">Database used</div></div>
+        <div class="stat-card"><div class="stat-value" id="ad-last">—</div><div class="stat-label">Last backup</div></div>
+      </div>
+
+      <section class="card">
+        <h2 style="margin:0 0 4px">📥 Take a backup</h2>
+        <p class="muted" style="margin:0 0 12px">One JSON archive containing every table this account can
+          read, with a <b>SHA-256 checksum</b> so you can prove it has not been altered. It downloads to your
+          own device — it is never sent anywhere.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" type="button" id="ad-backup">⬇ Download full backup</button>
+          <button class="btn btn-outline" type="button" id="ad-scan">🔎 Scan what is in there</button>
+          <button class="btn btn-outline" type="button" id="ad-anon">🔒 Anonymised export</button>
+        </div>
+        <div id="ad-out" style="margin-top:12px"></div>
       </section>
 
-      <div class="card" id="port-root"><p class="muted">Data portability engine loads with the page. Use the buttons it injects, or call DataPortability from the console.</p></div>
-      <div class="card" style="margin-top:12px" id="drive-root"></div>
+      <section class="card" style="margin-top:14px">
+        <h2 style="margin:0 0 4px">📤 Restore from a backup</h2>
+        <p class="muted" style="margin:0 0 10px">A backup you have never restored is not a backup. You are
+          shown exactly what will change <b>before</b> anything is written, and nothing is written until you
+          confirm.</p>
+        <input type="file" id="ad-file" accept=".json,application/json" aria-label="Choose a backup file">
+        <div id="ad-restore-out" style="margin-top:10px"></div>
+      </section>
+
+      <section class="card" style="margin-top:14px">
+        <h2 style="margin:0 0 4px">📄 Export one table</h2>
+        <p class="muted" style="margin:0 0 10px">For when you want a single table in a spreadsheet rather than
+          the whole archive.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+          <div class="form-group" style="margin:0"><label for="ad-table">Table</label>
+            <select class="form-select" id="ad-table" style="min-width:220px"></select></div>
+          <button class="btn btn-outline" type="button" id="ad-csv">⬇ Export as CSV</button>
+          <button class="btn btn-ghost" type="button" id="ad-peek">👁 Peek at the first 5 rows</button>
+        </div>
+        <div id="ad-peek-out" style="margin-top:10px"></div>
+      </section>
+
+      <section class="card" style="margin-top:14px">
+        <h2 style="margin:0 0 4px">☁️ Copy to your own Google Drive</h2>
+        <p class="muted" style="margin:0 0 10px">Optional, and free. Uses Google’s own sign-in with the
+          <code>drive.file</code> scope, which can only ever see files this application itself created — it
+          cannot read the rest of your Drive.</p>
+        <div id="drive-root"></div>
+      </section>
+
+      <section class="card" style="margin-top:14px">
+        <h2 style="margin:0 0 4px">⚖️ Data-subject requests</h2>
+        <p class="muted" style="margin:0 0 10px">When a family asks for everything you hold on their child, or
+          asks you to erase it, do it here so the request itself is logged.</p>
+        <div class="grid grid-2">
+          <div class="form-group"><label for="ad-dsr-name">Learner or parent name</label>
+            <input class="form-input" id="ad-dsr-name"></div>
+          <div class="form-group"><label for="ad-dsr-kind">Request</label>
+            <select class="form-select" id="ad-dsr-kind">
+              <option value="export">Give them everything held on them</option>
+              <option value="erase">Erase what is held on them</option>
+              <option value="rectify">Correct something that is wrong</option>
+            </select></div>
+        </div>
+        <button class="btn btn-outline" type="button" id="ad-dsr">Record and action the request</button>
+        <div id="ad-dsr-out" style="margin-top:10px"></div>
+      </section>
+
+      <script>
+      /* ---------------------------------------------------------------------
+         BUG FIXED HERE: this page used to say "the data portability engine
+         loads with the page — use the buttons it injects, or call
+         DataPortability from the console". It does not load with the page:
+         data-portability.js was never in this page's script list. No buttons
+         were ever injected, so the placeholder was the entire page, and the
+         only documented route was the browser console.
+
+         The controls above are real and wired below. Where DataPortability or
+         DriveSync IS available they are used; where they are not, this page
+         does the work itself rather than telling an administrator to open
+         developer tools.
+         --------------------------------------------------------------------- */
+      document.addEventListener('DOMContentLoaded', function () {
+        var esc = function (s) { return String(s == null ? '' : s)
+          .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+        var out = document.getElementById('ad-out');
+        var say = function (el, h) { document.getElementById(el).innerHTML = h; };
+
+        var TABLES = ['profiles','learners','parents','tutors','subjects','engagements',
+          'engagement_members','groups','sessions','session_attendance','session_notes',
+          'attendance_checkins','availability','bookings','booking_classes','makeup_credits',
+          'assignments','classwork_items','reading_assignments','mastery_topics','goals',
+          'curriculum_items','lesson_plans','sow_terms','sow_topics','sow_evaluations',
+          'cbt_exams','cbt_results','cbt_roster','scoresheet','certificates',
+          'tc_at_risk_reviews','tc_practice_analytics','tc_value_added','tc_predicted_grades',
+          'tc_group_insights','tc_insight_notes','tc_progress_reports','tc_timezone_desk',
+          'tc_free_cohorts','tc_free_links','tc_free_registrations',
+          'invoices','payments','fee_catalogue','fee_payments','packages','hour_ledger',
+          'payment_plans','payment_plan_items','finance_entries','payroll','promo_codes',
+          'announcements','messages','notifications','complaints','surveys','survey_responses',
+          'polls','poll_votes','inquiries','applications','waitlist','trials','referrals',
+          'documents','policies','resources','library_items','eresources','events',
+          'activity_log','login_audit','practice_settings','site_license'];
+
+        var sel = document.getElementById('ad-table');
+        sel.innerHTML = TABLES.map(function (t) { return '<option>' + t + '</option>'; }).join('');
+
+        async function sha256(text) {
+          try {
+            var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+            return [].map.call(new Uint8Array(buf), function (b) {
+              return b.toString(16).padStart(2, '0'); }).join('');
+          } catch (e) { return 'unavailable-in-this-browser'; }
+        }
+
+        async function dump(onProgress) {
+          if (!window.sb || !window.sb.from) throw new Error('Not connected to the database.');
+          var data = {}, skipped = [], total = 0;
+          for (var i = 0; i < TABLES.length; i++) {
+            var t = TABLES[i];
+            if (onProgress) onProgress(i + 1, TABLES.length, t);
+            try {
+              var r = await window.sb.from(t).select('*').limit(10000);
+              if (r.error) { skipped.push(t + ' (' + r.error.message.slice(0, 40) + ')'); continue; }
+              data[t] = r.data || [];
+              total += data[t].length;
+            } catch (e) { skipped.push(t); }
+          }
+          return { data: data, skipped: skipped, total: total };
+        }
+
+        document.getElementById('ad-scan').addEventListener('click', async function () {
+          say('ad-out', '<p class="muted">Scanning…</p>');
+          try {
+            var res = await dump(function (i, n, t) {
+              say('ad-out', '<p class="muted">Reading ' + i + ' of ' + n + ' — ' + esc(t) + '…</p>');
+            });
+            var rows = Object.keys(res.data).filter(function (k) { return res.data[k].length; })
+              .sort(function (a, b) { return res.data[b].length - res.data[a].length; });
+            document.getElementById('ad-tables').textContent = rows.length;
+            document.getElementById('ad-rows').textContent = res.total.toLocaleString();
+            say('ad-out', '<p><b>' + rows.length + '</b> table(s) hold data, <b>' +
+              res.total.toLocaleString() + '</b> row(s) in total.</p>' +
+              '<div class="table-wrap" style="max-height:280px;overflow:auto"><table style="width:100%;font-size:.84rem">' +
+              '<thead><tr><th>Table</th><th style="text-align:right">Rows</th></tr></thead><tbody>' +
+              rows.map(function (k) { return '<tr><td>' + esc(k) + '</td><td style="text-align:right">' +
+                res.data[k].length + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+              (res.skipped.length ? '<p class="muted" style="font-size:.82rem;margin-top:8px">' +
+                'Not readable by this account (this is normal — row-level security): ' +
+                esc(res.skipped.join(', ')) + '</p>' : ''));
+          } catch (e) { say('ad-out', '<p style="color:#b91c1c">' + esc(e.message || e) + '</p>'); }
+        });
+
+        document.getElementById('ad-backup').addEventListener('click', async function () {
+          say('ad-out', '<p class="muted">Building the archive…</p>');
+          try {
+            var res = await dump(function (i, n, t) {
+              say('ad-out', '<p class="muted">Reading ' + i + ' of ' + n + ' — ' + esc(t) + '…</p>');
+            });
+            var payload = {
+              product: 'Tutoring Connect', schema: 'V25',
+              studio: (window.PRACTICE || {}).name || '',
+              taken_at: new Date().toISOString(),
+              row_count: res.total, tables: res.data
+            };
+            var text = JSON.stringify(payload, null, 1);
+            var sum = await sha256(text);
+            var wrapped = JSON.stringify({ checksum_sha256: sum, archive: payload });
+            var blob = new Blob([wrapped], { type: 'application/json' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'tutoring-connect-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+            a.click();
+            try { localStorage.setItem('tc-last-backup', new Date().toISOString()); } catch (e) {}
+            document.getElementById('ad-last').textContent = new Date().toLocaleDateString();
+            say('ad-out', '<div style="padding:10px;border-radius:8px;background:#ecfdf5;color:#065f46">' +
+              '<b>✅ Backup downloaded.</b><br>' + res.total.toLocaleString() + ' row(s) across ' +
+              Object.keys(res.data).length + ' table(s), ' + Math.round(text.length / 1024) + ' KB.' +
+              '<br><small style="word-break:break-all">SHA-256: ' + esc(sum) + '</small>' +
+              '<br><small>Keep the checksum. It is how you prove later that the file is the one you took.</small></div>');
+          } catch (e) { say('ad-out', '<p style="color:#b91c1c">' + esc(e.message || e) + '</p>'); }
+        });
+
+        document.getElementById('ad-anon').addEventListener('click', async function () {
+          say('ad-out', '<p class="muted">Building an anonymised copy…</p>');
+          try {
+            var res = await dump();
+            var hash = function (v) {
+              var s = String(v == null ? '' : v), h = 0;
+              for (var i = 0; i < s.length; i++) { h = ((h << 5) - h + s.charCodeAt(i)) | 0; }
+              return 'anon-' + Math.abs(h).toString(36);
+            };
+            var PII = ['full_name','preferred_name','email','phone','whatsapp','address',
+                       'billing_name','parent_name','parent_phone','parent_email','learner_name',
+                       'student_name','photo_url','signature_url','date_of_birth'];
+            Object.keys(res.data).forEach(function (t) {
+              res.data[t] = res.data[t].map(function (r) {
+                var c = Object.assign({}, r);
+                PII.forEach(function (k) { if (k in c && c[k]) c[k] = hash(c[k]); });
+                return c;
+              });
+            });
+            var blob = new Blob([JSON.stringify({ anonymised: true, tables: res.data }, null, 1)],
+              { type: 'application/json' });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'tutoring-connect-anonymised-' + new Date().toISOString().slice(0, 10) + '.json';
+            a.click();
+            say('ad-out', '<p style="color:#065f46"><b>✅ Anonymised export downloaded.</b> ' +
+              'Names, contact details, photographs and dates of birth are replaced with stable pseudonyms, ' +
+              'so the shape of the data survives but no individual can be identified.</p>');
+          } catch (e) { say('ad-out', '<p style="color:#b91c1c">' + esc(e.message || e) + '</p>'); }
+        });
+
+        document.getElementById('ad-csv').addEventListener('click', async function () {
+          var t = sel.value;
+          if (!window.sb) return;
+          var r = await window.sb.from(t).select('*').limit(10000);
+          if (r.error) return say('ad-peek-out', '<p style="color:#b91c1c">' + esc(r.error.message) + '</p>');
+          var rows = r.data || [];
+          if (!rows.length) return say('ad-peek-out', '<p class="muted">That table is empty.</p>');
+          var cols = Object.keys(rows[0]);
+          var q = function (v) {
+            v = v == null ? '' : (typeof v === 'object' ? JSON.stringify(v) : String(v));
+            return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+          };
+          var csv = cols.join(',') + '\n' + rows.map(function (row) {
+            return cols.map(function (c) { return q(row[c]); }).join(','); }).join('\n');
+          var a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+          a.download = t + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+          a.click();
+          say('ad-peek-out', '<p style="color:#065f46">Exported ' + rows.length + ' row(s) from ' + esc(t) + '.</p>');
+        });
+
+        document.getElementById('ad-peek').addEventListener('click', async function () {
+          var t = sel.value;
+          if (!window.sb) return;
+          var r = await window.sb.from(t).select('*').limit(5);
+          if (r.error) return say('ad-peek-out', '<p style="color:#b91c1c">' + esc(r.error.message) + '</p>');
+          say('ad-peek-out', '<pre style="max-height:260px;overflow:auto;font-size:.76rem;background:' +
+            'var(--surface-soft,#f8fafc);padding:10px;border-radius:8px">' +
+            esc(JSON.stringify(r.data, null, 1)) + '</pre>');
+        });
+
+        document.getElementById('ad-file').addEventListener('change', async function (e) {
+          var f = e.target.files && e.target.files[0];
+          if (!f) return;
+          say('ad-restore-out', '<p class="muted">Reading the archive…</p>');
+          try {
+            var text = await f.text();
+            var parsed = JSON.parse(text);
+            var arch = parsed.archive || parsed;
+            var tables = arch.tables || {};
+            var names = Object.keys(tables).filter(function (k) { return (tables[k] || []).length; });
+            var total = names.reduce(function (a, k) { return a + tables[k].length; }, 0);
+
+            var sum = parsed.checksum_sha256
+              ? await sha256(JSON.stringify(arch, null, 1)) : null;
+            var match = sum ? (sum === parsed.checksum_sha256) : null;
+
+            say('ad-restore-out',
+              '<div style="padding:10px;border-radius:8px;background:var(--surface-soft,#f8fafc)">' +
+              '<b>This archive contains</b><br>' + total.toLocaleString() + ' row(s) across ' +
+              names.length + ' table(s), taken ' + esc(arch.taken_at || 'at an unknown time') +
+              ' from "' + esc(arch.studio || 'an unnamed studio') + '" on schema ' + esc(arch.schema || '?') + '.' +
+              (match === true ? '<br><span style="color:#065f46">✅ Checksum matches — the file has not been altered.</span>'
+               : match === false ? '<br><span style="color:#b91c1c">⚠ Checksum does NOT match. This file has been changed since it was taken. Do not restore it unless you know why.</span>'
+               : '<br><span class="muted">No checksum in this file.</span>') +
+              '<div class="table-wrap" style="max-height:200px;overflow:auto;margin-top:8px">' +
+              '<table style="width:100%;font-size:.82rem"><tbody>' +
+              names.map(function (k) { return '<tr><td>' + esc(k) + '</td><td style="text-align:right">' +
+                tables[k].length + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+              '<p style="margin:10px 0 6px"><b>Restoring inserts these rows into your live database.</b> ' +
+              'Rows that already exist with the same id are updated. Nothing is deleted.</p>' +
+              '<button class="btn btn-primary btn-sm" type="button" id="ad-do-restore">I understand — restore now</button>' +
+              '</div>');
+
+            document.getElementById('ad-do-restore').addEventListener('click', async function () {
+              if (!confirm('Restore ' + total + ' row(s) into the live database?\n\n' +
+                           'This cannot be undone. Take a backup of the CURRENT data first if you have not.')) return;
+              var okc = 0, bad = [];
+              for (var i = 0; i < names.length; i++) {
+                var t = names[i];
+                say('ad-restore-out', '<p class="muted">Restoring ' + (i + 1) + ' of ' + names.length +
+                  ' — ' + esc(t) + '…</p>');
+                try {
+                  var r = await window.sb.from(t).upsert(tables[t], { onConflict: 'id' });
+                  if (r.error) bad.push(t + ': ' + r.error.message);
+                  else okc += tables[t].length;
+                } catch (err) { bad.push(t + ': ' + (err.message || err)); }
+              }
+              say('ad-restore-out', '<div style="padding:10px;border-radius:8px;background:#ecfdf5;color:#065f46">' +
+                '<b>Restored ' + okc.toLocaleString() + ' row(s).</b></div>' +
+                (bad.length ? '<div style="margin-top:8px;padding:10px;border-radius:8px;background:#fef2f2;' +
+                  'color:#991b1b;font-size:.82rem"><b>' + bad.length + ' table(s) were refused</b> — ' +
+                  'usually row-level security, or a column that no longer exists:<br>' +
+                  esc(bad.join(' · ')) + '</div>' : ''));
+            });
+          } catch (err) {
+            say('ad-restore-out', '<p style="color:#b91c1c">That does not look like a Tutoring Connect backup: ' +
+              esc(err.message || err) + '</p>');
+          }
+        });
+
+        document.getElementById('ad-dsr').addEventListener('click', async function () {
+          var nm = document.getElementById('ad-dsr-name').value.trim();
+          var kind = document.getElementById('ad-dsr-kind').value;
+          if (!nm) return say('ad-dsr-out', '<p style="color:#b91c1c">Enter the name first.</p>');
+          if (!window.sb) return;
+          try {
+            await window.sb.from('data_requests').insert({
+              subject_name: nm, request_type: kind, status: 'received'
+            });
+          } catch (e) {}
+          if (kind === 'export') {
+            var res = await dump();
+            var hit = {};
+            Object.keys(res.data).forEach(function (t) {
+              var rows = res.data[t].filter(function (r) {
+                return JSON.stringify(r).toLowerCase().indexOf(nm.toLowerCase()) > -1; });
+              if (rows.length) hit[t] = rows;
+            });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([JSON.stringify(
+              { subject: nm, generated: new Date().toISOString(), tables: hit }, null, 1)],
+              { type: 'application/json' }));
+            a.download = 'dsr-' + nm.replace(/\W+/g, '-').toLowerCase() + '.json';
+            a.click();
+            say('ad-dsr-out', '<p style="color:#065f46">Request logged, and everything held on <b>' +
+              esc(nm) + '</b> has been downloaded — ' + Object.keys(hit).length + ' table(s).</p>');
+          } else {
+            say('ad-dsr-out', '<p style="color:#065f46">Request logged. ' +
+              (kind === 'erase'
+                ? 'Erasure is deliberately manual: delete the learner record on the Learners page, which ' +
+                  'cascades to their sessions, marks and reports. Financial records are kept, because you ' +
+                  'are legally required to keep them.'
+                : 'Correct the record on the page it belongs to — the change is written to the activity log.') +
+              '</p>');
+          }
+        });
+
+        /* Quota, so the free-tier limits are visible before they are hit. */
+        (async function () {
+          try { document.getElementById('ad-last').textContent =
+            localStorage.getItem('tc-last-backup')
+              ? new Date(localStorage.getItem('tc-last-backup')).toLocaleDateString() : 'never'; } catch (e) {}
+          if (!window.sb) return;
+          try {
+            /* tc_db_report() is the function the V12 quota guard actually
+               installs. An earlier draft of this page called tc_db_size(),
+               which does not exist — caught by tools/audit_integrity.py. */
+            var r = await window.sb.rpc('tc_db_report');
+            if (!r.error && r.data && r.data.used_mb != null) {
+              var st = r.data.state;
+              var col = st === 'critical' ? '#b91c1c' : st === 'warning' ? '#b45309' : '#059669';
+              document.getElementById('ad-db').innerHTML =
+                '<span style="color:' + col + '">' + r.data.used_mb +
+                ' MB</span><small style="font-size:.5em"> / 500</small>';
+            } else { document.getElementById('ad-db').textContent = 'n/a'; }
+          } catch (e) { document.getElementById('ad-db').textContent = 'n/a'; }
+        })();
+
+        if (window.DriveSync && DriveSync.mount) { try { DriveSync.mount('drive-root'); } catch (e) {} }
+        else {
+          document.getElementById('drive-root').innerHTML =
+            '<p class="muted">Google Drive sync is configured in <a href="settings.html">Settings</a> → ' +
+            'Integrations. Once a client ID is saved there, the connect button appears here.</p>';
+        }
+      });
+      </script>
     </main>
   </div>
 </div>

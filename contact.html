@@ -71,8 +71,14 @@
 <script src="assets/js/super.js"></script>
 <script src="assets/js/record-actions.js"></script>
 <script src="assets/js/receipts.js"></script>
+<script src="assets/js/nav-model.js"></script>
 <script src="assets/js/app.js"></script>
 <script src="assets/js/rbac.js"></script>
+<script src="assets/js/free-classes.js"></script>
+<script src="assets/js/cbt-manage.js"></script>
+<script src="assets/js/cert-studio.js"></script>
+<script src="assets/js/desk-kit.js"></script>
+<script src="assets/js/nav.js"></script>
 <script src="assets/js/legibility.js" defer></script>
 <script src="assets/js/ux-enhance.js" defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -82,144 +88,8 @@
 <div class="app-layout" data-require-role="any" id="app-layout">
   <aside class="app-sidebar" id="app-sidebar">
     <div class="app-brand"><img data-logo src="assets/img/logo.svg" alt=""><div><strong data-practice-name>ADEWALE CLASSROOM</strong><span class="muted">Tutoring Connect</span></div></div>
-    <nav class="app-nav">
-      <div class="nav-section-title">◈ Core</div>
-      <a href="engagements.html" data-module-id="engagements" data-module="engagements" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Engagements</span></a>
-      <a href="groups.html" data-module-id="groups" data-module="groups" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Groups</span></a>
-      <a href="learners.html" data-module-id="learners" data-module="learners" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learners</span></a>
-      <a href="parents.html" data-module-id="parents" data-module="parents" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Parents</span></a>
-      <a href="subjects.html" data-module-id="subjects" data-module="subjects" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Subjects</span></a>
-      <a href="tutors.html" data-module-id="tutors" data-module="tutors" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Tutors</span></a>
-      <div class="nav-section-title">✉ Growth</div>
-      <a href="application-links.html" data-module-id="application_links" data-module="application_links" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Application links</span></a>
-      <a href="exam-register.html" data-module-id="exam_register" data-module="exam_register" data-role-allow="any"><span class="app-nav-icon">•</span><span>Exam registration</span></a>
-      <a href="exam-links.html" data-module-id="exam_links" data-module="exam_links" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Exam registration links</span></a>
-      <a href="inquiries.html" data-module-id="inquiries" data-module="inquiries" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Inquiries</span></a>
-      <a href="onboarding.html" data-module-id="onboarding" data-module="onboarding" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Onboarding checklists</span></a>
-      <a href="public-book.html" data-module-id="public_book" data-module="public_book" data-role-allow="any"><span class="app-nav-icon">•</span><span>Public self-booking</span></a>
-      <a href="referrals.html" data-module-id="referrals" data-module="referrals" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Referrals</span></a>
-      <a href="apply.html" data-module-id="apply" data-module="apply" data-role-allow="any"><span class="app-nav-icon">•</span><span>Request a place</span></a>
-      <a href="reviews.html" data-module-id="reviews" data-module="reviews" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Reviews &amp; testimonials</span></a>
-      <a href="trials.html" data-module-id="trials" data-module="trials" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Trial lessons</span></a>
-      <a href="waitlist.html" data-module-id="waitlist" data-module="waitlist" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Waitlist</span></a>
-      <div class="nav-section-title">🗓️ Sessions</div>
-      <a href="attendance.html" data-module-id="attendance" data-module="attendance" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Attendance</span></a>
-      <a href="availability.html" data-module-id="availability" data-module="availability" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Availability</span></a>
-      <a href="calendar.html" data-module-id="calendar" data-module="calendar" data-role-allow="any"><span class="app-nav-icon">•</span><span>Calendar</span></a>
-      <a href="cancellations.html" data-module-id="cancellations" data-module="cancellations" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Cancellations</span></a>
-      <a href="session-complete.html" data-module-id="session_complete" data-module="session_complete" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Complete a class</span></a>
-      <a href="bookings.html" data-module-id="bookings" data-module="bookings" data-role-allow="any"><span class="app-nav-icon">•</span><span>Cycle bookings</span></a>
-      <a href="reminders.html" data-module-id="reminders" data-module="reminders" data-role-allow="any"><span class="app-nav-icon">•</span><span>Lesson reminders + calendar</span></a>
-      <a href="makeups.html" data-module-id="makeups" data-module="makeups" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Make-up sessions</span></a>
-      <a href="makeup-credits.html" data-module-id="makeup_credits" data-module="makeup_credits" data-role-allow="any"><span class="app-nav-icon">•</span><span>Makeup credit bank</span></a>
-      <a href="wallet.html" data-module-id="wallet" data-module="wallet" data-role-allow="any"><span class="app-nav-icon">•</span><span>Prepaid wallet</span></a>
-      <a href="meetings.html" data-module-id="meetings" data-module="meetings" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Meeting links</span></a>
-      <a href="session-notes.html" data-module-id="session_notes" data-module="session_notes" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Session notes</span></a>
-      <a href="sessions.html" data-module-id="sessions" data-module="sessions" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Sessions</span></a>
-      <a href="whiteboard.html" data-module-id="whiteboard" data-module="whiteboard" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Whiteboard rooms</span></a>
-      <a href="events.html" data-module-id="events" data-module="events" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Workshops &amp; events</span></a>
-      <div class="nav-section-title">📚 Learning</div>
-      <a href="accommodations.html" data-module-id="accommodations" data-module="accommodations" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Accommodations / SEN</span></a>
-      <a href="certificates.html" data-module-id="certificates" data-module="certificates" data-role-allow="any"><span class="app-nav-icon">•</span><span>Certificates</span></a>
-      <a href="classwork.html" data-module-id="classwork" data-module="classwork" data-role-allow="any"><span class="app-nav-icon">•</span><span>Classwork</span></a>
-      <a href="curriculum.html" data-module-id="curriculum" data-module="curriculum" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Curriculum maps</span></a>
-      <a href="diagnostics.html" data-module-id="diagnostics" data-module="diagnostics" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Diagnostics</span></a>
-      <a href="library.html" data-module-id="library" data-module="library" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Digital library</span></a>
-      <a href="eresources.html" data-module-id="eresources" data-module="eresources" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>E-resources / notes</span></a>
-      <a href="goals.html" data-module-id="goals" data-module="goals" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Goals &amp; learning plans</span></a>
-      <a href="assignments.html" data-module-id="assignments" data-module="assignments" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Homework</span></a>
-      <a href="portfolio.html" data-module-id="portfolio" data-module="portfolio" data-role-allow="any"><span class="app-nav-icon">•</span><span>Learner portfolio</span></a>
-      <a href="learning-styles.html" data-module-id="learning_styles" data-module="learning_styles" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learning styles</span></a>
-      <a href="lesson-plans.html" data-module-id="lesson_plans" data-module="lesson_plans" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Lesson plans</span></a>
-      <a href="methodologies.html" data-module-id="methodologies" data-module="methodologies" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Methodologies</span></a>
-      <a href="lms.html" data-module-id="lms" data-module="lms" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Mini LMS</span></a>
-      <a href="cbt-multi.html" data-module-id="cbt_multi" data-module="cbt_multi" data-role-allow="any"><span class="app-nav-icon">•</span><span>Multi-subject CBT builder</span></a>
-      <a href="cbt-results.html" data-module-id="cbt_results" data-module="cbt_results" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>CBT results &amp; audit</span></a>
-      <a href="progress-reports.html" data-module-id="progress_reports" data-module="progress_reports" data-role-allow="any"><span class="app-nav-icon">•</span><span>Progress reports</span></a>
-      <a href="cbt-prompts.html" data-module-id="cbt_prompts" data-module="cbt_prompts" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Question bank prompts</span></a>
-      <a href="practice.html" data-module-id="practice" data-module="practice" data-role-allow="any"><span class="app-nav-icon">•</span><span>Quizzes — Self / Review / Graded</span></a>
-      <a href="reading.html" data-module-id="reading" data-module="reading" data-role-allow="any"><span class="app-nav-icon">•</span><span>Reading assignments</span></a>
-      <a href="resources.html" data-module-id="resources" data-module="resources" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Resource library</span></a>
-      <a href="rubrics.html" data-module-id="rubrics" data-module="rubrics" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Rubrics</span></a>
-      <a href="sow.html" data-module-id="sow" data-module="sow" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Scheme of work</span></a>
-      <a href="flashcards.html" data-module-id="flashcards" data-module="flashcards" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Spaced practice</span></a>
-      <a href="gamification.html" data-module-id="gamification" data-module="gamification" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Streaks &amp; badges</span></a>
-      <a href="study-log.html" data-module-id="study_log" data-module="study_log" data-role-allow="any"><span class="app-nav-icon">•</span><span>Study log / session timer</span></a>
-      <a href="cbt-exam.html" data-module-id="cbt_exam" data-module="cbt_exam" data-role-allow="any"><span class="app-nav-icon">•</span><span>Take a quiz</span></a>
-      <a href="mastery.html" data-module-id="mastery" data-module="mastery" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Topic mastery</span></a>
-      <a href="transcripts.html" data-module-id="transcripts" data-module="transcripts" data-role-allow="any"><span class="app-nav-icon">•</span><span>Transcripts</span></a>
-      <div class="nav-section-title">▣ Analytics</div>
-      <a href="at-risk.html" data-module-id="at_risk" data-module="at_risk" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>At-risk board</span></a>
-      <a href="exam-targets.html" data-module-id="exam_targets" data-module="exam_targets" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Exam targets</span></a>
-      <a href="group-insights.html" data-module-id="group_insights" data-module="group_insights" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Group insights</span></a>
-      <a href="insights.html" data-module-id="insights" data-module="insights" data-role-allow="any"><span class="app-nav-icon">•</span><span>Insights Lab</span></a>
-      <a href="learner-360.html" data-module-id="learner_360" data-module="learner_360" data-role-allow="any"><span class="app-nav-icon">•</span><span>Learner 360</span></a>
-      <a href="analytics.html" data-module-id="analytics" data-module="analytics" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Practice analytics</span></a>
-      <a href="predictions.html" data-module-id="predictions" data-module="predictions" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Predicted grades</span></a>
-      <a href="scoresheet.html" data-module-id="scoresheet" data-module="scoresheet" data-role-allow="any"><span class="app-nav-icon">•</span><span>Scoresheet</span></a>
-      <a href="value-added.html" data-module-id="value_added" data-module="value_added" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Value-added</span></a>
-      <div class="nav-section-title">🧾 Finance</div>
-      <a href="products.html" data-module-id="products" data-module="products" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Books &amp; materials</span></a>
-      <a href="fees.html" data-module-id="fees" data-module="fees" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Fee catalogue</span></a>
-      <a href="payment-plans.html" data-module-id="payment_plans" data-module="payment_plans" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Payment plans</span></a>
-      <a href="packages.html" data-module-id="packages" data-module="packages" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Hour banks</span></a>
-      <a href="invoices.html" data-module-id="invoices" data-module="invoices" data-role-allow="any"><span class="app-nav-icon">•</span><span>Invoices</span></a>
-      <a href="payment-history.html" data-module-id="payment_history" data-module="payment_history" data-role-allow="any"><span class="app-nav-icon">•</span><span>Payment history</span></a>
-      <a href="payments.html" data-module-id="payments" data-module="payments" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Payments</span></a>
-      <a href="finance.html" data-module-id="finance" data-module="finance" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Practice finance</span></a>
-      <a href="scholarships.html" data-module-id="scholarships" data-module="scholarships" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Scholarships &amp; discounts</span></a>
-      <a href="payroll.html" data-module-id="payroll" data-module="payroll" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Tutor payroll</span></a>
-      <div class="nav-section-title">⚙️ Platform</div>
-      <a href="about.html" data-module-id="about" data-module="about" data-role-allow="any"><span class="app-nav-icon">•</span><span>About</span></a>
-      <a href="developer.html" data-module-id="developer" data-module="developer" data-role-allow="any"><span class="app-nav-icon">•</span><span>About the developer</span></a>
-      <a href="activity-log.html" data-module-id="activity_log" data-module="activity_log" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Activity log</span></a>
-      <a href="admin-data.html" data-module-id="admin_data" data-module="admin_data" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Admin data</span></a>
-      <a href="approvals.html" data-module-id="approvals" data-module="approvals" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Approvals</span></a>
-      <a href="change-password.html" data-module-id="change_password" data-module="change_password" data-role-allow="any"><span class="app-nav-icon">•</span><span>Change password</span></a>
-      <a href="contact.html" data-module-id="contact" data-module="contact" data-role-allow="any" class="active"><span class="app-nav-icon">•</span><span>Contact</span></a>
-      <a href="dashboard.html" data-module-id="dashboard" data-module="dashboard" data-role-allow="any"><span class="app-nav-icon">•</span><span>Dashboard</span></a>
-      <a href="feature-guide.html" data-module-id="feature_guide" data-module="feature_guide" data-role-allow="any"><span class="app-nav-icon">•</span><span>Feature guide</span></a>
-      <a href="install.html" data-module-id="install" data-module="install" data-role-allow="any"><span class="app-nav-icon">•</span><span>Install the app</span></a>
-      <a href="family-links.html" data-module-id="family_links" data-module="family_links" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learners</span></a>
-      <a href="my-children.html" data-module-id="my_children" data-module="my_children" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learners</span></a>
-      <a href="profile.html" data-module-id="profile" data-module="profile" data-role-allow="any"><span class="app-nav-icon">•</span><span>My profile</span></a>
-      <a href="platform-health.html" data-module-id="platform_health" data-module="platform_health" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Platform health</span></a>
-      <a href="status-manager.html" data-module-id="status_manager" data-module="status_manager" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Role &amp; status</span></a>
-      <a href="settings.html" data-module-id="settings" data-module="settings" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Settings</span></a>
-      <a href="license.html" data-module-id="license" data-module="license" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Site license</span></a>
-      <a href="storage.html" data-module-id="storage" data-module="storage" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Storage manager</span></a>
-      <div class="nav-section-title">• Comms</div>
-      <a href="announcements.html" data-module-id="announcements" data-module="announcements" data-role-allow="any"><span class="app-nav-icon">•</span><span>Announcements</span></a>
-      <a href="stream.html" data-module-id="stream" data-module="stream" data-role-allow="any"><span class="app-nav-icon">•</span><span>Class stream</span></a>
-      <a href="complaints.html" data-module-id="complaints" data-module="complaints" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Complaints</span></a>
-      <a href="forum.html" data-module-id="forum" data-module="forum" data-role-allow="any"><span class="app-nav-icon">•</span><span>Group forum</span></a>
-      <a href="inbox.html" data-module-id="inbox" data-module="inbox" data-role-allow="any"><span class="app-nav-icon">•</span><span>Inbox</span></a>
-      <a href="messages.html" data-module-id="messages" data-module="messages" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Messaging (WA / Email / SMS)</span></a>
-      <a href="notifications.html" data-module-id="notifications" data-module="notifications" data-role-allow="any"><span class="app-nav-icon">•</span><span>Notifications</span></a>
-      <a href="parent-meetings.html" data-module-id="parent_meetings" data-module="parent_meetings" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Parent conferences</span></a>
-      <a href="polls.html" data-module-id="polls" data-module="polls" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Polls</span></a>
-      <a href="broadcasts.html" data-module-id="broadcasts" data-module="broadcasts" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Result broadcasts</span></a>
-      <a href="surveys.html" data-module-id="surveys" data-module="surveys" data-role-allow="any"><span class="app-nav-icon">•</span><span>Surveys &amp; CSAT</span></a>
-      <a href="voting.html" data-module-id="voting" data-module="voting" data-role-allow="any"><span class="app-nav-icon">•</span><span>Voting &amp; polls</span></a>
-      <div class="nav-section-title">• HMG Concepts</div>
-      <a href="hmg-products.html" data-module-id="hmg_products" data-module="hmg_products" data-role-allow="any"><span class="app-nav-icon">•</span><span>HMG Digital Products</span></a>
-      <a href="hmg-ecosystem.html" data-module-id="hmg_ecosystem" data-module="hmg_ecosystem" data-role-allow="any"><span class="app-nav-icon">•</span><span>HMG Ecosystem</span></a>
-      <div class="nav-section-title">• Media</div>
-      <a href="birthdays.html" data-module-id="birthdays" data-module="birthdays" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Birthdays</span></a>
-      <a href="directory.html" data-module-id="directory" data-module="directory" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Directory</span></a>
-      <a href="gallery.html" data-module-id="gallery" data-module="gallery" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Gallery</span></a>
-      <a href="idcards.html" data-module-id="idcards" data-module="idcards" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Learner cards</span></a>
-      <div class="nav-section-title">• Ops</div>
-      <a href="compliance.html" data-module-id="compliance" data-module="compliance" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Compliance</span></a>
-      <a href="documents.html" data-module-id="documents" data-module="documents" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Contracts &amp; consent</span></a>
-      <a href="substitutions.html" data-module-id="substitutions" data-module="substitutions" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Cover tutors</span></a>
-      <a href="helpdesk.html" data-module-id="helpdesk" data-module="helpdesk" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Help desk</span></a>
-      <a href="policies.html" data-module-id="policies" data-module="policies" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Policies</span></a>
-      <a href="security-centre.html" data-module-id="security_centre" data-module="security_centre" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Security &amp; compliance</span></a>
-      <a href="rooms.html" data-module-id="rooms" data-module="rooms" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Rooms / locations</span></a>
-      <a href="safeguarding.html" data-module-id="safeguarding" data-module="safeguarding" data-role-allow="admin"><span class="app-nav-icon">•</span><span>Safeguarding log</span></a>
-      <a href="timezones.html" data-module-id="timezones" data-module="timezones" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Timezone desk</span></a>
-      <a href="leave.html" data-module-id="leave" data-module="leave" data-role-allow="admin tutor staff"><span class="app-nav-icon">•</span><span>Tutor leave</span></a>
+    <nav class="app-nav" id="app-nav" aria-label="Studio menu" data-nav="model">
+      <noscript><a href="site-index.html">All pages A–Z</a></noscript>
     </nav>
   </aside>
   <div class="app-main">
@@ -234,13 +104,229 @@
     <main class="app-content">
       <section class="help-card page-intro">
         <div class="page-intro-head"><strong>Contact</strong><span class="page-intro-badge" style="background:#0f766e">🌍 Public page</span></div>
-        <p class="page-intro-what">Every way to reach the studio — WhatsApp, email, phone and social — plus an enquiry form that lands directly in the staff CRM. The main actions available here are: <b>Sign out</b>, <b>Theme</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.</p>
-        <p class="page-intro-who"><b>Who it is for.</b> Public.</p>
-        <p class="page-intro-why"><b>Why it matters.</b> A parent who cannot reach you in under a minute contacts the next tutor on their list.</p>
-        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Choose the channel you prefer; WhatsApp and email open your own device app.</li><li>Or submit the form and the studio replies from the Inquiries board.</li></ol></details>
-        <p class="page-intro-rel"><b>Related:</b> <a href="about.html">about</a> · <a href="activity-log.html">activity log</a> · <a href="admin-data.html">admin data</a> · <a href="approvals.html">approvals</a> · <a href="change-password.html">change password</a> · <a href="dashboard.html">dashboard</a></p>
+        <p class="page-intro-what">How to reach the studio, and a form that actually delivers. Shows the studio's phone, WhatsApp, email, address and teaching hours in the visitor's own time zone, a map link, the response time to expect, and a message form that writes into the studio's inbox so nothing depends on an email client being configured. What you can do here: <b>Send the message</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.</p>
+        <p class="page-intro-who"><b>Who it is for.</b> Anyone. No sign-in needed.</p>
+        <p class="page-intro-why"><b>Why it matters.</b> For a tutoring studio the contact page is a sales page. A parent who cannot see a phone number, cannot tell whether you are open, and gets no acknowledgement after writing, contacts the next tutor instead.</p>
+        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Use the WhatsApp or call button for anything urgent — both are one tap on a phone.</li><li>Check the teaching hours: they are shown converted into your own time zone, not the studio's.</li><li>Use the form for anything that needs a written record. You get a reference number back.</li><li>Choose the right subject on the form — it routes the message to the right person and sets the response time you are promised.</li></ol></details>
+        <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access, and can edit the content behind it in Settings.</li><li><b>Tutor:</b> Full access — it is a public page.</li><li><b>Parent:</b> Full access — it is a public page.</li><li><b>Learner:</b> Full access — it is a public page.</li></ul></details>
+        <p class="page-intro-rel"><b>Related:</b> <a href="feature-guide.html">feature guide</a> · <a href="site-index.html">site index</a> · <a href="about.html">about</a> · <a href="developer.html">developer</a> · <a href="flyer.html">flyer</a></p>
       </section>
-      <p class="muted">Use the related links and the ❓ Page Help button. Connect Supabase to load live rows.</p>
+      <div class="grid grid-2">
+        <article class="card">
+          <h3 style="margin-top:0">📞 Reach the studio</h3>
+          <div id="contact-details">
+            <p class="muted">Loading the studio’s contact details…</p>
+          </div>
+          <div id="contact-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"></div>
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--gray-200,#e2e8f0)">
+            <b>Teaching hours</b>
+            <div id="contact-hours" class="muted" style="margin-top:4px">—</div>
+            <div id="contact-hours-local" style="margin-top:6px;font-size:.85rem"></div>
+          </div>
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--gray-200,#e2e8f0)">
+            <b>How quickly you will hear back</b>
+            <ul class="muted" style="margin:6px 0 0;padding-left:18px;line-height:1.7;font-size:.88rem">
+              <li>WhatsApp: usually within a few hours during teaching hours.</li>
+              <li>This form and email: within one working day.</li>
+              <li>Anything about a class happening today: use WhatsApp, not the form.</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="card">
+          <h3 style="margin-top:0">✉️ Send a message</h3>
+          <p class="muted" style="margin-top:0">This goes straight into the studio’s inbox and you get a
+            reference number back — it does not depend on an email app being set up on your device.</p>
+          <div id="contact-error" style="display:none;margin-bottom:10px;padding:10px 12px;border-radius:10px;
+            background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:.88rem"></div>
+          <div id="contact-form">
+            <div class="grid grid-2">
+              <div class="form-group"><label for="cf-name">Your name *</label>
+                <input class="form-input" id="cf-name"></div>
+              <div class="form-group"><label for="cf-phone">Phone / WhatsApp *</label>
+                <input class="form-input" id="cf-phone"></div>
+              <div class="form-group"><label for="cf-email">Email</label>
+                <input class="form-input" type="email" id="cf-email"></div>
+              <div class="form-group"><label for="cf-topic">What is it about? *</label>
+                <select class="form-select" id="cf-topic">
+                  <option value="">— choose —</option>
+                  <option>A place for my child</option>
+                  <option>Fees and payment</option>
+                  <option>Timetable or a class time</option>
+                  <option>Exam preparation (WAEC / NECO / JAMB / IGCSE / SAT / IELTS)</option>
+                  <option>Free classes</option>
+                  <option>A problem with the portal</option>
+                  <option>A concern or complaint</option>
+                  <option>Something else</option>
+                </select>
+                <div class="form-help">Choosing the right one routes the message to the right person.</div></div>
+              <div class="form-group"><label for="cf-when">Best time to call you</label>
+                <input class="form-input" id="cf-when" placeholder="e.g. weekday evenings after 6pm"></div>
+              <div class="form-group"><label for="cf-tz">Your time zone</label>
+                <input class="form-input" id="cf-tz" readonly>
+                <div class="form-help">Detected from your device, so nobody calls you at 3am.</div></div>
+              <div class="form-group" style="grid-column:1/-1"><label for="cf-msg">Message *</label>
+                <textarea class="form-textarea" id="cf-msg" rows="4"></textarea></div>
+            </div>
+            <button class="btn btn-primary" type="button" id="cf-send">Send the message</button>
+          </div>
+        </article>
+      </div>
+
+      <article class="card" style="margin-top:14px">
+        <h3 style="margin-top:0">Other ways in</h3>
+        <div class="grid grid-4">
+          <a class="card" href="apply.html"><b>📝 Request a place</b><br>
+            <span class="muted">The full application. About two minutes.</span></a>
+          <a class="card" href="public-book.html"><b>📅 Book a trial</b><br>
+            <span class="muted">Pick a slot yourself, without emailing anyone.</span></a>
+          <a class="card" href="free-register.html"><b>🎁 Free classes</b><br>
+            <span class="muted">Open preparation classes for national and international exams.</span></a>
+          <a class="card" href="complaints.html"><b>❗ Raise a concern</b><br>
+            <span class="muted">If you are already with us and something is wrong.</span></a>
+        </div>
+      </article>
+
+      <script>
+      /* ---------------------------------------------------------------------
+         The studio's own details come from PRACTICE (assets/js/config.js) and
+         are overridden by practice_settings in the database when it is
+         reachable, so a studio that changes its number in Settings does not
+         have to remember to edit this page too.
+         --------------------------------------------------------------------- */
+      document.addEventListener('DOMContentLoaded', function () {
+        var esc = function (s) { return String(s == null ? '' : s)
+          .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+        var P = window.PRACTICE || {};
+
+        function paint(p) {
+          var box = document.getElementById('contact-details');
+          var acts = document.getElementById('contact-actions');
+          var rows = [];
+          if (p.name)    rows.push('<p style="margin:.2rem 0"><b>' + esc(p.name) + '</b></p>');
+          if (p.motto)   rows.push('<p class="muted" style="margin:.2rem 0"><i>' + esc(p.motto) + '</i></p>');
+          if (p.address) rows.push('<p style="margin:.4rem 0">📍 ' + esc(p.address) + '</p>');
+          if (p.phone)   rows.push('<p style="margin:.4rem 0">📞 <a href="tel:' + esc(p.phone) + '">' + esc(p.phone) + '</a></p>');
+          if (p.email)   rows.push('<p style="margin:.4rem 0">✉️ <a href="mailto:' + esc(p.email) + '">' + esc(p.email) + '</a></p>');
+          if (p.timezone)rows.push('<p style="margin:.4rem 0">🌐 Studio clock: ' + esc(p.timezone) + '</p>');
+          if (!rows.length) {
+            rows.push('<p class="muted">The studio has not filled in its contact details yet. ' +
+              'An administrator can add them on <a href="settings.html">Settings</a>.</p>');
+          }
+          box.innerHTML = rows.join('');
+
+          var a = [];
+          var wa = (p.socials && p.socials.whatsapp) || p.whatsapp || '';
+          if (wa) a.push('<a class="btn btn-primary" target="_blank" rel="noopener" href="' + esc(wa) + '">💬 WhatsApp us</a>');
+          if (p.phone) a.push('<a class="btn btn-outline" href="tel:' + esc(p.phone) + '">📞 Call</a>');
+          if (p.email) a.push('<a class="btn btn-outline" href="mailto:' + esc(p.email) + '">✉️ Email</a>');
+          if (p.address) a.push('<a class="btn btn-ghost" target="_blank" rel="noopener" ' +
+            'href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(p.address) + '">🗺️ Map</a>');
+          var s = p.socials || {};
+          ['facebook','instagram','x','linkedin','youtube','tiktok'].forEach(function (k) {
+            if (s[k]) a.push('<a class="btn btn-ghost btn-sm" target="_blank" rel="noopener" href="' +
+              esc(s[k]) + '">' + k + '</a>');
+          });
+          acts.innerHTML = a.join('');
+
+          var hrs = p.teachingHours || 'Monday to Saturday, 08:00 \u2013 21:00';
+          document.getElementById('contact-hours').textContent = hrs + ' (' + (p.timezone || 'Africa/Lagos') + ')';
+
+          /* Convert the studio's opening hours into the VISITOR's time zone.
+             Half the enquiries come from other countries, and "6pm" without a
+             zone is the single commonest cause of a missed first class. */
+          try {
+            var mine = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            var studioTz = p.timezone || 'Africa/Lagos';
+            if (mine && mine !== studioTz) {
+              var conv = function (h) {
+                var now = new Date();
+                var d0 = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), h, 0));
+                // offset between the two zones, right now
+                var f = function (tz) {
+                  var p2 = new Intl.DateTimeFormat('en', { timeZone: tz, hour12: false,
+                    hour: '2-digit', minute: '2-digit' }).formatToParts(d0);
+                  return p2;
+                };
+                var st = f(studioTz), me = f(mine);
+                var get = function (parts, t) { return +(parts.filter(function (x) { return x.type === t; })[0] || {}).value; };
+                var diff = (get(me, 'hour') * 60 + get(me, 'minute')) - (get(st, 'hour') * 60 + get(st, 'minute'));
+                var tot = ((h * 60 + diff) % 1440 + 1440) % 1440;
+                return String(Math.floor(tot / 60)).padStart(2, '0') + ':' + String(tot % 60).padStart(2, '0');
+              };
+              document.getElementById('contact-hours-local').innerHTML =
+                '🕒 In <b>your</b> time zone (' + esc(mine) + ') that is roughly <b>' +
+                conv(8) + ' \u2013 ' + conv(21) + '</b>.';
+            }
+          } catch (e) {}
+
+          try {
+            document.getElementById('cf-tz').value = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+          } catch (e) {}
+        }
+
+        paint(P);
+        if (window.sb && window.sb.from) {
+          window.sb.from('practice_settings').select('*').eq('id', 1).maybeSingle()
+            .then(function (r) { if (r && r.data) paint(Object.assign({}, P, r.data)); })
+            .catch(function () {});
+        }
+
+        document.getElementById('cf-send').addEventListener('click', async function () {
+          var err = document.getElementById('contact-error');
+          var show = function (m) { err.innerHTML = m; err.style.display = ''; };
+          err.style.display = 'none';
+          var v = function (id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; };
+
+          if (!v('cf-name'))  return show('Please tell us your name.');
+          if (!v('cf-phone')) return show('Please leave a phone or WhatsApp number \u2014 it is the fastest way to reach you.');
+          if (!v('cf-topic')) return show('Please choose what the message is about, so it reaches the right person.');
+          if (v('cf-msg').length < 10) return show('Please write a little more so we can actually help.');
+
+          var btn = document.getElementById('cf-send');
+          btn.disabled = true; btn.textContent = 'Sending\u2026';
+
+          var ref = 'MSG-' + Date.now().toString(36).toUpperCase().slice(-6);
+          var body = v('cf-msg') +
+            '\n\n\u2014\nTopic: ' + v('cf-topic') +
+            '\nBest time to call: ' + (v('cf-when') || 'not given') +
+            '\nTheir time zone: ' + (v('cf-tz') || 'unknown') +
+            '\nPhone: ' + v('cf-phone') + '  Email: ' + (v('cf-email') || 'not given');
+
+          var done = function () {
+            document.getElementById('contact-form').innerHTML =
+              '<div style="padding:14px;border-radius:12px;background:#ecfdf5;border:1px solid #a7f3d0;color:#065f46">' +
+              '<b>\u2705 Message sent.</b><br>Your reference is <b>' + ref + '</b> \u2014 quote it if you follow up.' +
+              '<br><span style="font-size:.88rem">You will hear back within one working day. ' +
+              'If it is urgent, use WhatsApp instead.</span></div>';
+          };
+
+          if (!window.sb || !window.sb.from) {
+            btn.disabled = false; btn.textContent = 'Send the message';
+            return show('The studio\u2019s inbox is not reachable from this device right now. ' +
+              'Please use the WhatsApp or Call button on the left instead.');
+          }
+          try {
+            /* Written as an inquiry, so it lands in the same pipeline as an
+               application rather than in a separate place nobody checks. */
+            var res = await window.sb.from('inquiries').insert({
+              full_name: v('cf-name'),
+              email: v('cf-email') || null,
+              phone: v('cf-phone'),
+              source: 'contact form',
+              status: 'new',
+              notes: '[' + ref + '] ' + body
+            });
+            if (res.error) throw res.error;
+            done();
+          } catch (e) {
+            btn.disabled = false; btn.textContent = 'Send the message';
+            show('Could not send that: ' + esc(e.message || e) +
+              '<br>Please use the WhatsApp button on the left instead \u2014 it always works.');
+          }
+        });
+      });
+      </script>
     </main>
   </div>
 </div>
