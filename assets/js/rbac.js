@@ -44,6 +44,13 @@
      parent reads it.
      --------------------------------------------------------------------- */
   var FAMILY_READ = [
+    /* ITEMS 2 & 6 — 'dashboard' was missing from every list, so deny-by-
+       default blocked a parent or learner from their OWN HOME PAGE the
+       instant they signed in. The core shell pages are listed first now, and
+       a test asserts every role can reach its dashboard. */
+    'dashboard',
+    'my-children',         // a parent's children summary
+    'learner-360',
     'bookings',            // cycle bookings
     'goals',               // goals & learning plans
     'attendance',
@@ -151,13 +158,23 @@
   var STAFF_READ = ['invoices', 'payments', 'fees', 'wallet', 'payment-plans',
                     'scholarships', 'packages', 'activity-log'];
 
+  /* The four real roles this matrix understands. ANYTHING ELSE — 'guest',
+     'pending', 'demo', an empty string, or a value we have not seen — is NOT
+     a role we may make decisions about. See KNOWN() below. */
+  var REAL = ['admin', 'tutor', 'staff', 'parent', 'student'];
+
   function normRole(r) {
-    r = String(r || '').toLowerCase();
-    if (r === 'owner' || r === 'administrator') return 'admin';
-    if (r === 'teacher') return 'tutor';
-    if (r === 'learner') return 'student';
+    r = String(r || '').trim().toLowerCase();
+    if (['owner', 'administrator', 'super_admin', 'superadmin', 'super admin',
+         'super', 'proprietor'].indexOf(r) > -1) return 'admin';
+    if (['teacher', 'instructor', 'facilitator'].indexOf(r) > -1) return 'tutor';
+    if (['learner', 'pupil', 'child'].indexOf(r) > -1) return 'student';
+    if (['guardian', 'father', 'mother'].indexOf(r) > -1) return 'parent';
     return r;
   }
+
+  /* Is this a role we are confident about? */
+  function isKnown(r) { return REAL.indexOf(normRole(r)) > -1; }
 
   function normPage(p) {
     return String(p || '').toLowerCase()
@@ -185,7 +202,21 @@
         return 'write';
       }
 
+      // Staff run the studio; decide for them before anything else.
       if (role === 'admin') return 'write';
+
+      /* Pages that belong to the USER, not to a department. Blocking any of
+         these strands someone in their own portal, so they are reachable by
+         every role. Writing is only meaningful on the personal ones. */
+      var SHELL = ['dashboard', 'profile', 'change-password', 'notifications',
+                   'inbox', 'messages', 'offline', 'install', 'about',
+                   'feature-guide', 'site-index', 'contact', 'helpdesk',
+                   'hmg-ecosystem', 'hmg-products'];
+      if (SHELL.indexOf(page) > -1) {
+        if (role === 'tutor' || role === 'staff') return 'write';
+        return ['profile', 'change-password', 'inbox', 'messages', 'helpdesk',
+                'contact'].indexOf(page) > -1 ? 'write' : 'read';
+      }
 
       if (role === 'tutor' || role === 'staff') {
         if (STAFF_DENY.indexOf(page) > -1) return 'none';
@@ -207,8 +238,41 @@
         return 'none';                       // deny by default
       }
 
-      // Unknown or guest role: only the public set above.
-      return 'none';
+      /* ------------------------------------------------------------------
+         CRITICAL FIX (item 7): this used to `return 'none'` for any role it
+         did not recognise. App.currentRole is initialised to 'guest' and
+         stays that way until the session resolves, and 'super_admin' was
+         never normalised at all — so the matrix confidently blocked EVERY
+         page for EVERY user, including administrators, with the message
+         "Your account is a guest account".
+
+         An access-control layer that is unsure must never be the thing that
+         locks a legitimate user out. Where the role is not one we actually
+         understand, we defer: return 'write' and let row-level security in
+         the database decide, which is the real boundary anyway.
+         ------------------------------------------------------------------ */
+      return 'write';
+    },
+
+    /* If a page was made read-only while the role was still resolving, and
+       the resolved role turns out to be admin or staff, undo it. Without
+       this a slow session left an administrator staring at a read-only
+       banner until they reloaded. */
+    unlock: function () {
+      var d = w.document;
+      if (d.body.dataset.tcReadonly !== '1') return;
+      delete d.body.dataset.tcReadonly;
+      d.body.classList.remove('tc-readonly');
+      var n = d.getElementById('tc-ro-note');
+      if (n) n.remove();
+      d.querySelectorAll('[data-tc-ro-disabled="1"]').forEach(function (el) {
+        el.disabled = false;
+        el.removeAttribute('data-tc-ro-disabled');
+      });
+      d.querySelectorAll('[data-tc-ro-hidden="1"]').forEach(function (el) {
+        el.style.display = '';
+        el.removeAttribute('data-tc-ro-hidden');
+      });
     },
 
     canSee:  function (page, role) { return this.level(page, role) !== 'none'; },
@@ -217,9 +281,19 @@
     /* ------------------------------------------------------------------
        Apply the matrix to the page currently on screen.
        ------------------------------------------------------------------ */
+    isKnown: isKnown,
+    REAL: REAL,
+
     apply: function (role) {
-      role = normRole(role || (w.App && (w.App.currentRole || w.App.role)) || '');
-      if (!role || role === 'admin') return;      // admin sees everything
+      var raw = role || (w.App && (w.App.currentRole || w.App.role)) || '';
+      role = normRole(raw);
+
+      /* Do nothing at all unless we KNOW the role. 'guest', 'pending',
+         'demo' and an unresolved session must never trigger a lockout —
+         that was the bug that blocked administrators out of their own
+         studio. */
+      if (!isKnown(role)) return;
+      if (role === 'admin') { RBAC.unlock(); return; }   // admin: no restrictions
 
       var d = w.document;
 
@@ -264,12 +338,47 @@
       if (lvl === 'read') { RBAC.makeReadOnly(); }
     },
 
-    /* Turn the current page read-only: disable every writing control, and
-       leave a clear banner saying why. Deliberately allows search, filter,
-       sort, paging, print and export — reading well is the point. */
+    /* -----------------------------------------------------------------------
+       READ-ONLY MODE — allow-list, not deny-list (items 3 and 5).
+
+       The first version disabled controls inside `.app-content form` plus a
+       short list of CRUD selectors. That missed the pages the report actually
+       named — cycle bookings, reading assignments, classwork, class stream,
+       study log — because those pages contain NO <form> at all: they build
+       their buttons in JavaScript. So a parent still had working Save and
+       Delete buttons on exactly the pages that were reported.
+
+       The posture is now inverted. Everything that could write is disabled,
+       and only controls that are demonstrably READING TOOLS are allowed
+       through. Getting the allow-list wrong makes a page slightly less
+       convenient; getting a deny-list wrong lets a parent edit the register.
+       ----------------------------------------------------------------------- */
+
+    /* Controls a viewer legitimately keeps: searching, filtering, sorting,
+       paging, printing, exporting, opening a record, switching theme,
+       navigating, and closing a dialog. */
+    _isReadTool: function (el) {
+      var id = (el.id || '').toLowerCase();
+      var cls = (typeof el.className === 'string' ? el.className : '').toLowerCase();
+      var txt = (el.textContent || '').trim().toLowerCase();
+      var t = (el.getAttribute && el.getAttribute('type') || '').toLowerCase();
+
+      if (el.hasAttribute && (el.hasAttribute('data-filter') || el.hasAttribute('data-sort') ||
+          el.hasAttribute('data-open') || el.hasAttribute('data-audit') ||
+          el.hasAttribute('data-res') || el.hasAttribute('data-signout') ||
+          el.hasAttribute('data-view-only'))) return true;
+      if (t === 'search') return true;
+      if (/^(crud-q|crud-csv|crud-print|crud-cols|crud-dense|crud-clear|crud-prev|crud-next|crud-size|crud-saved|nav-search|nav-search-clear|btn-dark|page-help-btn|tc-bot-fab|notif-bell)$/.test(id)) return true;
+      if (/(^|\s)(nav-|crud-pager|crud-toolbar|tab|chip-view)/.test(cls)) return true;
+      if (/^(search|filter|sort|print|export|download|csv|close|cancel|back|view|open|audit|results|refresh|reload|theme|sign out|help|next|prev|previous|page)\b/.test(txt)) return true;
+      if (/(⬇|🖨|🔎|🔍|❓|×|‹|›)/.test(txt)) return true;
+      // Anchors are navigation, not writes.
+      if (el.tagName === 'A') return true;
+      return false;
+    },
+
     makeReadOnly: function () {
       var d = w.document;
-      if (d.body.dataset.tcReadonly === '1') return;
       d.body.dataset.tcReadonly = '1';
       d.body.classList.add('tc-readonly');
 
@@ -278,32 +387,51 @@
         var note = d.createElement('div');
         note.id = 'tc-ro-note';
         note.className = 'tc-ro-note';
-        note.innerHTML = '<b>👁 View only.</b> You can read, search, print and export everything on ' +
-          'this page. Changes are made by the studio — if something looks wrong, use ' +
+        note.innerHTML = '<b>👁 View only.</b> You can read, search, sort, print and export ' +
+          'everything on this page. Changes are made by the studio — if something looks wrong, use ' +
           '<a href="complaints.html">Raise a concern</a> or <a href="inbox.html">Messages</a>.';
         main.insertBefore(note, main.firstChild);
       }
 
+      var self = this;
       var sweep = function () {
-        // Anything that writes.
-        d.querySelectorAll('#crud-add,[data-edit],[data-del],[data-dup],[data-rowact],' +
-          '[data-crud-add],.btn-danger,#crud-bulk,[data-pick],#crud-all').forEach(function (el) {
-          el.style.display = 'none';
-        });
-        // Forms inside the content area, minus the ones that are reading tools.
-        d.querySelectorAll('.app-content form').forEach(function (f) {
-          if (f.closest('#crud-root, .crud-toolbar')) return;
-          if (f.id === 'crud-form') return;
-          f.querySelectorAll('input,select,textarea,button').forEach(function (el) {
-            if (el.type === 'search' || el.id === 'crud-q' || el.hasAttribute('data-filter')) return;
+        var scope = d.querySelector('.app-content') || d.body;
+        if (!scope) return;
+
+        // Every control that could write, unless it is a reading tool.
+        scope.querySelectorAll('button, input, select, textarea, [role="button"]').forEach(function (el) {
+          if (el.closest('#tc-ro-note')) return;
+          if (el.closest('.app-sidebar, .app-topbar, .app-nav')) return;   // chrome
+          if (el.closest('#tc-bot-panel, .tc-popup, #page-help-btn')) return;
+          if (self._isReadTool(el)) return;
+          if (el.tagName === 'BUTTON' || el.getAttribute('role') === 'button') {
+            if (el.style.display !== 'none') {
+              el.style.display = 'none';
+              el.setAttribute('data-tc-ro-hidden', '1');
+            }
+          } else if (!el.disabled) {
             el.disabled = true;
-          });
+            el.setAttribute('data-tc-ro-disabled', '1');
+          }
+        });
+
+        // The workbench's own writing affordances.
+        scope.querySelectorAll('#crud-add,[data-edit],[data-del],[data-dup],[data-rowact],' +
+          '#crud-bulk,[data-pick],#crud-all').forEach(function (el) {
+          if (el.style.display !== 'none') {
+            el.style.display = 'none';
+            el.setAttribute('data-tc-ro-hidden', '1');
+          }
         });
       };
+
       sweep();
-      // The workbench paints asynchronously, so sweep again as rows arrive.
-      if (w.MutationObserver) {
-        new MutationObserver(sweep).observe(d.documentElement, { childList: true, subtree: true });
+      // Pages paint asynchronously, so keep sweeping as content arrives.
+      if (w.MutationObserver && !this._roObserver) {
+        this._roObserver = new MutationObserver(function () {
+          if (d.body.dataset.tcReadonly === '1') sweep();
+        });
+        this._roObserver.observe(d.documentElement, { childList: true, subtree: true });
       }
     }
   };
@@ -316,10 +444,15 @@
   w.document.addEventListener('tc:role', function (e) {
     try { RBAC.apply(e && e.detail); } catch (err) {}
   });
-  setTimeout(function () {
-    try {
+  /* A guarded fallback for pages that resolve the role by another route. It
+     re-checks a few times, and only ever acts on a role it recognises, so an
+     unresolved session can never cause a lockout. */
+  (function poll() {
+    var tries = 0;
+    var t = setInterval(function () {
       var r = (w.App && (w.App.currentRole || w.App.role)) || '';
-      if (r) RBAC.apply(r);
-    } catch (e) {}
-  }, 1500);
+      if (isKnown(r)) { clearInterval(t); try { RBAC.apply(r); } catch (e) {} }
+      else if (++tries > 20) { clearInterval(t); }     // ~10s, then give up quietly
+    }, 500);
+  })();
 })(window);

@@ -615,6 +615,9 @@ const App = {
   ],
 
   ESSENTIAL_NAV: [
+    /* Home first. If a generated studio ever ships without a dashboard link,
+       this puts one back rather than leaving the user with no way home. */
+    ['dashboard', '🏠', 'Dashboard', 'dashboard.html', 'any'],
     ['profile', '👤', 'My profile', 'profile.html', 'any'],
     ['notifications', '🔔', 'Notifications', 'notifications.html', 'any'],
     ['voting', '🗳️', 'Voting & polls', 'voting.html', 'any'],
@@ -736,13 +739,67 @@ const App = {
         const id = this.normalizeModuleId(a.getAttribute('data-module-id') || a.getAttribute('data-module') || a.getAttribute('href'));
         if (seen.has(id)) a.remove(); else seen.add(id);
       });
-      const remaining = [...nav.querySelectorAll('a[data-module-id], a[data-module]')];
-      const rank = (a) => {
+      /* -----------------------------------------------------------------
+         BUG FIX 4 (reported): "when you click a public page and come back,
+         the navigation pane is scattered and unordered."
+
+         This is why. The old line was:
+
+             remaining.sort(...).forEach(a => nav.appendChild(a));
+
+         appendChild MOVES a node. Appending every link to the nav therefore
+         tore all 130 links out of their sections and stacked them at the
+         bottom, leaving the "◈ Core", "🗓️ Sessions", "🧾 Finance" headings
+         orphaned together at the top with nothing beneath them. The nav went
+         from a grouped menu to a heap.
+
+         Sections are the whole point of the menu, so ordering now happens
+         WITHIN each section. The headings stay put, their links stay under
+         them, and NAV_ORDER still decides the sequence inside a section.
+         ----------------------------------------------------------------- */
+      /* ITEMS 2 & 6 — "there is no Dashboard on the navigation pane".
+
+         The link was present, but buried far down among the platform pages,
+         below eleven section headings. For a parent or a learner — who can
+         reach only a handful of pages — it was effectively invisible, and for
+         everyone else it was in the last place you would look for a home
+         link. Home belongs at the top, above the first section heading. */
+      var home = nav.querySelector('a[href="dashboard.html"], a[data-module-id="dashboard"]');
+      if (home && nav.firstElementChild !== home) {
+        nav.insertBefore(home, nav.firstElementChild);
+        if (!home.dataset.homePinned) {
+          home.dataset.homePinned = '1';
+          home.style.fontWeight = '700';
+        }
+      }
+
+      const kids = [...nav.children].filter(function (el) { return el !== home; });
+      const rankOf = (a) => {
         const id = this.normalizeModuleId(a.getAttribute('data-module-id') || a.getAttribute('data-module'));
         const i = this.NAV_ORDER.indexOf(id);
-        return i === -1 ? this.NAV_ORDER.length + remaining.indexOf(a) : i;
+        return i === -1 ? this.NAV_ORDER.length : i;
       };
-      remaining.sort((a, b) => rank(a) - rank(b)).forEach(a => nav.appendChild(a));
+
+      // Walk the nav, collecting each heading and the links that follow it.
+      let group = [];
+      const flush = () => {
+        if (group.length < 2) { group = []; return; }
+        const sorted = group.slice().sort((a, b) => rankOf(a) - rankOf(b));
+        // Only touch the DOM if the order actually changes.
+        let changed = false;
+        for (let i = 0; i < group.length; i++) if (group[i] !== sorted[i]) { changed = true; break; }
+        if (changed) {
+          const anchor = group[group.length - 1].nextSibling;
+          sorted.forEach(a => nav.insertBefore(a, anchor));
+        }
+        group = [];
+      };
+      kids.forEach(el => {
+        if (el.classList && el.classList.contains('nav-section-title')) { flush(); return; }
+        if (el.tagName === 'A') group.push(el);
+        else flush();
+      });
+      flush();
     } catch (e) {}
   },
 
