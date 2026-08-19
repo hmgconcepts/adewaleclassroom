@@ -37,6 +37,7 @@
 <script src="assets/js/record-actions.js"></script>
 <script src="assets/js/receipts.js"></script>
 <script src="assets/js/app.js"></script>
+<script src="assets/js/rbac.js"></script>
 <script src="assets/js/legibility.js" defer></script>
 <script src="assets/js/ux-enhance.js" defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -207,7 +208,7 @@ document.getElementById('start').onclick = async () => {
 
   // Item 9 — watermark + the full anti-cheat suite.
   ExamKit.watermark(idLine + ' · ' + new Date().toLocaleString());
-  ExamKit.onAutoSubmit = () => { try { finish(); } catch (_) {} };
+  ExamKit.onAutoSubmit = () => { try { state.autoSubmitted = true; finish(); } catch (_) {} };
   ExamKit.startAntiCheat(ac, () => {});
 
   // Item 14 — calculator + maths keyboard.
@@ -363,14 +364,34 @@ async function finish() {
     identity_mode: state.identity_mode
   };
   if (window.sb && state.exam.id) {
+    /* ITEM 3 — the audit needs more than a score. Until now the runner sent
+       only score/answers/review, so "what did the candidate do" could not be
+       answered: there was no start time, no duration, no attempt number, no
+       device, and per_question was never populated at all (the audit read an
+       empty default instead of `review`). All of it is sent now. */
+    const finishedAt = new Date();
+    const startedAt = new Date(state.started);
     const payload = {
       exam_id: state.exam.id,
-      learner_id: state.learner && state.learner.id,
+      exam_code: state.exam.code || null,
+      learner_id: (state.learner && state.learner.id) || null,
       student_no: meta.student_no,
       candidate_name: displayName,
+      is_anonymous: !(state.learner && state.learner.id),
       score: result.got, max_score: result.max,
       quiz_kind: state.exam.quiz_kind,
-      answers, review: result.detail, subject_scores: result.subject_scores,
+      answers,
+      // Written to BOTH columns: `per_question` is what the audit reads first,
+      // `review` is kept so older tooling and the learner review still work.
+      per_question: result.detail,
+      review: result.detail,
+      subject_scores: result.subject_scores,
+      started_at: startedAt.toISOString(),
+      finished_at: finishedAt.toISOString(),
+      duration_sec: Math.max(0, Math.round((finishedAt - startedAt) / 1000)),
+      attempt_no: state.attemptNo || 1,
+      user_agent: (navigator && navigator.userAgent || '').slice(0, 300),
+      auto_submitted: !!state.autoSubmitted,
       violations: (Proctor.violations || []).concat(kitViolations), detail: result
     };
     // BUGFIX: this insert used to be fire-and-forget. When RLS or the network
