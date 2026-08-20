@@ -46,16 +46,76 @@
   };
 
   /* Parse a field that may arrive as JSON text, an array, or a pipe list. */
+  /* -------------------------------------------------------------------------
+     LENIENT STRUCTURED-CELL PARSER  (reported item 2)
+
+     Chat models asked to fill the Items / Pairs columns very often emit
+     PYTHON literal syntax rather than JSON, because that is what their
+     training data looks like when a list is printed. Every one of these
+     appeared in the three CSVs supplied with the report:
+
+         ['new creature|new creation', 'new']          single quotes
+         {"min_words":40,"keywords":['sinner','forgiven']}   mixed
+         ["Step one", "Step two",]                     trailing comma
+         {'min_words': 40, 'keywords': ["a"]}          python dict
+
+     JSON.parse rejects all of them, the old code fell through to splitting
+     on | and ;, produced garbage or nothing, and the question ended up with
+     no usable key. The tutor then saw "N question(s) have no answer key".
+
+     Rejecting a file because a model used the wrong quote character is not
+     a defensible product decision when the intent is unambiguous. This
+     normalises the common cases and then parses. It is deliberately
+     conservative: it only rewrites quotes it can prove are delimiters, and
+     if anything at all goes wrong it falls back to the old behaviour rather
+     than inventing data.
+     ------------------------------------------------------------------------- */
+  function lenientJSON(str) {
+    var s = String(str).trim();
+    if (!s) return null;
+    // 1. Straight JSON first — the common, correct case.
+    try { return JSON.parse(s); } catch (e) {}
+
+    // 2. Smart quotes, which arrive when a prompt is pasted through a word
+    //    processor or a chat UI.
+    var t = s.replace(/[\u201c\u201d]/g, '"').replace(/[\u2018\u2019]/g, "'");
+    try { return JSON.parse(t); } catch (e) {}
+
+    // 3. Python literals: True/False/None, and single-quoted strings.
+    try {
+      var out = '', i = 0, ch, q = null, body;
+      while (i < t.length) {
+        ch = t.charAt(i);
+        if (q) {
+          // inside a string
+          if (ch === '\\') { out += ch + t.charAt(i + 1); i += 2; continue; }
+          if (ch === q) { out += '"'; q = null; i++; continue; }
+          // a double quote inside a single-quoted string must be escaped
+          if (ch === '"') { out += '\\"'; i++; continue; }
+          out += ch; i++; continue;
+        }
+        if (ch === "'" || ch === '"') { q = ch; out += '"'; i++; continue; }
+        out += ch; i++;
+      }
+      body = out
+        .replace(/\bTrue\b/g, 'true')
+        .replace(/\bFalse\b/g, 'false')
+        .replace(/\bNone\b/g, 'null')
+        .replace(/,\s*([\]}])/g, '$1');          // trailing commas
+      return JSON.parse(body);
+    } catch (e) {}
+
+    return null;
+  }
+
   function parseList(v) {
     if (v == null || v === '') return [];
     if (Array.isArray(v)) return v;
     if (typeof v === 'object') return Object.values(v);
     var s = String(v).trim();
     if (s.charAt(0) === '[' || s.charAt(0) === '{') {
-      try {
-        var p = JSON.parse(s);
-        return Array.isArray(p) ? p : [p];
-      } catch (e) { /* fall through to delimiter parsing */ }
+      var p = lenientJSON(s);
+      if (p != null) return Array.isArray(p) ? p : [p];
     }
     return s.split(/\s*[|;]\s*/).filter(Boolean);
   }
@@ -63,14 +123,16 @@
   function parseObj(v) {
     if (!v) return {};
     if (typeof v === 'object' && !Array.isArray(v)) return v;
-    try { var p = JSON.parse(String(v)); return (p && typeof p === 'object') ? p : {}; }
-    catch (e) { return {}; }
+    var p = lenientJSON(v);                       // tolerates Python dicts
+    return (p && typeof p === 'object' && !Array.isArray(p)) ? p : {};
   }
 
   /* A deterministic shuffle seeded by the question id, so the right-hand pool
      of a matching question is the same every time the learner returns to it.
      A fresh Math.random() shuffle on each repaint would move the options
      under the learner's finger. */
+  /* exported below as CBTTypes.parseList / .parseObj / .lenientJSON so the
+     CSV importer in cbt.js uses exactly the same leniency. */
   function seededShuffle(arr, seed) {
     var a = arr.slice(), s = 0, i, j, t;
     String(seed || '').split('').forEach(function (c) { s = (s * 31 + c.charCodeAt(0)) & 0x7fffffff; });
@@ -469,7 +531,35 @@
         if (list._wired) return; list._wired = true;
         var nm = list.getAttribute('data-order');
         var hidden = root.querySelector('input[type="hidden"][name="' + nm + '"]');
+        /* ---------------------------------------------------------------
+           SECOND HALF OF THE "marks for a blank paper" BUG.
+
+           Fixing the radio fallback took the three supplied papers from
+           56% / 59% / 15% down to 0% / 2.3% / 0%. The stubborn 2.3% was
+           ordering questions, and this is why.
+
+           The list is rendered PRE-POPULATED in a seeded shuffle, and
+           sync() ran once at the end of activate() to paint the position
+           numbers — writing that shuffle into the hidden input as it went.
+           A candidate who never touched the question therefore submitted a
+           complete ordering, and partial credit handed them a mark for
+           every item the shuffle happened to place correctly. Pure luck,
+           scored as knowledge.
+
+           The hidden input is now only written once the candidate has
+           actually moved something. `paint` renumbers without recording;
+           `sync` records. Until then the question harvests as [], which
+           isBlank() correctly treats as unanswered.
+           --------------------------------------------------------------- */
+        var touched = false;
+        var paint = function () {
+          [].forEach.call(list.querySelectorAll('.tcq-order-item'), function (li, i) {
+            var n = li.querySelector('.tcq-order-num'); if (n) n.textContent = i + 1;
+          });
+        };
         var sync = function () {
+          touched = true;
+          if (hidden) hidden.dataset.tcTouched = '1';
           var vals = [].map.call(list.querySelectorAll('.tcq-order-item'), function (li, i) {
             var n = li.querySelector('.tcq-order-num'); if (n) n.textContent = i + 1;
             return li.getAttribute('data-val');
@@ -502,7 +592,8 @@
             list.insertBefore(li.nextElementSibling, li); sync();
           }
         });
-        sync();
+        /* Paint the numbers, but do NOT record an answer. See above. */
+        paint();
       });
 
       // Hot text — tappable chips.
@@ -559,7 +650,11 @@
         return [].map.call(root.querySelectorAll('input[name="' + name + '"]:checked'), function (i) { return i.value; });
       }
       if (t === 'ordering') {
-        try { return JSON.parse(one('input[type=hidden][name="' + name + '"]') || '[]'); } catch (e) { return []; }
+        /* An ordering list the candidate never touched is NOT an answer,
+           however plausible the shuffle looks. See the note in activate(). */
+        var oh = root.querySelector('input[type=hidden][name="' + name + '"]');
+        if (!oh || oh.dataset.tcTouched !== '1') return [];
+        try { return JSON.parse(oh.value || '[]'); } catch (e) { return []; }
       }
       if (t === 'matching' || t === 'categorization' || t === 'matrix' ||
           t === 'multi_numeric' || t === 'cloze') {
@@ -571,8 +666,50 @@
         });
         return out;
       }
-      var el = root.querySelector('[name="' + name + '"]:checked') || root.querySelector('[name="' + name + '"]');
-      return el ? el.value : '';
+      /* ===================================================================
+         THE BUG BEHIND "I answered nothing and the system gave me marks"
+         (reported twice; this is the actual cause, found by harvesting an
+         untouched rendered paper in a headless DOM).
+
+         The line here used to be:
+
+             var el = root.querySelector('[name="'+name+'"]:checked')
+                   || root.querySelector('[name="'+name+'"]');
+             return el ? el.value : '';
+
+         Read the fallback carefully. When a radio group has NOTHING
+         checked, the first selector returns null, so the `||` falls
+         through to the second — which matches the FIRST RADIO IN THE
+         GROUP regardless of its state — and returns its value.
+
+         Every multiple-choice question therefore silently answered itself
+         with option A the instant the paper was rendered. Measured against
+         the three CSVs supplied with this report, a completely untouched
+         paper harvested 65 of 100 answers and scored:
+
+             your-new-beginning-in-christ.csv      56 / 100  (56%)
+             navigating-tech-space-as-a-newbie.csv 35.4 / 60 (59%)
+             Ade your-new-beginning-in-christ.csv  15 / 100  (15%)
+
+         The 59% is the giveaway: that paper happens to key most answers to
+         option A, so "always pick A" nearly passes it. This also explains
+         the other two symptoms in the same report — the palette saying
+         "65 of 100 answered" before anything was touched, and the review
+         page showing answers the candidate never chose. All three were
+         this one line.
+
+         The fallback exists for text inputs and textareas, which have no
+         :checked state. It must never apply to a radio or a checkbox: an
+         unchecked box is the ABSENCE of an answer, not an answer.
+         =================================================================== */
+      var checked = root.querySelector('[name="' + name + '"]:checked');
+      if (checked) return checked.value;
+
+      var el = root.querySelector('[name="' + name + '"]');
+      if (!el) return '';
+      var kind = String(el.type || '').toLowerCase();
+      if (kind === 'radio' || kind === 'checkbox') return '';   // nothing was chosen
+      return el.value == null ? '' : el.value;
     },
 
     /** Is a response genuinely blank? Arrays and objects need a length check;
@@ -758,6 +895,14 @@
       return res(norm(given) === norm(ans) ? max : 0);
     }
   };
+
+  /* Shared with the CSV importer in cbt.js, so an Items or Pairs cell is
+     interpreted identically at import time and at grading time. Before this
+     they used two different parsers and could disagree. */
+  CBTTypes.parseList   = parseList;
+  CBTTypes.parseObj    = parseObj;
+  CBTTypes.lenientJSON = lenientJSON;
+  CBTTypes.ALIAS       = ALIAS;
 
   w.CBTTypes = CBTTypes;
   if (w.TC) w.TC.CBTTypes = CBTTypes;

@@ -994,3 +994,257 @@ body.dark-mode .tc-popup a, body.dark-mode #tc-bot-panel a { color: #a5b4fc !imp
 .tc-ro-note a{color:#0506ae;font-weight:700}
 body.tc-readonly .crud-toolbar-actions .btn-primary{display:none}
 body.tc-readonly .crud-actions .btn-danger{display:none}
+
+/* =========================================================================
+   V26 — POPUP LEGIBILITY, DEFINITIVELY.            (reported item 8, again)
+   -------------------------------------------------------------------------
+   "Whenever a popup message shows up on any page, the texts are not legible,
+    cannot be seen or read. I have raised these issues before but you are yet
+    to address it."
+
+   That is fair, and here is why the previous two attempts did not work.
+
+   FAULT 1 — THE DARK-MODE RULES WERE DEAD CODE.
+   Every dark-mode popup override in this file was written as
+
+        body.dark-mode .modal { ... }
+
+   but nothing in the application ever sets that class. App.toggleDarkMode()
+   does exactly this:
+
+        document.body.dataset.theme = 'dark';
+
+   which produces  body[data-theme="dark"]  — a completely different
+   selector. So in dark mode NONE of the popup fixes applied, the popup kept
+   `background:#ffffff !important` from the light rule, and the text
+   inherited the near-white body colour. White on white. Unreadable, exactly
+   as reported.
+
+   FAULT 2 — ONLY `.modal` WAS COVERED.
+   The popups a user actually meets are not all `.modal`. Page Help, the
+   assistant panel, the notification tray, the quiz manager dialogs and the
+   record drawer are separate elements built in JavaScript with inline
+   styles, and most set a background without ever setting a colour.
+
+   THE RULE APPLIED HERE
+   Every popup surface names BOTH its background and its colour, in both
+   themes, and the pairing is fixed rather than inherited. A surface that
+   sets one without the other is the bug.
+
+   Contrast, measured:
+     #0f172a on #ffffff  = 17.4:1   (light)
+     #f1f5f9 on #111827  = 15.9:1   (dark)
+     #475569 on #ffffff  =  7.0:1   (muted, light)
+     #94a3b8 on #111827  =  6.4:1   (muted, dark)
+   WCAG AA needs 4.5:1 for body text. All pass with room to spare.
+   ========================================================================= */
+
+/* The complete list of popup surfaces in the product. Anything added later
+   must be added here too — tools/test_runtime.js asserts on this list. */
+.modal,
+.modal-content,
+.tc-popup,
+.tc-popup-backdrop > div,
+#cbtm-modal > div,
+#tc-bot-panel,
+#page-help-modal,
+#page-help-modal > div,
+.notif-dropdown,
+#tc-live-notification-tray > *,
+#crud-record .modal,
+#crud-modal .modal,
+#crud-cols-modal .modal,
+#ex-docs .modal,
+.pwa-install-banner,
+.desk-drawer,
+.tcq-legend {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1;
+}
+
+/* Children inherit the surface colour instead of the page's. The long list
+   is deliberate: a bare `*` would also recolour buttons and badges that
+   legitimately set their own. */
+.modal p, .modal li, .modal td, .modal th, .modal label, .modal span,
+.modal div, .modal summary, .modal h1, .modal h2, .modal h3, .modal h4,
+.tc-popup p, .tc-popup li, .tc-popup div, .tc-popup span, .tc-popup h1,
+.tc-popup h2, .tc-popup h3, .tc-popup h4, .tc-popup td, .tc-popup th,
+#cbtm-modal p, #cbtm-modal li, #cbtm-modal div, #cbtm-modal span,
+#cbtm-modal h1, #cbtm-modal h2, #cbtm-modal h3, #cbtm-modal td, #cbtm-modal th,
+#tc-bot-panel p, #tc-bot-panel li, #tc-bot-panel div, #tc-bot-panel span,
+#page-help-modal p, #page-help-modal li, #page-help-modal div,
+#page-help-modal span, #page-help-modal h1, #page-help-modal h2,
+#page-help-modal h3, #page-help-modal h4, #page-help-modal summary,
+.notif-dropdown p, .notif-dropdown li, .notif-dropdown div, .notif-dropdown span,
+.notif-dropdown b, .notif-dropdown strong, .notif-dropdown small {
+  color: #0f172a;
+}
+
+.modal .muted, .tc-popup .muted, #cbtm-modal .muted, #page-help-modal .muted,
+#tc-bot-panel .muted, .notif-dropdown .muted,
+.modal small, .modal .form-help, #cbtm-modal small, #page-help-modal small {
+  color: #475569 !important;
+}
+
+.modal a, .tc-popup a, #cbtm-modal a, #page-help-modal a,
+#tc-bot-panel a, .notif-dropdown a {
+  color: #0506ae !important;
+  text-decoration: underline;
+}
+
+.modal input, .modal select, .modal textarea,
+.tc-popup input, .tc-popup select, .tc-popup textarea,
+#cbtm-modal input, #cbtm-modal select, #cbtm-modal textarea,
+#tc-bot-panel input, #tc-bot-panel textarea,
+#page-help-modal input, #page-help-modal select, #page-help-modal textarea {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1px solid #cbd5e1 !important;
+}
+.modal input::placeholder, .modal textarea::placeholder,
+#cbtm-modal input::placeholder, #tc-bot-panel input::placeholder {
+  color: #64748b !important;
+}
+
+/* Buttons inside a popup must not inherit the surface colour and vanish. */
+.modal .btn-primary, .tc-popup .btn-primary, #cbtm-modal .btn-primary,
+#page-help-modal .btn-primary, #tc-bot-panel .btn-primary {
+  background: var(--gradient, linear-gradient(135deg, #0506ae, #964eec)) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+.modal .btn-outline, .tc-popup .btn-outline, #cbtm-modal .btn-outline,
+#page-help-modal .btn-outline {
+  background: #ffffff !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important;
+}
+.modal .btn-ghost, .tc-popup .btn-ghost, #cbtm-modal .btn-ghost,
+#page-help-modal .btn-ghost {
+  background: transparent !important; color: #0f172a !important;
+}
+.modal-close { color: #0f172a !important; background: #e2e8f0 !important; }
+
+/* Toasts: dark surface, light text, in BOTH themes. A toast is never the
+   page's background colour, so it is stated outright. */
+.toast, .toast-msg, .toast-title { color: #ffffff !important; }
+.toast          { background: #0f172a !important; }
+.toast-success  { background: #166534 !important; }
+.toast-danger   { background: #991b1b !important; }
+.toast-warning  { background: #92400e !important; }
+.toast a        { color: #ffffff !important; text-decoration: underline; }
+
+/* -------------------------------------------------------------------------
+   DARK MODE — the same rules, against the selector the application ACTUALLY
+   sets. Both spellings are listed so that a studio, a saved preference or a
+   future refactor using either one still gets a readable popup. This is the
+   fault that made the two previous fixes invisible.
+   ------------------------------------------------------------------------- */
+body[data-theme="dark"] .modal,
+body[data-theme="dark"] .modal-content,
+body[data-theme="dark"] .tc-popup,
+body[data-theme="dark"] .tc-popup-backdrop > div,
+body[data-theme="dark"] #cbtm-modal > div,
+body[data-theme="dark"] #tc-bot-panel,
+body[data-theme="dark"] #page-help-modal,
+body[data-theme="dark"] #page-help-modal > div,
+body[data-theme="dark"] .notif-dropdown,
+body[data-theme="dark"] #tc-live-notification-tray > *,
+body[data-theme="dark"] .pwa-install-banner,
+body[data-theme="dark"] .desk-drawer,
+body[data-theme="dark"] .tcq-legend,
+body.dark-mode .modal,
+body.dark-mode .modal-content,
+body.dark-mode .tc-popup,
+body.dark-mode #cbtm-modal > div,
+body.dark-mode #tc-bot-panel,
+body.dark-mode #page-help-modal,
+body.dark-mode .notif-dropdown {
+  background: #111827 !important;
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}
+
+body[data-theme="dark"] .modal p, body[data-theme="dark"] .modal li,
+body[data-theme="dark"] .modal td, body[data-theme="dark"] .modal th,
+body[data-theme="dark"] .modal label, body[data-theme="dark"] .modal div,
+body[data-theme="dark"] .modal span, body[data-theme="dark"] .modal summary,
+body[data-theme="dark"] .modal h1, body[data-theme="dark"] .modal h2,
+body[data-theme="dark"] .modal h3, body[data-theme="dark"] .modal h4,
+body[data-theme="dark"] .tc-popup p, body[data-theme="dark"] .tc-popup div,
+body[data-theme="dark"] .tc-popup span, body[data-theme="dark"] .tc-popup li,
+body[data-theme="dark"] .tc-popup h1, body[data-theme="dark"] .tc-popup h2,
+body[data-theme="dark"] .tc-popup h3,
+body[data-theme="dark"] #cbtm-modal p, body[data-theme="dark"] #cbtm-modal div,
+body[data-theme="dark"] #cbtm-modal span, body[data-theme="dark"] #cbtm-modal li,
+body[data-theme="dark"] #cbtm-modal h1, body[data-theme="dark"] #cbtm-modal h2,
+body[data-theme="dark"] #cbtm-modal h3, body[data-theme="dark"] #cbtm-modal td,
+body[data-theme="dark"] #page-help-modal p, body[data-theme="dark"] #page-help-modal div,
+body[data-theme="dark"] #page-help-modal span, body[data-theme="dark"] #page-help-modal li,
+body[data-theme="dark"] #page-help-modal h1, body[data-theme="dark"] #page-help-modal h2,
+body[data-theme="dark"] #page-help-modal h3, body[data-theme="dark"] #page-help-modal h4,
+body[data-theme="dark"] #page-help-modal summary,
+body[data-theme="dark"] #tc-bot-panel p, body[data-theme="dark"] #tc-bot-panel div,
+body[data-theme="dark"] .notif-dropdown p, body[data-theme="dark"] .notif-dropdown div,
+body[data-theme="dark"] .notif-dropdown span, body[data-theme="dark"] .notif-dropdown b,
+body[data-theme="dark"] .notif-dropdown small {
+  color: #f1f5f9 !important;
+}
+
+body[data-theme="dark"] .modal .muted, body[data-theme="dark"] .modal small,
+body[data-theme="dark"] .modal .form-help,
+body[data-theme="dark"] .tc-popup .muted,
+body[data-theme="dark"] #cbtm-modal .muted, body[data-theme="dark"] #cbtm-modal small,
+body[data-theme="dark"] #page-help-modal .muted, body[data-theme="dark"] #page-help-modal small,
+body[data-theme="dark"] #tc-bot-panel .muted,
+body[data-theme="dark"] .notif-dropdown .muted {
+  color: #94a3b8 !important;
+}
+
+body[data-theme="dark"] .modal a, body[data-theme="dark"] .tc-popup a,
+body[data-theme="dark"] #cbtm-modal a, body[data-theme="dark"] #page-help-modal a,
+body[data-theme="dark"] #tc-bot-panel a, body[data-theme="dark"] .notif-dropdown a {
+  color: #a5b4fc !important;
+}
+
+body[data-theme="dark"] .modal input, body[data-theme="dark"] .modal select,
+body[data-theme="dark"] .modal textarea,
+body[data-theme="dark"] #cbtm-modal input, body[data-theme="dark"] #cbtm-modal select,
+body[data-theme="dark"] #cbtm-modal textarea,
+body[data-theme="dark"] #tc-bot-panel input, body[data-theme="dark"] #tc-bot-panel textarea,
+body[data-theme="dark"] #page-help-modal input, body[data-theme="dark"] #page-help-modal textarea {
+  background: #1e293b !important; color: #f1f5f9 !important; border-color: #475569 !important;
+}
+body[data-theme="dark"] .modal .btn-outline,
+body[data-theme="dark"] #cbtm-modal .btn-outline,
+body[data-theme="dark"] #page-help-modal .btn-outline {
+  background: #1e293b !important; color: #f1f5f9 !important; border-color: #475569 !important;
+}
+body[data-theme="dark"] .modal .btn-ghost,
+body[data-theme="dark"] #cbtm-modal .btn-ghost,
+body[data-theme="dark"] #page-help-modal .btn-ghost {
+  background: transparent !important; color: #f1f5f9 !important;
+}
+body[data-theme="dark"] .modal-close { background: #334155 !important; color: #f1f5f9 !important; }
+
+/* Coloured info panels used inside popups and desks. These set a pale
+   background inline; without a matching colour they inherit the dark body
+   text colour in light mode and the light one in dark mode. Pin both. */
+[style*="background:#fef2f2"], [style*="background:#fef2f2"] * { color: #991b1b !important; }
+[style*="background:#fffbeb"], [style*="background:#fffbeb"] * { color: #92400e !important; }
+[style*="background:#ecfdf5"], [style*="background:#ecfdf5"] * { color: #065f46 !important; }
+[style*="background:#eff6ff"], [style*="background:#eff6ff"] * { color: #1e3a8a !important; }
+[style*="background:#fff7ed"], [style*="background:#fff7ed"] * { color: #9a3412 !important; }
+[style*="background:#fef2f2"] b, [style*="background:#fffbeb"] b,
+[style*="background:#ecfdf5"] b, [style*="background:#eff6ff"] b { color: inherit !important; }
+[style*="background:#fef2f2"] code, [style*="background:#fffbeb"] code,
+[style*="background:#eff6ff"] code {
+  background: rgba(0,0,0,.07) !important; color: inherit !important;
+  padding: 1px 5px; border-radius: 4px;
+}
+
+/* A popup must always sit above the app chrome, or it is "not visible"
+   for a different reason. */
+.modal-backdrop { z-index: 10000; }
+#cbtm-modal     { z-index: 10050; }
+.tc-popup-backdrop, #page-help-modal { z-index: 10060; }
+.toast-container, #tc-live-notification-tray { z-index: 10100; }

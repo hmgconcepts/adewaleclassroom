@@ -158,20 +158,71 @@
       }
     },
 
+    /* -------------------------------------------------------------------
+       REPORTED ITEM 11 — clicking Share produced "A table is missing", and
+       re-running the schema did not help.
+
+       Two causes, both now handled. The misclassified error message is fixed
+       in assets/js/schema-doctor.js; the note there explains the stale
+       PostgREST schema cache, which is the usual reason a function that
+       genuinely exists still reports as missing.
+
+       The design fault is here, though: sharing REFUSED TO WORK AT ALL
+       unless the RPC succeeded. But a share link does not actually need the
+       database. The paper already has a code, and cbt-exam.html opens on
+       ?code=. The token only makes the link nicer to audit.
+
+       So the link is now built first and shown immediately, and the token is
+       a bonus we try to obtain. If the RPC is unavailable the tutor still
+       gets a working, shareable link plus a plain explanation — instead of a
+       dead end in the middle of a class.
+       ------------------------------------------------------------------- */
     async share(x, reload) {
       var s = sb();
-      if (!s) return;
-      var token = x.share_token;
-      if (!token || x.share_active === false) {
-        var r = await s.rpc('tc_cbt_set_state', { p_exam: x.id, p_action: 'share' });
-        if (r.error) return toast(r.error.message, 'danger', 9000);
-        token = (r.data || {}).share_token;
-        if (reload) reload();
+      if (!s) return toast('Not connected to the database.', 'warning');
+
+      if (!x.code) {
+        return toast('This paper has no code yet, so there is nothing to share. ' +
+                     'Open ✏️ Edit, give it a code, and save.', 'warning', 9000);
+      }
+
+      var token = (x.share_active === false) ? null : x.share_token;
+      var rpcNote = '';
+
+      if (!token) {
+        try {
+          var r = await s.rpc('tc_cbt_set_state', { p_exam: x.id, p_action: 'share' });
+          if (r.error) throw r.error;
+          if (r.data && r.data.ok === false) throw new Error(r.data.error || 'refused');
+          token = (r.data || {}).share_token;
+          if (reload) reload();
+        } catch (err) {
+          var m = String(err.message || err);
+          if (/does not exist|schema cache|PGRST202|Could not find the function/i.test(m)) {
+            rpcNote =
+              '<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:9px 11px;' +
+              'margin-bottom:10px;font-size:.85rem;color:#92400e">' +
+              '<b>The link below works right now</b> — copy it and send it. ' +
+              'What did not work is the optional tracking <i>token</i>, because your database cannot ' +
+              'see the function <code>tc_cbt_set_state</code>.<br><br>' +
+              '<b>To fix that</b> (it also re-enables Close, Open and Archive):<br>' +
+              '1. Supabase → SQL editor → run:  <code>notify pgrst, \'reload schema\';</code><br>' +
+              '2. Still failing? Run <b>database/complete-schema.sql</b> in full and watch for a red ' +
+              'error — one failed statement abandons the rest of the script — then repeat step 1.<br>' +
+              '3. Check it worked:  <code>select public.tc_v25_report();</code>' +
+              '</div>';
+          } else {
+            rpcNote = '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;' +
+              'padding:9px 11px;margin-bottom:10px;font-size:.85rem;color:#991b1b">' +
+              'The link below works. The tracking token could not be created: ' + esc(m) + '</div>';
+          }
+        }
       }
       var base = w.location.href.replace(/[^/]*$/, '');
       var url = base + 'cbt-exam.html?code=' + encodeURIComponent(x.code || '') +
                 (token ? '&t=' + encodeURIComponent(token) : '');
       this._modal('🔗 Share “' + esc(x.title || '') + '”',
+        rpcNote +
         '<p class="muted">Send this link to candidates. It opens the paper directly, so nobody has to ' +
         'type a code — which is where most "the code does not work" messages come from.</p>' +
         '<div style="display:flex;gap:6px;margin:10px 0">' +
@@ -194,11 +245,17 @@
             if (w.navigator.clipboard) w.navigator.clipboard.writeText(i.value);
             toast('Link copied.', 'success');
           });
-          body.querySelector('#cbtm-unshare').addEventListener('click', async function () {
-            var r2 = await sb().rpc('tc_cbt_set_state', { p_exam: x.id, p_action: 'unshare' });
-            if (r2.error) return toast(r2.error.message, 'danger');
-            toast('Share link turned off.', 'success');
-            if (reload) reload();
+          var off = body.querySelector('#cbtm-unshare');
+          if (off) off.addEventListener('click', async function () {
+            try {
+              var r2 = await sb().rpc('tc_cbt_set_state', { p_exam: x.id, p_action: 'unshare' });
+              if (r2.error) throw r2.error;
+              toast('Share link turned off.', 'success');
+              if (reload) reload();
+            } catch (e2) {
+              toast('Could not turn the link off: ' + (e2.message || e2) +
+                    ' — use 🔒 Close to stop the paper accepting answers.', 'danger', 10000);
+            }
           });
         });
     },
@@ -216,6 +273,19 @@
       if (!qs.length) {
         return toast('That paper has no questions in it yet.', 'warning');
       }
+      var isTutorMarked = function (q) {
+        if (q.tutor_marked) return true;
+        var TM = (w.CBT && w.CBT.TUTOR_MARKED_TYPES) || ['essay', 'case_study', 'code'];
+        return TM.indexOf(q.type) > -1;
+      };
+      var hasKey = function (q) {
+        if (w.CBTTypes && w.CBTTypes.hasKey) { try { return w.CBTTypes.hasKey(q); } catch (e) {} }
+        var a = q.answer;
+        if (Array.isArray(a)) return a.filter(function (z) { return String(z).trim() !== ''; }).length > 0;
+        if (a && typeof a === 'object') return Object.keys(a).length > 0;
+        return a != null && String(a).trim() !== '';
+      };
+
       var html =
         '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">' +
           '<span class="muted"><b>' + qs.length + '</b> question(s)</span>' +
@@ -246,19 +316,75 @@
                            esc(q.answer == null ? '(none set)' : q.answer) + '</b></div>') +
             (q.explanation ? '<div class="muted" style="font-size:.82rem;margin-top:5px">💡 ' +
               esc(q.explanation) + '</div>' : '') +
-            (q.answer == null || q.answer === ''
-              ? '<div style="color:#b91c1c;font-size:.82rem;margin-top:5px">⚠ No answer key — this ' +
-                'question cannot be marked, and every candidate will score zero on it.</div>' : '') +
+            (isTutorMarked(q)
+              ? '<div style="color:#1e40af;font-size:.82rem;margin-top:5px">✍️ You mark this one. It is ' +
+                'held as <b>awaiting marking</b> until you do, never scored as wrong.</div>'
+              : !hasKey(q)
+                ? '<div style="color:#b91c1c;font-size:.82rem;margin-top:5px">⚠ No answer key — this ' +
+                  'question cannot be marked, and every candidate will score zero on it.</div>'
+                : '') +
             '</div>';
         }).join('') + '</div>';
 
-      var missing = qs.filter(function (q) { return q.answer == null || q.answer === ''; }).length;
-      if (missing) {
-        html = '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;' +
-               'margin-bottom:10px;color:#991b1b"><b>⚠ ' + missing + ' question(s) have no answer key.</b> ' +
-               'Fix them before anyone sits this paper — an unkeyed question marks every candidate wrong.</div>' + html;
+      /* -------------------------------------------------------------------
+         REPORTED ITEM 2 — "⚠ 6 question(s) have no answer key",
+                           "⚠ 18 question(s) have no answer key".
+
+         The warning was counting two completely different things as one:
+
+           (a) genuinely broken rows — a multiple-choice question whose
+               CorrectAnswer cell is empty. This IS a problem and every
+               candidate will be marked wrong on it.
+
+           (b) essays, case studies, oral prompts and code questions, which
+               have no machine-checkable key BY DESIGN and are meant to be
+               marked by the tutor.
+
+         Every one of the flagged questions in the three CSVs supplied with
+         the report was category (b), or was a cloze/ordering row whose key
+         sits in the Items column and was simply not being read. So the
+         warning was alarming, wrong, and gave no way to act on it.
+
+         The two are now counted and coloured separately, and the tutor is
+         told exactly which questions are affected and what to do.
+         ------------------------------------------------------------------- */
+      var tutorQs  = [];
+      var brokenQs = [];
+      qs.forEach(function (q, i) {
+        if (isTutorMarked(q)) { tutorQs.push(i + 1); return; }
+        if (!hasKey(q)) brokenQs.push(i + 1);
+      });
+
+      var banner = '';
+      if (brokenQs.length) {
+        banner += '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;' +
+          'padding:10px;margin-bottom:8px;color:#991b1b">' +
+          '<b>⚠ ' + brokenQs.length + ' question(s) have no answer key and cannot be marked.</b><br>' +
+          'Question ' + brokenQs.slice(0, 20).join(', ') +
+          (brokenQs.length > 20 ? ' …' : '') + '.<br>' +
+          '<span style="font-size:.86rem">Every candidate will be marked wrong on these. Fix them before ' +
+          'anyone sits the paper: open <b>✏️ Edit</b>, and make sure the <code>CorrectAnswer</code> column ' +
+          'is filled in — or, for a gap-fill, ordering or matching question, the <code>Items</code> or ' +
+          '<code>Pairs</code> column.</span></div>';
       }
-      this._modal('👁 Preview — ' + esc(x.title || ''), html);
+      if (tutorQs.length) {
+        banner += '<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;' +
+          'padding:10px;margin-bottom:8px;color:#1e3a8a">' +
+          '<b>✍️ ' + tutorQs.length + ' question(s) will be marked by you, not by the computer.</b><br>' +
+          'Question ' + tutorQs.slice(0, 20).join(', ') + (tutorQs.length > 20 ? ' …' : '') + '.<br>' +
+          '<span style="font-size:.86rem">This is normal and nothing is wrong. Essays, case studies, oral ' +
+          'prompts and code cannot be marked fairly by a machine. After candidates sit the paper they ' +
+          'appear in your marking queue on <a href="cbt-results.html?exam=' + esc(x.id) + '&tab=marking">' +
+          'CBT results → Marking</a>, where you award the marks. Until you do, they are held as ' +
+          '<b>awaiting marking</b> and are never counted as wrong.</span></div>';
+      }
+      if (!brokenQs.length && !tutorQs.length) {
+        banner = '<div style="background:#ecfdf5;border:1px solid #a7f3d0;border-radius:8px;' +
+          'padding:10px;margin-bottom:8px;color:#065f46"><b>✅ Every question has an answer key.</b> ' +
+          'This paper will mark itself completely.</div>';
+      }
+
+      this._modal('👁 Preview — ' + esc(x.title || ''), banner + html);
     },
 
     /* ---------------------------------------------------------------------

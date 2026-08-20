@@ -18,6 +18,57 @@ const CBT = {
   _sb: null,
   init(sb) { this._sb = sb || window.sb || null; },
 
+  /* Parse an Items / Pairs cell. Delegates to the shared lenient parser in
+     cbt-types.js when it is loaded, so import-time and grade-time agree. */
+  _structured(v) {
+    if (v == null || v === '') return null;
+    if (typeof v === 'object') return v;
+    if (window.CBTTypes && CBTTypes.lenientJSON) {
+      var p = CBTTypes.lenientJSON(String(v));
+      if (p != null) return p;
+    } else {
+      try { return JSON.parse(String(v)); } catch (e) {}
+    }
+    var parts = String(v).split(/\s*[|;]\s*/).filter(Boolean);
+    return parts.length ? parts : null;
+  },
+
+  /* Question families whose key lives in Items / Pairs rather than in the
+     CorrectAnswer column. */
+  STRUCTURED_KEY_TYPES: ['cloze', 'ordering', 'drag_drop', 'timeline', 'matching',
+                         'categorization', 'matrix', 'multi_numeric', 'hot_text',
+                         'sequence'],
+
+  /* Families a machine must NOT pretend to mark. See item 7: these go to the
+     tutor for marking, and are counted as "awaiting marking", never as
+     "unkeyed" and never as wrong. */
+  TUTOR_MARKED_TYPES: ['essay', 'case_study', 'oral_prompt', 'peer_review',
+                       'citation', 'true_false_justify', 'code', 'comprehension',
+                       'data_interpretation', 'graph_read', 'error_spotting',
+                       'hotspot', 'audio_based', 'video_based'],
+
+  /* Lift the answer key out of items/pairs for the structured families. */
+  _keyFromStructure(type, items, pairs, answer) {
+    var have = function (v) {
+      if (v == null) return false;
+      if (Array.isArray(v)) return v.length > 0;
+      if (typeof v === 'object') return Object.keys(v).length > 0;
+      return String(v).trim() !== '';
+    };
+    if (have(answer)) return answer;                       // explicit wins
+
+    if (type === 'matching') {
+      if (have(pairs)) return pairs;
+      if (have(items)) return items;
+      return answer;
+    }
+    if (this.STRUCTURED_KEY_TYPES.indexOf(type) > -1) {
+      if (have(items)) return items;
+      if (have(pairs)) return pairs;
+    }
+    return answer;
+  },
+
   normalizeQuestion(q, idx) {
     q = q || {};
     const canon = k => String(k||'').toLowerCase().replace(/[^a-z0-9]/g,'');
@@ -92,6 +143,19 @@ const CBT = {
       }
     }
     if (type === 'multi_select' && typeof answer === 'string') answer = answer.split(/[,;|]/).map(s => s.trim()).filter(Boolean);
+
+    /* Parse the structured columns BEFORE building the record, so the key
+       can be derived from them. */
+    const _items = this._structured(pick('items', 'rows', 'parts', 'chunks', 'blanks', 'sequence'));
+    const _pairs = this._structured(pick('pairs', 'matches'));
+    answer = this._keyFromStructure(type, _items, _pairs, answer);
+
+    /* Item 7 — a question a machine cannot fairly mark is flagged here, once,
+       so every consumer agrees: the preview does not call it unkeyed, the
+       grader parks it as pending instead of scoring it zero, and the tutor's
+       marking queue can find it. */
+    const _tutorMarked = this.TUTOR_MARKED_TYPES.indexOf(type) > -1;
+
     return {
       id: pick('id') || ('q'+(idx+1)),
       _orig_index: idx,
@@ -120,18 +184,42 @@ const CBT = {
          now, and JSON in a cell is parsed rather than kept as a string.
          ----------------------------------------------------------------- */
       unit: pick('unit','units','si_unit') || '',
-      pairs: (function () {
-        var v = pick('pairs', 'matches');
-        if (!v) return null;
-        if (typeof v === 'object') return v;
-        try { return JSON.parse(String(v)); } catch (e) { return String(v).split(/\s*[|;]\s*/).filter(Boolean); }
-      })(),
-      items: (function () {
-        var v = pick('items', 'rows', 'parts', 'chunks', 'blanks', 'sequence');
-        if (!v) return null;
-        if (typeof v === 'object') return v;
-        try { return JSON.parse(String(v)); } catch (e) { return String(v).split(/\s*[|;]\s*/).filter(Boolean); }
-      })(),
+      /* -----------------------------------------------------------------
+         REPORTED ITEM 2 — "N question(s) have no answer key".
+
+         Two distinct causes, both reproduced against the three CSVs
+         supplied with the report.
+
+         CAUSE A — the key is not in CorrectAnswer.
+         For cloze, ordering, matching, categorization, matrix, multi-part
+         numeric and hot-text, the HMG/School Connect template puts the
+         answer in the **Items** or **Pairs** column and leaves
+         CorrectAnswer empty. That is correct: a cloze with three blanks
+         has three answers and cannot fit in one cell. The importer only
+         ever read CorrectAnswer, so `answer` stayed '' and the preview
+         reported the question as unkeyed. Measured:
+
+             your-new-beginning-in-christ.csv       20 of 100 unkeyed
+             Ade your-new-beginning-in-christ.csv   20 of 100 unkeyed
+             navigating-tech-space-as-a-newbie.csv  12 of  60 unkeyed
+
+         All of them were cloze, ordering or essay rows that DID carry a
+         key — in Items.
+
+         CAUSE B — the cell is Python, not JSON.
+         Chat models emit ['a', 'b'] and {'k': [...]} because that is what
+         a printed list looks like in their training data. JSON.parse
+         rejects it. See lenientJSON() in cbt-types.js.
+
+         Both are handled below. `_keyFromStructure` then lifts the key out
+         of items/pairs into `answer`, so downstream code — the preview
+         warning, the grader, the review page and the audit — all see a
+         question that is properly keyed.
+         ----------------------------------------------------------------- */
+      pairs: _pairs,
+      items: _items,
+      /* True when only a human can mark this fairly. */
+      tutor_marked: _tutorMarked,
       all_or_nothing: (function () {
         var v = pick('mrq_aon', 'all_or_nothing', 'aon');
         return String(v == null ? '' : v).toLowerCase() === 'true' || v === true || v === 1;

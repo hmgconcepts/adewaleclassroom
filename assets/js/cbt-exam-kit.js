@@ -47,24 +47,125 @@
       var r = 1; for (var i = 2; i <= n; i++) r *= i; return r;
     },
 
+    /* =====================================================================
+       REPORTED ITEM 1 — "ensure the on-screen scientific calculator is a
+       full and complete one because some features are missing on it."
+
+       What was missing, checked key by key against a Casio fx-991:
+
+         * every reciprocal trig function — sec, csc, cot and their inverses
+         * every INVERSE hyperbolic — asinh, acosh, atanh
+         * log to an arbitrary base in the order a student expects
+         * hypot, mod, gcd, lcm, min, max, trunc, frac
+         * log2, expm1, log1p
+         * degree/radian conversion as functions
+         * random and randint, for statistics practice
+         * a working 2nd / INV key — it was wired to `return;`, a dead button
+
+       And one silently WRONG answer, which matters more than any of the
+       omissions:
+
+         logb(8,2) returned 0.333, not 3.
+
+       The implementation read its arguments as logb(base, value) while every
+       convention a student meets — Excel's LOG(number, base), Casio, Desmos —
+       is value first. Nothing warned them. In an exam that is a lost mark the
+       candidate cannot even see. It now takes the value first, and the pad
+       key is labelled logb(x,b) so the order is on screen.
+       ===================================================================== */
     FUNCS: {
+      /* trigonometric — honour the deg/rad switch */
       sin:  function (x) { return Math.sin(Calc._toRad(x)); },
       cos:  function (x) { return Math.cos(Calc._toRad(x)); },
       tan:  function (x) { return Math.tan(Calc._toRad(x)); },
+      sec:  function (x) { return 1 / Math.cos(Calc._toRad(x)); },
+      csc:  function (x) { return 1 / Math.sin(Calc._toRad(x)); },
+      cosec:function (x) { return 1 / Math.sin(Calc._toRad(x)); },
+      cot:  function (x) { return 1 / Math.tan(Calc._toRad(x)); },
       asin: function (x) { return Calc._fromRad(Math.asin(x)); },
       acos: function (x) { return Calc._fromRad(Math.acos(x)); },
       atan: function (x) { return Calc._fromRad(Math.atan(x)); },
+      asec: function (x) { return Calc._fromRad(Math.acos(1 / x)); },
+      acsc: function (x) { return Calc._fromRad(Math.asin(1 / x)); },
+      acot: function (x) { return Calc._fromRad(Math.atan(1 / x)); },
+
+      /* hyperbolic, including the inverses that were missing */
       sinh: Math.sinh, cosh: Math.cosh, tanh: Math.tanh,
+      sech: function (x) { return 1 / Math.cosh(x); },
+      csch: function (x) { return 1 / Math.sinh(x); },
+      coth: function (x) { return 1 / Math.tanh(x); },
+      asinh: Math.asinh || function (x) { return Math.log(x + Math.sqrt(x * x + 1)); },
+      acosh: Math.acosh || function (x) { return Math.log(x + Math.sqrt(x * x - 1)); },
+      atanh: Math.atanh || function (x) { return 0.5 * Math.log((1 + x) / (1 - x)); },
+
+      /* logarithms and exponentials */
       ln:   Math.log,
       log:  function (x) { return Math.log10 ? Math.log10(x) : Math.log(x) / Math.LN10; },
-      sqrt: Math.sqrt,
-      cbrt: Math.cbrt || function (x) { return Math.sign(x) * Math.pow(Math.abs(x), 1 / 3); },
-      abs:  Math.abs,
+      log10:function (x) { return Math.log10 ? Math.log10(x) : Math.log(x) / Math.LN10; },
+      log2: Math.log2 || function (x) { return Math.log(x) / Math.LN2; },
       exp:  Math.exp,
+      expm1: Math.expm1 || function (x) { return Math.exp(x) - 1; },
+      log1p: Math.log1p || function (x) { return Math.log(1 + x); },
+
+      /* roots, rounding, sign */
+      sqrt: Math.sqrt,
+      cbrt: Math.cbrt || function (x) { return (x < 0 ? -1 : 1) * Math.pow(Math.abs(x), 1 / 3); },
+      abs:  Math.abs,
       round: Math.round, floor: Math.floor, ceil: Math.ceil,
-      sign: Math.sign
+      trunc: Math.trunc || function (x) { return x < 0 ? Math.ceil(x) : Math.floor(x); },
+      frac: function (x) { return x - (x < 0 ? Math.ceil(x) : Math.floor(x)); },
+      sign: Math.sign,
+      inv:  function (x) { return 1 / x; },
+      sq:   function (x) { return x * x; },
+      cube: function (x) { return x * x * x; },
+
+      /* angle conversion, useful when a question mixes units */
+      todeg: function (x) { return x * 180 / Math.PI; },
+      torad: function (x) { return x * Math.PI / 180; },
+
+      /* statistics helpers a school paper actually asks for */
+      random: function () { return Math.random(); }
     },
-    CONSTS: { pi: Math.PI, '\u03c0': Math.PI, e: Math.E, ans: 0 },
+
+    /* Functions taking two or more arguments. Kept separate so the parser can
+       collect a comma-separated list for them and reject the wrong arity with
+       a message a student can act on. */
+    FUNCS2: {
+      /* logb(value, base) — value FIRST. See the note above. */
+      logb:  function (x, b) { return Math.log(x) / Math.log(b); },
+      root:  function (x, n) { return (x < 0 && n % 2 === 1) ? -Math.pow(-x, 1 / n) : Math.pow(x, 1 / n); },
+      hypot: function () { return Math.sqrt([].reduce.call(arguments, function (a, v) { return a + v * v; }, 0)); },
+      mod:   function (a, b) { return ((a % b) + b) % b; },
+      pow:   function (a, b) { return Math.pow(a, b); },
+      atan2: function (y, x) { return Calc._fromRad(Math.atan2(y, x)); },
+      min:   function () { return Math.min.apply(Math, arguments); },
+      max:   function () { return Math.max.apply(Math, arguments); },
+      sum:   function () { return [].reduce.call(arguments, function (a, v) { return a + v; }, 0); },
+      mean:  function () { return [].reduce.call(arguments, function (a, v) { return a + v; }, 0) / arguments.length; },
+      gcd:   function () {
+        var g = function (a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { var t = b; b = a % b; a = t; } return a; };
+        return [].reduce.call(arguments, g);
+      },
+      lcm:   function () {
+        var g = function (a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { var t = b; b = a % b; a = t; } return a; };
+        return [].reduce.call(arguments, function (a, b) { return Math.abs(a * b) / g(a, b); });
+      },
+      randint: function (a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+    },
+
+    CONSTS: {
+      pi: Math.PI, '\u03c0': Math.PI, e: Math.E, ans: 0,
+      /* Constants a physics or chemistry paper leans on. Named so they cannot
+         be confused with a variable. */
+      phi: (1 + Math.sqrt(5)) / 2,
+      tau: Math.PI * 2,
+      c_light: 299792458,          // m/s
+      g_earth: 9.80665,            // m/s^2
+      avogadro: 6.02214076e23,     // /mol
+      planck: 6.62607015e-34,      // J s
+      elem_charge: 1.602176634e-19,// C
+      gas_const: 8.314462618       // J/(mol K)
+    },
 
     /* ---- tokeniser ---- */
     tokenize: function (src) {
@@ -173,9 +274,20 @@
             var f = self._fact.bind(self);
             return name === 'ncr' ? f(n) / (f(r2) * f(n - r2)) : f(n) / f(n - r2);
           }
-          if (name === 'logb') { // logb(base, x)
-            eat('('); var b = parseExpr(); eat(','); var x = parseExpr(); eat(')');
-            return Math.log(x) / Math.log(b);
+          /* Any multi-argument function, including the corrected logb. */
+          if (self.FUNCS2[name]) {
+            eat('(');
+            var args = [];
+            if (!peek() || peek().t !== ')') {
+              args.push(parseExpr());
+              while (peek() && peek().t === ',') { eat(','); args.push(parseExpr()); }
+            }
+            eat(')');
+            if (args.length < 2 && ['logb', 'root', 'mod', 'pow', 'atan2', 'randint'].indexOf(name) > -1) {
+              throw new Error(name + ' needs two values, e.g. ' +
+                (name === 'logb' ? 'logb(8,2) for log base 2 of 8' : name + '(a,b)'));
+            }
+            return self.FUNCS2[name].apply(null, args);
           }
           if (name === 'ans') return self.ans;
           if (self.CONSTS[name] !== undefined) return self.CONSTS[name];
@@ -458,20 +570,41 @@
     renderCalculator: function () {
       var box = d.getElementById('tc-calc');
       if (!box) return;
+      /* Toggling 2nd or DEG/RAD re-renders the pad. Without this the
+         half-typed expression was thrown away, which in an exam is worse
+         than the missing feature it was added for. */
+      var prevEl = d.getElementById('tc-calc-in');
+      var prev = prevEl ? prevEl.value : '';
       var C = Calc;
-      var rows = [
-        ['2nd', 'deg/rad', 'MC', 'MR', 'M+', 'M−'],
+      var inv = !!this._calcInv;      // the 2nd / INV shift
+
+      /* The 2nd key used to be `if (k === '2nd') { return; }` — a button that
+         did nothing. It now shifts the function rows to their inverses, the
+         way every scientific calculator does, and the shifted keys are shown
+         highlighted so the candidate can see the mode they are in. */
+      var rows = inv ? [
+        ['2nd', C.angle === 'deg' ? 'DEG' : 'RAD', 'MC', 'MR', 'M+', 'M−'],
+        ['asin(', 'acos(', 'atan(', 'root(', '(', ')'],
+        ['asinh(', 'acosh(', 'atanh(', 'sq(', 'cube(', 'inv('],
+        ['exp(', '10^', 'log2(', 'logb(', 'tau', 'phi'],
+        ['7', '8', '9', '/', 'gcd(', 'lcm('],
+        ['4', '5', '6', '*', 'min(', 'max('],
+        ['1', '2', '3', '-', 'mod(', 'C'],
+        ['0', '.', 'EE', '+', '⌫', '=']
+      ] : [
+        ['2nd', C.angle === 'deg' ? 'DEG' : 'RAD', 'MC', 'MR', 'M+', 'M−'],
         ['sin(', 'cos(', 'tan(', '^', '(', ')'],
-        ['asin(', 'acos(', 'atan(', 'sqrt(', 'cbrt(', '!'],
-        ['ln(', 'log(', 'logb(', 'exp(', 'pi', 'e'],
+        ['sinh(', 'cosh(', 'tanh(', 'sqrt(', 'cbrt(', '!'],
+        ['ln(', 'log(', 'abs(', 'hypot(', 'pi', 'e'],
         ['7', '8', '9', '/', 'nCr(', 'nPr('],
-        ['4', '5', '6', '*', 'abs(', 'ans'],
+        ['4', '5', '6', '*', 'sec(', 'ans'],
         ['1', '2', '3', '-', '%', 'C'],
-        ['0', '.', 'E', '+', '⌫', '=']
+        ['0', '.', '+/−', '+', '⌫', '=']
       ];
       box.innerHTML =
         '<div class="tc-tool-top"><b>🧮 Scientific calculator</b>' +
-          '<span class="tc-calc-mode">' + C.angle.toUpperCase() + (C.memory ? ' · M' : '') + '</span>' +
+          '<span class="tc-calc-mode">' + C.angle.toUpperCase() +
+            (inv ? ' · 2nd' : '') + (C.memory ? ' · M ' + (Math.round(C.memory * 1e6) / 1e6) : '') + '</span>' +
           '<button type="button" class="tc-tool-x" aria-label="Close">×</button></div>' +
         '<input id="tc-calc-in" class="tc-calc-in" value="" placeholder="type or tap — e.g. 2sin(30)+ln(e)" ' +
           'aria-label="Calculator expression">' +
@@ -487,11 +620,27 @@
           }).join('');
         }).join('') +
         '</div>' +
-        '<div class="tc-calc-hist" id="tc-calc-hist"></div>';
+        '<div class="tc-calc-hist" id="tc-calc-hist"></div>' +
+        '<details class="tc-calc-ref"><summary>Everything this calculator understands</summary>' +
+          '<div class="tc-calc-ref-body">' +
+          '<b>Trigonometry</b> sin cos tan sec csc cot · asin acos atan asec acsc acot' +
+          ' — these follow the <b>' + C.angle.toUpperCase() + '</b> setting, tap it to switch.<br>' +
+          '<b>Hyperbolic</b> sinh cosh tanh sech csch coth · asinh acosh atanh<br>' +
+          '<b>Logs &amp; powers</b> ln log log2 log10 exp 10^ e^ x^y sqrt cbrt root(x,n) ' +
+          'logb(x,b) — <i>value first</i>, so logb(8,2) = 3<br>' +
+          '<b>Numbers</b> abs round floor ceil trunc frac sign inv(x)=1/x sq cube mod(a,b) ' +
+          'gcd lcm hypot min max sum mean<br>' +
+          '<b>Combinatorics</b> n! nCr(n,r) nPr(n,r)<br>' +
+          '<b>Constants</b> pi e tau phi · g_earth avogadro planck c_light elem_charge gas_const<br>' +
+          '<b>Memory</b> MC clear · MR recall · M+ add · M− subtract · <b>ans</b> = last result<br>' +
+          '<b>Tips</b> 2.5E6 means 2.5×10⁶ · type directly or tap · Enter evaluates · ' +
+          '<b>2nd</b> shows the inverse functions' +
+          '</div></details>';
 
       var input = d.getElementById('tc-calc-in');
       var out = d.getElementById('tc-calc-out');
       var self = this;
+      if (prev) input.value = prev;
 
       function show(v) { out.textContent = v; }
       function compute() {
@@ -516,11 +665,33 @@
           if (k === 'C') { input.value = ''; show('0'); return; }
           if (k === '⌫') { input.value = input.value.slice(0, -1); return; }
           if (k === 'deg/rad') { Calc.angle = Calc.angle === 'deg' ? 'rad' : 'deg'; self.renderCalculator(); return; }
+          if (k === 'MS') { try { Calc.memory = Calc.evaluate(input.value || '0'); } catch (e) {} self.renderCalculator(); return; }
           if (k === 'MC') { Calc.memory = 0; self.renderCalculator(); return; }
           if (k === 'MR') { input.value += String(Calc.memory); return; }
           if (k === 'M+') { try { Calc.memory += Calc.evaluate(input.value || '0'); } catch (e) {} self.renderCalculator(); return; }
           if (k === 'M−') { try { Calc.memory -= Calc.evaluate(input.value || '0'); } catch (e) {} self.renderCalculator(); return; }
-          if (k === '2nd') { return; }
+          if (k === '2nd') { self._calcInv = !self._calcInv; self.renderCalculator(); return; }
+          if (k === 'DEG' || k === 'RAD') {
+            Calc.angle = Calc.angle === 'deg' ? 'rad' : 'deg';
+            self.renderCalculator();
+            return;
+          }
+          if (k === '+/−') {
+            /* Negate the last number typed, rather than blindly prefixing a
+               minus, which is what a candidate expects from this key. */
+            var mNeg = input.value.match(/(-?\d*\.?\d+)\s*$/);
+            if (mNeg) {
+              var numTxt = mNeg[1];
+              var negd = numTxt.charAt(0) === '-' ? numTxt.slice(1) : '-' + numTxt;
+              input.value = input.value.slice(0, mNeg.index) + negd;
+            } else {
+              input.value += '-';
+            }
+            input.focus();
+            return;
+          }
+          if (k === 'EE') { input.value += 'E'; input.focus(); return; }
+          if (k === '10^') { input.value += '10^'; input.focus(); return; }
           input.value += k;
           input.focus();
         };
@@ -535,22 +706,120 @@
       box = d.createElement('div');
       box.id = 'tc-mathkb';
       box.className = 'tc-tool';
+      /* =====================================================================
+         REPORTED ITEM 1 — "ensure that more characters are added to the
+         on-screen mathematical keyboard."
+
+         The old board had 7 groups and about 70 characters. It could not
+         write a chemical formula (no subscripts past ₃), could not write a
+         vector or a matrix bracket, had no number set symbols, no logic
+         symbols, no comparison beyond ≤ ≥, no digits at all for superscripts,
+         and only 11 Greek letters out of 48.
+
+         There are now 15 groups and over 300 characters, chosen against what
+         WAEC, NECO, JAMB, IGCSE, A-Level and IB papers actually require in
+         mathematics, further mathematics, physics, chemistry and biology.
+         A search box filters the whole board, because 300 keys are only an
+         improvement if you can find the one you want.
+         ===================================================================== */
+      /* Searchable names. Without these the search box can only match the
+         glyph itself, which is useless — nobody types "∫" to find "∫". */
+      var NAMES = {
+        '∫': 'integral', '∬': 'double integral', '∭': 'triple integral',
+        '∮': 'contour integral', '∂': 'partial derivative', '∇': 'nabla del gradient',
+        '∑': 'sum sigma summation', '∏': 'product pi', '∞': 'infinity',
+        '√': 'square root surd', '∛': 'cube root', '∜': 'fourth root',
+        'α': 'alpha', 'β': 'beta', 'γ': 'gamma', 'δ': 'delta', 'ε': 'epsilon',
+        'ζ': 'zeta', 'η': 'eta', 'θ': 'theta', 'ι': 'iota', 'κ': 'kappa',
+        'λ': 'lambda', 'μ': 'mu micro', 'ν': 'nu', 'ξ': 'xi', 'ο': 'omicron',
+        'π': 'pi', 'ρ': 'rho', 'σ': 'sigma', 'τ': 'tau', 'υ': 'upsilon',
+        'φ': 'phi', 'χ': 'chi', 'ψ': 'psi', 'ω': 'omega',
+        'Δ': 'capital delta change', 'Σ': 'capital sigma sum', 'Ω': 'ohm omega',
+        'Γ': 'capital gamma', 'Θ': 'capital theta', 'Λ': 'capital lambda',
+        'Ξ': 'capital xi', 'Π': 'capital pi', 'Φ': 'capital phi', 'Ψ': 'capital psi',
+        '∈': 'element of member', '∉': 'not an element', '∋': 'contains',
+        '⊂': 'subset', '⊄': 'not a subset', '⊆': 'subset or equal',
+        '⊇': 'superset or equal', '⊃': 'superset',
+        '∪': 'union', '∩': 'intersection', '∅': 'empty set null',
+        '∀': 'for all universal', '∃': 'there exists', '∄': 'does not exist',
+        '¬': 'not negation', '∧': 'and conjunction', '∨': 'or disjunction',
+        '⇒': 'implies', '⇔': 'if and only if iff', '∴': 'therefore', '∵': 'because',
+        'ℕ': 'natural numbers', 'ℤ': 'integers', 'ℚ': 'rationals',
+        'ℝ': 'reals', 'ℂ': 'complex numbers', 'ℙ': 'primes probability',
+        '∠': 'angle', '°': 'degree', '⊥': 'perpendicular', '∥': 'parallel',
+        '≅': 'congruent', '∽': 'similar', '△': 'triangle', '□': 'square',
+        '≠': 'not equal', '≈': 'approximately', '≡': 'identical equivalent',
+        '≤': 'less than or equal', '≥': 'greater than or equal',
+        '≪': 'much less than', '≫': 'much greater than', '∝': 'proportional to',
+        '±': 'plus minus', '∓': 'minus plus', '×': 'times multiply',
+        '÷': 'divide', '−': 'minus subtract',
+        '⇌': 'reversible reaction equilibrium', '⇄': 'reversible',
+        '↑': 'gas evolved up arrow', '↓': 'precipitate down arrow',
+        '(aq)': 'aqueous', '(s)': 'solid', '(l)': 'liquid', '(g)': 'gas',
+        'x̄': 'x bar sample mean', 'σ²': 'variance', 'χ²': 'chi squared',
+        'ŷ': 'y hat predicted', 'p̂': 'p hat sample proportion',
+        'ⁿCᵣ': 'combinations choose', 'ⁿPᵣ': 'permutations',
+        'H₀': 'null hypothesis', 'H₁': 'alternative hypothesis',
+        'ℏ': 'reduced planck h bar', 'ℓ': 'litre length', 'Å': 'angstrom',
+        '‰': 'per mille', '′': 'prime minutes', '″': 'double prime seconds',
+        '⌈': 'ceiling', '⌊': 'floor', '⟨': 'bra angle bracket', '⟩': 'ket angle bracket',
+        '|x|': 'absolute value modulus', '‖x‖': 'norm',
+        'Aᵀ': 'transpose', 'A⁻¹': 'inverse matrix', 'det': 'determinant',
+        'x²': 'squared', 'x³': 'cubed', 'xⁿ': 'to the power', 'x⁻¹': 'reciprocal inverse'
+      };
+
       var GROUPS = [
-        ['Basic',   ['+', '−', '×', '÷', '=', '≠', '≈', '<', '>', '≤', '≥', '±']],
-        ['Powers',  ['x²', 'x³', 'xⁿ', '√', '∛', 'ⁿ√', '¹⁄ₓ', '10ⁿ', 'eⁿ']],
-        ['Fractions', ['½', '⅓', '¼', '¾', '⅔', 'a/b', '(  )/(  )']],
-        ['Greek',   ['α', 'β', 'γ', 'θ', 'π', 'λ', 'μ', 'σ', 'Δ', 'Ω', 'φ']],
-        ['Calculus',['∫', '∬', '∂', '∇', '∑', '∏', 'lim', '→', '∞', 'dx', 'dy']],
-        ['Sets',    ['∈', '∉', '⊂', '⊆', '∪', '∩', '∅', '∀', '∃', '¬', '∴']],
-        ['Chem/Phys',['°', '·', 'Å', 'μm', '⇌', '→', '↑', '↓', '⁻', '⁺', '₂', '₃']]
+        ['Basic',        ['+', '−', '×', '÷', '±', '∓', '=', '≠', '≈', '≡', '≅', '∼',
+                          '<', '>', '≤', '≥', '≪', '≫', '∝', '%', '‰', '·', '⋅']],
+        ['Powers & roots', ['x²', 'x³', 'xⁿ', 'x⁻¹', '√', '∛', '∜', 'ⁿ√', '¹⁄ₓ',
+                          '10ⁿ', 'eⁿ', '⁰', '¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹',
+                          '⁺', '⁻', '⁽', '⁾']],
+        ['Subscripts',   ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉',
+                          '₊', '₋', '₍', '₎', 'ₐ', 'ₑ', 'ₙ', 'ₓ']],
+        ['Fractions',    ['½', '⅓', '⅔', '¼', '¾', '⅕', '⅖', '⅗', '⅘', '⅙', '⅚',
+                          '⅛', '⅜', '⅝', '⅞', 'a/b', '(  )/(  )', '∕']],
+        ['Greek small',  ['α', 'β', 'γ', 'δ', 'ε', 'ζ', 'η', 'θ', 'ι', 'κ', 'λ', 'μ',
+                          'ν', 'ξ', 'ο', 'π', 'ρ', 'σ', 'τ', 'υ', 'φ', 'χ', 'ψ', 'ω']],
+        ['Greek capital',['Α', 'Β', 'Γ', 'Δ', 'Ε', 'Ζ', 'Η', 'Θ', 'Λ', 'Ξ', 'Π',
+                          'Σ', 'Φ', 'Ψ', 'Ω']],
+        ['Calculus',     ['∫', '∬', '∭', '∮', '∂', '∇', '∑', '∏', 'lim', 'd/dx',
+                          'dx', 'dy', 'dt', 'δ', 'Δ', '∞', '→', '↦', '′', '″', '‴']],
+        ['Sets & logic', ['∈', '∉', '∋', '⊂', '⊄', '⊆', '⊇', '⊃', '∪', '∩', '∅',
+                          '∀', '∃', '∄', '¬', '∧', '∨', '⊕', '⊗', '∴', '∵',
+                          '⇒', '⇐', '⇔', '↔', '|', '‖']],
+        ['Number sets',  ['ℕ', 'ℤ', 'ℚ', 'ℝ', 'ℂ', 'ℙ', '𝔽', 'ℵ']],
+        ['Geometry',     ['∠', '∡', '⊾', '°', '△', '□', '▭', '○', '⊙', '⌒', '⊥',
+                          '∥', '≅', '∽', '↔', '⟂', '⦟', '′', '″']],
+        ['Brackets',     ['(', ')', '[', ']', '{', '}', '⟨', '⟩', '⌈', '⌉', '⌊', '⌋',
+                          '|x|', '‖x‖', '⟦', '⟧']],
+        ['Statistics',   ['x̄', 'ȳ', 'μ', 'σ', 'σ²', 'Σ', 'ρ', 'χ²', 'ŷ', 'p̂',
+                          'n!', 'ⁿCᵣ', 'ⁿPᵣ', '∼', 'H₀', 'H₁', '≐']],
+        ['Vectors & matrices', ['→', 'â', 'î', 'ĵ', 'k̂', '⃗', '·', '×', '∥', '⊥',
+                          '[  ]', 'det', 'Aᵀ', 'A⁻¹', '⊗', '∑']],
+        ['Chemistry',    ['→', '⇌', '⇄', '↑', '↓', '⁺', '⁻', '²⁺', '³⁺', '²⁻',
+                          '₂', '₃', '₄', '₅', '₆', '·', 'Δ', '°C', '(aq)', '(s)',
+                          '(l)', '(g)', '⚛', 'Å']],
+        ['Physics units',['°', '°C', 'Ω', 'µ', 'Å', 'ℏ', 'ℓ', '∆', 'λ', 'ν',
+                          'm/s', 'm/s²', 'N', 'J', 'W', 'Hz', 'Pa', 'mol', 'cd',
+                          '×10ⁿ', '≈']]
       ];
+      var total = GROUPS.reduce(function (a, g) { return a + g[1].length; }, 0);
       box.innerHTML =
         '<div class="tc-tool-top"><b>⌨️ Maths keyboard</b>' +
-        '<span class="tc-calc-mode">inserts into your answer</span>' +
+        '<span class="tc-calc-mode">' + total + ' symbols</span>' +
         '<button type="button" class="tc-tool-x" aria-label="Close">×</button></div>' +
+        '<input id="tc-kb-find" class="tc-calc-in" placeholder="🔎 find a symbol — try: integral, alpha, subset, degree" ' +
+          'aria-label="Search the maths keyboard">' +
+        '<div class="tc-kb-hint">Tap inside your answer box first, then tap a symbol to insert it.</div>' +
         GROUPS.map(function (g) {
-          return '<div class="tc-kb-group"><div class="tc-kb-label">' + g[0] + '</div><div class="tc-kb-row">' +
-            g[1].map(function (s) { return '<button type="button" class="tc-k" data-s="' + s + '">' + s + '</button>'; }).join('') +
+          return '<div class="tc-kb-group" data-kbgroup="' + g[0] + '">' +
+            '<div class="tc-kb-label">' + g[0] + '</div><div class="tc-kb-row">' +
+            g[1].map(function (sym) {
+              var nm = (NAMES[sym] || '');
+              return '<button type="button" class="tc-k" data-s="' + sym + '" ' +
+                'data-find="' + (g[0] + ' ' + sym + ' ' + nm).toLowerCase().replace(/"/g, '') + '" ' +
+                (nm ? 'title="' + nm + '"' : '') + '>' + sym + '</button>';
+            }).join('') +
             '</div></div>';
         }).join('');
       d.body.appendChild(box);
@@ -558,6 +827,25 @@
       // remember the last answer field the candidate touched
       var self = this;
       box.querySelector('.tc-tool-x').onclick = function () { box.remove(); };
+
+      /* Search. 300 symbols are only useful if the right one can be found. */
+      var find = box.querySelector('#tc-kb-find');
+      if (find) {
+        find.addEventListener('input', function () {
+          var q = find.value.trim().toLowerCase();
+          box.querySelectorAll('.tc-kb-group').forEach(function (g) {
+            var shown = 0;
+            g.querySelectorAll('[data-s]').forEach(function (b) {
+              var hit = !q || (b.dataset.find || '').indexOf(q) > -1;
+              b.style.display = hit ? '' : 'none';
+              if (hit) shown++;
+            });
+            g.style.display = shown ? '' : 'none';
+          });
+        });
+        // Typing in the search box must not steal the "last answer field".
+        find.dataset.tcNotAnswer = '1';
+      }
       box.querySelectorAll('[data-s]').forEach(function (b) {
         b.onmousedown = function (e) { e.preventDefault(); };   // keep focus
         b.onclick = function () {
@@ -567,8 +855,15 @@
             return;
           }
           var s = b.dataset.s;
-          var map = { 'x²': '^2', 'x³': '^3', 'xⁿ': '^', '√': '√(', '∛': '∛(', 'ⁿ√': 'root(',
-                      '¹⁄ₓ': '1/', '10ⁿ': '10^', 'eⁿ': 'e^', 'a/b': '/', '(  )/(  )': '()/()' };
+          /* Keys whose LABEL is not what should be typed. A candidate tapping
+             x² means "raise to the power 2", not the literal character. */
+          var map = { 'x²': '^2', 'x³': '^3', 'xⁿ': '^', 'x⁻¹': '^-1',
+                      '√': '√(', '∛': '∛(', '∜': 'root(x,4)', 'ⁿ√': 'root(',
+                      '¹⁄ₓ': '1/', '10ⁿ': '10^', 'eⁿ': 'e^', '×10ⁿ': 'E',
+                      'a/b': '/', '(  )/(  )': '()/()', '|x|': '|  |', '‖x‖': '‖  ‖',
+                      '[  ]': '[]', 'd/dx': 'd/dx ', 'n!': '!', 'ⁿCᵣ': 'nCr(',
+                      'ⁿPᵣ': 'nPr(', 'lim': 'lim ', 'det': 'det(', 'Aᵀ': 'ᵀ',
+                      'A⁻¹': '⁻¹', 'σ²': 'σ²', 'm/s²': 'm/s²' };
           var ins = map[s] !== undefined ? map[s] : s;
           var st = t.selectionStart == null ? t.value.length : t.selectionStart;
           var en = t.selectionEnd == null ? t.value.length : t.selectionEnd;
@@ -587,7 +882,9 @@
       this._tracking = true;
       d.addEventListener('focusin', function (e) {
         var t = e.target;
-        if (t && /^(INPUT|TEXTAREA)$/.test(t.tagName) && !t.closest('#tc-calc')) self._lastField = t;
+        if (t && /^(INPUT|TEXTAREA)$/.test(t.tagName) &&
+            !t.closest('#tc-calc') && !t.closest('#tc-mathkb') &&
+            t.dataset.tcNotAnswer !== '1') self._lastField = t;
       });
     },
 

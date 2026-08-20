@@ -61,23 +61,66 @@
     },
 
     /* ---------------- error humanising ---------------- */
+    /* -----------------------------------------------------------------------
+       REPORTED ITEM 11 — "When I click the share icon beside any CBT exam
+       I get 'A table is missing'. I re-ran complete-schema.sql and the error
+       is not fixed."
+
+       Two separate defects produced that, and neither was a missing table.
+
+       DEFECT 1 — MISCLASSIFICATION.
+       The rules below are tested in order. The third one was
+
+           /42P01|does not exist|relation .* does not exist/i  ->  "A table is missing"
+
+       and `does not exist` matches far more than a missing relation.
+       PostgreSQL reports a missing FUNCTION as
+
+           function public.tc_cbt_set_state(uuid, text) does not exist
+
+       which contains "does not exist" but NOT "Could not find the function",
+       so it sailed past rule 1 and was announced as a missing table. The
+       advice — "run complete-schema.sql to install every table" — was
+       therefore useless, which is exactly why re-running changed nothing.
+
+       Object-specific patterns now come FIRST and are anchored, the generic
+       relation pattern is narrowed so it can only match a real relation
+       error, and the message NAMES the object that is missing instead of
+       guessing at its kind.
+
+       DEFECT 2 — A STALE POSTGREST SCHEMA CACHE.
+       Supabase serves RPC through PostgREST, which caches the schema. A
+       function created seconds ago can be genuinely present in the database
+       and still absent from that cache, and the error is identical to the one
+       you get when it was never created. Re-running the SQL does not clear
+       it. database/complete-schema.sql now ends with
+
+           notify pgrst, 'reload schema';
+
+       and the advice below tells the reader about it, because this is the
+       single most confusing failure mode Supabase has.
+       ----------------------------------------------------------------------- */
     HUMAN: [
-      { test: /PGRST202|Could not find the function/i,
-        title: 'Your database is behind the app',
-        say: 'This screen needs a database function that has not been installed yet.',
-        fix: 'Run database/complete-schema.sql in the Supabase SQL editor (it is idempotent — safe to re-run).' },
+      { test: /PGRST202|Could not find the function|function [a-z0-9_.]*\(.*\) does not exist|could not find the (public\.)?function/i,
+        title: 'A database function is missing (or its cache is stale)',
+        say: 'This action calls a function in your database that PostgREST cannot currently see.',
+        fix: 'Two things, in order. FIRST run this one line in the Supabase SQL editor — it costs nothing ' +
+             'and fixes it about half the time, because PostgREST caches the schema and a newly created ' +
+             'function can be invisible to it for a while:  notify pgrst, \'reload schema\';  ' +
+             'If that does not do it, run database/complete-schema.sql in full, watch for any red error ' +
+             'in the output (one failure abandons the rest of the script), then run the notify line again.' },
       { test: /42501|row-level security|permission denied/i,
         title: 'The database refused that request',
         say: 'Row Level Security blocked it — either your role is not allowed, or the access policies have not been installed.',
-        fix: 'If you are an admin and this looks wrong, run database/v7-family-access-fix.sql.' },
-      { test: /42P01|does not exist|relation .* does not exist/i,
+        fix: 'If you are an admin and this looks wrong, run database/complete-schema.sql — it reinstalls every policy.' },
+      { test: /42703|column ["'a-z0-9_.]* does not exist|Could not find the '[^']+' column/i,
+        title: 'A column is missing',
+        say: 'Your database is an older version than these files.',
+        fix: 'Run database/complete-schema.sql to bring it up to date, then run:  notify pgrst, \'reload schema\';' },
+      { test: /42P01|relation ["'a-z0-9_.]* does not exist|Could not find the table/i,
         title: 'A table is missing',
         say: 'This screen reads a table that is not in your database yet.',
         fix: 'Run database/complete-schema.sql to install every table.' },
-      { test: /42703|column .* does not exist/i,
-        title: 'A column is missing',
-        say: 'Your database is an older version than these files.',
-        fix: 'Run database/complete-schema.sql to bring it up to date.' },
       { test: /JWT|invalid token|expired/i,
         title: 'Your session expired',
         say: 'You have been signed out for security.',
@@ -93,7 +136,13 @@
       for (var i = 0; i < this.HUMAN.length; i++) {
         if (this.HUMAN[i].test.test(s)) {
           var h = this.HUMAN[i];
-          return { matched: true, text: h.title + ' — ' + h.say + ' ' + (this.isOwner() ? h.fix : 'Please tell the studio administrator.') };
+          /* Name the object. "A database function is missing" is far less
+             useful than "tc_cbt_set_state is missing", and the reader needs
+             the name to search the SQL file for it. */
+          var named = (s.match(/(?:function|relation|table|column)\s+["']?(?:public\.)?([a-z0-9_]+)/i) || [])[1];
+          var subject = named ? h.title + ' (' + named + ')' : h.title;
+          return { matched: true, object: named || null,
+                   text: subject + ' — ' + h.say + ' ' + (this.isOwner() ? h.fix : 'Please tell the studio administrator.') };
         }
       }
       return { matched: false, text: s };

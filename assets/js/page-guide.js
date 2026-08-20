@@ -3736,7 +3736,7 @@
   "tasks": [],
   "faqs": [],
   "purpose": "The catalogue of HMG Concepts software — School Connect, GOSA Portal, HMG Academy CBT Pro, Tutoring Connect itself and the rest — with what each one does, who it is for, a live demo link, the source repository and how to obtain a licence.",
-  "detail": "The catalogue of HMG Concepts software — School Connect, GOSA Portal, HMG Academy CBT Pro, Tutoring Connect itself and the rest — with what each one does, who it is for, a live demo link, the source repository and how to obtain a licence. What you can do here: <b>Everything</b>, <b>For a school</b>, <b>For a tutor</b>, <b>For an association</b>, <b>For examinations</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
+  "detail": "The catalogue of HMG Concepts software — School Connect, GOSA Portal, HMG Academy CBT Pro, Tutoring Connect itself and the rest — with what each one does, who it is for, a live demo link, the source repository and how to obtain a licence. What you can do here: <b>Everything</b>, <b>For a church or business</b>, <b>For a school</b>, <b>For a tutor</b>, <b>For examinations</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
   "audience": "Anyone. The page is public and indexed, because it is also how a visitor discovers the rest of the ecosystem.",
   "why": "A studio running Tutoring Connect is frequently asked by a school, a church or an association whether something similar exists for them. This page answers that without a phone call, and links the sites together for search engines.",
   "how": [
@@ -3751,9 +3751,9 @@
   ],
   "actions": [
    "Everything",
+   "For a church or business",
    "For a school",
    "For a tutor",
-   "For an association",
    "For examinations"
   ],
   "tabs": []
