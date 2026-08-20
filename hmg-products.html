@@ -74,6 +74,8 @@
 <script src="assets/js/nav-model.js"></script>
 <script src="assets/js/app.js"></script>
 <script src="assets/js/rbac.js"></script>
+<script src="assets/js/cbt-marking.js"></script>
+<script src="assets/js/scope-check.js"></script>
 <script src="assets/js/free-classes.js"></script>
 <script src="assets/js/cbt-manage.js"></script>
 <script src="assets/js/cert-studio.js"></script>
@@ -104,7 +106,7 @@
     <main class="app-content">
       <section class="help-card page-intro">
         <div class="page-intro-head"><strong>HMG Digital Products</strong><span class="page-intro-badge" style="background:#0f766e">🌍 Public page</span></div>
-        <p class="page-intro-what">The catalogue of HMG Concepts software — School Connect, GOSA Portal, HMG Academy CBT Pro, Tutoring Connect itself and the rest — with what each one does, who it is for, a live demo link, the source repository and how to obtain a licence. What you can do here: <b>Everything</b>, <b>For a school</b>, <b>For a tutor</b>, <b>For an association</b>, <b>For examinations</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.</p>
+        <p class="page-intro-what">The catalogue of HMG Concepts software — School Connect, GOSA Portal, HMG Academy CBT Pro, Tutoring Connect itself and the rest — with what each one does, who it is for, a live demo link, the source repository and how to obtain a licence. What you can do here: <b>Everything</b>, <b>For a church or business</b>, <b>For a school</b>, <b>For a tutor</b>, <b>For examinations</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.</p>
         <p class="page-intro-who"><b>Who it is for.</b> Anyone. The page is public and indexed, because it is also how a visitor discovers the rest of the ecosystem.</p>
         <p class="page-intro-why"><b>Why it matters.</b> A studio running Tutoring Connect is frequently asked by a school, a church or an association whether something similar exists for them. This page answers that without a phone call, and links the sites together for search engines.</p>
         <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Browse the catalogue, or filter by the kind of organisation you are.</li><li>Open a live demo to see a product working before asking about it.</li><li>Follow the enquiry link on any product to start a conversation about a licence.</li><li>Use the comparison table when two products look similar — it says plainly which one fits which situation.</li></ol></details>
@@ -123,7 +125,7 @@
         <button class="btn btn-sm btn-outline" type="button" data-pfilter="school">For a school</button>
         <button class="btn btn-sm btn-outline" type="button" data-pfilter="tutor">For a tutor</button>
         <button class="btn btn-sm btn-outline" type="button" data-pfilter="exam">For examinations</button>
-        <button class="btn btn-sm btn-outline" type="button" data-pfilter="assoc">For an association</button>
+        <button class="btn btn-sm btn-outline" type="button" data-pfilter="assoc">For a church or business</button>
       </div>
 
       <div class="grid grid-2" id="hmg-product-grid"></div>
@@ -142,9 +144,12 @@
             <tr><td>Running examinations for other people’s candidates</td>
                 <td><b>HMG Academy CBT Pro</b></td>
                 <td>It is a dedicated examination engine — registration, seating, proctoring, results, audit.</td></tr>
-            <tr><td>An alumni body, church or association</td>
+            <tr><td>A church, ministry or community body</td>
+                <td><b>Church Connect</b></td>
+                <td>It models members, giving, programmes and departments instead of learners.</td></tr>
+            <tr><td>Wanting to see School Connect running for a REAL school</td>
                 <td><b>GOSA Portal</b></td>
-                <td>It models members, dues, elections, chapters and events instead of learners.</td></tr>
+                <td>God of Seed Academy’s live portal — a School Connect deployment in daily use.</td></tr>
           </tbody>
         </table></div>
       </article>
@@ -180,48 +185,82 @@
             line: 'A complete school management platform.',
             what: 'Admissions, classes and streams, timetabling, attendance, continuous assessment, a full ' +
                   'report-card engine with affective traits, bursary and fees, a parent portal, CBT, ' +
-                  'certificates and an activity audit. Around 150 pages.',
+                  'certificates, digital voting and an activity audit. Around 150 pages, installable as an app.',
             who: 'Nursery, primary and secondary schools running terms and class teachers.',
-            demo: 'https://hmgschoolconnect.vercel.app/', repo: '' },
+            /* ITEM 13 — this used to point at hmgschoolconnect.vercel.app, which is the
+               GENERATOR: the internal tool HMG uses to build a school its own portal.
+               A prospective customer must never be sent there. The demo deployment is
+               the correct public shop window: it is clearly labelled as simulated data
+               and resets periodically. */
+            demo: 'https://schoolconnectdemo.vercel.app/',
+            demoLabel: 'Open the live demo',
+            note: 'Sample data only — explore every feature without touching a real school.',
+            repo: '' },
+
+          { tag: ['school'], icon: '🎒', name: 'GOSA Portal — God of Seed Academy',
+            line: 'A real school running on School Connect.',
+            /* ITEM 5 — this was described as an alumni / association platform. It is
+               not, and the description was corrected after opening the live site.
+               gosaportal.vercel.app is "God of Seed Academy — School Portal": a School
+               Connect deployment serving an actual school, motto "Excellence in
+               Learning and Character". */
+            what: 'The official school portal of God of Seed Academy — <i>Excellence in Learning and ' +
+                  'Character</i>. A live School Connect deployment: real-time continuous assessment, exam ' +
+                  'and CBT marks, an installable mobile app with push notifications, digital voting for ' +
+                  'school elections and prefect polls, fee balances with printable receipts, multi-channel ' +
+                  'broadcasts over WhatsApp, email and push, and row-level security so one family can never ' +
+                  'see another\'s data.',
+            who: 'Look at this one if you want to see School Connect in production rather than in a demo.',
+            demo: 'https://gosaportal.vercel.app/', demoLabel: 'Open the live school portal', repo: '' },
 
           { tag: ['tutor'], icon: '🎓', name: 'Tutoring Connect', current: true,
             line: 'The platform you are looking at.',
             what: 'Engagements instead of classes, hour banks instead of term fees, cycle bookings, ' +
-                  'value-added and predicted grades, free outreach cohorts, three kinds of quiz, and a ' +
-                  'generator that stamps out a branded studio of its own.',
-            who: 'Independent tutors and small tutoring studios teaching 1:1 and in small groups, ' +
-                 'locally and internationally.',
-            demo: 'https://adewaleclassroom.vercel.app/', repo: '' },
+                  'value-added and predicted grades, free outreach cohorts with shareable registration ' +
+                  'links, three kinds of quiz with tutor marking for open responses, a certificate studio, ' +
+                  'and a generator that stamps out a branded studio of its own.',
+            who: 'Independent tutors and small studios teaching 1:1 and in small groups, locally and ' +
+                 'internationally.',
+            demo: 'https://adewaleclassroom.vercel.app/', demoLabel: 'Open a live studio', repo: '' },
 
           { tag: ['exam', 'school'], icon: '🧪', name: 'HMG Academy CBT Pro',
-            line: 'A dedicated computer-based testing engine.',
-            what: 'Candidate registration and numbering, question banks across seventeen question families, ' +
-                  'seating and scheduling, anti-cheat and proctoring, instant marking, item analysis, ' +
-                  'result broadcasts and certificate issue.',
+            line: 'A dedicated computer-based testing engine, built on a ₦0 budget.',
+            what: 'Built on an Android tablet with no budget and used with real students in real exams. ' +
+                  'CSV question upload, timed papers, per-student randomisation, anti-cheat, automatic ' +
+                  'marking and four tabs of analytics. Candidate registration and numbering, seating, ' +
+                  'proctoring, item analysis, result broadcasts and certificate issue.',
             who: 'Anyone running examinations at scale, including for candidates who are not their own students.',
-            demo: 'https://cbtsystem-hmgacademy.vercel.app/',
+            demo: 'https://cbtsystem-hmgacademy.vercel.app/', demoLabel: 'Open the live platform',
             repo: 'https://github.com/hmgacademyhub/cbt-system' },
 
-          { tag: ['assoc'], icon: '🏛️', name: 'GOSA Portal',
-            line: 'Membership, dues and elections for an association.',
-            what: 'Member records and chapters, dues and payment tracking, elections and voting, events, ' +
-                  'a directory, broadcasts, certificates and an activity audit.',
-            who: 'Alumni associations, professional bodies, churches and community organisations.',
+          { tag: ['assoc'], icon: '⛪', name: 'Church Connect',
+            line: 'Administration for a church or ministry.',
+            what: 'Member care and records, programmes and services, giving and contribution tracking, ' +
+                  'departments and units, attendance, and multi-channel communication.',
+            who: 'Churches, ministries and community organisations.',
+            demo: '', repo: '' },
+
+          { tag: ['assoc', 'school'], icon: '🏢', name: 'Business Connect',
+            line: 'Operations for a small business.',
+            what: 'Business website, invoicing, a light CRM, inventory and day-to-day customer operations — ' +
+                  'the same free-tier, own-your-data architecture as the school products.',
+            who: 'A small business running on a notebook and a WhatsApp thread.',
             demo: '', repo: '' },
 
           { tag: ['school', 'tutor', 'exam', 'assoc'], icon: '🌐', name: 'HMG Concepts',
-            line: 'The parent organisation. Est. 2015.',
-            what: 'Learning Deliberately. Teaching Authentically. The umbrella over HMG Technologies, ' +
-                  'HMG Academy, HMG Media and HMG Gospel.',
-            who: 'Start here if you are not sure which product you need.',
-            demo: 'https://hmgconcepts.pages.dev/', repo: '' },
+            line: 'The parent brand. Est. 2015, Lagos.',
+            what: '<i>His Marvellous Grace.</i> Learning Deliberately. Teaching Authentically. The umbrella ' +
+                  'over four live arms: HMG Academy, HMG Technologies, HMG Media and HMG Gospel.',
+            who: 'Start here if you are not sure which product fits you.',
+            demo: 'https://hmgconcepts.pages.dev/', demoLabel: 'Open hmgconcepts.pages.dev', repo: '' },
 
           { tag: ['tutor', 'exam'], icon: '📚', name: 'HMG Academy',
             line: 'Virtual tutoring and examination preparation.',
-            what: 'The teaching practice itself — WAEC, NECO, JAMB, IGCSE, SAT and IELTS preparation, ' +
-                  'delivered online. The products above exist because this practice needed them.',
+            what: 'The teaching practice itself — a strictly virtual school covering all subjects and all ' +
+                  'levels: WAEC, NECO, GCE, BECE, UTME, IGCSE, IELTS, JUPEB and SAT. The software above ' +
+                  'exists because this practice needed it first.',
             who: 'Students and parents looking for teaching rather than software.',
-            demo: 'https://hmgacademy.pages.dev/', repo: '' }
+            demo: 'https://hmgacademy.pages.dev/', demoLabel: 'Open HMG Academy', repo: '' }
         ];
 
         var grid = document.getElementById('hmg-product-grid');
@@ -241,11 +280,12 @@
                       '</h3>' +
                     '<p class="muted" style="margin:0 0 6px">' + esc(p.line) + '</p>' +
                   '</div></div>' +
-                '<p style="margin:8px 0 6px;font-size:.9rem">' + esc(p.what) + '</p>' +
+                '<p style="margin:8px 0 6px;font-size:.9rem">' + p.what + '</p>' +
                 '<p class="muted" style="margin:0 0 10px;font-size:.85rem"><b>Best for:</b> ' + esc(p.who) + '</p>' +
+                (p.note ? '<p class="muted" style="margin:-4px 0 10px;font-size:.8rem">ℹ️ ' + esc(p.note) + '</p>' : '') +
                 '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
                   (p.demo ? '<a class="btn btn-sm btn-primary" target="_blank" rel="noopener" href="' +
-                    esc(p.demo) + '">Open the live site</a>' : '') +
+                    esc(p.demo) + '">' + esc(p.demoLabel || 'Open the live site') + '</a>' : '') +
                   (p.repo ? '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="' +
                     esc(p.repo) + '">Source code</a>' : '') +
                   '<a class="btn btn-sm btn-ghost" target="_blank" rel="noopener" href="https://wa.me/2348100866322?text=' +

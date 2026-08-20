@@ -75,6 +75,8 @@
 <script src="assets/js/nav-model.js"></script>
 <script src="assets/js/app.js"></script>
 <script src="assets/js/rbac.js"></script>
+<script src="assets/js/cbt-marking.js"></script>
+<script src="assets/js/scope-check.js"></script>
 <script src="assets/js/free-classes.js"></script>
 <script src="assets/js/cbt-manage.js"></script>
 <script src="assets/js/cert-studio.js"></script>
@@ -211,31 +213,142 @@ function syncFields(){
   if (need.indexOf('subjects') !== -1) syncSubjectTopics();
 }
 
-/* One topic box per subject, rebuilt whenever the subject list changes.
-   Existing entries are preserved so typing another subject does not wipe
-   the topics already filled in. */
-function syncSubjectTopics(){
+/* =========================================================================
+   REPORTED ITEM 12 — "I type the first letter, the keypad minimises; I click
+   the box, type the second letter, the keypad minimises, and this continues."
+
+   THE CAUSE, exactly.
+
+   Each topic box carried  i.addEventListener('input', build)
+   build() calls syncFields()
+   syncFields() calls syncSubjectTopics()
+   syncSubjectTopics() did  host.innerHTML = ...
+
+   So every single keystroke DESTROYED the input element the user was typing
+   into and built a replacement. The replacement is a different DOM node, so
+   focus was lost — and on a phone, losing focus closes the keyboard. The
+   character survived only because the value was copied into the new node.
+   One letter per tap, exactly as described.
+
+   THE FIX, in two parts.
+
+   1. syncSubjectTopics() is now INCREMENTAL. It compares the subject list
+      against what is already on screen and returns immediately if nothing
+      has changed. When the list HAS changed it adds, removes and reorders
+      rows while REUSING the existing input elements, so the node you are
+      typing into is never replaced. Focus and caret position are preserved
+      explicitly as well, for the case where a row genuinely has to move.
+
+   2. Typing a TOPIC no longer calls build(). A topic cannot change which
+      fields are visible, so it only needs to refresh the generated prompt.
+      It calls renderPrompt(), which touches nothing but the output box.
+
+   Net effect: you can type a whole topic, and tab between subjects, without
+   the field ever being rebuilt underneath you.
+   ========================================================================= */
+let _lastSubjectSig = null;
+
+function syncSubjectTopics(force){
   const host = document.getElementById('subject-topics');
   if (!host) return;
   const list = (document.getElementById('subjects').value || '')
     .split(',').map(x=>x.trim()).filter(Boolean);
-  const keep = {};
-  host.querySelectorAll('[data-subject-topic]').forEach(i=>{ keep[i.dataset.subjectTopic]=i.value; });
-  host.innerHTML = list.length
-    ? list.map(sub =>
-        '<div class="tcq-part">' +
-          '<label class="tcq-part-label" style="min-width:110px">' + TC.esc(sub) + '</label>' +
-          '<input class="form-input" data-subject-topic="' + TC.esc(sub) + '" ' +
-            'value="' + TC.esc(keep[sub] || '') + '" placeholder="Topic for ' + TC.esc(sub) + '">' +
-        '</div>').join('')
-    : '<p class="muted" style="margin:0">Type the subjects above and a topic box will appear for each.</p>';
-  host.querySelectorAll('[data-subject-topic]').forEach(i=>{
-    i.addEventListener('input', build);
+
+  // De-duplicate, keeping first occurrence, so "Maths, Maths" makes one box.
+  const seen = new Set();
+  const subs = list.filter(s => { const k = s.toLowerCase(); if (seen.has(k)) return false; seen.add(k); return true; });
+
+  const sig = subs.join('\u0001');
+  if (!force && sig === _lastSubjectSig) return;      // nothing to do — do NOT touch the DOM
+  _lastSubjectSig = sig;
+
+  // Remember what the user has typed, keyed case-insensitively.
+  const existing = {};
+  host.querySelectorAll('[data-subject-topic]').forEach(i => {
+    existing[i.dataset.subjectTopic.toLowerCase()] = i;
   });
+
+  // Preserve focus across a genuine restructure.
+  const active = document.activeElement;
+  const activeKey = (active && active.dataset && active.dataset.subjectTopic) || null;
+  const selStart = activeKey ? active.selectionStart : null;
+  const selEnd   = activeKey ? active.selectionEnd   : null;
+
+  if (!subs.length) {
+    host.innerHTML = '<p class="muted" style="margin:0">Type the subjects above and a topic box ' +
+      'will appear for each one.</p>';
+    return;
+  }
+
+  const empty = host.querySelector('p.muted');
+  if (empty) empty.remove();
+
+  const wanted = [];
+  subs.forEach(sub => {
+    const key = sub.toLowerCase();
+    let input = existing[key];
+    let row;
+    if (input) {
+      // REUSE the live element. This is the whole point of the fix.
+      row = input.closest('.tcq-part');
+      const lab = row.querySelector('.tcq-part-label');
+      if (lab && lab.textContent !== sub) lab.textContent = sub;   // re-cased
+      input.dataset.subjectTopic = sub;
+      input.placeholder = 'Topic for ' + sub;
+      delete existing[key];
+    } else {
+      row = document.createElement('div');
+      row.className = 'tcq-part';
+      const lab = document.createElement('label');
+      lab.className = 'tcq-part-label';
+      lab.style.minWidth = '110px';
+      lab.textContent = sub;
+      input = document.createElement('input');
+      input.className = 'form-input';
+      input.dataset.subjectTopic = sub;
+      input.placeholder = 'Topic for ' + sub;
+      // A topic does not change which fields are shown, so it must NOT call
+      // build(). renderPrompt() only rewrites the output textarea.
+      input.addEventListener('input', renderPrompt);
+      row.appendChild(lab);
+      row.appendChild(input);
+    }
+    wanted.push(row);
+  });
+
+  // Anything the user removed from the subject list goes away.
+  Object.keys(existing).forEach(k => {
+    const row = existing[k].closest('.tcq-part');
+    if (row) row.remove();
+  });
+
+  // Put the rows in the order the subjects were typed. appendChild MOVES an
+  // existing node rather than cloning it, so the elements — and their values,
+  // and their listeners — survive.
+  wanted.forEach(row => host.appendChild(row));
+
+  if (activeKey) {
+    /* CSS.escape is missing on older Android WebViews — the exact devices
+       this page has to work on. Escape by hand rather than throwing. */
+    const esc1 = (window.CSS && CSS.escape)
+      ? CSS.escape(activeKey)
+      : String(activeKey).replace(/["\\]/g, '\\$&');
+    const again = host.querySelector('[data-subject-topic="' + esc1 + '"]');
+    if (again && document.activeElement !== again) {
+      again.focus();
+      try { again.setSelectionRange(selStart, selEnd); } catch (e) {}
+    }
+  }
 }
 
 function build(){
   syncFields();
+  renderPrompt();
+}
+
+/* Rewrites ONLY the generated-prompt textarea. Safe to call on every
+   keystroke because it does not rebuild a single form control. */
+function renderPrompt(){
   const pack = document.getElementById('pack').value;
   const boardEl = document.getElementById('examType');
   const subjEl  = document.getElementById('subjects');
@@ -262,9 +375,24 @@ function build(){
 }
 document.getElementById('build').onclick=build;
 document.getElementById('pack').addEventListener('change', build);
-document.getElementById('subjects').addEventListener('input', syncSubjectTopics);
-['topic','n','lv','src','subject','examType','subjects'].forEach(id=>{
-  const el=document.getElementById(id); if(el) el.addEventListener('input', build);
+
+/* The SUBJECTS field is the only one that may restructure the topic boxes.
+   Even here syncSubjectTopics() returns immediately when the parsed list has
+   not actually changed — typing a space after a comma must not rebuild
+   anything. */
+document.getElementById('subjects').addEventListener('input', function(){
+  syncSubjectTopics();
+  renderPrompt();
+});
+
+/* Everything else only needs the prompt re-rendered. Calling build() here
+   was what dragged syncSubjectTopics() — and its innerHTML wipe — into every
+   keystroke on the page. */
+['topic','n','lv','src','subject','examType'].forEach(id=>{
+  const el=document.getElementById(id); if(el) el.addEventListener('input', renderPrompt);
+});
+['pack','lv','examType'].forEach(id=>{
+  const el=document.getElementById(id); if(el) el.addEventListener('change', build);
 });
 document.getElementById('copy').onclick=async()=>{ await navigator.clipboard.writeText(document.getElementById('out').value); toast('Copied — paste into any free chat','success'); };
 /* Save the CSV the chat gives back, straight to a .csv file (items 7 & 12). */

@@ -75,6 +75,8 @@
 <script src="assets/js/nav-model.js"></script>
 <script src="assets/js/app.js"></script>
 <script src="assets/js/rbac.js"></script>
+<script src="assets/js/scope-check.js"></script>
+<script src="assets/js/cbt-marking.js"></script>
 <script src="assets/js/free-classes.js"></script>
 <script src="assets/js/cbt-manage.js"></script>
 <script src="assets/js/cert-studio.js"></script>
@@ -114,6 +116,15 @@
       </section>
 
       <div id="cr-alert"></div>
+
+      <!-- ==================================================================
+           REPORTED ITEM 7 — tutor oversight of open-response questions.
+
+           This sits ABOVE the results tables deliberately. An unmarked paper
+           is work owed to a candidate who is waiting for it, so it should be
+           the first thing on the page, not a tab somebody has to find.
+           ================================================================== -->
+      <div id="marking-root"></div>
 
       <div class="card">
         <h2 style="margin-top:0">🔔 Live submissions</h2>
@@ -637,6 +648,22 @@
   else boot();
 })();
 
+</script>
+<script>
+/* Boot the marking desk. It scopes itself through tc_cbt_marking_queue(),
+   which applies the same tutor rules as everything else: a tutor sees only
+   submissions on papers assigned to them. */
+document.addEventListener('DOMContentLoaded', function () {
+  if (!window.CBTMarking) return;
+  var qs = new URLSearchParams(location.search);
+  CBTMarking.mount('marking-root', qs.get('exam') || null);
+  if (qs.get('tab') === 'marking') {
+    setTimeout(function () {
+      var el = document.getElementById('marking-root');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 500);
+  }
+});
 </script>
 </body>
 </html>
