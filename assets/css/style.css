@@ -1248,3 +1248,183 @@ body[data-theme="dark"] .modal-close { background: #334155 !important; color: #f
 #cbtm-modal     { z-index: 10050; }
 .tc-popup-backdrop, #page-help-modal { z-index: 10060; }
 .toast-container, #tc-live-notification-tray { z-index: 10100; }
+
+/* =====================================================================
+   V30 — Page Help / popup body ink lock
+   --------------------------------------------------------------------
+   Symptom reported: "When the icon Page Help is clicked for any page,
+   its text is not visible at all. But if I try to highlight it, it then
+   becomes visible." That is white-on-white (or near-white on white): the
+   selection highlight is the only thing that reveals the glyphs.
+   Cause: theme / dark-mode rules and the popup surface disagreed on the
+   ink colour; some children kept a light inline colour against a forced
+   white background.
+   Fix: pin EVERY text container inside .tc-popup / #page-help-modal to
+   dark ink with !important on light surfaces, and light ink on dark.
+   ===================================================================== */
+.tc-popup,
+.tc-popup-backdrop .tc-popup,
+#page-help-modal .tc-popup,
+#page-help-modal {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+.tc-popup-body,
+.tc-popup-body *,
+.tc-popup .tc-popup-body,
+.tc-popup .tc-popup-p,
+.tc-popup .tc-popup-title,
+.tc-popup .tc-popup-ol,
+.tc-popup .tc-popup-ol li,
+.tc-popup .tc-popup-badge,
+.tc-popup .tc-popup-foot,
+#page-help-modal .tc-popup-body,
+#page-help-modal .tc-popup-body *,
+#page-help-modal p,
+#page-help-modal li,
+#page-help-modal div,
+#page-help-modal span,
+#page-help-modal h1,
+#page-help-modal h2,
+#page-help-modal h3,
+#page-help-modal h4,
+#page-help-modal strong,
+#page-help-modal b,
+#page-help-modal ol,
+#page-help-modal ul {
+  color: #0f172a !important;
+}
+.tc-popup a,
+.tc-popup .tc-popup-a,
+#page-help-modal a,
+#page-help-modal .tc-popup-a {
+  color: #0506ae !important;
+  text-decoration: underline !important;
+}
+.tc-popup .muted,
+.tc-popup-foot,
+#page-help-modal .muted,
+#page-help-modal .tc-popup-foot {
+  color: #475569 !important;
+}
+.tc-popup-hr, #page-help-modal hr {
+  border: none !important;
+  border-top: 1px solid #e2e8f0 !important;
+  margin: 14px 0 !important;
+}
+
+/* Dark mode: only when the app actually marks the body dark. */
+body[data-theme="dark"] .tc-popup,
+body[data-theme="dark"] #page-help-modal .tc-popup,
+body.dark-mode .tc-popup,
+body.dark-mode #page-help-modal .tc-popup {
+  background: #111827 !important;
+  color: #f1f5f9 !important;
+}
+body[data-theme="dark"] .tc-popup-body,
+body[data-theme="dark"] .tc-popup-body *,
+body[data-theme="dark"] .tc-popup .tc-popup-p,
+body[data-theme="dark"] .tc-popup .tc-popup-title,
+body[data-theme="dark"] .tc-popup .tc-popup-ol li,
+body[data-theme="dark"] .tc-popup .tc-popup-foot,
+body[data-theme="dark"] #page-help-modal .tc-popup-body,
+body[data-theme="dark"] #page-help-modal .tc-popup-body *,
+body[data-theme="dark"] #page-help-modal p,
+body[data-theme="dark"] #page-help-modal li,
+body[data-theme="dark"] #page-help-modal div,
+body[data-theme="dark"] #page-help-modal span,
+body[data-theme="dark"] #page-help-modal h1,
+body[data-theme="dark"] #page-help-modal h2,
+body[data-theme="dark"] #page-help-modal h3,
+body[data-theme="dark"] #page-help-modal strong,
+body.dark-mode .tc-popup-body,
+body.dark-mode .tc-popup-body *,
+body.dark-mode .tc-popup .tc-popup-p,
+body.dark-mode .tc-popup .tc-popup-title,
+body.dark-mode .tc-popup .tc-popup-ol li,
+body.dark-mode .tc-popup .tc-popup-foot,
+body.dark-mode #page-help-modal .tc-popup-body,
+body.dark-mode #page-help-modal .tc-popup-body *,
+body.dark-mode #page-help-modal p,
+body.dark-mode #page-help-modal li,
+body.dark-mode #page-help-modal div,
+body.dark-mode #page-help-modal span,
+body.dark-mode #page-help-modal h1,
+body.dark-mode #page-help-modal h2,
+body.dark-mode #page-help-modal h3,
+body.dark-mode #page-help-modal strong {
+  color: #f1f5f9 !important;
+}
+body[data-theme="dark"] .tc-popup a,
+body[data-theme="dark"] #page-help-modal a,
+body.dark-mode .tc-popup a,
+body.dark-mode #page-help-modal a {
+  color: #a5b4fc !important;
+}
+body[data-theme="dark"] .tc-popup .muted,
+body[data-theme="dark"] .tc-popup-foot,
+body.dark-mode .tc-popup .muted,
+body.dark-mode .tc-popup-foot {
+  color: #94a3b8 !important;
+}
+
+/* Nav search — self-contained sticky + clear affordances */
+.nav-search-box {
+  padding: 8px 10px 6px !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 6 !important;
+  background: var(--sidebar-bg, var(--white, #fff)) !important;
+  border-bottom: 1px solid var(--gray-200, #e2e8f0);
+}
+#nav-search {
+  width: 100% !important;
+  padding: 9px 34px 9px 12px !important;
+  border: 1px solid var(--gray-300, #cbd5e1) !important;
+  border-radius: 10px !important;
+  font-size: .88rem !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  box-sizing: border-box !important;
+}
+#nav-search::placeholder { color: #64748b !important; opacity: 1 !important; }
+#nav-search:focus {
+  outline: 2px solid rgba(5,6,174,.35) !important;
+  border-color: #0506ae !important;
+}
+#nav-search-clear {
+  position: absolute !important;
+  right: 6px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  border: 0 !important;
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  border-radius: 999px !important;
+  width: 22px !important;
+  height: 22px !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  font-size: .8rem !important;
+}
+#nav-search-empty {
+  font-size: .75rem !important;
+  color: #64748b !important;
+  padding: 6px 2px !important;
+}
+#nav-search-meta {
+  font-size: .7rem !important;
+  color: #64748b !important;
+  padding: 2px 2px 0 !important;
+}
+body[data-theme="dark"] .nav-search-box,
+body.dark-mode .nav-search-box {
+  background: #0f172a !important;
+  border-bottom-color: #1e293b !important;
+}
+body[data-theme="dark"] #nav-search,
+body.dark-mode #nav-search {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}

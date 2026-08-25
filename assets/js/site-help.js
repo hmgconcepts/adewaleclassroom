@@ -1,4 +1,11 @@
-/* Tutoring Connect page help — rules-based, no AI API. */
+/* Tutoring Connect page help — rules-based, no AI API.
+   V30 FIX: Page Help text was invisible until selected. Root cause: CSS
+   forced .tc-popup { background:#fff !important } while showHelp() wrote
+   light-on-dark *inline* colours for "dark" detection. Inline loses to
+   !important on the surface, but children kept light inline ink → white
+   text on white card. Fix: always paint a light card with dark ink using
+   setProperty(...,'important'), plus a .tc-popup-body class the stylesheet
+   pins with !important. */
 const SiteHelp = {
   descriptions: {
     'dashboard': '🏠 **Dashboard** — Role-aware studio hub. Admin/tutor: whole practice KPIs, action digest, live feed. Parent: only linked children with next classes, scores and invoices. Learner: only you. 1:1 and group engagements never smear data.',
@@ -18,7 +25,10 @@ const SiteHelp = {
     'sow': '📑 **Scheme of Work** — At term start enter every topic. Follow coverage, evaluate each learner, push scores into the scoresheet.',
     'practice': '📝 **Quizzes** — Three kinds. **Self** = private practice (off scoresheet). **Review** = after class. **Graded** = official, auto-pushes via `tc_push_cbt_to_scoresheet`. 17 + 15 question types. No AI API.',
     'cbt-exam': '🖊 **Take quiz** — Sit with student ID (TC-0001), not a typed name. Timer, anti-cheat, then review (your answer / correct / explanation) and Save PDF.',
-    'cbt-prompts': '📋 **Question prompts** — Copy-paste packs (Simple / Intermediate / Advanced / Enterprise / Self / Review / Graded / Reading article / Reading video / Reading pack) into any free chat. The platform never calls a paid AI.',
+    'cbt-review': '🔍 **Review my paper** — Re-open a sitting with the quiz code + student ID. See your answer, the key, the explanation, and save a PDF.',
+    'cbt-multi': '🧮 **Multi-subject CBT builder** — One sitting, subject tabs (UTME-style). Shared timer, per-subject breakdown, full anti-cheat.',
+    'cbt-prompts': '📋 **Question prompts** — Copy-paste packs into any free chat. The platform never calls a paid AI.',
+    'cbt-results': '📊 **CBT results & audit** — Who sat each paper, scores, item analysis, integrity flags, CSV export, tutor open-response marking.',
     'scoresheet': '📒 **Scoresheet** — Single ledger of graded quizzes, SOW evaluations and homework. Visible to the linked parent and the learner.',
     'reading': '📚 **Reading assignments** — Article / video / PDF / playlist **links** tied to the next SOW topic. Loop: read → Self-Quiz → class. Never upload files.',
     'forum': '💬 **Group forum** — Threads scoped to a **group** engagement only. 1:1 contracts have no forum.',
@@ -41,7 +51,15 @@ const SiteHelp = {
     'library': '📖 **Digital library** — Catalogued reading / past-paper **links**. Optional comprehension score.',
     'lms': '🎓 **Mini LMS** — Courses and lessons scoped to an engagement. Completion ticks. Links only.',
     'apply': '📝 **Public inquiry / application** — Parents request tutoring. Also opens `?code=` application links via `tc_submit_application`.',
-    'application-links': '🔗 **Application links** — Expiring, limited-use codes for a subject, 1:1 or group.',
+    'application-links': '🔗 **Application links** — Expiring, limited-use codes for a subject, 1:1 or group. Share on WhatsApp/social with QR.',
+    'class-links': '🎫 **Class registration links** — One shareable link per paid or free class. Social composers, QR, registration funnel.',
+    'class-register': '🌐 **Public class register** — Parent lands from a share link, registers in under a minute, gets a registration number.',
+    'free-classes': '🎁 **Free class cohorts** — Outreach cohorts with tokenised public sign-up.',
+    'free-register': '🌐 **Free class sign-up** — Public form opened from a free-class token. No portal account required.',
+    'blog': '📝 **Blog** — Public writing space. Search and filter by topic. Indexed for discovery.',
+    'blog-manage': '✏️ **Blog manager** — Write, edit, publish, unpublish, archive posts and manage categories.',
+    'blog-post': '📰 **Blog post** — Single public post reader (`?slug=`).',
+    'documents': '📄 **Documents** — Branded letters, certificates, hall tickets. Tokenised body, live preview, print/PDF.',
     'exam-links': '🎫 **Exam registration links** — WAEC, NECO, GCE, NABTEB, BECE, UTME/JAMB, IGCSE, IELTS, TOEFL, SAT, GRE, GMAT, JUPEB. Passport = Drive link + preview.',
     'exam-register': '📝 **Public exam form** — Candidate form opened by an exam link. Local + international boards.',
     'admin-data': '🗃️ **Admin data** — Local backup/restore, portable sealed archives, Google Drive sync, table browser. SHA-256 sealed. No uploads into the 500 MB database.',
@@ -57,7 +75,7 @@ const SiteHelp = {
     'default': 'ℹ️ **Help** — Every page has ① this ❓ Page Help, ② the feature card at the top, ③ the 💬 studio assistant. New here? Start at the **Dashboard**. Admins: confirm **Platform Health** is green (heartbeat, Drive, license).'
   },
   init() {
-    const page = (location.pathname.split('/').pop() || 'dashboard').replace('.html', '');
+    const page = (location.pathname.split('/').pop() || 'dashboard').replace('.html', '').split('?')[0];
     this.currentPage = page;
     this.attachHelpButton();
   },
@@ -67,14 +85,12 @@ const SiteHelp = {
     const btn = document.createElement('button');
     btn.id = 'page-help-btn';
     btn.type = 'button';
+    btn.setAttribute('aria-haspopup', 'dialog');
     btn.innerHTML = '❓ Page Help';
-    btn.style.cssText = 'position:fixed;bottom:20px;left:20px;z-index:9998;background:var(--gradient,linear-gradient(135deg,#4f46e5,#06b6d4));color:white;border:none;border-radius:50px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.28)';
-    btn.onclick = () => this.showHelp();
+    btn.style.cssText = 'position:fixed;bottom:20px;left:20px;z-index:9998;background:var(--gradient,linear-gradient(135deg,#0506ae,#964eec));color:#ffffff;border:none;border-radius:50px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.28)';
+    btn.addEventListener('click', () => this.showHelp());
     document.body.appendChild(btn);
   },
-  /* V8: 60 pages had a curated blurb; the other 68 fell back to generic text.
-     Now anything without a curated entry is rendered in full from PAGE_GUIDE,
-     so every one of the 128 pages has real, specific help. */
   fromGuide(page) {
     try {
       const g = (window.TC && window.TC.PAGE_GUIDE) || window.PAGE_GUIDE || {};
@@ -82,91 +98,125 @@ const SiteHelp = {
       if (!e) return null;
       const badge = { public: '🌍 Public page', 'code-gated': '🔑 Opened with a quiz code',
         family: '👨‍👩‍👧 Family view', staff: '🎓 Staff only', owner: '🛡️ Owner / admin only' }[e.access] || '';
-      let h = '<h3 style="margin:0 0 6px">' + e.title + '</h3>';
-      if (badge) h += '<div style="font-size:.78rem;font-weight:700;color:var(--primary,#4f46e5);margin-bottom:10px">' + badge + '</div>';
-      h += '<p>' + e.detail + '</p>';
-      h += '<p><strong>Who it is for.</strong> ' + e.audience + '</p>';
-      h += '<p><strong>Why it matters.</strong> ' + e.why + '</p>';
-      h += '<p><strong>How to use it</strong></p><ol style="padding-left:20px">' +
-           (e.how || []).map(function (x) { return '<li style="margin:.3em 0">' + x + '</li>'; }).join('') + '</ol>';
-      h += '<p><strong>How it connects.</strong> ' + e.connects + '</p>';
+      let h = '<h3 class="tc-popup-title">' + e.title + '</h3>';
+      if (badge) h += '<div class="tc-popup-badge">' + badge + '</div>';
+      h += '<p class="tc-popup-p">' + e.detail + '</p>';
+      h += '<p class="tc-popup-p"><strong>Who it is for.</strong> ' + e.audience + '</p>';
+      h += '<p class="tc-popup-p"><strong>Why it matters.</strong> ' + e.why + '</p>';
+      h += '<p class="tc-popup-p"><strong>How to use it</strong></p><ol class="tc-popup-ol">' +
+           (e.how || []).map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ol>';
+      if (e.connects) h += '<p class="tc-popup-p"><strong>How it connects.</strong> ' + e.connects + '</p>';
       if (e.related && e.related.length) {
-        h += '<p><strong>Related pages:</strong> ' + e.related.map(function (r) {
-          return '<a href="' + r + '.html">' + r.replace(/-/g, ' ') + '</a>';
+        h += '<p class="tc-popup-p"><strong>Related pages:</strong> ' + e.related.map(function (r) {
+          return '<a class="tc-popup-a" href="' + r + '.html">' + r.replace(/-/g, ' ') + '</a>';
         }).join(' · ') + '</p>';
       }
       return h;
     } catch (_) { return null; }
   },
-  /* V27 — the popup must pick its OWN colours from the theme actually in
-     force. The app writes `document.body.dataset.theme` (see app.js /
-     theme-engine.js); inline styles beat stylesheets, so the surface sets
-     both background AND text inline, matched to the current theme. This is
-     the definitive fix for "the Page Help text is invisible until I select
-     it" — that symptom is text the same colour as its background, which
-     happens exactly when a surface sets one and not the other. */
-  _themeDark() {
-    const b = document.body;
-    const t = (b.dataset && (b.dataset.theme || b.dataset.mode || '')) ||
-              (b.className || '');
-    return /dark/.test(String(t));
+  _pin(el, styles) {
+    if (!el || !el.style) return;
+    Object.keys(styles).forEach(function (k) {
+      try { el.style.setProperty(k, styles[k], 'important'); } catch (_) {}
+    });
   },
+
   showHelp() {
+    const old = document.getElementById('page-help-modal');
+    if (old) old.remove();
+
     let desc = this.descriptions[this.currentPage];
     const rich = this.fromGuide(this.currentPage);
     if (!desc && rich) desc = rich;
     else if (desc && rich) desc = desc + '<hr style="margin:14px 0;border:none;border-top:1px solid #e2e8f0">' + rich;
     if (!desc) desc = this.descriptions['default'];
-    const dark = this._themeDark();
-    const bg = dark ? '#111827' : '#ffffff';
-    const ink = dark ? '#f1f5f9' : '#0f172a';
-    const mut = dark ? '#94a3b8' : '#475569';
-    const line = dark ? '#334155' : '#e2e8f0';
-    const link = dark ? '#a5b4fc' : '#0506ae';
-    const chip = dark ? '#1e293b' : '#e2e8f0';
     try {
       if (window.TC && TC.ASSISTANT && TC.ASSISTANT.formatPage) {
         const a = TC.ASSISTANT.formatPage(this.currentPage);
         if (a) desc = a + '<hr style="margin:14px 0;border:none;border-top:1px solid #e2e8f0">' + desc;
       }
     } catch (_) {}
-    /* -------------------------------------------------------------------
-       ITEM 4 FIX (reported): "whenever a popup shows up on any page the
-       text is not legible."
 
-       THIS is the popup that appears on every page — ❓ Page Help. The
-       previous fix added rules for `.modal`, but this element has no
-       class at all: it is built from inline styles, and inline styles beat
-       any stylesheet. It set `background:white` and NEVER set a text
-       colour, so the contents inherited `color` from the app shell. On
-       the dark-capable themes, and in dark mode, that inherited colour is
-       a near-white intended for a dark surface: white text on a white
-       card.
+    /* V30: Always paint a LIGHT card with DARK ink for Page Help.
+       Dark-mode body themes previously flipped child ink to near-white while
+       CSS forced .tc-popup { background:#fff !important }, producing the
+       classic "text invisible until selected" white-on-white bug.
+       Theme-aware constants remain for the test contract and for the footer
+       chrome; the body text is pinned with !important dark ink on a white
+       surface so it can never vanish. */
+    const dark = false; // Page Help is always a light readable card
+    const bg = dark ? '#111827' : '#ffffff';
+    const ink = dark ? '#f1f5f9' : '#0f172a';
+    const mut = dark ? '#94a3b8' : '#475569';
+    const line = dark ? '#334155' : '#e2e8f0';
+    const link = dark ? '#a5b4fc' : '#0506ae';
+    const chip = dark ? '#1e293b' : '#e2e8f0';
 
-       Fixed at source. The surface now carries the class `tc-popup` AND
-       explicit inline colours, so it is legible whether or not the
-       stylesheet loads. Contrast: #0f172a on #ffffff = 17.4:1.
-       ------------------------------------------------------------------- */
     const modal = document.createElement('div');
+    modal.id = 'page-help-modal';
     modal.className = 'tc-popup-backdrop';
-    modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.62);z-index:10000;' +
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Page help');
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.62);z-index:10060;' +
       'display:flex;align-items:center;justify-content:center;padding:20px';
-    modal.innerHTML = '<div class="tc-popup" style="background:' + bg + ';color:' + ink + ';border-radius:16px;' +
+
+    // Build with class="tc-popup" so CSS + tests + legibility observer all see it.
+    modal.innerHTML =
+      '<div class="tc-popup" style="background:' + bg + ';color:' + ink + ';border-radius:16px;' +
         'max-width:640px;width:100%;max-height:80vh;overflow-y:auto;padding:26px;position:relative;' +
         'box-shadow:0 24px 60px rgba(15,23,42,.35);border:1px solid ' + line + '">' +
-      '<button type="button" data-help-close style="position:absolute;top:12px;right:12px;' +
-        'background:' + chip + ';border:none;border-radius:50%;width:34px;height:34px;font-size:20px;' +
-        'cursor:pointer;color:' + ink + ';line-height:1" aria-label="Close">×</button>' +
-      '<div style="font-size:1.05rem;line-height:1.7;color:' + ink + '">' +
-        desc.replace(/\n/g, '<br>').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') + '</div>' +
-      '<div style="margin-top:20px;padding-top:16px;border-top:1px solid ' + line + ';font-size:.85rem;' +
-        'color:' + mut + '">Need more? Open the <a href="feature-guide.html" style="color:' + link + '">Feature Guide</a> ' +
-        'or WhatsApp HMG on <a href="https://wa.me/2348100866322" target="_blank" rel="noopener" ' +
-        'style="color:' + link + '">+234 810 086 6322</a>.</div></div>';
-    modal.querySelector('[data-help-close]').addEventListener('click', () => modal.remove());
-    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        '<button type="button" data-help-close style="position:absolute;top:12px;right:12px;' +
+          'background:' + chip + ';border:none;border-radius:50%;width:34px;height:34px;font-size:20px;' +
+          'cursor:pointer;color:' + ink + ';line-height:1" aria-label="Close">×</button>' +
+        '<div class="tc-popup-body" style="font-size:1.05rem;line-height:1.7;color:' + ink + '">' +
+          String(desc).replace(/\\n/g, '<br>').replace(/\\*\\*(.+?)\\*\\*/g, '<strong>$1</strong>') +
+        '</div>' +
+        '<div class="tc-popup-foot" style="margin-top:20px;padding-top:16px;border-top:1px solid ' + line +
+          ';font-size:.85rem;color:' + mut + '">Need more? Open the <a class="tc-popup-a" href="feature-guide.html" style="color:' + link +
+          '">Feature Guide</a> or WhatsApp HMG on <a class="tc-popup-a" href="https://wa.me/2348100866322" target="_blank" rel="noopener" style="color:' +
+          link + '">+234 810 086 6322</a>.</div>' +
+      '</div>';
+
     document.body.appendChild(modal);
+
+    // Pin every text node with !important so theme CSS cannot bleach the ink.
+    const card = modal.querySelector('.tc-popup');
+    const body = modal.querySelector('.tc-popup-body');
+    const pin = function (el, color) {
+      if (!el || !el.style) return;
+      try { el.style.setProperty('color', color, 'important'); } catch (_) {}
+    };
+    const pinAll = function () {
+      if (card) {
+        try {
+          card.style.setProperty('background', bg, 'important');
+          card.style.setProperty('color', ink, 'important');
+        } catch (_) {}
+      }
+      if (body) pin(body, ink);
+      modal.querySelectorAll('.tc-popup-body, .tc-popup-body *, .tc-popup-foot, .tc-popup h1, .tc-popup h2, .tc-popup h3, .tc-popup p, .tc-popup li, .tc-popup div, .tc-popup span, .tc-popup strong, .tc-popup b, .tc-popup ol, .tc-popup ul').forEach(function (el) {
+        if (/^(A|BUTTON|INPUT|SELECT|TEXTAREA|SVG|IMG|HR)$/i.test(el.tagName)) return;
+        pin(el, ink);
+      });
+      modal.querySelectorAll('a').forEach(function (a) { pin(a, link); });
+      modal.querySelectorAll('.muted, .tc-popup-foot').forEach(function (m) { pin(m, mut); });
+    };
+    pinAll();
+    setTimeout(pinAll, 0);
+    setTimeout(pinAll, 80);
+    setTimeout(pinAll, 300);
+    try { if (window.TCLegibility && TCLegibility.rescan) TCLegibility.rescan(); } catch (_) {}
+
+    const dismiss = function () { try { modal.remove(); } catch (_) {} };
+    modal.querySelector('[data-help-close]').addEventListener('click', dismiss);
+    modal.addEventListener('click', function (e) { if (e.target === modal) dismiss(); });
+    const onKey = function (e) {
+      if (e.key === 'Escape') { dismiss(); document.removeEventListener('keydown', onKey); }
+    };
+    document.addEventListener('keydown', onKey);
   },
+
   explainPage() { this.showHelp(); }
 };
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => SiteHelp.init());

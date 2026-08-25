@@ -663,6 +663,8 @@ const App = {
     try {
       const nav = document.querySelector('.app-nav');
       if (!nav || document.getElementById('nav-search-box')) return;
+      // TCNav owns the search box when present — do not double-inject.
+      if (window.TCNav && typeof TCNav.render === 'function' && nav.getAttribute('data-nav') === 'model') return;
       const wrap = document.createElement('div');
       wrap.id = 'nav-search-box';
       wrap.style.cssText = 'padding:8px 10px 4px;position:sticky;top:0;background:inherit;z-index:5';

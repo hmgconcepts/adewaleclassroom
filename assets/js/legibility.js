@@ -83,6 +83,14 @@
 
   function fix(el) {
     if (!el || el.nodeType !== 1 || el.dataset.tcLegible === '1') return;
+    /* V30: never recolour the Page Help card — site-help.js owns its ink.
+       A previous pass could mark light ink as "fixed" against a misread bg. */
+    try {
+      if (el.closest && (el.closest('#page-help-modal') || el.closest('.tc-popup-body'))) {
+        el.dataset.tcLegible = '1';
+        return;
+      }
+    } catch (e) {}
     var cs;
     try { cs = w.getComputedStyle(el); } catch (e) { return; }
     if (!cs || cs.display === 'none' || cs.visibility === 'hidden') return;

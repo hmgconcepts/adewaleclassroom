@@ -217,18 +217,21 @@
 
       /* ---- Search box, always first. ---------------------------------- */
       html.push(
-        '<div id="nav-search-box" class="nav-search-box">' +
+        '<div id="nav-search-box" class="nav-search-box" role="search">' +
           '<div style="position:relative">' +
-            '<input id="nav-search" type="search" placeholder="🔎 Search pages…" ' +
-              'autocomplete="off" aria-label="Search the menu" ' +
-              'style="width:100%;padding:8px 30px 8px 12px;border:1px solid var(--gray-200,#e2e8f0);' +
-              'border-radius:10px;font-size:.85rem;background:var(--white,#fff);color:inherit">' +
-            '<button id="nav-search-clear" type="button" title="Clear search" ' +
+            '<input id="nav-search" type="search" placeholder="🔎 Search pages, modules, actions…" ' +
+              'autocomplete="off" spellcheck="false" enterkeyhint="search" ' +
+              'aria-label="Search every page in the menu" aria-controls="app-nav" ' +
+              'style="width:100%;padding:9px 34px 9px 12px;border:1px solid var(--gray-300,#cbd5e1);' +
+              'border-radius:10px;font-size:.88rem;background:#fff;color:#0f172a;box-sizing:border-box">' +
+            '<button id="nav-search-clear" type="button" title="Clear search" aria-label="Clear search" ' +
               'style="position:absolute;right:6px;top:50%;transform:translateY(-50%);border:0;' +
-              'background:none;cursor:pointer;font-size:.9rem;display:none">✕</button>' +
+              'background:#e2e8f0;color:#0f172a;border-radius:999px;width:22px;height:22px;' +
+              'cursor:pointer;font-size:.8rem;display:none;line-height:1">✕</button>' +
           '</div>' +
+          '<div id="nav-search-meta" style="display:none;font-size:.7rem;color:#64748b;padding:2px 2px 0"></div>' +
           '<div id="nav-search-empty" style="display:none;font-size:.75rem;' +
-            'color:var(--gray-500,#64748b);padding:6px 2px">No page matches that.</div>' +
+            'color:#64748b;padding:6px 2px">No page matches. Try another word (e.g. quiz, invoice, blog).</div>' +
         '</div>');
 
       /* ---- Sections and their links. ---------------------------------- */
@@ -314,65 +317,206 @@
 
       if (!inp) return;
 
-      /* Search.
+      /* Search — robust, all-inclusive, self-contained.
 
-         The old search matched a.textContent, which on this markup contains
-         the icon glyph and collapsed whitespace, so "payment plan" failed. It
-         also left the section headings on screen, so a search that matched one
-         link produced eleven headings and one result, which reads as "nothing
-         came up". Both are handled here. */
+         Matches every visible nav link on:
+           • label text (icon stripped)
+           • module id (dashes/underscores → spaces)
+           • href / filename
+           • section title
+           • synonym dictionary (quiz→practice/cbt, money→invoices, …)
+         Every typed word must match somewhere (order-free). Folded sections
+         still yield matches while a query is active. Headings hide when
+         empty. Enter opens the first hit; Esc clears. */
+      var SYNONYMS = {
+        quiz: 'practice cbt exam test paper assessment graded self review',
+        quizzes: 'practice cbt exam test paper',
+        cbt: 'practice quiz exam multi results prompts review paper',
+        test: 'practice cbt quiz exam',
+        exam: 'cbt practice quiz exam-register exam-links exam-targets',
+        money: 'finance invoices payments fees packages wallet payroll scholarships',
+        pay: 'payments invoices payment-plans wallet fees packages',
+        invoice: 'invoices payments fees packages finance',
+        bill: 'invoices payments fees packages',
+        class: 'sessions bookings classwork class-links free-classes calendar attendance',
+        lesson: 'sessions bookings lesson-plans sow curriculum',
+        student: 'learners learner-360 my-children directory idcards',
+        child: 'learners my-children learner-360 parents family-links',
+        parent: 'parents family-links my-children',
+        teacher: 'tutors tutors payroll leave',
+        tutor: 'tutors payroll leave availability',
+        group: 'groups group-insights engagements forum',
+        book: 'bookings calendar public-book library',
+        booking: 'bookings calendar public-book availability',
+        link: 'application-links class-links exam-links family-links',
+        register: 'class-register free-register exam-register apply',
+        signup: 'apply free-register class-register',
+        blog: 'blog blog-manage blog-post',
+        post: 'blog blog-manage blog-post',
+        doc: 'documents contracts policies',
+        document: 'documents contracts',
+        letter: 'documents contracts certificates',
+        report: 'progress-reports analytics insights learner-360 cbt-results',
+        score: 'scoresheet cbt-results mastery insights progress-reports',
+        mark: 'scoresheet cbt-results cbt-marking mastery',
+        risk: 'at-risk insights learner-360',
+        health: 'platform-health diagnostics storage admin-data',
+        backup: 'admin-data storage platform-health drive',
+        drive: 'admin-data storage',
+        setting: 'settings profile change-password license security-centre',
+        security: 'security-centre settings change-password approvals',
+        message: 'inbox messages notifications broadcasts announcements',
+        chat: 'inbox messages forum',
+        vote: 'voting polls surveys',
+        poll: 'voting polls surveys',
+        free: 'free-classes free-register',
+        social: 'class-links application-links flyer blog',
+        share: 'class-links application-links flyer',
+        multi: 'cbt-multi practice',
+        prompt: 'cbt-prompts practice',
+        result: 'cbt-results scoresheet progress-reports',
+        review: 'cbt-review practice scoresheet',
+        paper: 'cbt-review practice cbt-results cbt-exam',
+        help: 'feature-guide helpdesk hmg-ecosystem',
+        hmg: 'hmg-ecosystem hmg-products developer feature-guide'
+      };
+
       var norm = function (t) {
         return String(t || '')
           .replace(/[•·\u2022]/g, ' ')
+          .replace(/[^a-z0-9\s_-]+/gi, ' ')
+          .replace(/[_-]+/g, ' ')
           .replace(/\s+/g, ' ')
           .trim().toLowerCase();
       };
 
+      var expand = function (q) {
+        var words = norm(q).split(' ').filter(Boolean);
+        var out = [];
+        words.forEach(function (w) {
+          out.push(w);
+          if (SYNONYMS[w]) {
+            SYNONYMS[w].split(' ').forEach(function (s) { out.push(s); });
+          }
+          // light stemming: quizzes→quiz, payments→payment, bookings→booking
+          if (w.length > 4 && w.charAt(w.length - 1) === 's') out.push(w.slice(0, -1));
+          if (w.length > 5 && w.slice(-3) === 'ies') out.push(w.slice(0, -3) + 'y');
+          if (w.length > 6 && w.slice(-3) === 'ing') out.push(w.slice(0, -3));
+        });
+        // unique
+        var seen = {};
+        return out.filter(function (w) { if (seen[w]) return false; seen[w] = 1; return true; });
+      };
+
       var apply = function () {
-        var q = norm(inp.value);
+        var raw = inp.value || '';
+        var q = norm(raw);
         clr.style.display = q ? '' : 'none';
+        var words = q ? q.split(' ').filter(Boolean) : [];
+        var expanded = q ? expand(raw) : [];
         var shown = 0;
         var collapsed = self._collapsed();
+        var meta = nav.querySelector('#nav-search-meta');
 
         nav.querySelectorAll('a[data-module-id]').forEach(function (a) {
           var label = a.querySelector('.app-nav-label');
+          var id = a.getAttribute('data-module-id') || '';
+          var href = (a.getAttribute('href') || '').replace(/\.html$/i, '');
+          var sect = a.getAttribute('data-nav-section') || '';
           var hay = [
             norm(label ? label.textContent : a.textContent),
-            norm((a.getAttribute('data-module-id') || '').replace(/[-_]/g, ' ')),
-            norm((a.getAttribute('href') || '').replace(/\.html$/, '').replace(/[-_]/g, ' ')),
-            norm(a.getAttribute('data-nav-section'))
+            norm(id),
+            norm(href),
+            norm(sect),
+            // also index synonym keys that point at this module
+            Object.keys(SYNONYMS).filter(function (k) {
+              return (' ' + SYNONYMS[k] + ' ').indexOf(' ' + id.replace(/_/g, '-') + ' ') > -1
+                  || (' ' + SYNONYMS[k] + ' ').indexOf(' ' + id + ' ') > -1
+                  || (' ' + SYNONYMS[k] + ' ').indexOf(' ' + href + ' ') > -1;
+            }).join(' ')
           ].join(' ');
-          // Every word typed must appear somewhere, so word order is free.
-          var match = !q || q.split(' ').every(function (word) { return hay.indexOf(word) !== -1; });
-          // While searching, a folded section must still yield its matches.
+
+          var match;
+          if (!q) {
+            match = true;
+          } else {
+            // Every typed word must match either directly OR via a synonym
+            // expansion that appears in the haystack.
+            match = words.every(function (word) {
+              if (hay.indexOf(word) !== -1) return true;
+              var syn = SYNONYMS[word];
+              if (syn) {
+                return syn.split(' ').some(function (s) {
+                  return hay.indexOf(s) !== -1 || hay.indexOf(norm(s)) !== -1;
+                });
+              }
+              // prefix match for partial typing ("paym" → payments)
+              if (word.length >= 3) {
+                return hay.split(' ').some(function (h) { return h.indexOf(word) === 0; });
+              }
+              return false;
+            });
+          }
+
           var folded = !q && collapsed.indexOf(a.getAttribute('data-nav-section')) > -1;
           a.style.display = (match && !folded) ? '' : 'none';
-          if (match) shown++;
+          if (match && !folded) shown++;
+          // highlight active match set for keyboard nav
+          if (match && q) a.setAttribute('data-nav-hit', '1');
+          else a.removeAttribute('data-nav-hit');
         });
 
-        // A heading is shown only when something under it is visible. This is
-        // what removes the "many empty spaces and gaps" a parent used to see.
         nav.querySelectorAll('button[data-nav-section]').forEach(function (h) {
           var title = h.getAttribute('data-nav-section');
-          var any = nav.querySelector('a[data-nav-section="' + title.replace(/"/g, '\\"') + '"]:not([style*="display: none"])');
+          var any = false;
+          nav.querySelectorAll('a[data-nav-section]').forEach(function (a) {
+            if (a.getAttribute('data-nav-section') === title && a.style.display !== 'none') any = true;
+          });
           h.style.display = any ? '' : 'none';
-          // While a search is running the caret is meaningless.
           var caret = h.querySelector('.nav-section-caret');
           if (caret) caret.style.visibility = q ? 'hidden' : '';
         });
 
         empty.style.display = (q && !shown) ? '' : 'none';
+        if (meta) {
+          if (q && shown) {
+            meta.style.display = '';
+            meta.textContent = shown + (shown === 1 ? ' page' : ' pages') + ' match';
+          } else {
+            meta.style.display = 'none';
+            meta.textContent = '';
+          }
+        }
       };
 
       inp.addEventListener('input', apply);
+      inp.addEventListener('search', apply); // native clear on type=search
       inp.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') { inp.value = ''; apply(); inp.blur(); }
+        if (e.key === 'Escape') { inp.value = ''; apply(); inp.blur(); e.preventDefault(); }
         if (e.key === 'Enter') {
-          var first = nav.querySelector('a[data-module-id]:not([style*="display: none"])');
-          if (first) w.location.href = first.getAttribute('href');
+          var first = nav.querySelector('a[data-module-id][data-nav-hit="1"], a[data-module-id]:not([style*="display: none"])');
+          // prefer visible
+          var pick = null;
+          nav.querySelectorAll('a[data-module-id]').forEach(function (a) {
+            if (!pick && a.style.display !== 'none') pick = a;
+          });
+          if (pick) { w.location.href = pick.getAttribute('href'); e.preventDefault(); }
         }
+        // "/" focuses search when not in an input — handled globally below
       });
       clr.addEventListener('click', function () { inp.value = ''; apply(); inp.focus(); });
+
+      // Global "/" shortcut to focus nav search (when not typing elsewhere)
+      if (!w.__tcNavSlashBound) {
+        w.__tcNavSlashBound = true;
+        d.addEventListener('keydown', function (e) {
+          if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+          var t = e.target;
+          if (t && (/^(INPUT|TEXTAREA|SELECT)$/i.test(t.tagName) || t.isContentEditable)) return;
+          var box = d.getElementById('nav-search');
+          if (box) { e.preventDefault(); box.focus(); box.select(); }
+        });
+      }
 
       if (prevQuery) { inp.value = prevQuery; apply(); }
       else { apply(); }                               // applies the fold state
