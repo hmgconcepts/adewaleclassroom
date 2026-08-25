@@ -116,9 +116,10 @@
         <p class="page-intro-rel"><b>Related:</b> <a href="apply.html">apply</a> · <a href="inquiries.html">inquiries</a> · <a href="trials.html">trials</a> · <a href="waitlist.html">waitlist</a> · <a href="onboarding.html">onboarding</a> · <a href="referrals.html">referrals</a></p>
       </section>
 
+      <div id="al-kpis" class="crud-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px"></div>
       <div class="card">
         <div class="grid grid-2">
-          <div class="form-group"><label>Code</label><input class="form-input" id="code" placeholder="igcse-maths"></div>
+          <div class="form-group"><label>Code</label><div style="display:flex;gap:8px"><input class="form-input" id="code" placeholder="igcse-maths" style="flex:1"><button type="button" class="btn btn-outline" id="al-gen" title="Generate code">🎲</button></div></div>
           <div class="form-group"><label>Title</label><input class="form-input" id="title"></div>
           <div class="form-group"><label>Subject</label><input class="form-input" id="subj"></div>
           <div class="form-group"><label>Kind</label><select class="form-select" id="kind"><option value="one_on_one">1:1</option><option value="group">Group</option></select></div>
@@ -134,21 +135,192 @@
   </div>
 </div>
 <div id="toast-container" class="toast-container"></div>
+
 <script>
+/* Application links desk — self-contained. Create expiring, limited-use
+   codes; share on WhatsApp/social; copy; QR; open/close; use counters. */
+(function () {
+  'use strict';
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+  }
+  function toast(m, k) {
+    try {
+      if (window.App && App.toast) return App.toast(m, k || 'info');
+      if (window.toast) return window.toast(m, k || 'info');
+    } catch (_) {}
+    console.log('[application-links]', m);
+  }
+  function origin() {
+    try {
+      var u = (window.PRACTICE && PRACTICE.siteUrl) || location.origin;
+      return String(u).replace(/\/+$/, '');
+    } catch (_) { return location.origin; }
+  }
+  function applyUrl(code) {
+    return origin() + '/apply.html?code=' + encodeURIComponent(code);
+  }
+  function randCode() {
+    var a = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    var s = '';
+    for (var i = 0; i < 8; i++) s += a[Math.floor(Math.random() * a.length)];
+    return 'app-' + s;
+  }
+  function qrUrl(data) {
+    return 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(data);
+  }
 
-async function load(){
-  if(!window.sb) return;
-  const {data}=await sb.from('application_links').select('*').order('created_at',{ascending:false});
-  document.getElementById('list').innerHTML=(data||[]).map(l=>`<div class="card" style="margin-bottom:8px"><b>${TC.esc(l.title)}</b> · <code>${TC.esc(l.code)}</code> · ${l.uses||0}/${l.max_uses||'∞'} · <a href="apply.html?code=${encodeURIComponent(l.code)}">open</a></div>`).join('')||'<p class="muted">None yet.</p>';
-}
-document.getElementById('mk').onclick=async()=>{
-  if(!window.sb){toast('Connect Supabase','warning');return;}
-  const row={code:document.getElementById('code').value.trim(),title:document.getElementById('title').value,subject:document.getElementById('subj').value,kind:document.getElementById('kind').value,intro:document.getElementById('intro').value,expires_on:document.getElementById('exp').value||null,max_uses:Number(document.getElementById('max').value||0)||null,status:'open'};
-  const {error}=await sb.from('application_links').insert(row);
-  if(error) toast(error.message,'danger'); else { toast('Link created','success'); document.getElementById('share').innerHTML='Share <a href="apply.html?code='+encodeURIComponent(row.code)+'">apply.html?code='+TC.esc(row.code)+'</a>'; load(); }
-};
-document.addEventListener('DOMContentLoaded', load);
+  async function load() {
+    var list = document.getElementById('list');
+    var kpis = document.getElementById('al-kpis');
+    if (!list) return;
+    if (!window.sb) {
+      list.innerHTML = '<div class="card"><p class="muted">Connect Supabase to manage application links. You can still draft a link below — it will save once the database is connected.</p></div>';
+      return;
+    }
+    list.innerHTML = '<p class="muted">Loading…</p>';
+    var { data, error } = await sb.from('application_links').select('*').order('created_at', { ascending: false });
+    if (error) {
+      list.innerHTML = '<div class="card" style="border-left:4px solid #b91c1c"><b>Could not load links</b><p class="muted">' + esc(error.message) + '</p></div>';
+      return;
+    }
+    var rows = data || [];
+    if (kpis) {
+      var open = rows.filter(function (r) { return (r.status || 'open') === 'open'; }).length;
+      var uses = rows.reduce(function (n, r) { return n + (Number(r.uses) || 0); }, 0);
+      kpis.innerHTML =
+        '<div class="card" style="padding:12px 14px"><div class="muted" style="font-size:.75rem">Links</div><b style="font-size:1.3rem">' + rows.length + '</b></div>' +
+        '<div class="card" style="padding:12px 14px"><div class="muted" style="font-size:.75rem">Open</div><b style="font-size:1.3rem">' + open + '</b></div>' +
+        '<div class="card" style="padding:12px 14px"><div class="muted" style="font-size:.75rem">Total uses</div><b style="font-size:1.3rem">' + uses + '</b></div>';
+    }
+    if (!rows.length) {
+      list.innerHTML = '<div class="card"><p class="muted">No application links yet. Create one above — parents open it from WhatsApp or social without needing an account first.</p></div>';
+      return;
+    }
+    list.innerHTML = rows.map(function (l) {
+      var url = applyUrl(l.code);
+      var st = (l.status || 'open');
+      var badge = st === 'open'
+        ? '<span style="background:#ecfdf5;color:#065f46;padding:2px 8px;border-radius:99px;font-size:.72rem;font-weight:800">OPEN</span>'
+        : '<span style="background:#f1f5f9;color:#475569;padding:2px 8px;border-radius:99px;font-size:.72rem;font-weight:800">' + esc(st.toUpperCase()) + '</span>';
+      var uses = (l.uses || 0) + ' / ' + (l.max_uses == null || l.max_uses === '' ? '∞' : l.max_uses);
+      var exp = l.expires_on ? (' · expires ' + esc(String(l.expires_on).slice(0, 10))) : '';
+      return '<div class="card" style="margin-bottom:10px;padding:14px 16px">' +
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start">' +
+          '<div style="flex:1;min-width:220px">' +
+            '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+              '<b style="font-size:1.05rem">' + esc(l.title || l.code) + '</b> ' + badge +
+            '</div>' +
+            '<div class="muted" style="font-size:.85rem;margin-top:4px">' +
+              '<code>' + esc(l.code) + '</code> · ' + esc(l.kind || 'one_on_one') +
+              (l.subject ? ' · ' + esc(l.subject) : '') +
+              ' · uses ' + uses + exp +
+            '</div>' +
+            (l.intro ? '<p style="margin:8px 0 0;font-size:.9rem">' + esc(l.intro) + '</p>' : '') +
+            '<div style="margin-top:8px;font-size:.82rem;word-break:break-all"><a href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(url) + '</a></div>' +
+          '</div>' +
+          '<img alt="QR" width="88" height="88" style="border-radius:8px;border:1px solid #e2e8f0;background:#fff" src="' + qrUrl(url) + '">' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">' +
+          '<button type="button" class="btn btn-sm btn-primary" data-al-copy="' + esc(l.code) + '">📋 Copy link</button>' +
+          '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent('Apply here: ' + url) + '">WhatsApp</a>' +
+          '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url) + '">Facebook</a>' +
+          '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(l.title || 'Apply') + '">X</a>' +
+          '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="mailto:?subject=' + encodeURIComponent(l.title || 'Application') + '&body=' + encodeURIComponent(url) + '">Email</a>' +
+          '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="' + esc(url) + '">Open</a>' +
+          (st === 'open'
+            ? '<button type="button" class="btn btn-sm btn-ghost" data-al-status="' + esc(l.id) + '" data-to="closed">Close</button>'
+            : '<button type="button" class="btn btn-sm btn-ghost" data-al-status="' + esc(l.id) + '" data-to="open">Reopen</button>') +
+          '<button type="button" class="btn btn-sm btn-ghost" data-al-del="' + esc(l.id) + '" style="color:#b91c1c">Delete</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
 
+    list.querySelectorAll('[data-al-copy]').forEach(function (b) {
+      b.onclick = async function () {
+        var u = applyUrl(b.getAttribute('data-al-copy'));
+        try { await navigator.clipboard.writeText(u); toast('Link copied', 'success'); }
+        catch (_) { prompt('Copy this link:', u); }
+      };
+    });
+    list.querySelectorAll('[data-al-status]').forEach(function (b) {
+      b.onclick = async function () {
+        var id = b.getAttribute('data-al-status');
+        var to = b.getAttribute('data-to');
+        var { error } = await sb.from('application_links').update({ status: to }).eq('id', id);
+        if (error) toast(error.message, 'danger'); else { toast('Marked ' + to, 'success'); load(); }
+      };
+    });
+    list.querySelectorAll('[data-al-del]').forEach(function (b) {
+      b.onclick = async function () {
+        if (!confirm('Delete this application link? Existing shares will stop working.')) return;
+        var { error } = await sb.from('application_links').delete().eq('id', b.getAttribute('data-al-del'));
+        if (error) toast(error.message, 'danger'); else { toast('Deleted', 'success'); load(); }
+      };
+    });
+  }
+
+  function wireForm() {
+    var codeEl = document.getElementById('code');
+    var gen = document.getElementById('al-gen');
+    if (gen && codeEl) {
+      gen.onclick = function () { codeEl.value = randCode(); codeEl.focus(); };
+      if (!codeEl.value) codeEl.value = randCode();
+    }
+    var mk = document.getElementById('mk');
+    if (!mk) return;
+    mk.onclick = async function () {
+      var code = (document.getElementById('code').value || '').trim();
+      var title = (document.getElementById('title').value || '').trim();
+      if (!code) { toast('Code is required', 'warning'); return; }
+      if (!title) { toast('Title is required', 'warning'); return; }
+      if (!window.sb) { toast('Connect Supabase to save', 'warning'); return; }
+      var maxRaw = document.getElementById('max').value;
+      var row = {
+        code: code,
+        title: title,
+        subject: document.getElementById('subj').value || null,
+        kind: document.getElementById('kind').value || 'one_on_one',
+        intro: document.getElementById('intro').value || null,
+        expires_on: document.getElementById('exp').value || null,
+        max_uses: maxRaw === '' ? null : Number(maxRaw),
+        status: 'open',
+        uses: 0
+      };
+      var { error } = await sb.from('application_links').insert(row);
+      if (error) { toast(error.message, 'danger'); return; }
+      var url = applyUrl(code);
+      var share = document.getElementById('share');
+      if (share) {
+        share.innerHTML =
+          '<div class="card" style="margin-top:12px;background:#ecfdf5;border:1px solid #a7f3d0">' +
+            '<b>Link ready</b>' +
+            '<div style="margin-top:6px;word-break:break-all"><a href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(url) + '</a></div>' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">' +
+              '<button type="button" class="btn btn-sm btn-primary" id="al-copy-new">📋 Copy</button>' +
+              '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent('Apply here: ' + url) + '">WhatsApp</a>' +
+              '<img alt="QR" width="72" height="72" style="border-radius:8px;border:1px solid #e2e8f0" src="' + qrUrl(url) + '">' +
+            '</div></div>';
+        var c = document.getElementById('al-copy-new');
+        if (c) c.onclick = async function () {
+          try { await navigator.clipboard.writeText(url); toast('Copied', 'success'); }
+          catch (_) { prompt('Copy:', url); }
+        };
+      }
+      toast('Link created', 'success');
+      document.getElementById('code').value = randCode();
+      load();
+    };
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    wireForm();
+    load();
+  });
+})();
 </script>
+
 </body>
 </html>
