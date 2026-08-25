@@ -84,6 +84,7 @@
 <script src="assets/js/nav.js"></script>
 <script src="assets/js/legibility.js" defer></script>
 <script src="assets/js/ux-enhance.js" defer></script>
+<script src="assets/js/ops-desk.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
 </head>
@@ -408,6 +409,10 @@
                      notify_sms:'s-nsms#c', reminder_hours:'s-remind#n', invoice_chase_days:'s-invoicedue#n',
                      notify_on_report:'s-nreport#c', notify_on_score:'s-nscore#c',
                      notify_on_atrisk:'s-natrisk#c', notify_birthdays:'s-nbirthday#c' },
+          sec:    { enforce_2fa:'s-enforce2fa#c' },
+          ids:    { learner_id_prefix:'s-idprefix', learner_id_format:'s-idformat' },
+          geo:    { latitude:'s-geolat#n', longitude:'s-geolng#n', geo_radius_m:'s-georad#n',
+                    geo_label:'s-geolabel', enforce_geo:'s-enforcegeo#c' },
           'public':{ tagline:'s-tagline', about_text:'s-about', seo_description:'s-seo',
                      advertised_subjects:'s-subjects', advertised_boards:'s-boards',
                      search_indexable:'s-indexable#c', show_prices:'s-showprices#c',
@@ -526,6 +531,72 @@
         });
       });
       </script>
+
+      <!-- ==============================================================
+           V28 — parity cards (report item 1). Mirror School Connect /
+           GOSA Settings: security/2FA, ID numbering, geofence, license
+           summary, module access. Each saves on its own like the rest.
+           =============================================================== -->
+      <section class="card" style="margin-top:16px">
+        <h2 style="margin-top:0">🔐 Security &amp; 2FA</h2>
+        <p class="muted" style="margin-top:0">Two-factor verification uses the free Supabase email one-time code — no SMS or AI cost. Enforce it studio-wide, or toggle it for your own account below.</p>
+        <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="s-enforce2fa"> Require 2FA for every staff account</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+          <button class="btn btn-outline btn-sm" type="button" id="s-2fa-me">Toggle 2FA for my account</button>
+          <button class="btn btn-primary btn-sm" type="button" data-save-card="sec">💾 Save security rules</button>
+        </div>
+        <p class="muted" id="s-2fa-me-out" style="font-size:.82rem;margin:8px 0 0"></p>
+      </section>
+
+      <section class="card" style="margin-top:16px">
+        <h2 style="margin-top:0">🔢 Learner ID numbering</h2>
+        <p class="muted" style="margin-top:0">New learners get a student number automatically. Choose the prefix and format; the live preview shows what the next learner will receive. Blank prefix falls back to <code>TC</code>.</p>
+        <div class="grid grid-2">
+          <div class="form-group"><label>ID prefix</label><input class="form-input" id="s-idprefix" maxlength="10" placeholder="TC"></div>
+          <div class="form-group"><label>Format</label>
+            <select class="form-select" id="s-idformat">
+              <option value="PREFIX-NNNN">PREFIX-NNNN (TC-0001)</option>
+              <option value="PREFIX/YYYY/NNNN">PREFIX/YYYY/NNNN (TC/2026/0001)</option>
+              <option value="PREFIXNNNN">PREFIXNNNN (TC0001)</option>
+            </select></div>
+        </div>
+        <div id="s-idprev" class="crud-kpis" style="margin-top:6px">Next learner ID: <b>TC-0001</b></div>
+        <button class="btn btn-primary" type="button" data-save-card="ids">💾 Save ID numbering</button>
+      </section>
+
+      <section class="card" style="margin-top:16px">
+        <h2 style="margin-top:0">📍 Attendance geofence</h2>
+        <p class="muted" style="margin-top:0">Optionally record where the studio is based (used by check-in tooling and the public page). Lat / long and radius are stored in settings; nothing is uploaded.</p>
+        <div class="grid grid-2">
+          <div class="form-group"><label>Latitude</label><input class="form-input" id="s-geolat" type="number" step="0.000001" placeholder="6.524400"></div>
+          <div class="form-group"><label>Longitude</label><input class="form-input" id="s-geolng" type="number" step="0.000001" placeholder="3.379200"></div>
+          <div class="form-group"><label>Allowed radius (metres)</label><input class="form-input" id="s-georad" type="number" min="20" max="5000" value="200"></div>
+          <div class="form-group"><label>Location label</label><input class="form-input" id="s-geolabel" placeholder="Lagos, Nigeria"></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="s-enforcegeo"> Enforce on-premises check-in (staff)</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn btn-outline btn-sm" type="button" id="s-geo-capture">📡 Use this device's location</button>
+          <button class="btn btn-primary btn-sm" type="button" data-save-card="geo">💾 Save geofence</button>
+        </div>
+      </section>
+
+      <section class="card" style="margin-top:16px">
+        <h2 style="margin-top:0">🔑 Site license &amp; subscription</h2>
+        <div id="s-license-summary" class="muted">Checking license…</div>
+        <a class="btn btn-outline btn-sm" href="license.html" style="margin-top:8px">Open Site License &amp; Subscription →</a>
+      </section>
+
+      <section class="card" style="margin-top:16px">
+        <h2 style="margin-top:0">🔐 Module access &amp; roles</h2>
+        <p class="muted" style="margin-top:0">Who may open which pages, and what each person's role and status are, live in two places:
+          the <b>Roles &amp; Status Manager</b> (change a person's role or status with an audit trail) and the
+          <b>Page Access manager</b> on the Dashboard (hide or show individual pages per role).</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn btn-outline btn-sm" href="status-manager.html">Open Roles &amp; Status Manager →</a>
+          <a class="btn btn-outline btn-sm" href="dashboard.html#access">Open Page Access manager →</a>
+        </div>
+      </section>
+
     </main>
   </div>
 </div>
@@ -615,6 +686,51 @@ document.getElementById('save').onclick = async () => {
     }
     toast('Sibling discount rules saved \u2705', 'success');
   };
+
+
+        /* ---- V28: ID preview, 2FA, geofence capture, license summary ---- */
+        var idPrefix = document.getElementById('s-idprefix');
+        var idFormat = document.getElementById('s-idformat');
+        function idPrev(){
+          var p = (idPrefix.value || 'TC').toUpperCase();
+          var f = idFormat.value;
+          var n = 1;
+          var out = f === 'PREFIX/YYYY/NNNN' ? p + '/' + new Date().getFullYear() + '/' + String(n).padStart(4,'0')
+                  : f === 'PREFIXNNNN' ? p + String(n).padStart(4,'0')
+                  : p + '-' + String(n).padStart(4,'0');
+          document.getElementById('s-idprev').innerHTML = 'Next learner ID: <b>' + out + '</b>';
+        }
+        idPrefix.addEventListener('input', idPrev);
+        idFormat.addEventListener('change', idPrev);
+        idPrev();
+        document.getElementById('s-2fa-me').addEventListener('click', function () {
+          var out = document.getElementById('s-2fa-me-out');
+          if (!window.Enterprise) { out.textContent = '2FA is available after sign-in (Enterprise add-on not loaded here).'; return; }
+          try {
+            if (Enterprise.security && Enterprise.security.toggle2fa) {
+              Enterprise.security.toggle2fa(); out.textContent = '2FA preference toggled for your account.';
+            } else { out.textContent = '2FA toggle available on your profile once the database is connected.'; }
+          } catch (e) { out.textContent = 'Could not toggle 2FA: ' + (e && e.message || e); }
+        });
+        document.getElementById('s-geo-capture').addEventListener('click', function () {
+          if (!navigator.geolocation) { alert('This browser cannot read location.'); return; }
+          navigator.geolocation.getCurrentPosition(function (pos) {
+            document.getElementById('s-geolat').value = pos.coords.latitude.toFixed(6);
+            document.getElementById('s-geolng').value = pos.coords.longitude.toFixed(6);
+            toast('Location captured — save the card to keep it.', 'success');
+          }, function () { alert('Location permission denied.'); }, { timeout: 8000 });
+        });
+        (function loadLicense(){
+          var box = document.getElementById('s-license-summary');
+          if (!window.sb) { box.textContent = 'Connect Supabase to see the license summary.'; return; }
+          window.sb.from('site_license').select('*').limit(1).then(function (r) {
+            var l = (r.data && r.data[0]) || null;
+            if (!l) { box.textContent = 'No license row found — the studio runs on the free defaults.'; return; }
+            var expiry = l.expires_at || l.expiry || '—';
+            box.innerHTML = '<b>' + (l.model || 'lifetime') + '</b> model · status <b>' + (l.status || 'active') +
+              '</b> · issued to <b>' + (l.issued_to || '—') + '</b> · expires <b>' + String(expiry).slice(0,10) + '</b>';
+          }).catch(function () { box.textContent = 'Could not read the license row.'; });
+        })();
 
   load();
 })();

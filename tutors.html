@@ -84,6 +84,7 @@
 <script src="assets/js/nav.js"></script>
 <script src="assets/js/legibility.js" defer></script>
 <script src="assets/js/ux-enhance.js" defer></script>
+<script src="assets/js/ops-desk.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
 </head>
@@ -114,6 +115,33 @@
         <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access.</li><li><b>Tutor:</b> Full access for the learners and groups assigned to them, and nothing else.</li><li><b>Parent:</b> No access.</li><li><b>Learner:</b> No access.</li></ul></details>
         <p class="page-intro-rel"><b>Related:</b> <a href="learners.html">learners</a> · <a href="parents.html">parents</a> · <a href="groups.html">groups</a> · <a href="engagements.html">engagements</a> · <a href="subjects.html">subjects</a> · <a href="family-links.html">family links</a></p>
       </section>
+      <div style="background:var(--gradient,linear-gradient(135deg,#0506ae,#964eec));border-radius:18px;padding:22px 24px;color:#fff;margin-bottom:16px">
+        <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;justify-content:space-between">
+          <div>
+            <div style="font-size:.74rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;opacity:.85">Teaching team</div>
+            <h2 style="margin:4px 0 2px;font-size:1.5rem">Tutors at a glance</h2>
+            <p style="margin:0;font-size:.9rem;opacity:.92">Availability, subjects, specialisms, rates and timezones — one team register.</p>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;width:min(520px,100%)">
+            <div style="background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:10px 12px">
+              <div class="stat-value" style="font-size:1.5rem" id="tut-total">–</div>
+              <div class="stat-label" style="color:#e9e4ff">Tutors</div>
+            </div>
+            <div style="background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:10px 12px">
+              <div class="stat-value" style="font-size:1.5rem" id="tut-active">–</div>
+              <div class="stat-label" style="color:#e9e4ff">Active</div>
+            </div>
+            <div style="background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:10px 12px">
+              <div class="stat-value" style="font-size:1.5rem" id="tut-rate">–</div>
+              <div class="stat-label" style="color:#e9e4ff">Avg rate/hr</div>
+            </div>
+            <div style="background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:14px;padding:10px 12px">
+              <div class="stat-value" style="font-size:1.5rem" id="tut-spec">–</div>
+              <div class="stat-label" style="color:#e9e4ff">Specialisms</div>
+            </div>
+          </div>
+        </div>
+      </div>
       <div id="scope-check-root"></div>
 
       <div id="crud-root"></div>
@@ -124,6 +152,28 @@
 <div id="toast-container" class="toast-container"></div>
 <script>
 
+</script>
+
+<script>
+/* V27 (item 30) — tutors page stats band. Reads the tutors table when the
+   database is connected; stays silent otherwise. */
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!window.sb) return;
+  try {
+    const { data } = await sb.from('tutors').select('status,hourly_cost,specialisms');
+    const rows = data || [];
+    const active = rows.filter(r => (r.status || 'active') === 'active');
+    const rates = active.map(r => Number(r.hourly_cost)).filter(n => !isNaN(n) && n > 0);
+    const avg = rates.length ? Math.round(rates.reduce((a, b) => a + b, 0) / rates.length) : null;
+    const specs = new Set();
+    active.forEach(r => String(r.specialisms || '').split(',').map(s => s.trim()).filter(Boolean).forEach(s => specs.add(s)));
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+    set('tut-total', rows.length);
+    set('tut-active', active.length);
+    set('tut-rate', avg ? avg.toLocaleString() + ' ' + (window.TC && TC.CURRENCY || '') : '—');
+    set('tut-spec', specs.size || '—');
+  } catch (_) {}
+});
 </script>
 </body>
 </html>

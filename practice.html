@@ -84,6 +84,7 @@
 <script src="assets/js/nav.js"></script>
 <script src="assets/js/legibility.js" defer></script>
 <script src="assets/js/ux-enhance.js" defer></script>
+<script src="assets/js/ops-desk.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
 </head>
@@ -114,6 +115,17 @@
         <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access across every learner.</li><li><b>Tutor:</b> Full access for the learners assigned to them.</li><li><b>Parent:</b> Read-only, and only for their own children.</li><li><b>Learner:</b> Read-only, and only their own record.</li></ul></details>
         <p class="page-intro-rel"><b>Related:</b> <a href="cbt-exam.html">cbt exam</a> · <a href="cbt-review.html">cbt review</a> · <a href="cbt-multi.html">cbt multi</a> · <a href="cbt-prompts.html">cbt prompts</a> · <a href="cbt-results.html">cbt results</a> · <a href="exam-targets.html">exam targets</a></p>
       </section>
+
+      <div class="card" style="padding:12px 14px;margin-bottom:14px;background:#fffbeb;border-color:#fde68a" data-staff-only>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:1.3rem">✍️</span>
+          <div style="flex:1;min-width:200px">
+            <b>Awaiting tutor marking?</b>
+            <span class="muted" style="font-size:.85rem">Essays, case studies, oral prompts, code and other open-response questions are never auto-scored — a tutor awards the marks.</span>
+          </div>
+          <a class="btn btn-primary btn-sm" href="cbt-results.html?tab=marking">Open marking queue</a>
+        </div>
+      </div>
 
       <div class="card">
         <div class="grid grid-2">
