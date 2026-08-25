@@ -182,3 +182,50 @@ The first user who requests access starts as `pending`. To make them the studio 
 2. Find their row. Set `role` to `admin` (or `owner`) and `status` to `approved`.
 3. They can now sign in and see the full platform, including the Access Manager on the dashboard.
 4. All subsequent approvals are done from **Approvals** in the portal.
+
+---
+
+## V31 one-shot schema (self-contained)
+
+You only need **one** SQL file for a new studio:
+
+1. Open your Supabase project → **SQL Editor**.
+2. Paste the entire contents of `database/complete-schema.sql`.
+3. Click **Run**.
+4. Confirm the last rows show something like:
+   - `Tutoring Connect V31 installed …`
+   - `install_check` → schema complete / OK
+5. You do **not** need to run `v2`…`v30` files separately — they are already folded into `complete-schema.sql`.
+6. If an older project failed mid-install with `learner_id` or `foreach` errors, you may also run the small hotfix files once:
+   - `database/v30-group-insights-rls-hotfix.sql`
+   - then re-run `complete-schema.sql` (it is idempotent: `if not exists` / `create or replace`).
+
+### After SQL
+
+1. **Authentication → URL configuration**: add your site URL and `https://your-domain/login.html` redirect.
+2. Paste **Project URL** + **anon public key** into `assets/js/config.js` (or regenerate the client ZIP from the builder with keys filled in).
+3. Host the static folder on Vercel / Netlify / Cloudflare Pages / GitHub Pages.
+4. Open `login.html` → **Request access** with your email.
+5. In SQL Editor promote yourself:
+
+```sql
+select id, email, full_name, role, status from public.profiles order by created_at desc;
+update public.profiles
+   set role = 'admin', status = 'approved'
+ where id = 'YOUR-USER-UUID';
+insert into public.practice_settings(id, name, motto, timezone, currency)
+values (1, 'YOUR STUDIO NAME', 'Independent progress. Visible to parents.', 'Africa/Lagos', '₦')
+on conflict (id) do update set name = excluded.name;
+```
+
+6. Sign out and back in. Open **Platform Health** — heartbeat should turn green after the keep-alive layers run.
+7. Optional: connect Google Drive Client ID under **Admin Data** for sealed backups.
+8. Optional: enable the GitHub Actions workflows in `.github/workflows/` (keep-alive + backup) with Supabase secrets.
+
+### Product law reminders (free stack)
+
+- No AI API required (Page Help + Studio Assistant are rules/KB only).
+- No file uploads into free Supabase — use Drive / https / YouTube links.
+- One Supabase project per studio; RLS is the real security boundary.
+- Messaging via `wa.me` / `mailto:` / `sms:`.
+
