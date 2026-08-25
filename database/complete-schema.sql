@@ -8473,10 +8473,16 @@ end $$;
 do $$
 declare t text;
 begin
+  /* V30 FIX: tc_group_insights is engagement-scoped and has NO learner_id
+     column. Including it in this loop caused:
+       ERROR 42703: column "learner_id" does not exist
+     when create policy ... using (tc_family_can_see_learner(learner_id)) ran.
+     Learner-keyed desks keep the family predicate; group insights are handled
+     separately below with an engagement-aware policy. */
   foreach t in array array[
     'tc_at_risk_reviews', 'tc_practice_analytics', 'tc_value_added',
-    'tc_predicted_grades', 'tc_progress_reports', 'tc_group_insights',
-    'tc_insight_notes', 'tc_timezone_desk'
+    'tc_predicted_grades', 'tc_progress_reports',
+    'tc_timezone_desk'
   ] loop
     if to_regclass('public.' || t) is not null then
       execute format($f$
@@ -8486,6 +8492,45 @@ begin
       $f$, t || '_read', t, t || '_read', t);
     end if;
   end loop;
+
+  /* Insight notes: learner may be null (group / studio scope). */
+  if to_regclass('public.tc_insight_notes') is not null then
+    execute $f$
+      drop policy if exists tc_insight_notes_read on public.tc_insight_notes;
+      create policy tc_insight_notes_read on public.tc_insight_notes
+        for select to authenticated
+        using (
+          public.tc_is_manager()
+          or (learner_id is not null and public.tc_family_can_see_learner(learner_id))
+          or (engagement_id is not null and public.tc_teaches_engagement(engagement_id))
+          or created_by = auth.uid()
+        );
+    $f$;
+  end if;
+
+  /* Group insights: NO learner_id — policy must not reference it. */
+  if to_regclass('public.tc_group_insights') is not null then
+    execute $f$
+      drop policy if exists tc_group_insights_read on public.tc_group_insights;
+      create policy tc_group_insights_read on public.tc_group_insights
+        for select to authenticated
+        using (
+          public.tc_is_manager()
+          or public.tc_teaches_engagement(engagement_id)
+          or (coalesce(published, false) and exists (
+                select 1 from public.engagement_members em
+                  join public.learners l on l.id = em.learner_id
+                 where em.engagement_id = tc_group_insights.engagement_id
+                   and l.user_id = auth.uid()))
+          or (coalesce(published, false) and exists (
+                select 1 from public.engagement_members em
+                  join public.parent_learner pl on pl.learner_id = em.learner_id
+                  join public.parents p on p.id = pl.parent_id
+                 where em.engagement_id = tc_group_insights.engagement_id
+                   and p.user_id = auth.uid()))
+        );
+    $f$;
+  end if;
 end $$;
 
 select 'V27 RLS recursion fix installed' as status;
