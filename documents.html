@@ -4,9 +4,9 @@
 <script src="assets/js/auth-guard.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Contracts &amp; consent • ADEWALE CLASSROOM</title>
+<title>Documents · custom document builder • ADEWALE CLASSROOM</title>
 <meta name="robots" content="noindex,nofollow">
-<meta name="description" content="Service agreement, safeguarding consent — Drive links + status.">
+<meta name="description" content="Custom document builder — official letters, certificates, hall tickets and consents, Service agreement, safeguarding consent — Drive links + status.">
 <meta name="theme-color" content="#0506ae">
 <meta name="author" content="HMG Technologies · HMG Concepts">
 <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
@@ -84,6 +84,8 @@
 <script src="assets/js/nav.js"></script>
 <script src="assets/js/legibility.js" defer></script>
 <script src="assets/js/ux-enhance.js" defer></script>
+<script src="assets/js/document-builder.js"></script>
+<script src="assets/js/ops-desk.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
 </head>
@@ -98,22 +100,23 @@
   <div class="app-main">
     <header class="app-topbar">
       <button class="mobile-toggle" type="button" aria-label="Menu">☰</button>
-      <h1 class="app-page-title">Contracts &amp; consent</h1>
+      <h1 class="app-page-title">Documents</h1>
       <div class="user-chip"><strong id="user-display-name" data-user-name></strong>
         <span id="user-display-role" data-user-role></span>
         <button class="btn btn-sm btn-ghost" id="btn-dark" type="button">Theme</button>
         <button class="btn btn-sm btn-ghost" type="button" data-signout onclick="App.signOut()">Sign out</button></div>
     </header>
     <main class="app-content">
-      <section class="help-card page-intro">
-        <div class="page-intro-head"><strong>Contracts &amp; consent</strong><span class="page-intro-badge" style="background:#334155">🎓 Staff only</span></div>
-        <p class="page-intro-what">Service agreement, safeguarding consent, recording consent — Drive links + status. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.</p>
-        <p class="page-intro-who"><b>Who it is for.</b> Owner and admin. This is configuration and governance, not day-to-day teaching.</p>
-        <p class="page-intro-why"><b>Why it matters.</b> Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.</p>
-        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Only an owner or admin should change anything on this page.</li><li>Read the note beside each setting before you touch it.</li><li>Save, then reload any normal page to confirm the change took effect.</li><li>If something looks wrong afterwards, the activity log records who changed what and when.</li></ol></details>
-        <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access.</li><li><b>Tutor:</b> Full access for the learners and groups assigned to them, and nothing else.</li><li><b>Parent:</b> No access.</li><li><b>Learner:</b> No access.</li></ul></details>
-        <p class="page-intro-rel"><b>Related:</b> <a href="policies.html">policies</a> · <a href="compliance.html">compliance</a> · <a href="safeguarding.html">safeguarding</a> · <a href="security-centre.html">security centre</a> · <a href="approvals.html">approvals</a> · <a href="activity-log.html">activity log</a></p>
+            <section class="help-card page-intro">
+        <div class="page-intro-head"><strong>Documents — custom document builder</strong><span class="page-intro-badge" style="background:#334155">🎓 Staff only</span></div>
+        <p class="page-intro-what">A dynamic publishing engine for official studio correspondence: bonafide certificates, exam hall tickets, recommendation and transfer letters, testimonials, invitations, fee clearance, admission and appointment letters, memoranda, certificates and fully custom documents. Choose a preset, edit the tokenised body — [NAME] [CLASS] [TERM] [SESSION] [DATE] [REFERENCE] [SCHOOL] [SIGNATORY] [TITLE] — pick the official signatory, preview it live, and print a branded PDF. Every document is stored with its status (draft → reviewed → final → issued → revoked) and is never deletable once issued. What you can do here: <b>Create document</b>, <b>Live preview</b>, <b>Print / PDF</b>, <b>Edit records</b>, <b>Export</b>. Requires sign-in as staff; families see only documents issued to their own children.</p>
+        <p class="page-intro-who"><b>Who it is for.</b> Tutors draft; the owner or admin approves, signs and issues.</p>
+        <p class="page-intro-why"><b>Why it matters.</b> Official letters used to be typed from scratch each time and never recorded. A tokenised builder makes them instant, consistent and auditable.</p>
+        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Pick a type preset — the body template fills automatically.</li><li>Fill title, reference, recipient and signatory; adjust the body and drop tokens in with one click.</li><li>Watch the live preview fill the tokens as you type.</li><li>Save the document, then <b>Print / PDF</b> for the watermarked branded copy.</li><li>Manage every document in the register below: search, filter by status, export.</li></ol></details>
+        <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access.</li><li><b>Tutor:</b> Full access for the learners and groups assigned to them, and nothing else.</li><li><b>Parent:</b> No access (signed copies reach them through the studio).</li><li><b>Learner:</b> No access.</li></ul></details>
+        <p class="page-intro-rel"><b>Related:</b> <a href="contracts.html">contracts &amp; consent</a> · <a href="policies.html">policies</a> · <a href="compliance.html">compliance</a> · <a href="safeguarding.html">safeguarding</a> · <a href="approvals.html">approvals</a></p>
       </section>
+      <div id="doc-builder-root"></div>
       <div id="crud-root"></div>
       <script>document.addEventListener('DOMContentLoaded',()=>{ if(window.CRUD) CRUD.renderList('documents'); });</script>
     </main>

@@ -4,9 +4,9 @@
 <script src="assets/js/auth-guard.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Messaging (WA / Email / SMS) • ADEWALE CLASSROOM</title>
+<title>Blog manager • ADEWALE CLASSROOM</title>
 <meta name="robots" content="noindex,nofollow">
-<meta name="description" content="Free device-native WhatsApp, email BCC and SMS links. No Twilio bill.">
+<meta name="description" content="Write and publish ADEWALE CLASSROOM blog posts. Every Tutoring Connect module explained.">
 <meta name="theme-color" content="#0506ae">
 <meta name="author" content="HMG Technologies · HMG Concepts">
 <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
@@ -14,8 +14,8 @@
 <link rel="apple-touch-icon" href="assets/img/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;800&display=swap" rel="stylesheet">
-<meta property="og:title" content="Messaging (WA / Email / SMS) • ADEWALE CLASSROOM">
-<meta property="og:description" content="Free device-native WhatsApp, email BCC and SMS links. No Twilio bill.">
+<meta property="og:title" content="Feature guide • ADEWALE CLASSROOM">
+<meta property="og:description" content="Every Tutoring Connect module explained.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="assets/css/style.css">
@@ -84,10 +84,6 @@
 <script src="assets/js/nav.js"></script>
 <script src="assets/js/legibility.js" defer></script>
 <script src="assets/js/ux-enhance.js" defer></script>
-<script src="assets/js/ops-desk.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
-</head>
 <body>
 <div class="app-layout" data-require-role="any" id="app-layout">
   <aside class="app-sidebar" id="app-sidebar">
@@ -99,7 +95,7 @@
   <div class="app-main">
     <header class="app-topbar">
       <button class="mobile-toggle" type="button" aria-label="Menu">☰</button>
-      <h1 class="app-page-title">Messaging (WA / Email / SMS)</h1>
+      <h1 class="app-page-title">Blog manager</h1>
       <div class="user-chip"><strong id="user-display-name" data-user-name></strong>
         <span id="user-display-role" data-user-role></span>
         <button class="btn btn-sm btn-ghost" id="btn-dark" type="button">Theme</button>
@@ -107,22 +103,16 @@
     </header>
     <main class="app-content">
       <section class="help-card page-intro">
-        <div class="page-intro-head"><strong>Messaging (WA / Email / SMS)</strong><span class="page-intro-badge" style="background:#334155">🎓 Staff only</span></div>
-        <p class="page-intro-what">Free device-native WhatsApp, email BCC and SMS links. No Twilio bill. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.</p>
-        <p class="page-intro-who"><b>Who it is for.</b> Owner and admin. This is configuration and governance, not day-to-day teaching.</p>
-        <p class="page-intro-why"><b>Why it matters.</b> Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.</p>
-        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Only an owner or admin should change anything on this page.</li><li>Read the note beside each setting before you touch it.</li><li>Save, then reload any normal page to confirm the change took effect.</li><li>If something looks wrong afterwards, the activity log records who changed what and when.</li></ol></details>
-        <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access.</li><li><b>Tutor:</b> Full access.</li><li><b>Parent:</b> Their own view of it.</li><li><b>Learner:</b> Their own view of it.</li></ul></details>
-        <p class="page-intro-rel"><b>Related:</b> <a href="dashboard.html">dashboard</a> · <a href="profile.html">profile</a> · <a href="notifications.html">notifications</a> · <a href="inbox.html">inbox</a> · <a href="change-password.html">change password</a> · <a href="install.html">install</a></p>
+        <div class="page-intro-head"><strong>Blog manager</strong><span class="page-intro-badge" style="background:#7f1d1d">🎓 Staff only</span></div>
+        <p class="page-intro-what">Where tutors and admins write, edit, publish, unpublish, archive and delete blog posts, and manage the topic categories. Every post can be saved as a draft first, previewed on the public reader, then published — publishing gives it its permanent link instantly. What you can do here: <b>New post</b>, <b>Edit</b>, <b>Publish / unpublish</b>, <b>Delete</b>, <b>Add category</b>. A tutor manages their own posts; an admin manages everything.</p>
+        <p class="page-intro-who"><b>Who it is for.</b> Tutors and administrators who write for the public.</p>
+        <p class="page-intro-why"><b>Why it matters.</b> Published posts are public, indexed web pages carrying the studio's name — so drafts, review and a deliberate publish act exist before anything goes live.</p>
+        <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access.</li><li><b>Tutor:</b> Full access for their own posts; an admin manages everything.</li><li><b>Parent:</b> No access — the editor is staff-side.</li><li><b>Learner:</b> No access.</li></ul></details>
+        <p class="page-intro-rel"><b>Related:</b> <a href="blog.html">blog</a> · <a href="blog-post.html">blog post</a> · <a href="profile.html">profile</a></p>
       </section>
-      <div id="crud-root"></div>
-      <script>document.addEventListener('DOMContentLoaded',()=>{ if(window.CRUD) CRUD.renderList('messages'); });</script>
-    </main>
-  </div>
-</div>
-<div id="toast-container" class="toast-container"></div>
-<script>
+      <div id="blog-admin-root"></div>
 
-</script>
+    </main>
+<script>// blog.js mounts the editor into #blog-admin-root</script>
 </body>
 </html>

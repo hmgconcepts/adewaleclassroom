@@ -61,6 +61,12 @@
 
 
 
+
+
+
+
+
+
 <style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
 </head>
 <body>
@@ -75,14 +81,6 @@
   </nav>
 </header>
 <main>
-      <section class="help-card page-intro">
-        <div class="page-intro-head"><strong>Give your tutoring studio a complete digital platform</strong><span class="page-intro-badge" style="background:#0f766e">🌍 Public page</span></div>
-        <p class="page-intro-what">The public front door of the studio. It introduces the practice to a parent who has never met you, states the core promise — independent progress that a parent can actually see — and drives two actions: sign in, or request a place. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.</p>
-        <p class="page-intro-who"><b>Who it is for.</b> Anyone on the internet. No sign-in required.</p>
-        <p class="page-intro-why"><b>Why it matters.</b> This is the page that converts a stranger into an enquiry. It is also the page search engines rank, so it carries the studio&#x27;s structured data and social preview.</p>
-        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Read the promise and the proof statistics.</li><li>Click <b>Sign in to portal</b> if you already have an account.</li><li>Click <b>Request a place</b> to submit an application — it takes about two minutes.</li><li>Accept the install prompt to add the studio to your home screen.</li></ol></details>
-        <p class="page-intro-rel"><b>Related:</b> <a href="about.html">about</a> · <a href="activity-log.html">activity log</a> · <a href="admin-data.html">admin data</a> · <a href="approvals.html">approvals</a> · <a href="change-password.html">change password</a> · <a href="contact.html">contact</a></p>
-      </section>
   <section class="hero" style="padding:96px 24px 72px;text-align:center">
     <div style="max-width:860px;margin:0 auto">
       <p class="hero-badge" style="display:inline-block;padding:8px 20px;border-radius:50px;font-weight:700;font-size:.85rem;margin-bottom:22px">🎓 Official tutoring portal</p>
@@ -113,6 +111,34 @@
     <p style="text-align:center;margin-top:36px"><a class="btn btn-primary" href="login.html">Access portal now</a>
       <a class="btn btn-ghost" href="apply.html">Request a place</a></p>
   </section>
+  <section id="tc-blog-teaser" style="max-width:1100px;margin:0 auto;padding:24px;display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <h2>Latest from the blog</h2>
+      <a class="btn btn-outline btn-sm" href="blog.html">All posts →</a>
+    </div>
+    <div id="tc-blog-cards" class="grid grid-3" style="margin-top:14px"></div>
+  </section>
+  <script>
+  /* V27 — latest published posts on the homepage. Quietly hides when the
+     database is not connected or nothing is published yet. */
+  (function(){
+    if (!window.sb) return;
+    window.sb.rpc('tc_blog_list', { p_category: null, p_q: null }).then(function(r){
+      var posts = (r.data || []).slice(0, 3);
+      if (!posts.length) return;
+      var box = document.getElementById('tc-blog-cards');
+      if (!box) return;
+      box.innerHTML = posts.map(function(p){
+        return '<a class="card" href="blog-post.html?slug=' + encodeURIComponent(p.slug) + '" style="text-decoration:none;color:inherit">' +
+          '<div style="font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#0506ae">' + (p.category || 'News') + '</div>' +
+          '<h3 style="margin:8px 0 6px;line-height:1.3">' + (p.title || '') + '</h3>' +
+          '<p class="muted" style="margin:0;font-size:.88rem">' + (p.excerpt || '') + '</p>' +
+          '</a>';
+      }).join('');
+      document.getElementById('tc-blog-teaser').style.display = 'block';
+    }).catch(function(){});
+  })();
+  </script>
 </main>
 <footer class="footer" style="padding:28px 24px;border-top:1px solid #e2e8f0">
   <p>Powered by the <b>HMG CONCEPTS Ecosystem</b> · Built by <a href="https://hmgconcepts.pages.dev/" target="_blank" rel="noopener">HMG Concepts</a> · <a href="https://hmgtechnologies.pages.dev/" target="_blank" rel="noopener">HMG Technologies</a></p>

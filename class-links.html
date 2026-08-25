@@ -4,8 +4,9 @@
 <script src="assets/js/auth-guard.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Feature guide • ADEWALE CLASSROOM</title>
-<meta name="description" content="Every Tutoring Connect module explained.">
+<title>Class registration links • ADEWALE CLASSROOM</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="description" content="Create shareable social-media registration links for your paid and free classes — WhatsApp, Facebook, X, LinkedIn, Telegram, email or QR. Every Tutoring Connect module explained.">
 <meta name="theme-color" content="#0506ae">
 <meta name="author" content="HMG Technologies · HMG Concepts">
 <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
@@ -83,10 +84,8 @@
 <script src="assets/js/nav.js"></script>
 <script src="assets/js/legibility.js" defer></script>
 <script src="assets/js/ux-enhance.js" defer></script>
+<script src="assets/js/class-links.js"></script>
 <script src="assets/js/ops-desk.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
-</head>
 <body>
 <div class="app-layout" data-require-role="any" id="app-layout">
   <aside class="app-sidebar" id="app-sidebar">
@@ -98,7 +97,7 @@
   <div class="app-main">
     <header class="app-topbar">
       <button class="mobile-toggle" type="button" aria-label="Menu">☰</button>
-      <h1 class="app-page-title">Feature guide</h1>
+      <h1 class="app-page-title">Class registration links</h1>
       <div class="user-chip"><strong id="user-display-name" data-user-name></strong>
         <span id="user-display-role" data-user-role></span>
         <button class="btn btn-sm btn-ghost" id="btn-dark" type="button">Theme</button>
@@ -106,30 +105,16 @@
     </header>
     <main class="app-content">
       <section class="help-card page-intro">
-        <div class="page-intro-head"><strong>Feature guide</strong><span class="page-intro-badge" style="background:#0f766e">🌍 Public page</span></div>
-        <p class="page-intro-what">The complete catalogue of what this studio can do: every module, what it is for, who can reach it and which pages it connects to, generated from the platform itself so it can never drift out of date. Search it, filter it by role, and open any page straight from its entry. This is the fastest way for a new tutor to learn the studio, and the fastest way for an owner to discover a feature they are paying for and not using. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.</p>
-        <p class="page-intro-who"><b>Who it is for.</b> Owner and admin. This is configuration and governance, not day-to-day teaching.</p>
-        <p class="page-intro-why"><b>Why it matters.</b> Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.</p>
-        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Only an owner or admin should change anything on this page.</li><li>Read the note beside each setting before you touch it.</li><li>Save, then reload any normal page to confirm the change took effect.</li><li>If something looks wrong afterwards, the activity log records who changed what and when.</li></ol></details>
-        <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access, and can edit the content behind it in Settings.</li><li><b>Tutor:</b> Full access — it is a public page.</li><li><b>Parent:</b> Full access — it is a public page.</li><li><b>Learner:</b> Full access — it is a public page.</li></ul></details>
-        <p class="page-intro-rel"><b>Related:</b> <a href="site-index.html">site index</a> · <a href="about.html">about</a> · <a href="contact.html">contact</a> · <a href="developer.html">developer</a> · <a href="flyer.html">flyer</a></p>
+        <div class="page-intro-head"><strong>Class registration links</strong><span class="page-intro-badge" style="background:#334155">🎓 Staff only</span></div>
+        <p class="page-intro-what">Create ONE short, shareable link for a class — paid or free — and post it on your social media handles: WhatsApp, Facebook, X, LinkedIn, Telegram, email, or as a QR code on a flyer. The link opens a clean public registration page (class-register.html?code=…) that shows the class, its price (or that it is free), when it runs and where, and lets a parent register in under a minute with a registration number on the spot. Every link tracks its own usage, and every registration is captured with its funnel status (new → contacted → booked → converted), so you can see which handle actually brings families. What you can do here: <b>Create link</b>, <b>Share</b>, <b>Preview</b>, <b>Close / reopen</b>, <b>Manage registrations</b>. Requires sign-in as staff.</p>
+        <p class="page-intro-who"><b>Who it is for.</b> The owner, admin and tutors who advertise classes on social media.</p>
+        <p class="page-intro-why"><b>Why it matters.</b> A parent who reads about your class on WhatsApp should not have to hunt for a form or create an account — one tap on a link should open everything and capture the registration. This is the difference between an enquiry and a booked seat.</p>
+        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Press <b>＋ New class link</b> and fill the class details — type (paid or free), title, subject, price if paid, schedule, platform, image and a short intro.</li><li>Press <b>Save link</b> — the share card appears instantly with pre-filled WhatsApp / Facebook / X / LinkedIn / Telegram / Email buttons, a copy-link button and a QR code.</li><li>Post the link on your handles. You can also open <b>Preview page</b> to see exactly what a parent sees.</li><li>Watch usage on each link and open <b>Registrations</b> to follow up — mark each one contacted, booked or converted.</li><li>Close the link when the class fills, or let it expire.</li></ol></details>
+        <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access to every link and registration.</li><li><b>Tutor:</b> Full access to the links they created, and their registrations.</li><li><b>Parent:</b> No access — parents use the public registration page.</li><li><b>Learner:</b> No access.</li></ul></details>
+        <p class="page-intro-rel"><b>Related:</b> <a href="free-classes.html">free classes</a> · <a href="class-register.html">public registration page</a> · <a href="application-links.html">application links</a> · <a href="inquiries.html">inquiries</a> · <a href="public-book.html">public self-booking</a></p>
       </section>
-      <div class="card" style="padding:14px 16px;margin-bottom:14px">
-        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-          <input id="fg-q" type="search" placeholder="🔎 Search modules…" style="flex:1;min-width:200px;padding:10px 14px;border:1px solid var(--gray-300,#e2e8f0);border-radius:12px;font:inherit">
-          <select id="fg-role" style="padding:10px 12px;border:1px solid var(--gray-300,#e2e8f0);border-radius:12px;font:inherit">
-            <option value="">Every role</option>
-            <option value="admin">Admin / owner</option>
-            <option value="tutor">Tutor</option>
-            <option value="parent">Parent</option>
-            <option value="student">Learner</option>
-            <option value="public">Public</option>
-          </select>
-          <span class="muted" id="fg-count" style="font-size:.82rem"></span>
-        </div>
-      </div>
-      <div id="guide-root">Loading catalogue…</div>
-    </main>
+      <div id="class-links-root"></div>
+    </main></main>
   </div>
 </div>
 <div id="toast-container" class="toast-container"></div>
@@ -182,5 +167,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 </script>
+
 </body>
 </html>

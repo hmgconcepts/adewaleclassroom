@@ -84,6 +84,7 @@
 <script src="assets/js/nav.js"></script>
 <script src="assets/js/legibility.js" defer></script>
 <script src="assets/js/ux-enhance.js" defer></script>
+<script src="assets/js/ops-desk.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
 </head>
@@ -114,13 +115,80 @@
         <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Can open any paper and see every candidate.</li><li><b>Tutor:</b> Can open the papers assigned to them.</li><li><b>Parent:</b> No access — a parent does not sit the paper.</li><li><b>Learner:</b> Opens their own paper with the quiz code and their student ID.</li></ul></details>
         <p class="page-intro-rel"><b>Related:</b> <a href="practice.html">practice</a> · <a href="cbt-exam.html">cbt exam</a> · <a href="cbt-multi.html">cbt multi</a> · <a href="cbt-prompts.html">cbt prompts</a> · <a href="cbt-results.html">cbt results</a> · <a href="exam-targets.html">exam targets</a></p>
       </section>
-      <p class="muted">Use the related links and the ❓ Page Help button. Connect Supabase to load live rows.</p>
+      <div class="card" style="max-width:620px;margin:0 auto 18px">
+        <h3 style="margin:0 0 4px">Review my paper</h3>
+        <p class="muted" style="margin:0 0 12px;font-size:.88rem">Enter the quiz code and the student ID you sat with — or, for an open (guest) paper, the code and the name you typed. Your latest attempt for that paper opens below, with your answer, the key and the explanation for every question. Nothing is stored on this page; the code is the gate.</p>
+        <div class="grid grid-2">
+          <div class="form-group" style="margin:0"><label>Quiz code</label><input class="form-input" id="rv-code" placeholder="ADC-MATH-01" autocomplete="off"></div>
+          <div class="form-group" style="margin:0"><label>Student ID / name</label><input class="form-input" id="rv-sid" placeholder="TC-0001 or your name" autocomplete="off"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+          <button class="btn btn-primary" type="button" id="rv-go">🔍 Load my review</button>
+          <button class="btn btn-outline" type="button" id="rv-pdf" style="display:none">💾 Save / print PDF</button>
+        </div>
+        <p class="muted" id="rv-hint" style="font-size:.8rem;margin:10px 0 0"></p>
+      </div>
+      <div id="rv-out"></div>
     </main>
   </div>
 </div>
 <div id="toast-container" class="toast-container"></div>
 <script>
 
+</script>
+
+<script>
+(function(){
+  var out = document.getElementById('rv-out');
+  var hint = document.getElementById('rv-hint');
+  var code = document.getElementById('rv-code');
+  var sid = document.getElementById('rv-sid');
+  var pdf = document.getElementById('rv-pdf');
+  try { if (localStorage.getItem('tc-last-code')) code.value = localStorage.getItem('tc-last-code'); } catch(_){}
+  try { if (localStorage.getItem('tc-student-no')) sid.value = localStorage.getItem('tc-student-no'); } catch(_){}
+  async function run(){
+    var c = code.value.trim(), s = sid.value.trim();
+    if (!c) { hint.textContent = 'Enter the quiz code first.'; return; }
+    out.innerHTML = '<p class="muted">Looking up your attempt…</p>';
+    if (!window.sb) { out.innerHTML = '<div class="card"><p class="muted">No database connected — review needs the studio database. See DEPLOYMENT-GUIDE.md.</p></div>'; return; }
+    try {
+      var { data, error } = await window.sb.rpc('tc_cbt_recent_result', { p_code: c, p_student_no: s || null });
+      if (error) throw error;
+      if (!data || !data.ok) {
+        out.innerHTML = '<div class="card" style="text-align:center;padding:30px"><div style="font-size:2rem">🔍</div><h3>No attempt found</h3><p class="muted">Check the code and student ID, or sit the paper first from <a href="cbt-exam.html">Take a quiz</a>.</p></div>';
+        hint.textContent = '';
+        return;
+      }
+      pdf.style.display = '';
+      var result = {
+        pct: data.pct, got: data.score, max: data.max_score,
+        correct: (data.detail || []).filter(function(x){ return x && x.ok && !x.pending; }).length,
+        pending: data.pending || 0, detail: data.detail || [],
+        subject_scores: data.subject_scores || {}
+      };
+      var meta = {
+        title: data.exam_title, student_no: data.student_no, full_name: data.candidate_name,
+        quiz_kind: data.quiz_kind
+      };
+      if (data.marking_status && data.marking_status !== 'complete') {
+        out.innerHTML = '<div class="card" style="border-left:4px solid #b45309;background:#fffbeb;margin-bottom:12px"><b>✍️ Still being marked.</b> Your auto-marked questions are shown below; the tutor's marks for open questions appear once released.</div>' + (window.CBT ? CBT.reviewHTML(result, meta) : '');
+      } else {
+        out.innerHTML = window.CBT ? CBT.reviewHTML(result, meta) : '<p class="muted">Review renderer unavailable — reload the page.</p>';
+      }
+      hint.textContent = 'Attempt finished ' + new Date(data.finished_at).toLocaleString();
+    } catch (e) {
+      out.innerHTML = '<div class="card" style="border-left:4px solid #b42318;background:#fef2f2;padding:18px"><b>Heads up.</b> Could not load the review: ' + TC.esc(e && e.message || e) + '</div>';
+    }
+  }
+  document.getElementById('rv-go').onclick = run;
+  pdf.onclick = function(){ if (window.CBT && CBT.printReview) CBT.printReview(); else window.print(); };
+  code.addEventListener('keydown', function(e){ if (e.key === 'Enter') run(); });
+  sid.addEventListener('keydown', function(e){ if (e.key === 'Enter') run(); });
+  // Pre-fill from URL (?code=...&sid=...)
+  var qs = new URLSearchParams(location.search);
+  if (qs.get('code')) { code.value = qs.get('code'); }
+  if (qs.get('sid')) { sid.value = qs.get('sid'); }
+})();
 </script>
 </body>
 </html>
