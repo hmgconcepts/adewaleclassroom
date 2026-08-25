@@ -229,3 +229,27 @@ on conflict (id) do update set name = excluded.name;
 - One Supabase project per studio; RLS is the real security boundary.
 - Messaging via `wa.me` / `mailto:` / `sms:`.
 
+---
+
+## V32 — Fix RLS infinite recursion (parents / parent_learner)
+
+If the live portal shows:
+
+> infinite recursion detected in policy for relation "parents"
+> infinite recursion detected in policy for relation "parent_learner"
+
+on **Parents**, **Parent–Child links**, **Payments**, **Invoices**, **Payment plans**,
+**Progress reports**, **Predicted grades**, or **Value-added**, run this **once** in the
+Supabase SQL Editor (even if you already ran complete-schema earlier):
+
+1. Open `database/v32-rls-recursion-hard-break.sql`
+2. Paste into SQL Editor → **Run**
+3. Confirm: `V32 RLS recursion hard-break installed`
+4. Hard-refresh the portal and reopen those pages
+
+**New installs:** `database/complete-schema.sql` already includes V32 at the end.
+You only need the one file.
+
+**Also fixed in complete-schema:** `jsonb_agg(x …)` functions now alias the
+subquery column as `x` (class registration link RPCs), which previously raised
+`ERROR 42703: column "x" does not exist`.
