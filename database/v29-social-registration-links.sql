@@ -256,7 +256,8 @@ as $$
                          where r.link_id = l.id),
                'regs_new', (select count(*) from public.tc_class_registrations r
                              where r.link_id = l.id and r.status = 'new'),
-               'created_at', l.created_at)
+               'created_at', l.created_at
+             ) as x
         from public.tc_class_links l
        where public.tc_is_manager() or l.created_by = auth.uid()
     ) s;
@@ -280,7 +281,8 @@ as $$
                'email', r.email, 'phone', r.phone, 'learner_name', r.learner_name,
                'learner_year', r.learner_year, 'school', r.school,
                'how_heard', r.how_heard, 'consent', r.consent, 'notes', r.notes,
-               'status', r.status, 'created_at', r.created_at)
+               'status', r.status, 'created_at', r.created_at
+             ) as x
         from public.tc_class_registrations r
        where r.link_id = p_link
     ) s;
