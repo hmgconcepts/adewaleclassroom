@@ -208,10 +208,10 @@
       role = normRole(role);
 
       // Public pages everyone reaches, signed in or not.
-      if (['index', 'login', 'forgot-password', 'apply', 'contact', 'about',
+      if (['index', 'login', 'forgot-password', 'reset-password', 'apply', 'contact', 'about',
            'install', 'offline', 'public-book', 'exam-register', 'cbt-exam',
            'feature-guide', 'site-index', 'hmg-ecosystem', 'hmg-products',
-           'flyer', 'blog', 'blog-post', 'class-register'].indexOf(page) > -1 && (!role || role === 'guest')) {
+           'flyer', 'blog', 'blog-post', 'class-register', 'free-register'].indexOf(page) > -1 && (!role || role === 'guest')) {
         return 'write';
       }
 
@@ -224,7 +224,8 @@
       var SHELL = ['dashboard', 'profile', 'change-password', 'notifications',
                    'inbox', 'offline', 'install', 'about',
                    'feature-guide', 'site-index', 'contact',
-                   'hmg-ecosystem', 'hmg-products', 'blog', 'blog-post', 'class-register'];
+                   'hmg-ecosystem', 'hmg-products', 'blog', 'blog-post',
+                   'class-register', 'free-register'];
       if (SHELL.indexOf(page) > -1) {
         if (role === 'tutor' || role === 'staff') return 'write';
         return ['profile', 'change-password', 'inbox',

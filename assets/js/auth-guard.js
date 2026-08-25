@@ -33,7 +33,9 @@
     '', 'index', 'login', 'about', 'contact', 'apply', 'register', 'signup',
     'forgot-password', 'reset-password', 'offline', 'install', 'feature-guide',
     'hmg-ecosystem', 'hmg-products', 'developer', 'flyer', 'exam-register',
-    'public-book', 'site-index', 'privacy', 'terms', '404'
+    'public-book', 'site-index', 'privacy', 'terms', '404',
+    /* V25/V27/V29 public acquisition pages — must stay open without a session */
+    'blog', 'blog-post', 'class-register', 'free-register'
   ];
 
   /* Code-gated public runtimes: a learner authenticates with a quiz code +

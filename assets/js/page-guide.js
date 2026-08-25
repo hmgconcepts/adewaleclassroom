@@ -3562,7 +3562,7 @@
   "file": "free-register.html",
   "title": "Register for a free class",
   "group": "Platform",
-  "access": "staff",
+  "access": "public",
   "archetype": "list",
   "sections": [
    {
@@ -3591,10 +3591,10 @@
    }
   ],
   "roleViews": {
-   "owner": "Full access.",
-   "tutor": "Full access for the learners and groups assigned to them, and nothing else.",
-   "parent": "No access.",
-   "learner": "No access."
+   "owner": "Same public form; manage cohorts from Free class cohorts.",
+   "tutor": "Same public form; manage cohorts from Free class cohorts.",
+   "parent": "Public registration form — no login required.",
+   "learner": "Public registration form — no login required."
   },
   "tasks": [],
   "faqs": [],

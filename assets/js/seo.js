@@ -26,7 +26,9 @@
   var PUBLIC_INDEXABLE = [
     'index', '', 'about', 'contact', 'apply', 'feature-guide', 'install',
     'hmg-ecosystem', 'hmg-products', 'developer', 'flyer', 'exam-register',
-    'public-book', 'login', 'site-index'
+    'public-book', 'login', 'site-index',
+    /* V25/V27/V29 acquisition surfaces — must be indexable */
+    'blog', 'blog-post', 'class-register', 'free-register'
   ];
 
   var SEO = {

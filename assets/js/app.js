@@ -9,8 +9,10 @@
 // are redirected to login.html. Keep this list tight — it is the privacy gate.
 const PUBLIC_PAGES = [
   'login','index','about','contact','apply','register','signup','forgot-password',
-  'exam-register','public-book','offline','install','feature-guide',
-  'hmg-ecosystem','hmg-products','developer','flyer',''
+  'reset-password','exam-register','public-book','offline','install','feature-guide',
+  'hmg-ecosystem','hmg-products','developer','flyer','site-index','privacy','terms','404',
+  /* V25/V27/V29 public acquisition pages — no portal login required */
+  'blog','blog-post','class-register','free-register',''
 ];
 
 (function () {
