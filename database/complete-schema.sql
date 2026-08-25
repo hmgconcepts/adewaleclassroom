@@ -8306,7 +8306,1814 @@ select public.tc_schema_ok() as schema_check;
 
 
 
+
+
 -- ===========================================================================
+-- TUTORING CONNECT — V27 (spliced from database/v27-rls-recursion-blog-documents.sql)
+-- RLS recursion fix · blog engine · document builder · contracts · account linking
+-- ===========================================================================
+-- ===========================================================================
+-- TUTORING CONNECT — V27
+-- ---------------------------------------------------------------------------
+-- 1.  RLS infinite-recursion fix (reported on: payments, invoices, payment
+--     plans, value-added, predicted grades, progress reports, at-risk board,
+--     group insights, insights lab, learner 360, family links, parents page).
+-- 2.  Public blog engine (staff write, public read).
+-- 3.  Custom Document Builder columns on `documents` + token renderer.
+-- 4.  Contracts & Consent register with family read-back of signed copies.
+-- 5.  Account-linking RPCs (sign-in -> learner / parent / tutor record).
+-- 6.  V27 self-test rows added through tc_v27_check().
+-- ---------------------------------------------------------------------------
+-- Safe to re-run: every statement is idempotent (create or replace,
+-- drop policy if exists, alter ... add column if not exists).
+-- ===========================================================================
+
+-- ---------------------------------------------------------------------------
+-- 1. RLS INFINITE RECURSION — ROOT CAUSE AND FIX
+-- ---------------------------------------------------------------------------
+-- The old policies had a cycle:
+--
+--     policy on parents         reads parent_learner   (inline subquery)
+--     policy on parent_learner  reads parents          (inline subquery)
+--
+-- PostgreSQL evaluates a policy's USING expression under RLS, so reading
+-- parent_learner from inside the parents policy applied the parent_learner
+-- policy, which read parents again… until the server gave up with:
+--
+--     infinite recursion detected in policy for relation "parents"
+--     infinite recursion detected in policy for relation "parent_learner"
+--
+-- Every downstream policy that touched either table in an inline subquery
+-- (payments, invoices, payment plans, the insight desks, progress reports…)
+-- inherited the crash, which is why one fix had to be at the two source
+-- policies, not at each report.
+--
+-- The fix is the standard Supabase pattern: move the cross-table reads into
+-- SECURITY DEFINER helper functions (they run as the table owner, bypassing
+-- RLS), so a policy never re-enters RLS on the other table.
+-- ---------------------------------------------------------------------------
+
+-- A parent record whose user_id matches the signed-in user.
+create or replace function public.tc_parent_matches_uid(p_parent uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select p_parent is not null
+     and exists (select 1 from public.parents p
+                  where p.id = p_parent and p.user_id = auth.uid());
+$$;
+
+revoke all on function public.tc_parent_matches_uid(uuid) from public, anon;
+grant execute on function public.tc_parent_matches_uid(uuid) to authenticated;
+
+-- A parent who has at least one child the signed-in tutor teaches.
+create or replace function public.tc_tutor_covers_parent(p_parent uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select p_parent is not null
+     and exists (select 1 from public.parent_learner pl
+                  where pl.parent_id = p_parent
+                    and public.tc_teaches_learner(pl.learner_id));
+$$;
+
+revoke all on function public.tc_tutor_covers_parent(uuid) from public, anon;
+grant execute on function public.tc_tutor_covers_parent(uuid) to authenticated;
+
+-- One predicate for "this person may see this learner": a manager, the
+-- teaching tutor, the learner themself, or the learner's own parent.
+create or replace function public.tc_family_can_see_learner(p_learner uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select p_learner is not null and (
+      public.tc_is_manager()
+      or public.tc_teaches_learner(p_learner)
+      or exists (select 1 from public.learners l
+                  where l.id = p_learner and l.user_id = auth.uid())
+      or exists (select 1 from public.parent_learner pl
+                  join public.parents p on p.id = pl.parent_id
+                 where pl.learner_id = p_learner and p.user_id = auth.uid())
+  );
+$$;
+
+revoke all on function public.tc_family_can_see_learner(uuid) from public, anon;
+grant execute on function public.tc_family_can_see_learner(uuid) to authenticated;
+
+-- Rebuild the two source policies WITHOUT the inline cross-table subqueries.
+do $$
+begin
+  if to_regclass('public.parents') is not null then
+    alter table public.parents enable row level security;
+    drop policy if exists parents_tutor_scope on public.parents;
+    create policy parents_tutor_scope on public.parents
+      for all to authenticated
+      using (
+        public.tc_is_manager()
+        or user_id = auth.uid()
+        or public.tc_tutor_covers_parent(id)
+      )
+      with check (public.tc_is_manager());
+  end if;
+
+  if to_regclass('public.parent_learner') is not null then
+    alter table public.parent_learner enable row level security;
+    drop policy if exists parent_learner_tutor_scope on public.parent_learner;
+    create policy parent_learner_tutor_scope on public.parent_learner
+      for all to authenticated
+      using (
+        public.tc_is_manager()
+        or public.tc_teaches_learner(learner_id)
+        or public.tc_parent_matches_uid(parent_id)
+      )
+      with check (public.tc_is_manager());
+  end if;
+end $$;
+
+-- The family-facing money policies that used inline `parents` subqueries.
+-- They were safe once the source policies were fixed, but the helper is
+-- cleaner and removes the RLS re-entry entirely.
+do $$
+begin
+  if to_regclass('public.account_credits') is not null then
+    drop policy if exists account_credits_family on public.account_credits;
+    create policy account_credits_family on public.account_credits
+      for select to authenticated
+      using (public.tc_parent_matches_uid(parent_id));
+  end if;
+
+  if to_regclass('public.payment_plans') is not null then
+    drop policy if exists payment_plans_family on public.payment_plans;
+    create policy payment_plans_family on public.payment_plans
+      for select to authenticated
+      using (public.tc_parent_matches_uid(parent_id));
+  end if;
+
+  if to_regclass('public.payment_plan_items') is not null then
+    drop policy if exists payment_plan_items_family on public.payment_plan_items;
+    create policy payment_plan_items_family on public.payment_plan_items
+      for select to authenticated
+      using (exists (select 1 from public.payment_plans pp
+                      where pp.id = plan_id
+                        and public.tc_parent_matches_uid(pp.parent_id)));
+  end if;
+end $$;
+
+-- The five insight / report desks that inline-queried parent_learner+parents
+-- in their read policies. Same pattern: one SECURITY DEFINER predicate.
+do $$
+declare t text;
+begin
+  foreach t in array array[
+    'tc_at_risk_reviews', 'tc_practice_analytics', 'tc_value_added',
+    'tc_predicted_grades', 'tc_progress_reports', 'tc_group_insights',
+    'tc_insight_notes', 'tc_timezone_desk'
+  ] loop
+    if to_regclass('public.' || t) is not null then
+      execute format($f$
+        drop policy if exists %I on public.%I;
+        create policy %I on public.%I for select to authenticated
+        using (public.tc_family_can_see_learner(learner_id))
+      $f$, t || '_read', t, t || '_read', t);
+    end if;
+  end loop;
+end $$;
+
+select 'V27 RLS recursion fix installed' as status;
+
+-- ===========================================================================
+-- 2. PUBLIC BLOG ENGINE  (report item 40)
+-- ---------------------------------------------------------------------------
+-- The studio writes posts; anyone on the internet reads published ones.
+-- No uploads: cover art is a Drive / web link, never a file. Slug drives a
+-- shareable public URL (blog-post.html?slug=...).
+-- ===========================================================================
+create table if not exists public.tc_blog_categories (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  slug text not null unique,
+  created_at timestamptz default now()
+);
+
+create table if not exists public.tc_blog_posts (
+  id uuid primary key default gen_random_uuid(),
+  slug text not null unique,
+  title text not null,
+  excerpt text,
+  body text not null,
+  category_id uuid references public.tc_blog_categories(id) on delete set null,
+  cover_url text,
+  tags text,
+  seo_description text,
+  author_id uuid references public.tutors(id) on delete set null,
+  author_name text,
+  status text not null default 'draft' check (status in ('draft','published','archived')),
+  published_at timestamptz,
+  view_count int default 0,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create index if not exists tc_blog_posts_published_idx
+  on public.tc_blog_posts (published_at desc) where status = 'published';
+create index if not exists tc_blog_posts_slug_idx
+  on public.tc_blog_posts (slug);
+
+alter table public.tc_blog_posts enable row level security;
+alter table public.tc_blog_categories enable row level security;
+
+-- Staff write, everyone reads what is published.
+drop policy if exists tc_blog_posts_staff on public.tc_blog_posts;
+create policy tc_blog_posts_staff on public.tc_blog_posts
+  for all to authenticated
+  using (public.tc_is_manager() or public.tc_my_tutor_id() is not null)
+  with check (public.tc_is_manager() or public.tc_my_tutor_id() is not null);
+
+drop policy if exists tc_blog_posts_public on public.tc_blog_posts;
+create policy tc_blog_posts_public on public.tc_blog_posts
+  for select to anon, authenticated
+  using (status = 'published');
+
+drop policy if exists tc_blog_categories_staff on public.tc_blog_categories;
+create policy tc_blog_categories_staff on public.tc_blog_categories
+  for all to authenticated
+  using (public.tc_is_manager() or public.tc_my_tutor_id() is not null)
+  with check (public.tc_is_manager() or public.tc_my_tutor_id() is not null);
+
+drop policy if exists tc_blog_categories_public on public.tc_blog_categories;
+create policy tc_blog_categories_public on public.tc_blog_categories
+  for select to anon, authenticated using (true);
+
+-- A stable slug if the author left it blank.
+create or replace function public.tc_blog_slugify(p_title text)
+returns text
+language sql
+immutable
+set search_path = public
+as $$
+  select coalesce(nullif(regexp_replace(
+           lower(p_title), '[^a-z0-9]+', '-', 'g'), ''), 'post')
+         || '-' || substr(md5(random()::text), 1, 6);
+$$;
+
+revoke all on function public.tc_blog_slugify(text) from public;
+
+-- The public list: newest first, published only, with category + author names.
+create or replace function public.tc_blog_list(p_category text default null, p_q text default null)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(jsonb_agg(x order by x->>'published_at' desc), '[]'::jsonb)
+    from (
+      select jsonb_build_object(
+               'id', b.id, 'slug', b.slug, 'title', b.title,
+               'excerpt', b.excerpt, 'cover_url', b.cover_url,
+               'tags', b.tags, 'author_name', coalesce(b.author_name, 'The Studio'),
+               'category', c.name, 'published_at', b.published_at,
+               'view_count', b.view_count
+             ) as x
+        from public.tc_blog_posts b
+        left join public.tc_blog_categories c on c.id = b.category_id
+       where b.status = 'published'
+         and (p_category is null or c.slug = p_category)
+         and (p_q is null or b.title ilike '%' || p_q || '%'
+                           or b.excerpt ilike '%' || p_q || '%'
+                           or coalesce(b.tags, '') ilike '%' || p_q || '%')
+    ) s;
+$$;
+
+revoke all on function public.tc_blog_list(text, text) from public, anon;
+grant execute on function public.tc_blog_list(text, text) to anon, authenticated;
+
+-- One post by slug; bumps the view counter once per open.
+create or replace function public.tc_blog_get(p_slug text)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v jsonb;
+begin
+  select jsonb_build_object(
+           'id', b.id, 'slug', b.slug, 'title', b.title,
+           'excerpt', b.excerpt, 'body', b.body, 'cover_url', b.cover_url,
+           'tags', b.tags, 'seo_description', b.seo_description,
+           'author_name', coalesce(b.author_name, 'The Studio'),
+           'category', c.name, 'published_at', b.published_at,
+           'updated_at', b.updated_at, 'view_count', b.view_count)
+    into v
+    from public.tc_blog_posts b
+    left join public.tc_blog_categories c on c.id = b.category_id
+   where b.slug = p_slug and b.status = 'published';
+
+  if v is null then
+    return jsonb_build_object('ok', false, 'reason', 'not_found');
+  end if;
+
+  update public.tc_blog_posts set view_count = view_count + 1 where slug = p_slug;
+  return jsonb_build_object('ok', true, 'post', v);
+end $$;
+
+revoke all on function public.tc_blog_get(text) from public, anon;
+grant execute on function public.tc_blog_get(text) to anon, authenticated;
+
+-- Staff editor list: everything, including drafts, with the author's tutor id.
+create or replace function public.tc_blog_my_posts()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(jsonb_agg(x order by x->>'created_at' desc), '[]'::jsonb)
+    from (
+      select jsonb_build_object(
+               'id', b.id, 'slug', b.slug, 'title', b.title,
+               'status', b.status, 'published_at', b.published_at,
+               'category', c.name, 'created_at', b.created_at,
+               'author_name', coalesce(b.author_name, 'The Studio'),
+               'view_count', b.view_count
+             ) as x
+        from public.tc_blog_posts b
+        left join public.tc_blog_categories c on c.id = b.category_id
+       where public.tc_is_manager()
+          or b.author_id = public.tc_my_tutor_id()
+    ) s;
+$$;
+
+revoke all on function public.tc_blog_my_posts() from public, anon;
+grant execute on function public.tc_blog_my_posts() to authenticated;
+
+-- Publish / unpublish / archive in one call.
+create or replace function public.tc_blog_set_status(p_id uuid, p_status text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_status not in ('draft','published','archived') then
+    return jsonb_build_object('ok', false, 'reason', 'bad_status');
+  end if;
+  if not (public.tc_is_manager() or public.tc_my_tutor_id() = (select author_id from public.tc_blog_posts where id = p_id)) then
+    return jsonb_build_object('ok', false, 'reason', 'not_your_post');
+  end if;
+  update public.tc_blog_posts
+     set status = p_status,
+         published_at = case when p_status = 'published' then coalesce(published_at, now()) else published_at end,
+         updated_at = now()
+   where id = p_id;
+  return jsonb_build_object('ok', true);
+end $$;
+
+revoke all on function public.tc_blog_set_status(uuid, text) from public, anon;
+grant execute on function public.tc_blog_set_status(uuid, text) to authenticated;
+
+select 'V27 blog engine installed' as status;
+
+-- ===========================================================================
+-- 3. CUSTOM DOCUMENT BUILDER  (report item 7)
+-- ---------------------------------------------------------------------------
+-- Upgrades the existing `documents` table into a publishing engine: preset
+-- types (bonafide, hall ticket, recommendation, transfer, testimonial,
+-- invitation, fee clearance, admission, appointment, memorandum, certificate,
+-- custom), tokenised body text, official signatory, and a renderer that fills
+-- the tokens before print / PDF.
+-- ===========================================================================
+do $$
+declare c text;
+begin
+  foreach c in array array[
+    'doc_type text',
+    'custom_type text',
+    'reference text',
+    'recipient_name text',
+    'body text',
+    'signatory_role text',
+    'signatory_name text',
+    'learner_id uuid',
+    'version int',
+    'effective_on date',
+    'issued_on date',
+    'updated_at timestamptz'
+  ] loop
+    execute format('alter table if exists public.documents add column if not exists %s', c);
+  end loop;
+end $$;
+
+alter table public.documents enable row level security;
+
+drop policy if exists documents_staff on public.documents;
+create policy documents_staff on public.documents
+  for all to authenticated
+  using (public.tc_is_manager() or public.tc_my_tutor_id() is not null)
+  with check (public.tc_is_manager() or public.tc_my_tutor_id() is not null);
+
+-- A family may read documents issued to their own children.
+drop policy if exists documents_family on public.documents;
+create policy documents_family on public.documents
+  for select to authenticated
+  using (status in ('issued','final')
+         and (learner_id is null or public.tc_family_can_see_learner(learner_id)));
+
+-- Fill the tokens: [NAME] [CLASS] [TERM] [SESSION] [DATE] [REFERENCE]
+-- [SCHOOL] [PRINCIPAL] [PROPRIETOR] [EXAM_OFFICER] [SIGNATORY] [TITLE]
+create or replace function public.tc_documents_render(p_id uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  r public.documents%rowtype;
+  v_school text;
+  v_body text;
+  v_learner_name text := null;
+  v_learner_class text := null;
+begin
+  select * into r from public.documents where id = p_id;
+  if not found then
+    return jsonb_build_object('ok', false, 'reason', 'not_found');
+  end if;
+
+  v_school := coalesce((select name from public.practice_settings where id = 1),
+                       'ADEWALE CLASSROOM');
+
+  if r.learner_id is not null then
+    select l.full_name, l.year_group into v_learner_name, v_learner_class
+      from public.learners l where l.id = r.learner_id;
+  end if;
+
+  v_body := coalesce(r.body, '');
+  v_body := replace(v_body, '[NAME]',      coalesce(v_learner_name, coalesce(r.recipient_name, '')));
+  v_body := replace(v_body, '[CLASS]',     coalesce(v_learner_class, ''));
+  v_body := replace(v_body, '[DATE]',      to_char(current_date, 'DD Month YYYY'));
+  v_body := replace(v_body, '[REFERENCE]', coalesce(r.reference, ''));
+  v_body := replace(v_body, '[SCHOOL]',    v_school);
+  v_body := replace(v_body, '[SIGNATORY]', coalesce(r.signatory_name, ''));
+  v_body := replace(v_body, '[TITLE]',     coalesce(r.title, ''));
+
+  return jsonb_build_object(
+    'ok', true,
+    'title', r.title,
+    'doc_type', coalesce(r.doc_type, r.kind),
+    'reference', r.reference,
+    'recipient', coalesce(v_learner_name, r.recipient_name),
+    'signatory_role', r.signatory_role,
+    'signatory_name', r.signatory_name,
+    'body', v_body,
+    'status', r.status,
+    'issued_on', r.issued_on);
+end $$;
+
+revoke all on function public.tc_documents_render(uuid) from public, anon;
+grant execute on function public.tc_documents_render(uuid) to authenticated;
+
+select 'V27 document builder installed' as status;
+
+-- ===========================================================================
+-- 4. CONTRACTS & CONSENT  (report item 8)
+-- ---------------------------------------------------------------------------
+-- A register of agreements and consent records per family. Staff draft and
+-- send; the signed copy is read back to the family; nothing is deletable
+-- once signed (audit integrity), so the table is append/update-only.
+-- ===========================================================================
+create table if not exists public.contracts (
+  id uuid primary key default gen_random_uuid(),
+  kind text not null default 'contract' check (kind in ('contract','consent')),
+  title text not null,
+  body text not null,
+  learner_id uuid references public.learners(id) on delete set null,
+  parent_name text,
+  status text not null default 'draft'
+    check (status in ('draft','sent','awaiting_signature','signed','void')),
+  signed_on date,
+  signed_by_name text,
+  created_by uuid default auth.uid(),
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create index if not exists contracts_learner_idx on public.contracts (learner_id);
+create index if not exists contracts_status_idx on public.contracts (status);
+
+alter table public.contracts enable row level security;
+
+drop policy if exists contracts_staff on public.contracts;
+create policy contracts_staff on public.contracts
+  for all to authenticated
+  using (public.tc_is_manager() or public.tc_my_tutor_id() is not null)
+  with check (public.tc_is_manager() or public.tc_my_tutor_id() is not null);
+
+-- A family sees only signed copies relating to their own children.
+drop policy if exists contracts_family on public.contracts;
+create policy contracts_family on public.contracts
+  for select to authenticated
+  using (status = 'signed'
+         and (learner_id is null or public.tc_family_can_see_learner(learner_id)));
+
+-- The family-facing list of signed documents.
+create or replace function public.tc_contracts_for_family()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(jsonb_agg(x order by x->>'created_at' desc), '[]'::jsonb)
+    from (
+      select jsonb_build_object(
+               'id', c.id, 'kind', c.kind, 'title', c.title,
+               'body', c.body, 'signed_on', c.signed_on,
+               'signed_by_name', c.signed_by_name,
+               'learner_name', l.full_name, 'created_at', c.created_at
+             ) as x
+        from public.contracts c
+        left join public.learners l on l.id = c.learner_id
+       where c.status = 'signed'
+         and public.tc_family_can_see_learner(c.learner_id)
+    ) s;
+$$;
+
+revoke all on function public.tc_contracts_for_family() from public, anon;
+grant execute on function public.tc_contracts_for_family() to authenticated;
+
+select 'V27 contracts & consent installed' as status;
+
+-- ===========================================================================
+-- 5. ACCOUNT LINKING  (report item 43)
+-- ---------------------------------------------------------------------------
+-- School Connect / GOSA connect a sign-in to the person's record (student,
+-- staff, parent). Tutoring Connect now does the same: profile.html shows the
+-- unlinked records that share the signed-in email and offers one-click Link.
+-- An admin can also link any record to any account (with audit).
+-- ===========================================================================
+create or replace function public.tc_unlinked_records()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v_email text;
+  v_uid uuid := auth.uid();
+  v jsonb;
+begin
+  select email into v_email from public.profiles where id = v_uid;
+  if v_email is null then
+    return jsonb_build_object('ok', false, 'reason', 'no_profile');
+  end if;
+
+  select coalesce(jsonb_agg(x), '[]'::jsonb) into v from (
+    select jsonb_build_object(
+             'kind', 'learner', 'id', id, 'full_name', full_name,
+             'student_no', student_no, 'email', email)
+      from public.learners
+     where user_id is null and lower(coalesce(email, '')) = lower(v_email)
+    union all
+    select jsonb_build_object(
+             'kind', 'parent', 'id', id, 'full_name', full_name,
+             'email', email)
+      from public.parents
+     where user_id is null and lower(coalesce(email, '')) = lower(v_email)
+    union all
+    select jsonb_build_object(
+             'kind', 'tutor', 'id', id, 'full_name', full_name,
+             'email', email)
+      from public.tutors
+     where user_id is null and lower(coalesce(email, '')) = lower(v_email)
+  ) s;
+
+  return jsonb_build_object('ok', true, 'records', v);
+end $$;
+
+revoke all on function public.tc_unlinked_records() from public, anon;
+grant execute on function public.tc_unlinked_records() to authenticated;
+
+-- Link a record to the signed-in user. Only when the email matches, or the
+-- caller is a manager (admin override for a family that changed emails).
+create or replace function public.tc_link_account(p_kind text, p_id uuid, p_uid uuid default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := coalesce(p_uid, auth.uid());
+  v_email text;
+  v_row_email text;
+  v_my bool;
+begin
+  if p_kind not in ('learner','parent','tutor') then
+    return jsonb_build_object('ok', false, 'reason', 'bad_kind');
+  end if;
+
+  select email into v_email from public.profiles where id = v_uid;
+
+  if p_kind = 'learner' then
+    select email into v_row_email from public.learners where id = p_id;
+    v_my := (lower(coalesce(v_row_email,'')) = lower(coalesce(v_email,'')));
+  elsif p_kind = 'parent' then
+    select email into v_row_email from public.parents where id = p_id;
+    v_my := (lower(coalesce(v_row_email,'')) = lower(coalesce(v_email,'')));
+  else
+    select email into v_row_email from public.tutors where id = p_id;
+    v_my := (lower(coalesce(v_row_email,'')) = lower(coalesce(v_email,'')));
+  end if;
+
+  if not (v_my or public.tc_is_manager()) then
+    return jsonb_build_object('ok', false, 'reason', 'email_mismatch');
+  end if;
+
+  if p_kind = 'learner' then
+    update public.learners set user_id = v_uid where id = p_id;
+  elsif p_kind = 'parent' then
+    update public.parents set user_id = v_uid where id = p_id;
+  else
+    update public.tutors set user_id = v_uid where id = p_id;
+  end if;
+
+  return jsonb_build_object('ok', true, 'linked', p_kind);
+end $$;
+
+revoke all on function public.tc_link_account(text, uuid, uuid) from public, anon;
+grant execute on function public.tc_link_account(text, uuid, uuid) to authenticated;
+
+select 'V27 account linking installed' as status;
+
+-- ===========================================================================
+-- 6. V27 SELF-TEST
+-- ---------------------------------------------------------------------------
+-- tc_schema_ok() now checks the V26 selftest PLUS these V27 objects.
+-- ===========================================================================
+create or replace function public.tc_v27_check()
+returns table (kind text, name text, present boolean, needed_for text)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  t record;
+begin
+  for t in
+    select * from (values
+      ('tc_blog_posts','public blog posts'),
+      ('tc_blog_categories','blog categories'),
+      ('contracts','contracts & consent register')
+    ) as v(n, why)
+  loop
+    kind := 'table'; name := t.n; needed_for := t.why;
+    present := to_regclass('public.' || t.n) is not null;
+    return next;
+  end loop;
+
+  for t in
+    select * from (values
+      ('tc_parent_matches_uid','RLS recursion fix (parents)'),
+      ('tc_tutor_covers_parent','RLS recursion fix (parent scope)'),
+      ('tc_family_can_see_learner','RLS recursion fix (insight desks)'),
+      ('tc_blog_list','public blog list'),
+      ('tc_blog_get','public blog post'),
+      ('tc_blog_set_status','blog publish workflow'),
+      ('tc_documents_render','document token renderer'),
+      ('tc_contracts_for_family','family signed-document list'),
+      ('tc_unlinked_records','account linking finder'),
+      ('tc_link_account','account linking')
+    ) as v(n, why)
+  loop
+    kind := 'function'; name := t.n; needed_for := t.why;
+    present := exists (
+      select 1 from pg_proc p
+        join pg_namespace ns on ns.oid = p.pronamespace
+       where ns.nspname = 'public' and p.proname = t.n);
+    return next;
+  end loop;
+
+  for t in
+    select * from (values
+      ('documents','doc_type','document builder type preset'),
+      ('documents','body','tokenised document body'),
+      ('documents','signatory_role','official signatory'),
+      ('documents','learner_id','issued-to learner'),
+      ('tc_blog_posts','slug','public post URL'),
+      ('tc_blog_posts','status','draft / published / archived'),
+      ('contracts','status','contract lifecycle')
+    ) as v(tbl, col, why)
+  loop
+    kind := 'column'; name := t.tbl || '.' || t.col; needed_for := t.why;
+    present := exists (
+      select 1 from information_schema.columns c
+       where c.table_schema = 'public' and c.table_name = t.tbl
+         and c.column_name = t.col);
+    return next;
+  end loop;
+end $$;
+
+revoke all on function public.tc_v27_check() from public;
+grant execute on function public.tc_v27_check() to authenticated;
+
+-- tc_schema_ok() reports both the V26 baseline and the V27 additions.
+create or replace function public.tc_schema_ok()
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select case
+    when count(*) filter (where not present) = 0
+      then 'Schema complete \u2705 — ' || count(*)::text || ' objects checked, none missing.'
+    else 'Schema INCOMPLETE \u274c — missing: ' ||
+         string_agg(kind || ' ' || name, ', ') filter (where not present)
+  end
+  from (
+    select * from public.tc_schema_selftest()
+    union all
+    select * from public.tc_v27_check()
+  ) t;
+$$;
+
+revoke all on function public.tc_schema_ok() from public;
+grant execute on function public.tc_schema_ok() to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 6b. REVIEW PAGE LOOKUP  (report item 36 — "review my paper")
+-- The cbt-review.html page needs one safe RPC: give me the latest result for
+-- a quiz code + student number. Open papers (guests) and self/review papers
+-- are always re-openable; a graded result is only re-openable once released.
+-- ---------------------------------------------------------------------------
+create or replace function public.tc_cbt_recent_result(p_code text, p_student_no text)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v jsonb;
+begin
+  if p_code is null or p_student_no is null then
+    return jsonb_build_object('ok', false, 'reason', 'missing');
+  end if;
+
+  select jsonb_build_object(
+           'ok', true,
+           'exam_title', e.title, 'quiz_kind', r.quiz_kind,
+           'student_no', r.student_no, 'candidate_name', r.candidate_name,
+           'score', r.score, 'max_score', r.max_score,
+           'pct', case when coalesce(r.max_score, 0) > 0
+                       then round(r.score / r.max_score * 100, 1) else 0 end,
+           'detail', r.per_question,
+           'subject_scores', coalesce(r.subject_scores, '{}'::jsonb),
+           'finished_at', r.finished_at,
+           'pending', coalesce(r.pending_count, 0),
+           'marking_status', coalesce(r.marking_status, 'complete'))
+    into v
+    from public.cbt_results r
+    join public.cbt_exams e on e.id = r.exam_id
+   where lower(coalesce(r.exam_code, e.code)) = lower(p_code)
+     and lower(coalesce(r.student_no, '')) = lower(coalesce(p_student_no, ''))
+     and (coalesce(r.is_anonymous, false)
+          or r.quiz_kind in ('self','review')
+          or coalesce(r.released, true))
+   order by r.finished_at desc
+   limit 1;
+
+  if v is null then
+    return jsonb_build_object('ok', false, 'reason', 'not_found');
+  end if;
+  return v;
+end $$;
+
+revoke all on function public.tc_cbt_recent_result(text, text) from public, anon;
+grant execute on function public.tc_cbt_recent_result(text, text) to anon, authenticated;
+
+select 'V27 review lookup installed' as status;
+
+-- ---------------------------------------------------------------------------
+-- 6c. tc_v27_check additions for the review lookup
+-- ---------------------------------------------------------------------------
+create or replace function public.tc_v27_check()
+returns table (kind text, name text, present boolean, needed_for text)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  t record;
+begin
+  for t in
+    select * from (values
+      ('tc_blog_posts','public blog posts'),
+      ('tc_blog_categories','blog categories'),
+      ('contracts','contracts & consent register')
+    ) as v(n, why)
+  loop
+    kind := 'table'; name := t.n; needed_for := t.why;
+    present := to_regclass('public.' || t.n) is not null;
+    return next;
+  end loop;
+
+  for t in
+    select * from (values
+      ('tc_parent_matches_uid','RLS recursion fix (parents)'),
+      ('tc_tutor_covers_parent','RLS recursion fix (parent scope)'),
+      ('tc_family_can_see_learner','RLS recursion fix (insight desks)'),
+      ('tc_blog_list','public blog list'),
+      ('tc_blog_get','public blog post'),
+      ('tc_blog_set_status','blog publish workflow'),
+      ('tc_documents_render','document token renderer'),
+      ('tc_contracts_for_family','family signed-document list'),
+      ('tc_unlinked_records','account linking finder'),
+      ('tc_link_account','account linking'),
+      ('tc_cbt_recent_result','review-my-paper lookup')
+    ) as v(n, why)
+  loop
+    kind := 'function'; name := t.n; needed_for := t.why;
+    present := exists (
+      select 1 from pg_proc p
+        join pg_namespace ns on ns.oid = p.pronamespace
+       where ns.nspname = 'public' and p.proname = t.n);
+    return next;
+  end loop;
+
+  for t in
+    select * from (values
+      ('documents','doc_type','document builder type preset'),
+      ('documents','body','tokenised document body'),
+      ('documents','signatory_role','official signatory'),
+      ('documents','learner_id','issued-to learner'),
+      ('tc_blog_posts','slug','public post URL'),
+      ('tc_blog_posts','status','draft / published / archived'),
+      ('contracts','status','contract lifecycle'),
+      ('cbt_results','released','holding graded results until marking ends')
+    ) as v(tbl, col, why)
+  loop
+    kind := 'column'; name := t.tbl || '.' || t.col; needed_for := t.why;
+    present := exists (
+      select 1 from information_schema.columns c
+       where c.table_schema = 'public' and c.table_name = t.tbl
+         and c.column_name = t.col);
+    return next;
+  end loop;
+end $$;
+
+revoke all on function public.tc_v27_check() from public;
+grant execute on function public.tc_v27_check() to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 7. PAGE-SCHEMA COLUMNS for the compliance / staff registers (report items
+--    3, 5, 6, 9, 10). Each page keeps its enterprise CRUD workbench; these
+--    columns give the registers the fields the page descriptions promise.
+-- ---------------------------------------------------------------------------
+do $$
+declare c text;
+begin
+  foreach c in array array[
+    -- safeguarding log: severity + case status + action
+    'severity text', 'case_status text', 'action_taken text', 'occurred_on date',
+    -- policies: versioned, owned, dated
+    'status text', 'version text', 'owner text', 'effective_on date',
+    -- leave: link to the tutor record + cover arrangement
+    'tutor_id uuid', 'days numeric', 'cover_tutor text', 'contact_phone text',
+    -- referrals: tracked code + reward shape
+    'code text', 'referred_email text', 'reward_kind text',
+    -- onboarding steps: order + deadline + owner
+    'order_no int', 'due_on date', 'owner text',
+    -- polls: creator
+    'created_by uuid'
+  ] loop
+    if c like '%uuid%' then
+      continue;
+    end if;
+    execute format('alter table if exists public.safeguarding_log add column if not exists %s', c);
+    execute format('alter table if exists public.policies add column if not exists %s', c);
+    execute format('alter table if exists public.leave_requests add column if not exists %s', c);
+    execute format('alter table if exists public.referrals add column if not exists %s', c);
+    execute format('alter table if exists public.onboarding_items add column if not exists %s', c);
+    execute format('alter table if exists public.polls add column if not exists %s', c);
+  end loop;
+  -- tutor_id is a FK-ish reference; add it only to leave_requests
+  execute 'alter table if exists public.leave_requests add column if not exists tutor_id uuid';
+end $$;
+
+select 'V27 staff-register columns installed' as status;
+
+-- ---------------------------------------------------------------------------
+-- 6b. REVIEW PAGE LOOKUP  (report item 36 — "review my paper")
+
+
+
+-- ===========================================================================
+-- TUTORING CONNECT — V28 (spliced from database/v28-admin-and-ops-enrichment.sql)
+-- Roles & status · settings parity · ops-register columns · RLS on public registers
+-- ===========================================================================
+-- ===========================================================================
+-- TUTORING CONNECT — V28
+-- ---------------------------------------------------------------------------
+-- 1.  Roles & Status Manager RPCs (admin changes a person's role/status with
+--     an audit trail) — matches School Connect / GOSA "Role & Status Manager".
+-- 2.  Settings additions: learner-ID numbering, enforced 2FA, geofence.
+-- 3.  Column enrichment for the ops registers (substitutions, rooms, badges,
+--     rubrics, subjects, products, scholarships, compliance, gallery,
+--     messages, complaints, sessions, attendance, assignments, reviews,
+--     events, payments, announcements, parent meetings, trials, waitlist,
+--     inquiries, helpdesk, library, LMS, e-resources, resources, stream,
+--     classwork, exam links + registrations).
+-- 4.  RLS for pages that had NONE (products, scholarships, gallery, events,
+--     reviews) — family-read / staff-write / public-published.
+-- 5.  V28 self-test (tc_v28_check) folded into tc_schema_ok().
+-- ---------------------------------------------------------------------------
+-- Idempotent: every statement is guarded (create or replace, add column if
+-- not exists, drop policy if exists).
+-- ===========================================================================
+
+-- ---------------------------------------------------------------------------
+-- 1. ROLES & STATUS MANAGER
+-- ---------------------------------------------------------------------------
+-- The manager lists everyone who has an account, with their role and status,
+-- and changes either with a confirm + audit row. Only a manager may call it;
+-- the functions are SECURITY DEFINER so they can write profiles, and they
+-- check tc_is_manager() themselves before touching anything.
+-- ---------------------------------------------------------------------------
+create or replace function public.tc_admin_list_profiles()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v jsonb;
+begin
+  if not public.tc_is_manager() then
+    return jsonb_build_object('ok', false, 'reason', 'not_manager');
+  end if;
+  select coalesce(jsonb_agg(x order by x->>'created_at' desc), '[]'::jsonb) into v
+    from (
+      select jsonb_build_object(
+               'id', p.id, 'email', p.email, 'full_name', p.full_name,
+               'role', p.role, 'status', p.status, 'created_at', p.created_at,
+               'linked_learner', (select count(*) from public.learners l where l.user_id = p.id),
+               'linked_parent',  (select count(*) from public.parents  pa where pa.user_id = p.id),
+               'linked_tutor',   (select count(*) from public.tutors   t where t.user_id = p.id)
+             ) as x
+        from public.profiles p
+    ) s;
+  return jsonb_build_object('ok', true, 'users', v);
+end $$;
+
+revoke all on function public.tc_admin_list_profiles() from public, anon;
+grant execute on function public.tc_admin_list_profiles() to authenticated;
+
+-- Change a person's role and/or status, with an audit row. The actor is
+-- recorded; nobody may change their own role (a manager demoting themselves
+-- would orphan the studio — do it in SQL deliberately if ever needed).
+create or replace function public.tc_admin_set_role_status(
+  p_user_id uuid, p_role text default null, p_status text default null, p_note text default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_row public.profiles%rowtype;
+  v_old_role text; v_old_status text;
+begin
+  if not public.tc_is_manager() then
+    return jsonb_build_object('ok', false, 'reason', 'not_manager');
+  end if;
+  if p_user_id is null then
+    return jsonb_build_object('ok', false, 'reason', 'no_user');
+  end if;
+  if p_user_id = auth.uid() then
+    return jsonb_build_object('ok', false, 'reason', 'cannot_change_self');
+  end if;
+  if p_role is not null and p_role not in
+     ('admin','owner','director','lead_tutor','tutor','staff','parent','student','learner') then
+    return jsonb_build_object('ok', false, 'reason', 'bad_role');
+  end if;
+  if p_status is not null and p_status not in
+     ('pending','approved','active','suspended','disabled','archived') then
+    return jsonb_build_object('ok', false, 'reason', 'bad_status');
+  end if;
+
+  select * into v_row from public.profiles where id = p_user_id;
+  if not found then
+    return jsonb_build_object('ok', false, 'reason', 'no_profile');
+  end if;
+  v_old_role := v_row.role; v_old_status := v_row.status;
+
+  update public.profiles
+     set role = coalesce(p_role, role),
+         status = coalesce(p_status, status)
+   where id = p_user_id;
+
+  insert into public.activity_log (actor, action, table_name, row_id)
+  values (auth.uid(),
+          'role_status_change',
+          'profiles',
+          p_user_id::text || '|' || v_old_role || '->' || coalesce(p_role, v_old_role)
+            || '|' || v_old_status || '->' || coalesce(p_status, v_old_status)
+            || coalesce('|' || p_note, ''));
+
+  return jsonb_build_object('ok', true, 'user', p_user_id,
+                            'role', coalesce(p_role, v_old_role),
+                            'status', coalesce(p_status, v_old_status));
+end $$;
+
+revoke all on function public.tc_admin_set_role_status(uuid, text, text, text) from public, anon;
+grant execute on function public.tc_admin_set_role_status(uuid, text, text, text) to authenticated;
+
+select 'V28 roles & status manager installed' as status;
+
+-- ---------------------------------------------------------------------------
+-- 2. SETTINGS ADDITIONS  (report item 1 — Settings parity with School Connect)
+-- ---------------------------------------------------------------------------
+do $$
+declare c text;
+begin
+  foreach c in array array[
+    'learner_id_prefix text',
+    'learner_id_format text',
+    'enforce_2fa boolean',
+    'enforce_geo boolean',
+    'geo_label text'
+  ] loop
+    execute format('alter table if exists public.practice_settings add column if not exists %s', c);
+  end loop;
+end $$;
+
+-- Student numbers now read the studio prefix from settings (fallback 'TC').
+create or replace function public.tc_generate_student_no()
+returns trigger language plpgsql as $$
+declare n int; prefix text;
+begin
+  if new.student_no is null or new.student_no = '' then
+    select coalesce(max(nullif(regexp_replace(student_no, '\D', '', 'g'), '')::int), 0) + 1
+      into n from public.learners;
+    select coalesce(learner_id_prefix, 'TC') into prefix
+      from public.practice_settings where id = 1;
+    if prefix = '' then prefix := 'TC'; end if;
+    new.student_no := prefix || '-' || lpad(n::text, 4, '0');
+  end if;
+  return new;
+end $$;
+drop trigger if exists trg_student_no on public.learners;
+create trigger trg_student_no before insert on public.learners
+for each row execute function public.tc_generate_student_no();
+
+select 'V28 settings additions installed' as status;
+
+-- ---------------------------------------------------------------------------
+-- 3. COLUMN ENRICHMENT — ops registers (report items 2–20)
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  t text; c text;
+begin
+  -- table -> column list. Every column is added with IF NOT EXISTS.
+  foreach t, c in array[
+    ('substitutions','cover_tutor_name text'),
+    ('substitutions','from_session_id uuid'),
+    ('substitutions','status text'),
+    ('substitutions','note text'),
+    ('substitutions','created_by uuid'),
+    ('rooms','kind text'),
+    ('rooms','url text'),
+    ('rooms','capacity int'),
+    ('rooms','notes text'),
+    ('rooms','available boolean'),
+    ('badges','icon text'),
+    ('badges','description text'),
+    ('badges','kind text'),
+    ('badges','awarded_on date'),
+    ('rubrics','criteria text'),
+    ('rubrics','scale text'),
+    ('rubrics','owner text'),
+    ('rubrics','status text'),
+    ('subjects','exam_board text'),
+    ('subjects','level text'),
+    ('subjects','icon text'),
+    ('subjects','colour text'),
+    ('products','author text'),
+    ('products','subject text'),
+    ('products','price numeric'),
+    ('products','currency text'),
+    ('products','url text'),
+    ('products','kind text'),
+    ('products','available boolean'),
+    ('scholarships','percent numeric'),
+    ('scholarships','applies_to text'),
+    ('scholarships','active boolean'),
+    ('scholarships','notes text'),
+    ('compliance_tasks','owner text'),
+    ('compliance_tasks','notes text'),
+    ('compliance_tasks','remind_on date'),
+    ('gallery','url text'),
+    ('gallery','kind text'),
+    ('gallery','caption text'),
+    ('gallery','featured boolean'),
+    ('gallery','taken_on date'),
+    ('messages','subject text'),
+    ('messages','body text'),
+    ('messages','to_role text'),
+    ('messages','read boolean'),
+    ('messages','thread_id uuid'),
+    ('complaints','body text'),
+    ('complaints','priority text'),
+    ('complaints','assignee text'),
+    ('complaints','status text'),
+    ('complaints','resolution text'),
+    ('sessions','ends_at timestamptz'),
+    ('sessions','tutor_id uuid'),
+    ('sessions','meeting_url text'),
+    ('sessions','whiteboard_url text'),
+    ('sessions','status text'),
+    ('sessions','outcome text'),
+    ('sessions','hours numeric'),
+    ('sessions','notes text'),
+    ('session_attendance','note text'),
+    ('session_attendance','marked_by uuid'),
+    ('session_attendance','marked_at timestamptz'),
+    ('assignments','subject text'),
+    ('assignments','due_on date'),
+    ('assignments','instructions text'),
+    ('assignments','status text'),
+    ('reviews','body text'),
+    ('reviews','rating int'),
+    ('reviews','published boolean'),
+    ('reviews','reviewer_role text'),
+    ('events','starts_at timestamptz'),
+    ('events','venue text'),
+    ('events','notes text'),
+    ('events','kind text'),
+    ('events','audience text'),
+    ('events','link text'),
+    ('payments','learner_id uuid'),
+    ('payments','engagement_id uuid'),
+    ('payments','method text'),
+    ('payments','reference text'),
+    ('payments','paid_on date'),
+    ('payments','status text'),
+    ('payments','note text'),
+    ('payments','currency text'),
+    ('announcements','audience text'),
+    ('announcements','pinned boolean'),
+    ('announcements','link text'),
+    ('parent_meetings','learner_id uuid'),
+    ('parent_meetings','scheduled_at timestamptz'),
+    ('parent_meetings','notes text'),
+    ('parent_meetings','status text'),
+    ('parent_meetings','meeting_url text'),
+    ('trials','subject text'),
+    ('trials','scheduled_at timestamptz'),
+    ('trials','notes text'),
+    ('trials','status text'),
+    ('trials','converted boolean'),
+    ('waitlist','subject text'),
+    ('waitlist','notes text'),
+    ('waitlist','offered_on date'),
+    ('waitlist','converted boolean'),
+    ('inquiries','email text'),
+    ('inquiries','phone text'),
+    ('inquiries','learner_name text'),
+    ('inquiries','kind text'),
+    ('inquiries','source text'),
+    ('inquiries','notes text'),
+    ('inquiries','owner text'),
+    ('inquiries','contacted_on date'),
+    ('helpdesk_tickets','priority text'),
+    ('helpdesk_tickets','assignee text'),
+    ('helpdesk_tickets','resolved_on date'),
+    ('helpdesk_tickets','resolution text'),
+    ('library_items','url text'),
+    ('library_items','author text'),
+    ('library_items','kind text'),
+    ('library_items','subject text'),
+    ('lms_lessons','url text'),
+    ('lms_lessons','order_no int'),
+    ('lms_lessons','status text'),
+    ('lms_lessons','duration_min int'),
+    ('eresources','url text'),
+    ('eresources','notes text'),
+    ('eresources','kind text'),
+    ('resources','url text'),
+    ('resources','kind text'),
+    ('stream_posts','body text'),
+    ('stream_posts','kind text'),
+    ('stream_posts','author_id uuid'),
+    ('stream_posts','link text'),
+    ('stream_posts','status text'),
+    ('classwork_items','title text'),
+    ('classwork_items','kind text'),
+    ('classwork_items','body text'),
+    ('classwork_items','due_on date'),
+    ('classwork_items','status text'),
+    ('exam_reg_links','board text'),
+    ('exam_reg_links','series text'),
+    ('exam_reg_links','intro text'),
+    ('exam_reg_links','max_uses int'),
+    ('exam_reg_links','uses int'),
+    ('exam_registrations','full_name text'),
+    ('exam_registrations','email text'),
+    ('exam_registrations','phone text'),
+    ('exam_registrations','board text'),
+    ('exam_registrations','series text'),
+    ('exam_registrations','photo_url text')
+  ] loop
+    execute format('alter table if exists public.%I add column if not exists %s', t, c);
+  end loop;
+end $$;
+
+select 'V28 ops-register columns installed' as status;
+
+-- ---------------------------------------------------------------------------
+-- 4. RLS FOR PAGES THAT HAD NONE
+-- ---------------------------------------------------------------------------
+-- products (Books & Materials), scholarships, gallery, events and reviews
+-- previously had NO row-level security at all — any anon visitor with the URL
+-- could read the whole table, and any signed-in person could write it. Now:
+--   staff write, families + the public read (published content only for
+--   reviews), everyone else denied.
+-- ---------------------------------------------------------------------------
+do $$
+declare t text;
+begin
+  foreach t in array array['products','scholarships','gallery','events'] loop
+    if to_regclass('public.' || t) is not null then
+      execute format('alter table public.%I enable row level security', t);
+      execute format('drop policy if exists %I on public.%I', t || '_staff', t);
+      execute format('create policy %I on public.%I for all to authenticated ' ||
+        'using (public.tc_is_manager() or public.tc_my_tutor_id() is not null) ' ||
+        'with check (public.tc_is_manager() or public.tc_my_tutor_id() is not null)',
+        t || '_staff', t);
+      execute format('drop policy if exists %I on public.%I', t || '_read', t);
+      execute format('create policy %I on public.%I for select to anon, authenticated using (true)',
+        t || '_read', t);
+    end if;
+  end loop;
+
+  -- Reviews: the public sees only published ones; staff manage all.
+  if to_regclass('public.reviews') is not null then
+    alter table public.reviews enable row level security;
+    drop policy if exists reviews_staff on public.reviews;
+    create policy reviews_staff on public.reviews
+      for all to authenticated
+      using (public.tc_is_manager() or public.tc_my_tutor_id() is not null)
+      with check (public.tc_is_manager() or public.tc_my_tutor_id() is not null);
+    drop policy if exists reviews_public on public.reviews;
+    create policy reviews_public on public.reviews
+      for select to anon, authenticated using (published = true);
+  end if;
+end $$;
+
+select 'V28 RLS on public registers installed' as status;
+
+-- ---------------------------------------------------------------------------
+-- 5. V28 SELF-TEST
+-- ---------------------------------------------------------------------------
+create or replace function public.tc_v28_check()
+returns table (kind text, name text, present boolean, needed_for text)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare t record;
+begin
+  for t in
+    select * from (values
+      ('tc_admin_list_profiles','roles & status — list users'),
+      ('tc_admin_set_role_status','roles & status — change role/status'),
+      ('tc_generate_student_no','learner-ID numbering trigger')
+    ) as v(n, why)
+  loop
+    kind := 'function'; name := t.n; needed_for := t.why;
+    present := exists (select 1 from pg_proc p
+                        join pg_namespace ns on ns.oid = p.pronamespace
+                       where ns.nspname = 'public' and p.proname = t.n);
+    return next;
+  end loop;
+
+  for t in
+    select * from (values
+      ('practice_settings','learner_id_prefix','settings — learner-ID numbering'),
+      ('practice_settings','enforce_2fa','settings — 2FA enforcement'),
+      ('practice_settings','enforce_geo','settings — geofence'),
+      ('rooms','capacity','rooms & locations'),
+      ('substitutions','cover_tutor_name','cover tutors'),
+      ('sessions','meeting_url','meeting links'),
+      ('sessions','outcome','complete a class'),
+      ('session_attendance','note','attendance register'),
+      ('assignments','due_on','homework'),
+      ('products','price','books & materials'),
+      ('scholarships','active','scholarships & discounts'),
+      ('payments','method','payments'),
+      ('exam_reg_links','max_uses','exam registration links'),
+      ('exam_registrations','full_name','exam registration')
+    ) as v(tbl, col, why)
+  loop
+    kind := 'column'; name := t.tbl || '.' || t.col; needed_for := t.why;
+    present := exists (select 1 from information_schema.columns c
+                        where c.table_schema = 'public' and c.table_name = t.tbl
+                          and c.column_name = t.col);
+    return next;
+  end loop;
+
+  for t in
+    select * from (values
+      ('products','RLS enabled'),
+      ('scholarships','RLS enabled'),
+      ('gallery','RLS enabled'),
+      ('events','RLS enabled'),
+      ('reviews','RLS enabled')
+    ) as v(n, why)
+  loop
+    kind := 'rls'; name := t.n; needed_for := t.why;
+    present := exists (select 1 from pg_tables
+                        where schemaname = 'public' and tablename = t.n
+                          and rowsecurity = true);
+    return next;
+  end loop;
+end $$;
+
+revoke all on function public.tc_v28_check() from public;
+grant execute on function public.tc_v28_check() to authenticated;
+
+-- tc_schema_ok() now checks V26 + V27 + V28 together.
+create or replace function public.tc_schema_ok()
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select case
+    when count(*) filter (where not present) = 0
+      then 'Schema complete \u2705 — ' || count(*)::text || ' objects checked, none missing.'
+    else 'Schema INCOMPLETE \u274c — missing: ' ||
+         string_agg(kind || ' ' || name, ', ') filter (where not present)
+  end
+  from (
+    select * from public.tc_schema_selftest()
+    union all
+    select * from public.tc_v27_check()
+    union all
+    select * from public.tc_v28_check()
+  ) t;
+$$;
+
+revoke all on function public.tc_schema_ok() from public;
+grant execute on function public.tc_schema_ok() to authenticated;
+
+select 'V28 installed and self-test extended' as status;
+
+
+
+-- ===========================================================================
+-- TUTORING CONNECT — V29 (spliced from database/v29-social-registration-links.sql)
+-- Social registration links for paid & free classes
+-- ===========================================================================
+-- ===========================================================================
+-- TUTORING CONNECT — V29
+-- ---------------------------------------------------------------------------
+-- SOCIAL REGISTRATION LINKS for paid AND free classes.
+--
+-- The studio creates ONE short link per class and shares it on social media
+-- (WhatsApp, Facebook, X, LinkedIn, Telegram, email, QR). The link opens a
+-- public landing page (class-register.html?code=…) that shows what the class
+-- is, what it costs (or that it is free), when it runs and where, and lets a
+-- parent/student register in under a minute. Every registration is captured
+-- with a registration number, and the studio tracks usage per link so it can
+-- see which handle actually brings families.
+--
+-- Two tables, five RPCs. Free and paid classes share one mechanism: the only
+-- difference is a price and a badge. A free registration is NOT a learner or
+-- a client — it stays in tc_class_registrations (the same principle the free
+-- cohort flow uses) until the studio deliberately moves it.
+--
+-- Idempotent: every statement is guarded (create or replace, add column if
+-- not exists, drop policy if exists, create table if not exists).
+-- ===========================================================================
+
+-- ---------------------------------------------------------------------------
+-- 1. TABLES
+-- ---------------------------------------------------------------------------
+create table if not exists public.tc_class_links (
+  id          uuid primary key default gen_random_uuid(),
+  code        text not null unique,                 -- short code in the share URL
+  kind        text not null default 'paid' check (kind in ('paid','free')),
+  title       text not null,
+  subject     text,
+  tutor_name  text,
+  starts_on   date,
+  schedule    text,                                 -- e.g. "Sat 10:00 – 12:00 · 8 weeks"
+  platform    text,                                 -- YouTube / Zoom / Meet / WhatsApp / In-person
+  price       numeric(12,2),                        -- NULL / 0 for free
+  currency    text default '₦',
+  image_url   text,                                 -- Drive / web link, never an upload
+  intro       text,                                 -- the message shown on the landing page
+  meeting_url text,                                 -- link to the live class / joining instructions
+  group_url   text,                                 -- WhatsApp / Telegram group link
+  status      text not null default 'open' check (status in ('open','closed','archived')),
+  expires_on  date,
+  max_uses    int,
+  uses        int not null default 0,
+  created_by  uuid default auth.uid(),
+  created_at  timestamptz default now()
+);
+
+create index if not exists tc_class_links_code_idx on public.tc_class_links (code);
+create index if not exists tc_class_links_kind_idx on public.tc_class_links (kind);
+
+create table if not exists public.tc_class_registrations (
+  id           uuid primary key default gen_random_uuid(),
+  link_id      uuid references public.tc_class_links(id) on delete cascade,
+  reg_no       text not null unique,
+  parent_name  text not null,
+  email        text,
+  phone        text,
+  learner_name text,
+  learner_year text,
+  school       text,
+  how_heard    text,
+  consent      boolean default false,               -- guardian consent for minors
+  notes        text,
+  status       text not null default 'new' check (status in ('new','contacted','booked','converted','closed')),
+  created_at   timestamptz default now()
+);
+
+create index if not exists tc_class_regs_link_idx on public.tc_class_registrations (link_id);
+create index if not exists tc_class_regs_created_idx on public.tc_class_registrations (created_at desc);
+
+-- ---------------------------------------------------------------------------
+-- 2. ROW LEVEL SECURITY
+-- ---------------------------------------------------------------------------
+alter table public.tc_class_links enable row level security;
+alter table public.tc_class_registrations enable row level security;
+
+-- Links: staff write; the public reads only open links (the RPC also gates).
+drop policy if exists tc_class_links_staff on public.tc_class_links;
+create policy tc_class_links_staff on public.tc_class_links
+  for all to authenticated
+  using (public.tc_is_manager() or public.tc_my_tutor_id() is not null)
+  with check (public.tc_is_manager() or public.tc_my_tutor_id() is not null);
+
+drop policy if exists tc_class_links_public on public.tc_class_links;
+create policy tc_class_links_public on public.tc_class_links
+  for select to anon, authenticated
+  using (status = 'open');
+
+-- Registrations: staff see and manage; the public never reads (the register
+-- RPC inserts via SECURITY DEFINER, so no anon INSERT policy is needed).
+drop policy if exists tc_class_regs_staff on public.tc_class_registrations;
+create policy tc_class_regs_staff on public.tc_class_registrations
+  for all to authenticated
+  using (public.tc_is_manager() or public.tc_my_tutor_id() is not null)
+  with check (public.tc_is_manager() or public.tc_my_tutor_id() is not null);
+
+revoke all on public.tc_class_links, public.tc_class_registrations from anon;
+
+select 'V29 class-link tables installed' as status;
+
+-- ---------------------------------------------------------------------------
+-- 3. PUBLIC RPCs
+-- ---------------------------------------------------------------------------
+-- Open a link by code. Returns everything the landing page needs, plus the
+-- share text so the page can offer "forward this to a friend". Only open,
+-- unexpired, under-limit links are returned.
+create or replace function public.tc_class_link_get(p_code text)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare
+  v jsonb;
+  l public.tc_class_links%rowtype;
+begin
+  if p_code is null or trim(p_code) = '' then
+    return jsonb_build_object('ok', false, 'error', 'No class link given.');
+  end if;
+
+  select * into l from public.tc_class_links where code = p_code;
+  if not found then
+    return jsonb_build_object('ok', false, 'error', 'This link does not match any class.');
+  end if;
+  if l.status <> 'open' then
+    return jsonb_build_object('ok', false, 'error', 'Registration for this class is closed.');
+  end if;
+  if l.expires_on is not null and l.expires_on < current_date then
+    return jsonb_build_object('ok', false, 'error', 'This registration link expired on ' || l.expires_on || '.');
+  end if;
+  if coalesce(l.max_uses, 0) > 0 and coalesce(l.uses, 0) >= l.max_uses then
+    return jsonb_build_object('ok', false, 'error', 'This registration link has reached its limit.');
+  end if;
+
+  v := jsonb_build_object(
+    'ok', true,
+    'id', l.id, 'code', l.code, 'kind', l.kind,
+    'title', l.title, 'subject', l.subject, 'tutor_name', l.tutor_name,
+    'starts_on', l.starts_on, 'schedule', l.schedule, 'platform', l.platform,
+    'price', l.price, 'currency', l.currency, 'image_url', l.image_url,
+    'intro', l.intro, 'meeting_url', l.meeting_url, 'group_url', l.group_url,
+    'created_at', l.created_at);
+  return v;
+end $$;
+
+revoke all on function public.tc_class_link_get(text) from public, anon;
+grant execute on function public.tc_class_link_get(text) to anon, authenticated;
+
+-- Register for a class. Validates the link exactly like tc_class_link_get,
+-- then writes one registration, bumps the use counter and issues a reg_no.
+create or replace function public.tc_class_register(
+  p_code        text,
+  p_parent_name text,
+  p_email       text default null,
+  p_phone       text default null,
+  p_learner_name text default null,
+  p_learner_year text default null,
+  p_school      text default null,
+  p_how_heard   text default null,
+  p_consent     boolean default false,
+  p_notes       text default null
+) returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  l public.tc_class_links%rowtype;
+  v_reg_no text;
+  v_id uuid;
+begin
+  if coalesce(trim(p_parent_name), '') = '' then
+    return jsonb_build_object('ok', false, 'error', 'Please enter the parent / guardian name.');
+  end if;
+
+  select * into l from public.tc_class_links where code = p_code;
+  if not found then
+    return jsonb_build_object('ok', false, 'error', 'This link does not match any class.');
+  end if;
+  if l.status <> 'open' then
+    return jsonb_build_object('ok', false, 'error', 'Registration for this class is closed.');
+  end if;
+  if l.expires_on is not null and l.expires_on < current_date then
+    return jsonb_build_object('ok', false, 'error', 'This registration link expired on ' || l.expires_on || '.');
+  end if;
+  if coalesce(l.max_uses, 0) > 0 and coalesce(l.uses, 0) >= l.max_uses then
+    return jsonb_build_object('ok', false, 'error', 'This registration link has reached its limit.');
+  end if;
+  -- Guardian consent: required on the PAGE when a child is registering. The
+  -- database stores the consent flag with the registration; enforcement lives
+  -- in the form so a legitimate parent with a broken checkbox is never
+  -- silently blocked at the database layer.
+  if coalesce(p_consent, false) = false and p_learner_year ~ '^[0-9]+$'
+     and p_learner_year::int < 18 then
+    return jsonb_build_object('ok', false, 'error',
+      'Please tick the guardian consent box — this class is for a minor.');
+  end if;
+
+  v_reg_no := 'REG-' || upper(substr(md5(l.id::text || clock_timestamp()::text), 1, 8));
+
+  insert into public.tc_class_registrations
+    (link_id, reg_no, parent_name, email, phone, learner_name, learner_year,
+     school, how_heard, consent, notes)
+  values
+    (l.id, v_reg_no, trim(p_parent_name), nullif(trim(coalesce(p_email,'')),''),
+     nullif(trim(coalesce(p_phone,'')),''), nullif(trim(coalesce(p_learner_name,'')),''),
+     nullif(trim(coalesce(p_learner_year,'')),''), nullif(trim(coalesce(p_school,'')),''),
+     nullif(trim(coalesce(p_how_heard,'')),''), coalesce(p_consent,false),
+     nullif(trim(coalesce(p_notes,'')),''))
+  returning id into v_id;
+
+  update public.tc_class_links set uses = uses + 1 where id = l.id;
+
+  return jsonb_build_object(
+    'ok', true,
+    'reg_no', v_reg_no,
+    'registration_id', v_id,
+    'class_title', l.title,
+    'kind', l.kind,
+    'meeting_url', l.meeting_url,
+    'group_url', l.group_url,
+    'platform', l.platform,
+    'starts_on', l.starts_on,
+    'message', 'You are registered! Keep this number for your records.'
+  );
+end $$;
+
+revoke all on function public.tc_class_register(text, text, text, text, text, text, text, text, boolean, text)
+  from public, anon;
+grant execute on function public.tc_class_register(text, text, text, text, text, text, text, text, boolean, text)
+  to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- 4. STAFF RPCs
+-- ---------------------------------------------------------------------------
+-- List the links I may manage, with registration counts and the share URL.
+create or replace function public.tc_class_links_my()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(jsonb_agg(x order by x->>'created_at' desc), '[]'::jsonb)
+    from (
+      select jsonb_build_object(
+               'id', l.id, 'code', l.code, 'kind', l.kind, 'title', l.title,
+               'subject', l.subject, 'price', l.price, 'currency', l.currency,
+               'starts_on', l.starts_on, 'platform', l.platform,
+               'status', l.status, 'uses', l.uses, 'max_uses', l.max_uses,
+               'expires_on', l.expires_on,
+               'regs', (select count(*) from public.tc_class_registrations r
+                         where r.link_id = l.id),
+               'regs_new', (select count(*) from public.tc_class_registrations r
+                             where r.link_id = l.id and r.status = 'new'),
+               'created_at', l.created_at)
+        from public.tc_class_links l
+       where public.tc_is_manager() or l.created_by = auth.uid()
+    ) s;
+$$;
+
+revoke all on function public.tc_class_links_my() from public, anon;
+grant execute on function public.tc_class_links_my() to authenticated;
+
+-- List registrations for one link (staff).
+create or replace function public.tc_class_regs_for(p_link uuid)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(jsonb_agg(x order by x->>'created_at' desc), '[]'::jsonb)
+    from (
+      select jsonb_build_object(
+               'id', r.id, 'reg_no', r.reg_no, 'parent_name', r.parent_name,
+               'email', r.email, 'phone', r.phone, 'learner_name', r.learner_name,
+               'learner_year', r.learner_year, 'school', r.school,
+               'how_heard', r.how_heard, 'consent', r.consent, 'notes', r.notes,
+               'status', r.status, 'created_at', r.created_at)
+        from public.tc_class_registrations r
+       where r.link_id = p_link
+    ) s;
+$$;
+
+revoke all on function public.tc_class_regs_for(uuid) from public, anon;
+grant execute on function public.tc_class_regs_for(uuid) to authenticated;
+
+-- Set a registration's status (new → contacted → booked → converted → closed).
+create or replace function public.tc_class_reg_status(p_reg uuid, p_status text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_status not in ('new','contacted','booked','converted','closed') then
+    return jsonb_build_object('ok', false, 'error', 'Unknown status.');
+  end if;
+  update public.tc_class_registrations set status = p_status where id = p_reg;
+  return jsonb_build_object('ok', true, 'status', p_status);
+end $$;
+
+revoke all on function public.tc_class_reg_status(uuid, text) from public, anon;
+grant execute on function public.tc_class_reg_status(uuid, text) to authenticated;
+
+-- Open / close / archive a link.
+create or replace function public.tc_class_link_set_status(p_id uuid, p_status text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_status not in ('open','closed','archived') then
+    return jsonb_build_object('ok', false, 'error', 'Unknown status.');
+  end if;
+  update public.tc_class_links set status = p_status where id = p_id;
+  return jsonb_build_object('ok', true, 'status', p_status);
+end $$;
+
+revoke all on function public.tc_class_link_set_status(uuid, text) from public, anon;
+grant execute on function public.tc_class_link_set_status(uuid, text) to authenticated;
+
+select 'V29 class-link RPCs installed' as status;
+
+-- ---------------------------------------------------------------------------
+-- 5. SELF-TEST
+-- ---------------------------------------------------------------------------
+create or replace function public.tc_v29_check()
+returns table (kind text, name text, present boolean, needed_for text)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+declare t record;
+begin
+  for t in
+    select * from (values
+      ('tc_class_links','social registration links'),
+      ('tc_class_registrations','registrations from those links')
+    ) as v(n, why)
+  loop
+    kind := 'table'; name := t.n; needed_for := t.why;
+    present := to_regclass('public.' || t.n) is not null;
+    return next;
+  end loop;
+
+  for t in
+    select * from (values
+      ('tc_class_link_get','open a share link'),
+      ('tc_class_register','public registration'),
+      ('tc_class_links_my','staff link list'),
+      ('tc_class_regs_for','staff registrations list'),
+      ('tc_class_reg_status','update a registration'),
+      ('tc_class_link_set_status','open / close a link')
+    ) as v(n, why)
+  loop
+    kind := 'function'; name := t.n; needed_for := t.why;
+    present := exists (select 1 from pg_proc p
+                        join pg_namespace ns on ns.oid = p.pronamespace
+                       where ns.nspname = 'public' and p.proname = t.n);
+    return next;
+  end loop;
+
+  for t in
+    select * from (values
+      ('tc_class_links','code','short code in the URL'),
+      ('tc_class_links','kind','paid or free'),
+      ('tc_class_links','price','fee / free'),
+      ('tc_class_links','status','open / closed / archived'),
+      ('tc_class_links','uses','usage counter'),
+      ('tc_class_registrations','reg_no','registration number'),
+      ('tc_class_registrations','status','funnel status')
+    ) as v(tbl, col, why)
+  loop
+    kind := 'column'; name := t.tbl || '.' || t.col; needed_for := t.why;
+    present := exists (select 1 from information_schema.columns c
+                        where c.table_schema = 'public' and c.table_name = t.tbl
+                          and c.column_name = t.col);
+    return next;
+  end loop;
+end $$;
+
+revoke all on function public.tc_v29_check() from public;
+grant execute on function public.tc_v29_check() to authenticated;
+
+-- tc_schema_ok() now checks V26 + V27 + V28 + V29 together.
+create or replace function public.tc_schema_ok()
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select case
+    when count(*) filter (where not present) = 0
+      then 'Schema complete \u2705 — ' || count(*)::text || ' objects checked, none missing.'
+    else 'Schema INCOMPLETE \u274c — missing: ' ||
+         string_agg(kind || ' ' || name, ', ') filter (where not present)
+  end
+  from (
+    select * from public.tc_schema_selftest()
+    union all
+    select * from public.tc_v27_check()
+    union all
+    select * from public.tc_v28_check()
+    union all
+    select * from public.tc_v29_check()
+  ) t;
+$$;
+
+revoke all on function public.tc_schema_ok() from public;
+grant execute on function public.tc_schema_ok() to authenticated;
+
+select 'V29 installed and self-test extended' as status;
+
 -- SCHEMA REGISTRY
 -- ---------------------------------------------------------------------------
 -- BUG FIXED IN V25 — this file used to end with THREE registry upserts, for
@@ -8321,19 +10128,22 @@ select public.tc_schema_ok() as schema_check;
 -- it names every pack the file contains.
 -- ===========================================================================
 insert into public.tc_schema_registry (id, version, packs, note)
-values (1, 'V26', array['v1-core','v2-tutoring-ops','v3-classroom-exams','v4-enterprise-parity',
+values (1, 'V29', array['v1-core','v2-tutoring-ops','v3-classroom-exams','v4-enterprise-parity',
                         'v5-ops-parity','v6-cbt-modes','v7-family-access','v9-keepalive-drive',
                         'v12-quota-guard','v15-family-polls-billing','v16-exam-registration',
                         'v17-licensing-family-billing','v18-security-hardening',
                         'v19-revenue-and-security','v20-cbt-2fa-polls','v22-cbt-results-audit',
                         'v24-tutor-scoping','v25-desks-lifecycle-free-classes',
-                        'v26-tutor-marking-and-selftest'],
+                        'v26-tutor-marking-and-selftest',
+                        'v27-rls-recursion-blog-documents',
+                        'v28-admin-and-ops-enrichment',
+                        'v29-social-registration-links'],
         'Installed by database/complete-schema.sql')
 on conflict (id) do update
    set version = excluded.version, applied_at = now(),
        packs = excluded.packs, note = excluded.note;
 
-select 'Tutoring Connect V26 installed \u2705 \u2014 entry desks, CBT lifecycle, free classes, certificate studio' as status;
+select 'Tutoring Connect V29 installed \u2705 \u2014 social registration links for paid & free classes' as status;
 
 
 -- ===========================================================================
