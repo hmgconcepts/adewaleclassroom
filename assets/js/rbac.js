@@ -88,12 +88,8 @@
     'meetings',            // the join link for their own class
     'whiteboard',
     'documents',
-    'policies',
     'announcements',
-    'broadcasts',
     'notifications',
-    'directory',
-    'birthdays',
     'feature-guide',
     'hmg-ecosystem',
     'hmg-products',
@@ -107,17 +103,14 @@
     'profile',
     'change-password',
     'inbox',
-    'messages',
     'complaints',          // raising a concern is the whole point
-    'helpdesk',
     'surveys',             // answering one
     'cbt-exam',            // sitting a paper
     'cbt-review',          // reviewing their own paper
     'practice-sit',        // (reserved) sitting a practice quiz
     'contact',
     'apply',
-    'public-book',
-    'referrals'
+    'public-book'
   ];
 
   /* Extra pages a PARENT gets that a student does not: money and the
@@ -155,17 +148,28 @@
     'exam-register', 'exam-links', 'application-links', 'cbt-multi',
     'cbt-prompts', 'cbt-results', 'diagnostics', 'lesson-plans',
     'methodologies', 'rubrics', 'assessments', 'leave', 'products',
-    'flyer', 'quota', 'admin', 'super'
+    'flyer', 'quota', 'admin', 'super',
+    /* V27 — pages that belong to the staff side of the studio, not the
+       family side. Removed from the family pane so a learner or parent is
+       never offered a page their role cannot open (reported repeatedly as
+       "Your role (learner) does not have permission to access …"). */
+    'messages', 'helpdesk', 'directory', 'birthdays', 'timezones',
+    'accommodations', 'learning-styles', 'broadcasts', 'policies',
+    'referrals', 'blog-manage', 'contracts', 'class-links'
   ];
 
   /* Staff (a tutor) run teaching but not the business. */
   var STAFF_DENY = [
     'payroll', 'finance', 'license', 'settings', 'developer', 'builder',
     'security-centre', 'admin-data', 'storage', 'platform-health',
-    'status-manager', 'approvals', 'compliance'
+    'status-manager', 'approvals', 'compliance',
+    /* V27 — admin-governance pages a tutor must never open: safeguarding is
+       confidential by law and by duty of care; application links are the
+       studio's recruitment channels; the activity log is the audit trail. */
+    'safeguarding', 'application-links', 'activity-log'
   ];
   var STAFF_READ = ['invoices', 'payments', 'fees', 'wallet', 'payment-plans',
-                    'scholarships', 'packages', 'activity-log'];
+                    'scholarships', 'packages'];
 
   /* The four real roles this matrix understands. ANYTHING ELSE — 'guest',
      'pending', 'demo', an empty string, or a value we have not seen — is NOT
@@ -207,7 +211,7 @@
       if (['index', 'login', 'forgot-password', 'apply', 'contact', 'about',
            'install', 'offline', 'public-book', 'exam-register', 'cbt-exam',
            'feature-guide', 'site-index', 'hmg-ecosystem', 'hmg-products',
-           'flyer'].indexOf(page) > -1 && (!role || role === 'guest')) {
+           'flyer', 'blog', 'blog-post', 'class-register'].indexOf(page) > -1 && (!role || role === 'guest')) {
         return 'write';
       }
 
@@ -218,12 +222,12 @@
          these strands someone in their own portal, so they are reachable by
          every role. Writing is only meaningful on the personal ones. */
       var SHELL = ['dashboard', 'profile', 'change-password', 'notifications',
-                   'inbox', 'messages', 'offline', 'install', 'about',
-                   'feature-guide', 'site-index', 'contact', 'helpdesk',
-                   'hmg-ecosystem', 'hmg-products'];
+                   'inbox', 'offline', 'install', 'about',
+                   'feature-guide', 'site-index', 'contact',
+                   'hmg-ecosystem', 'hmg-products', 'blog', 'blog-post', 'class-register'];
       if (SHELL.indexOf(page) > -1) {
         if (role === 'tutor' || role === 'staff') return 'write';
-        return ['profile', 'change-password', 'inbox', 'messages', 'helpdesk',
+        return ['profile', 'change-password', 'inbox',
                 'contact'].indexOf(page) > -1 ? 'write' : 'read';
       }
 
@@ -425,6 +429,19 @@
           } else if (!el.disabled) {
             el.disabled = true;
             el.setAttribute('data-tc-ro-disabled', '1');
+            /* V28 (item 21) — a disabled field is noise for a viewer. Hide
+               the whole labelled field (its .form-group wrapper) instead of
+               showing a greyed-out input the reader cannot use. This is what
+               cleans up pages like Cycle bookings for a parent or learner:
+               the form fields they cannot touch simply do not appear, while
+               the data they CAN read (the quote, the schedule, the register)
+               stays fully visible. */
+            var wrap = el.closest('.form-group');
+            if (wrap && !wrap.hasAttribute('data-tc-ro-hidden') &&
+                wrap.style.display !== 'none') {
+              wrap.style.display = 'none';
+              wrap.setAttribute('data-tc-ro-hidden', '1');
+            }
           }
         });
 

@@ -227,7 +227,10 @@ const App = {
 
   applyStoredTheme() {
     const saved = localStorage.getItem('tc-theme') || localStorage.getItem('sc-theme');
-    if (saved) document.body.dataset.theme = saved;
+    const m = (saved === 'dark' || saved === 'light') ? saved : 'light';
+    document.body.dataset.theme = m;
+    document.documentElement.dataset.theme = m;
+    this.paintThemeButton();
   },
 
   initAuthTabs() {
@@ -518,6 +521,20 @@ const App = {
   moduleAllowedForRole(moduleId, role) {
     const id = this.normalizeModuleId(moduleId);
     const r = String(role || '').toLowerCase();
+    if (this.isOwnerRole(r)) return true;
+    /* V27 — ONE access authority. rbac.js holds the page-by-page matrix
+       (items 15, 27, 32, 38: pages appearing in a role's pane that the role
+       cannot open, and pages a role can open being blocked). This method used
+       to keep its own STUDENT_WHITELIST / PARENT_WHITELIST / FAMILY_BLACKLIST,
+       which disagreed with rbac.js, so a learner could see a link AND be
+       blocked on entry with "Restricted Page", or be denied a page rbac.js
+       allowed. Delegate to RBAC instead; the legacy lists are kept only as a
+       fallback for studios built before V25 that lack rbac.js. */
+    try {
+      if (window.RBAC && typeof RBAC.level === 'function') {
+        return RBAC.level(id, r) !== 'none';
+      }
+    } catch (_) {}
     if (r === 'learner') return this.moduleAllowedForRole(id, 'student');
     if (r === 'parent') {
       if (this.FAMILY_BLACKLIST.has(id)) return false;
@@ -984,7 +1001,7 @@ const App = {
       ] : this.isTutorRole(role) && !this.isOwnerRole(role) ? [
         ['Engagements', 'engagements.html'], ['Complete a class', 'session-complete.html'],
         ['Scheme of work', 'sow.html'], ['CBT manager', 'practice.html'], ['Attendance', 'attendance.html'],
-        ['Inbox', 'inbox.html'], ['Insights', 'insights.html']
+        ['Marking queue', 'cbt-results.html?tab=marking'], ['Inbox', 'inbox.html'], ['Insights', 'insights.html']
       ] : [
         ['Engagements', 'engagements.html'], ['Learners', 'learners.html'], ['Cycle bookings', 'bookings.html'],
         ['Inquiries', 'inquiries.html'], ['Hour banks', 'packages.html'], ['Insights', 'insights.html'],
@@ -1282,10 +1299,49 @@ const App = {
     });
   },
 
+  /* V27 (item 29) — the theme toggle is now a real control, not a bare
+     button that flips a data attribute and forgets about the page:
+       1. it sets BOTH body and <html> data-theme (theme-engine.js reads the
+          latter for CSS variables — one of the two was always left stale);
+       2. it repaints its own label (🌙 Dark / ☀️ Light) so the user can see
+          which mode they are in;
+       3. it fires a tc:theme event so charts, popups and the bot panel can
+          recolour instead of keeping dark-theme styles from a light theme;
+       4. it persists, and restores on the next page load (initTheme below). */
+  paintThemeButton() {
+    const dark = document.getElementById('btn-dark');
+    if (!dark) return;
+    const cur = document.body.dataset.theme || 'light';
+    dark.textContent = cur === 'dark' ? '☀️ Light' : '🌙 Dark';
+    dark.title = cur === 'dark' ? 'Switch to light theme' : 'Switch to dark theme';
+    dark.setAttribute('aria-pressed', String(cur === 'dark'));
+  },
+
+  initTheme() {
+    const saved = localStorage.getItem('tc-theme') || localStorage.getItem('sc-theme');
+    const m = (saved === 'dark' || saved === 'light') ? saved : 'light';
+    document.body.dataset.theme = m;
+    document.documentElement.dataset.theme = m;
+    this.paintThemeButton();
+    document.addEventListener('tc:theme', () => this.paintThemeButton());
+  },
+
   toggleDarkMode() {
     const cur = document.body.dataset.theme || 'light';
-    document.body.dataset.theme = cur === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('tc-theme', document.body.dataset.theme);
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.body.dataset.theme = next;
+    document.documentElement.dataset.theme = next;
+    localStorage.setItem('tc-theme', next);
+    this.paintThemeButton();
+    try { document.dispatchEvent(new CustomEvent('tc:theme', { detail: next })); } catch (_) {}
+    /* Chart.js instances re-read their colours at creation; re-render the
+       visible ones so a toggle never leaves ink-on-ink charts behind. */
+    try {
+      if (window.Chart && Chart.instances) {
+        Object.keys(Chart.instances).forEach(k => { try { Chart.instances[k].update(); } catch (_) {} });
+      }
+    } catch (_) {}
+    try { if (window.SiteHelp && SiteHelp.explainPage) {} } catch (_) {}
   },
 
   signOut() {

@@ -66,7 +66,8 @@ const CRUD = {
     engagement_members: { table: 'engagement_members', title: 'Roster seat', cols: [
       { key: 'engagement_id', label: 'Engagement', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id', required: true },
       { key: 'learner_id', label: 'Learner', type: 'ref', refTable: 'learners', refValue: 'full_name', refStore: 'id', required: true },
-      { key: 'status', label: 'Status', type: 'select', options: ['active','left'] }
+      { key: 'status', label: 'Status', type: 'select', options: ['active','paused','left'] },
+      { key: 'joined_on', label: 'Joined', type: 'date' }
     ]},
     tutors: { table: 'tutors', title: 'Tutor', cols: [
       { key: 'full_name', label: 'Full name', type: 'text', required: true },
@@ -78,9 +79,11 @@ const CRUD = {
       { key: 'status', label: 'Status', type: 'select', options: ['active','inactive'] }
     ]},
     subjects: { table: 'subjects', title: 'Subject', cols: [
-      { key: 'name', label: 'Subject', type: 'text', required: true },
-      { key: 'exam_board', label: 'Default board', type: 'text' },
-      { key: 'level', label: 'Level', type: 'text' }
+      { key: 'name', label: 'Name', type: 'text', required: true },
+      { key: 'exam_board', label: 'Exam board', type: 'text' },
+      { key: 'level', label: 'Level', type: 'text' },
+      { key: 'icon', label: 'Icon', type: 'text' },
+      { key: 'colour', label: 'Colour', type: 'text' }
     ]},
     inquiries: { table: 'inquiries', title: 'Inquiry', cols: [
       { key: 'parent_name', label: 'Parent name', type: 'lookup', lookupTable: 'parents', lookupValue: 'full_name', required: true, help: 'Pick from your parents list.' },
@@ -166,7 +169,7 @@ const CRUD = {
     ]},
     methodologies: { table: 'methodologies', title: 'Methodology', cols: [
       { key: 'name', label: 'Name', type: 'text', required: true },
-      { key: 'summary', label: 'When to use it', type: 'textarea' },
+      { key: 'summary', label: 'Summary', type: 'textarea' },
       { key: 'steps', label: 'Steps', type: 'textarea' }
     ]},
     curriculum: { table: 'curriculum_items', title: 'Curriculum item', cols: [
@@ -291,13 +294,17 @@ const CRUD = {
     ]},
     inbox: { table: 'messages', title: 'Message', cols: [
       { key: 'to_role', label: 'To role', type: 'select', options: ['admin','tutor','parent','student'] },
-      { key: 'subject', label: 'Subject', type: 'lookup', lookupTable: 'subjects', lookupValue: 'name', required: true, help: 'Pick a subject you teach.' },
-      { key: 'body', label: 'Body', type: 'textarea' }
+      { key: 'subject', label: 'Subject', type: 'text' },
+      { key: 'body', label: 'Body', type: 'textarea' },
+      { key: 'read', label: 'Read', type: 'checkbox' }
     ]},
     complaints: { table: 'complaints', title: 'Complaint', cols: [
       { key: 'title', label: 'Title', type: 'text', required: true },
       { key: 'body', label: 'Details', type: 'textarea' },
-      { key: 'status', label: 'Status', type: 'select', options: ['open','investigating','resolved'] }
+      { key: 'priority', label: 'Priority', type: 'select', options: ['low','normal','high','urgent'] },
+      { key: 'assignee', label: 'Assignee', type: 'text' },
+      { key: 'status', label: 'Status', type: 'select', options: ['open','investigating','resolved','closed'] },
+      { key: 'resolution', label: 'Resolution', type: 'textarea' }
     ]},
     polls: { table: 'polls', title: 'Poll', cols: [
       { key: 'title', label: 'Question', type: 'text', required: true },
@@ -328,9 +335,29 @@ const CRUD = {
     ]},
     documents: { table: 'documents', title: 'Document', cols: [
       { key: 'title', label: 'Title', type: 'text', required: true },
-      { key: 'kind', label: 'Kind', type: 'select', options: ['contract','consent','policy','safeguarding','other'] },
-      { key: 'url', label: 'Drive link', type: 'text' },
-      { key: 'status', label: 'Status', type: 'select', options: ['draft','sent','signed'] }
+      { key: 'doc_type', label: 'Type preset', type: 'select', options: ['bonafide','hall ticket','recommendation letter','transfer letter','testimonial','invitation letter','fee clearance','admission letter','appointment letter','memorandum','certificate','custom'] },
+      { key: 'custom_type', label: 'Custom type (if preset = custom)', type: 'text' },
+      { key: 'reference', label: 'Reference', type: 'text' },
+      { key: 'recipient_name', label: 'Recipient', type: 'text' },
+      { key: 'learner_id', label: 'For learner', type: 'ref', refTable: 'learners', refValue: 'full_name', refStore: 'id' },
+      { key: 'signatory_role', label: 'Signatory role', type: 'select', options: ['Principal','Proprietor','Examination Officer','Head Teacher','Lead Tutor','Custom'] },
+      { key: 'signatory_name', label: 'Signatory name', type: 'text' },
+      { key: 'body', label: 'Body (tokens [NAME] [CLASS] [TERM] [SESSION] [DATE] [REFERENCE] [SCHOOL] [SIGNATORY] [TITLE])', type: 'textarea' },
+      { key: 'status', label: 'Status', type: 'select', options: ['draft','reviewed','final','issued','revoked'] },
+      { key: 'effective_on', label: 'Effective on', type: 'date' },
+      { key: 'issued_on', label: 'Issued on', type: 'date' },
+      { key: 'version', label: 'Version', type: 'number' },
+      { key: 'url', label: 'External link', type: 'text' }
+    ]},
+    contracts: { table: 'contracts', title: 'Contract / consent', cols: [
+      { key: 'kind', label: 'Kind', type: 'select', options: ['contract','consent'], required: true },
+      { key: 'title', label: 'Title', type: 'text', required: true },
+      { key: 'learner_id', label: 'For learner', type: 'ref', refTable: 'learners', refValue: 'full_name', refStore: 'id' },
+      { key: 'parent_name', label: 'Parent / signatory', type: 'text' },
+      { key: 'body', label: 'Body', type: 'textarea', required: true },
+      { key: 'status', label: 'Status', type: 'select', options: ['draft','sent','awaiting_signature','signed','void'] },
+      { key: 'signed_on', label: 'Signed on', type: 'date' },
+      { key: 'signed_by_name', label: 'Signed by', type: 'text' }
     ]},
     events: { table: 'events', title: 'Workshop / event', cols: [
       { key: 'title', label: 'Title', type: 'text', required: true },
@@ -341,7 +368,9 @@ const CRUD = {
     gallery: { table: 'gallery', title: 'Gallery item', cols: [
       { key: 'title', label: 'Caption', type: 'text', required: true },
       { key: 'url', label: 'Image / YouTube / Drive link', type: 'text', required: true },
-      { key: 'kind', label: 'Kind', type: 'select', options: ['image','video','youtube','drive'] }
+      { key: 'kind', label: 'Kind', type: 'select', options: ['image','video','youtube','drive'] },
+      { key: 'featured', label: 'Featured', type: 'checkbox' },
+      { key: 'taken_on', label: 'Date', type: 'date' }
     ]},
     helpdesk: { table: 'helpdesk_tickets', title: 'Ticket', cols: [
       { key: 'title', label: 'Title', type: 'text', required: true },
@@ -358,7 +387,10 @@ const CRUD = {
     referrals: { table: 'referrals', title: 'Referral', cols: [
       { key: 'referrer', label: 'Referrer', type: 'text', required: true },
       { key: 'referred', label: 'Referred family', type: 'text' },
+      { key: 'referred_email', label: 'Referred email', type: 'email' },
+      { key: 'code', label: 'Referral code', type: 'text' },
       { key: 'credit', label: 'Credit amount', type: 'number' },
+      { key: 'reward_kind', label: 'Reward', type: 'select', options: ['cash','credit','session','gift','none'] },
       { key: 'status', label: 'Status', type: 'select', options: ['open','credited','expired'] }
     ]},
     surveys: { table: 'surveys', title: 'Survey', cols: [
@@ -389,9 +421,13 @@ const CRUD = {
     ]},
     leave: { table: 'leave_requests', title: 'Leave request', cols: [
       { key: 'tutor_name', label: 'Tutor', type: 'lookup', lookupTable: 'tutors', lookupValue: 'full_name', required: true, help: 'Pick from your tutors.' },
+      { key: 'tutor_id', label: 'Tutor (linked record)', type: 'ref', refTable: 'tutors', refValue: 'full_name', refStore: 'id' },
       { key: 'kind', label: 'Kind', type: 'select', options: ['sick','casual','earned','study','other'] },
       { key: 'starts_on', label: 'From', type: 'date' },
       { key: 'ends_on', label: 'To', type: 'date' },
+      { key: 'days', label: 'Days', type: 'number' },
+      { key: 'cover_tutor', label: 'Cover tutor', type: 'text' },
+      { key: 'contact_phone', label: 'Contact during leave', type: 'text' },
       { key: 'reason', label: 'Reason', type: 'textarea' },
       { key: 'status', label: 'Status', type: 'select', options: ['pending','approved','rejected'] }
     ]},
@@ -441,13 +477,20 @@ const CRUD = {
     ]},
     scholarships: { table: 'scholarships', title: 'Scholarship / discount', cols: [
       { key: 'name', label: 'Name', type: 'text', required: true },
-      { key: 'percent', label: 'Percent', type: 'number' },
+      { key: 'percent', label: 'Percent off', type: 'number' },
+      { key: 'applies_to', label: 'Applies to', type: 'text' },
+      { key: 'active', label: 'Active', type: 'checkbox' },
       { key: 'notes', label: 'Notes', type: 'textarea' }
     ]},
     products: { table: 'products', title: 'Book / material', cols: [
-      { key: 'name', label: 'Name', type: 'text', required: true },
+      { key: 'name', label: 'Title', type: 'text', required: true },
+      { key: 'author', label: 'Author', type: 'text' },
+      { key: 'subject', label: 'Subject', type: 'text' },
       { key: 'price', label: 'Price', type: 'number' },
-      { key: 'url', label: 'Product / Drive link', type: 'text' }
+      { key: 'currency', label: 'Currency', type: 'text', placeholder: '₦' },
+      { key: 'url', label: 'Link (Drive / shop)', type: 'text' },
+      { key: 'kind', label: 'Kind', type: 'select', options: ['book','material','past-paper','tool'] },
+      { key: 'available', label: 'Available', type: 'checkbox' }
     ]},
     rooms: { table: 'rooms', title: 'Room / location', cols: [
       { key: 'name', label: 'Name', type: 'text', required: true },
@@ -457,13 +500,18 @@ const CRUD = {
     ]},
     substitutions: { table: 'substitutions', title: 'Cover tutor', cols: [
       { key: 'session_id', label: 'Session', type: 'ref', refTable: 'sessions', refValue: 'starts_at', refStore: 'id' },
-      { key: 'cover_tutor', label: 'Cover tutor', type: 'lookup', lookupTable: 'tutors', lookupValue: 'full_name', required: true, help: 'Pick the tutor covering the class.' },
-      { key: 'reason', label: 'Reason', type: 'text' }
+      { key: 'cover_tutor_name', label: 'Cover tutor', type: 'text', required: true },
+      { key: 'status', label: 'Status', type: 'select', options: ['proposed','accepted','done','cancelled'] },
+      { key: 'note', label: 'Note', type: 'textarea' }
     ]},
     policies: { table: 'policies', title: 'Policy', cols: [
       { key: 'title', label: 'Title', type: 'text', required: true },
-      { key: 'body', label: 'Body', type: 'textarea' },
-      { key: 'audience', label: 'Audience', type: 'select', options: ['all','parents','tutors'] }
+      { key: 'status', label: 'Status', type: 'select', options: ['draft','approved','current','retired'] },
+      { key: 'version', label: 'Version', type: 'text', placeholder: 'v1.0' },
+      { key: 'owner', label: 'Owner', type: 'text' },
+      { key: 'effective_on', label: 'Effective from', type: 'date' },
+      { key: 'audience', label: 'Audience', type: 'select', options: ['all','staff','families','tutors','admin'] },
+      { key: 'body', label: 'Body', type: 'textarea' }
     ]},
     accommodations: { table: 'accommodations', title: 'Accommodation', cols: [
       { key: 'learner_id', label: 'Learner', type: 'ref', refTable: 'learners', refValue: 'full_name', refStore: 'id', required: true },
@@ -508,7 +556,10 @@ const CRUD = {
     ]},
     onboarding: { table: 'onboarding_items', title: 'Onboarding step', cols: [
       { key: 'engagement_id', label: 'Engagement', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id' },
+      { key: 'order_no', label: 'Order', type: 'number' },
       { key: 'title', label: 'Step', type: 'text', required: true },
+      { key: 'owner', label: 'Owner', type: 'text' },
+      { key: 'due_on', label: 'Due', type: 'date' },
       { key: 'done', label: 'Done', type: 'checkbox' }
     ]},
     diagnostics: { table: 'assessments', title: 'Diagnostic', defaultFilters: { kind: 'diagnostic' }, cols: [
@@ -527,8 +578,11 @@ const CRUD = {
       { key: 'status', label: 'Status', type: 'select', options: ['scheduled','done','cancelled'] }
     ]},
     birthdays: { table: 'learners', title: 'Birthday', cols: [
-      { key: 'full_name', label: 'Name', type: 'text' },
-      { key: 'date_of_birth', label: 'Date of birth', type: 'date' }
+      { key: 'full_name', label: 'Name', type: 'text', required: true },
+      { key: 'date_of_birth', label: 'Date of birth', type: 'date', required: true },
+      { key: 'email', label: 'Email', type: 'email' },
+      { key: 'phone', label: 'Phone', type: 'tel' },
+      { key: 'year_group', label: 'Year group', type: 'text' }
     ]},
     directory: { table: 'learners', title: 'Directory row', cols: [
       { key: 'full_name', label: 'Name', type: 'text' },
@@ -537,8 +591,9 @@ const CRUD = {
       { key: 'year_group', label: 'Year', type: 'text' }
     ]},
     idcards: { table: 'learners', title: 'Learner card', cols: [
-      { key: 'full_name', label: 'Name', type: 'text' },
+      { key: 'full_name', label: 'Name', type: 'text', required: true },
       { key: 'student_no', label: 'Student ID', type: 'lookup', lookupTable: 'learners', lookupValue: 'student_no', help: 'Pick an existing learner ID.' },
+      { key: 'year_group', label: 'Year', type: 'text' },
       { key: 'photo_url', label: 'Photo (Drive)', type: 'text' }
     ]},
     portfolio: { table: 'resources', title: 'Portfolio item', cols: [
@@ -550,7 +605,9 @@ const CRUD = {
     rubrics: { table: 'rubrics', title: 'Rubric', cols: [
       { key: 'title', label: 'Title', type: 'text', required: true },
       { key: 'criteria', label: 'Criteria (one per line)', type: 'textarea' },
-      { key: 'scale', label: 'Scale', type: 'text' }
+      { key: 'scale', label: 'Scale', type: 'text' },
+      { key: 'owner', label: 'Owner', type: 'text' },
+      { key: 'status', label: 'Status', type: 'select', options: ['draft','active','retired'] }
     ]},
     transcripts: { table: 'scoresheet', title: 'Transcript row', cols: [
       { key: 'learner_id', label: 'Learner', type: 'ref', refTable: 'learners', refValue: 'full_name', refStore: 'id' },
@@ -562,16 +619,27 @@ const CRUD = {
     compliance: { table: 'compliance_tasks', title: 'Compliance task', cols: [
       { key: 'title', label: 'Task', type: 'text', required: true },
       { key: 'due_on', label: 'Due', type: 'date' },
-      { key: 'status', label: 'Status', type: 'select', options: ['open','done'] }
+      { key: 'owner', label: 'Owner', type: 'text' },
+      { key: 'remind_on', label: 'Remind on', type: 'date' },
+      { key: 'status', label: 'Status', type: 'select', options: ['open','done'] },
+      { key: 'notes', label: 'Notes', type: 'textarea' }
     ]},
     safeguarding: { table: 'safeguarding_log', title: 'Safeguarding note', cols: [
       { key: 'learner_id', label: 'Learner', type: 'ref', refTable: 'learners', refValue: 'full_name', refStore: 'id' },
-      { key: 'body', label: 'Confidential note', type: 'textarea', required: true }
+      { key: 'severity', label: 'Severity', type: 'select', options: ['low','medium','high','urgent'] },
+      { key: 'case_status', label: 'Case status', type: 'select', options: ['open','investigating','action_taken','closed'] },
+      { key: 'occurred_on', label: 'Occurred on', type: 'date' },
+      { key: 'body', label: 'Confidential note', type: 'textarea', required: true },
+      { key: 'action_taken', label: 'Action taken', type: 'textarea' }
     ]},
     gamification: { table: 'badges', title: 'Badge / streak', cols: [
       { key: 'learner_id', label: 'Learner', type: 'ref', refTable: 'learners', refValue: 'full_name', refStore: 'id' },
       { key: 'title', label: 'Badge', type: 'text', required: true },
-      { key: 'points', label: 'Points', type: 'number' }
+      { key: 'icon', label: 'Icon', type: 'text' },
+      { key: 'kind', label: 'Kind', type: 'select', options: ['badge','streak','certificate'] },
+      { key: 'points', label: 'Points', type: 'number' },
+      { key: 'awarded_on', label: 'Awarded', type: 'date' },
+      { key: 'description', label: 'Description', type: 'textarea' }
     ]},
     parent_meetings: { table: 'parent_meetings', title: 'Parent conference', cols: [
       { key: 'parent_name', label: 'Parent', type: 'lookup', lookupTable: 'parents', lookupValue: 'full_name', required: true, help: 'Pick from your parents list.' },
@@ -582,15 +650,18 @@ const CRUD = {
     broadcasts: { table: 'announcements', title: 'Broadcast', cols: [
       { key: 'title', label: 'Title', type: 'text', required: true },
       { key: 'body', label: 'Body', type: 'textarea' },
-      { key: 'audience', label: 'Audience', type: 'select', options: ['all','parents','learners'] }
+      { key: 'audience', label: 'Audience', type: 'select', options: ['all','parents','learners','tutors'] },
+      { key: 'pinned', label: 'Pinned', type: 'checkbox' },
+      { key: 'link', label: 'Link', type: 'text' }
     ]},
     flyer: { table: 'announcements', title: 'Flyer copy', cols: [
       { key: 'title', label: 'Headline', type: 'text', required: true },
       { key: 'body', label: 'Copy', type: 'textarea' }
     ]},
     learning_styles: { table: 'learners', title: 'Learning notes', cols: [
-      { key: 'full_name', label: 'Learner', type: 'text' },
-      { key: 'learning_style', label: 'Observed notes', type: 'textarea' }
+      { key: 'full_name', label: 'Learner', type: 'text', required: true },
+      { key: 'learning_style', label: 'Observed style / notes', type: 'textarea' },
+      { key: 'accommodations', label: 'Accommodations', type: 'textarea' }
     ]}
   },
 

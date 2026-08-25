@@ -36,7 +36,7 @@ const SiteHelp = {
     'inbox': '📥 **Inbox** — Private tutor ↔ parent ↔ learner threads. Also fires the notification bell.',
     'messages': '💬 **Messaging** — Free `wa.me` / `mailto:` / `sms:`. No Twilio bill.',
     'notifications': '🔔 **Notifications** — In-app bell + browser push after PWA install + email/WA/SMS compose. Realtime when Supabase is connected.',
-    'voting': '🗳️ **Voting & polls** — Anonymous or named. Live tally. Multi-channel notify when a poll opens. Free, no AI.',
+    'voting': '🗳️ **Voting** — Anonymous or named. Live tally. Multi-channel notify when a poll opens. Free, no AI.',
     'surveys': '📋 **Surveys** — After-trial and termly parent pulse. Feeds retention insight.',
     'library': '📖 **Digital library** — Catalogued reading / past-paper **links**. Optional comprehension score.',
     'lms': '🎓 **Mini LMS** — Courses and lessons scoped to an engagement. Completion ticks. Links only.',
@@ -98,12 +98,32 @@ const SiteHelp = {
       return h;
     } catch (_) { return null; }
   },
+  /* V27 — the popup must pick its OWN colours from the theme actually in
+     force. The app writes `document.body.dataset.theme` (see app.js /
+     theme-engine.js); inline styles beat stylesheets, so the surface sets
+     both background AND text inline, matched to the current theme. This is
+     the definitive fix for "the Page Help text is invisible until I select
+     it" — that symptom is text the same colour as its background, which
+     happens exactly when a surface sets one and not the other. */
+  _themeDark() {
+    const b = document.body;
+    const t = (b.dataset && (b.dataset.theme || b.dataset.mode || '')) ||
+              (b.className || '');
+    return /dark/.test(String(t));
+  },
   showHelp() {
     let desc = this.descriptions[this.currentPage];
     const rich = this.fromGuide(this.currentPage);
     if (!desc && rich) desc = rich;
     else if (desc && rich) desc = desc + '<hr style="margin:14px 0;border:none;border-top:1px solid #e2e8f0">' + rich;
     if (!desc) desc = this.descriptions['default'];
+    const dark = this._themeDark();
+    const bg = dark ? '#111827' : '#ffffff';
+    const ink = dark ? '#f1f5f9' : '#0f172a';
+    const mut = dark ? '#94a3b8' : '#475569';
+    const line = dark ? '#334155' : '#e2e8f0';
+    const link = dark ? '#a5b4fc' : '#0506ae';
+    const chip = dark ? '#1e293b' : '#e2e8f0';
     try {
       if (window.TC && TC.ASSISTANT && TC.ASSISTANT.formatPage) {
         const a = TC.ASSISTANT.formatPage(this.currentPage);
@@ -131,18 +151,18 @@ const SiteHelp = {
     modal.className = 'tc-popup-backdrop';
     modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.62);z-index:10000;' +
       'display:flex;align-items:center;justify-content:center;padding:20px';
-    modal.innerHTML = '<div class="tc-popup" style="background:#ffffff;color:#0f172a;border-radius:16px;' +
+    modal.innerHTML = '<div class="tc-popup" style="background:' + bg + ';color:' + ink + ';border-radius:16px;' +
         'max-width:640px;width:100%;max-height:80vh;overflow-y:auto;padding:26px;position:relative;' +
-        'box-shadow:0 24px 60px rgba(15,23,42,.35)">' +
+        'box-shadow:0 24px 60px rgba(15,23,42,.35);border:1px solid ' + line + '">' +
       '<button type="button" data-help-close style="position:absolute;top:12px;right:12px;' +
-        'background:#e2e8f0;border:none;border-radius:50%;width:34px;height:34px;font-size:20px;' +
-        'cursor:pointer;color:#0f172a;line-height:1" aria-label="Close">×</button>' +
-      '<div style="font-size:1.05rem;line-height:1.7;color:#0f172a">' +
+        'background:' + chip + ';border:none;border-radius:50%;width:34px;height:34px;font-size:20px;' +
+        'cursor:pointer;color:' + ink + ';line-height:1" aria-label="Close">×</button>' +
+      '<div style="font-size:1.05rem;line-height:1.7;color:' + ink + '">' +
         desc.replace(/\n/g, '<br>').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') + '</div>' +
-      '<div style="margin-top:20px;padding-top:16px;border-top:1px solid #e2e8f0;font-size:.85rem;' +
-        'color:#475569">Need more? Open the <a href="feature-guide.html" style="color:#0506ae">Feature Guide</a> ' +
+      '<div style="margin-top:20px;padding-top:16px;border-top:1px solid ' + line + ';font-size:.85rem;' +
+        'color:' + mut + '">Need more? Open the <a href="feature-guide.html" style="color:' + link + '">Feature Guide</a> ' +
         'or WhatsApp HMG on <a href="https://wa.me/2348100866322" target="_blank" rel="noopener" ' +
-        'style="color:#0506ae">+234 810 086 6322</a>.</div></div>';
+        'style="color:' + link + '">+234 810 086 6322</a>.</div></div>';
     modal.querySelector('[data-help-close]').addEventListener('click', () => modal.remove());
     modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
     document.body.appendChild(modal);

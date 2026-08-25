@@ -749,7 +749,7 @@
       {
         "id": "voting",
         "href": "voting.html",
-        "label": "Voting & polls",
+        "label": "Voting",
         "icon": "🗳️",
         "aud": "user"
       },
@@ -794,6 +794,20 @@
         "label": "Reviews & testimonials",
         "icon": "⭐",
         "aud": "staff"
+      },
+      {
+        "id": "blog",
+        "href": "blog.html",
+        "label": "Blog",
+        "icon": "📝",
+        "aud": "public"
+      },
+      {
+        "id": "blog_manage",
+        "href": "blog-manage.html",
+        "label": "Blog manager",
+        "icon": "✍️",
+        "aud": "staff"
       }
     ]
   },
@@ -807,6 +821,13 @@
         "label": "Request a place",
         "icon": "✉️",
         "aud": "public"
+      },
+      {
+        "id": "class_links",
+        "href": "class-links.html",
+        "label": "Class registration links",
+        "icon": "🔗",
+        "aud": "staff"
       },
       {
         "id": "application_links",
@@ -859,8 +880,15 @@
       {
         "id": "documents",
         "href": "documents.html",
-        "label": "Contracts & consent",
+        "label": "Documents",
         "icon": "📃",
+        "aud": "staff"
+      },
+      {
+        "id": "contracts",
+        "href": "contracts.html",
+        "label": "Contracts & consent",
+        "icon": "✍️",
         "aud": "staff"
       },
       {

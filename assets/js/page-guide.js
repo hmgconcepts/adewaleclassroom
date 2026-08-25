@@ -172,14 +172,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Found under <b>Records & compliance</b> in the menu, next to documents, policies, compliance, safeguarding. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "connects": "Found under <b>Records & compliance</b> in the menu, next to documents, contracts, policies, compliance. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "documents",
+   "contracts",
    "policies",
    "compliance",
    "safeguarding",
-   "security-centre",
-   "approvals"
+   "security-centre"
   ],
   "actions": [],
   "tabs": []
@@ -436,14 +436,14 @@
    "Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.",
    "Watch the funnel counts at the top — they show you exactly where prospects go cold."
   ],
-  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to apply, inquiries, trials, waitlist. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to apply, class-links, inquiries, trials. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "apply",
+   "class-links",
    "inquiries",
    "trials",
    "waitlist",
-   "onboarding",
-   "referrals"
+   "onboarding"
   ],
   "actions": [
    "Create link"
@@ -496,14 +496,14 @@
    "Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.",
    "Watch the funnel counts at the top — they show you exactly where prospects go cold."
   ],
-  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to application-links, inquiries, trials, waitlist. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to class-links, application-links, inquiries, trials. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
+   "class-links",
    "application-links",
    "inquiries",
    "trials",
    "waitlist",
-   "onboarding",
-   "referrals"
+   "onboarding"
   ],
   "actions": [
    "Submit application"
@@ -564,14 +564,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Found under <b>Records & compliance</b> in the menu, next to documents, policies, compliance, safeguarding. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "connects": "Found under <b>Records & compliance</b> in the menu, next to documents, contracts, policies, compliance. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "documents",
+   "contracts",
    "policies",
    "compliance",
    "safeguarding",
-   "security-centre",
-   "activity-log"
+   "security-centre"
   ],
   "actions": [
    "Reinstate",
@@ -895,6 +895,170 @@
   "actions": [],
   "tabs": []
  },
+ "blog-manage": {
+  "page": "blog-manage",
+  "file": "blog-manage.html",
+  "title": "Blog manager",
+  "group": "Comms",
+  "access": "staff",
+  "archetype": "list",
+  "sections": [
+   {
+    "name": "Page header",
+    "what": "The title, a one-line purpose, and the ? Page Help button that opens this same explanation inside the app."
+   },
+   {
+    "name": "Toolbar / filters",
+    "what": "Search box, status and date filters, and the Add / New button. Filters narrow the list below without reloading the page."
+   },
+   {
+    "name": "Records table",
+    "what": "Every record you are allowed to see. Parents and learners are filtered to their own rows by the database itself, not by hiding buttons."
+   },
+   {
+    "name": "Row actions",
+    "what": "Open, edit, duplicate or delete a record. Deleting asks for confirmation and is written to the activity log."
+   },
+   {
+    "name": "Record form (modal)",
+    "what": "Opens over the list. Required fields are marked; everything else can be completed later."
+   },
+   {
+    "name": "Export",
+    "what": "Download the current view as CSV. Your data is always portable — nothing is locked in."
+   }
+  ],
+  "roleViews": {
+   "owner": "Full access.",
+   "tutor": "Full access for their own posts; an admin manages everything.",
+   "parent": "No access — the editor is staff-side.",
+   "learner": "No access."
+  },
+  "tasks": [],
+  "faqs": [],
+  "purpose": "The staff editor for the public blog: write, edit, save as draft, publish, unpublish, archive and delete posts, and manage the topic categories. Publishing gives a post its permanent public link instantly; drafts are visible only to staff.",
+  "detail": "The staff editor for the public blog: write, edit, save as draft, publish, unpublish, archive and delete posts, and manage the topic categories. Publishing gives a post its permanent public link instantly; drafts are visible only to staff. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "audience": "Tutors and administrators who write for the public. A tutor manages their own posts; an admin manages everything.",
+  "why": "Published posts are public, indexed web pages carrying the studio's name, so drafts, review and a deliberate publish act exist before anything goes live.",
+  "how": [
+   "Press <b>＋ New post</b>, fill the title, slug (blank = auto), category, status, cover link, tags, excerpt and body.",
+   "Save as a draft first, then publish when ready — publishing creates the permanent link.",
+   "Use <b>Publish now / Unpublish</b> beside an existing post, or delete it (with confirmation).",
+   "Add and remove topic categories from the categories bar."
+  ],
+  "connects": "Found under <b>Communication</b> in the menu, next to blog, blog-post, profile. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "related": [
+   "blog",
+   "blog-post",
+   "profile"
+  ],
+  "actions": [],
+  "tabs": []
+ },
+ "blog-post": {
+  "page": "blog-post",
+  "file": "blog-post.html",
+  "title": "Blog post",
+  "group": "Platform",
+  "access": "public",
+  "archetype": "public",
+  "sections": [
+   {
+    "name": "Hero",
+    "what": "The headline promise and the primary call to action."
+   },
+   {
+    "name": "Proof",
+    "what": "Statistics and feature cards that answer \"why should I trust this studio?\"."
+   },
+   {
+    "name": "Call to action",
+    "what": "Sign in, or request a place."
+   },
+   {
+    "name": "Footer",
+    "what": "Contact details, social links and the HMG Concepts ecosystem links, which also help search engines connect the sites."
+   }
+  ],
+  "roleViews": {
+   "owner": "Full access — it is a public page.",
+   "tutor": "Full access — it is a public page.",
+   "parent": "Full access — it is a public page.",
+   "learner": "Full access — it is a public page."
+  },
+  "tasks": [],
+  "faqs": [],
+  "purpose": "A single published blog post, opened from its permanent shareable link (blog-post.html?slug=…). Shows the title, author, publication date, cover image (a Drive or web link, never an upload), the full body rendered with light formatting, the topic tags and the read count, with calls to action back to the blog and to the application form.",
+  "detail": "A single published blog post, opened from its permanent shareable link (blog-post.html?slug=…). Shows the title, author, publication date, cover image (a Drive or web link, never an upload), the full body rendered with light formatting, the topic tags and the read count, with calls to action back to the blog and to the application form. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
+  "audience": "Anyone with the link — the public, search engines, and families the studio shared the post with on WhatsApp, X or Instagram.",
+  "why": "Each post is a permanently addressable page, so a shared link always opens the right article and search engines can rank it.",
+  "how": [
+   "Open the link you were given, or find the post from the blog listing.",
+   "Read the article; follow the tags to related topics.",
+   "Use the call-to-action buttons to apply or browse more posts."
+  ],
+  "connects": "Found under <b>Platform</b> in the menu, next to blog, apply, about. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "related": [
+   "blog",
+   "apply",
+   "about"
+  ],
+  "actions": [],
+  "tabs": []
+ },
+ "blog": {
+  "page": "blog",
+  "file": "blog.html",
+  "title": "Blog",
+  "group": "Comms",
+  "access": "public",
+  "archetype": "public",
+  "sections": [
+   {
+    "name": "Hero",
+    "what": "The headline promise and the primary call to action."
+   },
+   {
+    "name": "Proof",
+    "what": "Statistics and feature cards that answer \"why should I trust this studio?\"."
+   },
+   {
+    "name": "Call to action",
+    "what": "Sign in, or request a place."
+   },
+   {
+    "name": "Footer",
+    "what": "Contact details, social links and the HMG Concepts ecosystem links, which also help search engines connect the sites."
+   }
+  ],
+  "roleViews": {
+   "owner": "Full access — it is a public page.",
+   "tutor": "Full access — it is a public page.",
+   "parent": "Full access — it is a public page.",
+   "learner": "Full access — it is a public page."
+  },
+  "tasks": [],
+  "faqs": [],
+  "purpose": "The studio's public blog: exam tips, subject guides, studio news and success stories. Every post has its own permanent shareable link, so a WhatsApp message or a social bio can point straight at a specific article.",
+  "detail": "The studio's public blog: exam tips, subject guides, studio news and success stories. Every post has its own permanent shareable link, so a WhatsApp message or a social bio can point straight at a specific article. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
+  "audience": "Everyone on the internet — parents researching a tutor, learners revising, anyone who finds the studio through search.",
+  "why": "A blog is how an independent tutor becomes findable: each post is a page search engines rank, and each links back to the application form.",
+  "how": [
+   "Search the posts by keyword, or filter by topic category.",
+   "Open any card to read the full post on its own page.",
+   "Follow the call to action to request a place when you are ready."
+  ],
+  "connects": "Found under <b>Communication</b> in the menu, next to blog-manage, about, apply, feature-guide. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "related": [
+   "blog-manage",
+   "about",
+   "apply",
+   "feature-guide",
+   "hmg-ecosystem"
+  ],
+  "actions": [],
+  "tabs": []
+ },
  "bookings": {
   "page": "bookings",
   "file": "bookings.html",
@@ -1091,8 +1255,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "cbt-results",
-   "change-password"
+   "blog-post",
+   "cbt-results"
   ],
   "actions": [],
   "tabs": []
@@ -1683,6 +1847,118 @@
   ],
   "tabs": []
  },
+ "class-links": {
+  "page": "class-links",
+  "file": "class-links.html",
+  "title": "Class registration links",
+  "group": "Growth",
+  "access": "staff",
+  "archetype": "list",
+  "sections": [
+   {
+    "name": "Page header",
+    "what": "The title, a one-line purpose, and the ? Page Help button that opens this same explanation inside the app."
+   },
+   {
+    "name": "Toolbar / filters",
+    "what": "Search box, status and date filters, and the Add / New button. Filters narrow the list below without reloading the page."
+   },
+   {
+    "name": "Records table",
+    "what": "Every record you are allowed to see. Parents and learners are filtered to their own rows by the database itself, not by hiding buttons."
+   },
+   {
+    "name": "Row actions",
+    "what": "Open, edit, duplicate or delete a record. Deleting asks for confirmation and is written to the activity log."
+   },
+   {
+    "name": "Record form (modal)",
+    "what": "Opens over the list. Required fields are marked; everything else can be completed later."
+   },
+   {
+    "name": "Export",
+    "what": "Download the current view as CSV. Your data is always portable — nothing is locked in."
+   }
+  ],
+  "roleViews": {
+   "owner": "Full access to every link and registration.",
+   "tutor": "Full access to the links they created.",
+   "parent": "No access — parents use the public registration page.",
+   "learner": "No access."
+  },
+  "tasks": [],
+  "faqs": [],
+  "purpose": "Create one short, shareable registration link per class — paid or free — and post it on social media. Each link opens a public registration page, tracks its own usage, and captures every registration with a funnel status.",
+  "detail": "Create one short, shareable registration link per class — paid or free — and post it on social media. Each link opens a public registration page, tracks its own usage, and captures every registration with a funnel status. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "audience": "The owner, admin and tutors who advertise classes on social media.",
+  "why": "A parent who reads about your class on WhatsApp should not have to hunt for a form — one tap on a link should open everything and capture the registration.",
+  "how": [
+   "Press ＋ New class link and fill the class details.",
+   "Save — the share card appears with pre-filled WhatsApp / Facebook / X / LinkedIn / Telegram / Email buttons, a copy button and a QR code.",
+   "Post the link on your handles, then watch usage and follow up registrations."
+  ],
+  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to free-classes, application-links, inquiries, public-book. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "related": [
+   "free-classes",
+   "application-links",
+   "inquiries",
+   "public-book",
+   "class-register"
+  ],
+  "actions": [],
+  "tabs": []
+ },
+ "class-register": {
+  "page": "class-register",
+  "file": "class-register.html",
+  "title": "Register for a class • ADEWALE CLASSROOM",
+  "group": "Platform",
+  "access": "public",
+  "archetype": "public",
+  "sections": [
+   {
+    "name": "Hero",
+    "what": "The headline promise and the primary call to action."
+   },
+   {
+    "name": "Proof",
+    "what": "Statistics and feature cards that answer \"why should I trust this studio?\"."
+   },
+   {
+    "name": "Call to action",
+    "what": "Sign in, or request a place."
+   },
+   {
+    "name": "Footer",
+    "what": "Contact details, social links and the HMG Concepts ecosystem links, which also help search engines connect the sites."
+   }
+  ],
+  "roleViews": {
+   "owner": "Full access — it is a public page.",
+   "tutor": "Full access — it is a public page.",
+   "parent": "Full access — it is a public page.",
+   "learner": "Full access — it is a public page."
+  },
+  "tasks": [],
+  "faqs": [],
+  "purpose": "The public registration page a share link opens. Shows the class card — what it is, what it costs (or that it is free), when it runs and where — then a short form that issues a registration number instantly.",
+  "detail": "The public registration page a share link opens. Shows the class card — what it is, what it costs (or that it is free), when it runs and where — then a short form that issues a registration number instantly. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.",
+  "audience": "Parents and students with the link. No account and no sign-in required.",
+  "why": "This is the conversion page behind every social media post: the fewer steps between reading about a class and registering, the more seats fill.",
+  "how": [
+   "Open the link you were given, read the class card, and fill in the short form.",
+   "Tick the guardian consent box when registering a child.",
+   "Press Register — you get a registration number and the joining links instantly."
+  ],
+  "connects": "Found under <b>Platform</b> in the menu, next to class-links, apply, free-classes. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "related": [
+   "class-links",
+   "apply",
+   "free-classes"
+  ],
+  "actions": [],
+  "tabs": []
+ },
  "classwork": {
   "page": "classwork",
   "file": "classwork.html",
@@ -1862,14 +2138,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Found under <b>Records & compliance</b> in the menu, next to documents, policies, safeguarding, security-centre. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "connects": "Found under <b>Records & compliance</b> in the menu, next to documents, contracts, policies, safeguarding. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "documents",
+   "contracts",
    "policies",
    "safeguarding",
    "security-centre",
-   "approvals",
-   "activity-log"
+   "approvals"
   ],
   "actions": [],
   "tabs": []
@@ -1928,6 +2204,69 @@
   "actions": [
    "Send the message"
   ],
+  "tabs": []
+ },
+ "contracts": {
+  "page": "contracts",
+  "file": "contracts.html",
+  "title": "Contracts &amp; consent",
+  "group": "Governance",
+  "access": "staff",
+  "archetype": "list",
+  "sections": [
+   {
+    "name": "Page header",
+    "what": "The title, a one-line purpose, and the ? Page Help button that opens this same explanation inside the app."
+   },
+   {
+    "name": "Toolbar / filters",
+    "what": "Search box, status and date filters, and the Add / New button. Filters narrow the list below without reloading the page."
+   },
+   {
+    "name": "Records table",
+    "what": "Every record you are allowed to see. Parents and learners are filtered to their own rows by the database itself, not by hiding buttons."
+   },
+   {
+    "name": "Row actions",
+    "what": "Open, edit, duplicate or delete a record. Deleting asks for confirmation and is written to the activity log."
+   },
+   {
+    "name": "Record form (modal)",
+    "what": "Opens over the list. Required fields are marked; everything else can be completed later."
+   },
+   {
+    "name": "Export",
+    "what": "Download the current view as CSV. Your data is always portable — nothing is locked in."
+   }
+  ],
+  "roleViews": {
+   "owner": "Full access.",
+   "tutor": "Full access for the learners and groups assigned to them.",
+   "parent": "Read-only, and only their own signed copies.",
+   "learner": "No access."
+  },
+  "tasks": [],
+  "faqs": [],
+  "purpose": "The register of every agreement and consent record between the studio and a family: service agreements, safeguarding consent, recording / photo consent and custom consents, with a draft → sent → awaiting signature → signed → void lifecycle. A signed record is stamped with who signed and when and is never deleted; the family can read its own signed copies.",
+  "detail": "The register of every agreement and consent record between the studio and a family: service agreements, safeguarding consent, recording / photo consent and custom consents, with a draft → sent → awaiting signature → signed → void lifecycle. A signed record is stamped with who signed and when and is never deleted; the family can read its own signed copies. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.",
+  "audience": "The owner and admin draft and sign; a tutor may prepare a draft for their own learners.",
+  "why": "Consent is a safeguarding and data-protection record. If it is not written down, dated and kept, it did not happen.",
+  "how": [
+   "Choose <b>contract</b> or <b>consent</b>, give it a title and paste the body.",
+   "Attach it to a learner so the family link works.",
+   "Move it to <b>sent</b>, then <b>awaiting signature</b> when the family receives it.",
+   "When the family signs, set <b>signed</b> with the signatory name and date — it becomes part of the permanent register.",
+   "Void a superseded record rather than deleting it."
+  ],
+  "connects": "Found under <b>Records & compliance</b> in the menu, next to documents, policies, compliance, safeguarding. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "related": [
+   "documents",
+   "policies",
+   "compliance",
+   "safeguarding",
+   "security-centre"
+  ],
+  "actions": [],
   "tabs": []
  },
  "curriculum": {
@@ -2239,7 +2578,7 @@
  "documents": {
   "page": "documents",
   "file": "documents.html",
-  "title": "Contracts &amp; consent",
+  "title": "Documents",
   "group": "Ops",
   "access": "staff",
   "archetype": "list",
@@ -2287,14 +2626,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Found under <b>Records & compliance</b> in the menu, next to policies, compliance, safeguarding, security-centre. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "connects": "Found under <b>Records & compliance</b> in the menu, next to contracts, policies, compliance, safeguarding. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
+   "contracts",
    "policies",
    "compliance",
    "safeguarding",
    "security-centre",
-   "approvals",
-   "activity-log"
+   "approvals"
   ],
   "actions": [],
   "tabs": []
@@ -3088,8 +3427,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "cbt-results",
-   "change-password"
+   "blog-post",
+   "cbt-results"
   ],
   "actions": [],
   "tabs": []
@@ -3936,8 +4275,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "cbt-results",
-   "change-password"
+   "blog-post",
+   "cbt-results"
   ],
   "actions": [],
   "tabs": []
@@ -3993,14 +4332,14 @@
    "Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.",
    "Watch the funnel counts at the top — they show you exactly where prospects go cold."
   ],
-  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to apply, application-links, trials, waitlist. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to apply, class-links, application-links, trials. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "apply",
+   "class-links",
    "application-links",
    "trials",
    "waitlist",
-   "onboarding",
-   "referrals"
+   "onboarding"
   ],
   "actions": [],
   "tabs": []
@@ -4438,14 +4777,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Found under <b>Records & compliance</b> in the menu, next to documents, policies, compliance, safeguarding. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "connects": "Found under <b>Records & compliance</b> in the menu, next to documents, contracts, policies, compliance. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "documents",
+   "contracts",
    "policies",
    "compliance",
    "safeguarding",
-   "security-centre",
-   "approvals"
+   "security-centre"
   ],
   "actions": [],
   "tabs": []
@@ -4688,7 +5027,7 @@
  "login": {
   "page": "login",
   "file": "login.html",
-  "title": "Studio sign in",
+  "title": "Welcome back",
   "group": "Platform",
   "access": "public",
   "archetype": "public",
@@ -4737,8 +5076,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "cbt-results",
-   "change-password"
+   "blog-post",
+   "cbt-results"
   ],
   "actions": [
    "Request access",
@@ -5302,8 +5641,8 @@
    "activity-log",
    "admin-data",
    "approvals",
-   "cbt-results",
-   "change-password"
+   "blog-post",
+   "cbt-results"
   ],
   "actions": [],
   "tabs": []
@@ -5359,14 +5698,14 @@
    "Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.",
    "Watch the funnel counts at the top — they show you exactly where prospects go cold."
   ],
-  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to apply, application-links, inquiries, trials. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to apply, class-links, application-links, inquiries. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "apply",
+   "class-links",
    "application-links",
    "inquiries",
    "trials",
-   "waitlist",
-   "referrals"
+   "waitlist"
   ],
   "actions": [],
   "tabs": []
@@ -5937,14 +6276,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Found under <b>Records & compliance</b> in the menu, next to documents, compliance, safeguarding, security-centre. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "connects": "Found under <b>Records & compliance</b> in the menu, next to documents, contracts, compliance, safeguarding. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "documents",
+   "contracts",
    "compliance",
    "safeguarding",
    "security-centre",
-   "approvals",
-   "activity-log"
+   "approvals"
   ],
   "actions": [],
   "tabs": []
@@ -6576,14 +6915,14 @@
    "Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.",
    "Watch the funnel counts at the top — they show you exactly where prospects go cold."
   ],
-  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to apply, application-links, inquiries, trials. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to apply, class-links, application-links, inquiries. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "apply",
+   "class-links",
    "application-links",
    "inquiries",
    "trials",
-   "waitlist",
-   "onboarding"
+   "waitlist"
   ],
   "actions": [],
   "tabs": []
@@ -6955,14 +7294,14 @@
    "Save, then reload any normal page to confirm the change took effect.",
    "If something looks wrong afterwards, the activity log records who changed what and when."
   ],
-  "connects": "Found under <b>Records & compliance</b> in the menu, next to documents, policies, compliance, security-centre. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "connects": "Found under <b>Records & compliance</b> in the menu, next to documents, contracts, policies, compliance. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "documents",
+   "contracts",
    "policies",
    "compliance",
    "security-centre",
-   "approvals",
-   "activity-log"
+   "approvals"
   ],
   "actions": [],
   "tabs": []
@@ -7160,11 +7499,11 @@
   "connects": "Reads the same audit trail shown in activity-log.html. Works with safeguarding.html, compliance.html and policies.html. Licence state is managed in license.html.",
   "related": [
    "documents",
+   "contracts",
    "policies",
    "compliance",
    "safeguarding",
-   "approvals",
-   "activity-log"
+   "approvals"
   ],
   "actions": [
    "Download anonymised data",
@@ -8158,14 +8497,14 @@
    "Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.",
    "Watch the funnel counts at the top — they show you exactly where prospects go cold."
   ],
-  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to apply, application-links, inquiries, waitlist. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to apply, class-links, application-links, inquiries. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "apply",
+   "class-links",
    "application-links",
    "inquiries",
    "waitlist",
-   "onboarding",
-   "referrals"
+   "onboarding"
   ],
   "actions": [],
   "tabs": []
@@ -8296,7 +8635,7 @@
  "voting": {
   "page": "voting",
   "file": "voting.html",
-  "title": "Voting &amp; polls",
+  "title": "Voting",
   "group": "Comms",
   "access": "family",
   "archetype": "list",
@@ -8411,14 +8750,14 @@
    "Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.",
    "Watch the funnel counts at the top — they show you exactly where prospects go cold."
   ],
-  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to apply, application-links, inquiries, trials. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
+  "connects": "Found under <b>Enrolment & growth</b> in the menu, next to apply, class-links, application-links, inquiries. Every record is scoped to the engagement it belongs to, so one learner's data never appears inside another's, and a tutor sees only the learners assigned to them.",
   "related": [
    "apply",
+   "class-links",
    "application-links",
    "inquiries",
    "trials",
-   "onboarding",
-   "referrals"
+   "onboarding"
   ],
   "actions": [],
   "tabs": []
