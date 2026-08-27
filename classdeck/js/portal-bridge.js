@@ -1,10 +1,11 @@
-/* portal-bridge.js — ADEWALE CLASSROOM DECK ↔ ADEWALE CLASSROOM portal
-   Teachers who already signed into the portal do not log in again.
-   We read the Supabase session from the parent origin's localStorage
-   (same site) and optional PRACTICE brand from ../assets/js/config.js.
+/* portal-bridge.js — ADEWALE CLASSROOM DECK ↔ portal (V36)
+   - No second login / trial
+   - Top chip sits BESIDE brand, never covers toolbar buttons
+   - Applies client PRACTICE brand (name, colours, logo) into the deck
 */
-(function (w) {
+(function (w, d) {
   'use strict';
+
   function hasSbSession() {
     try {
       for (var i = 0; i < localStorage.length; i++) {
@@ -22,58 +23,140 @@
     } catch (e) {}
     return false;
   }
-  function isTeachPage() {
-    var p = (location.pathname || '').toLowerCase();
-    return /teach\.html|classroom\.html|stream\.html|admin\.html|generate\.html/.test(p);
+
+  function readPractice() {
+    // 1) live PRACTICE from parent portal config if same origin already loaded
+    if (w.PRACTICE && w.PRACTICE.name) return w.PRACTICE;
+    // 2) stamped deck brand
+    if (w.CLASSDECK && w.CLASSDECK.BRAND && w.CLASSDECK.BRAND.studioName)
+      return {
+        name: w.CLASSDECK.BRAND.studioName,
+        shortName: w.CLASSDECK.BRAND.shortName,
+        theme: { primary: w.CLASSDECK.BRAND.primary, accent: w.CLASSDECK.BRAND.accent },
+        logoUrl: w.CLASSDECK.BRAND.logoUrl,
+        email: w.CLASSDECK.BRAND.email
+      };
+    // 3) PRACTICE.json next to deck or parent
+    return null;
   }
-  function isJoinPage() {
-    return /join\.html/.test((location.pathname || '').toLowerCase());
-  }
-  function brandPaint() {
-    var b = (w.CLASSDECK && w.CLASSDECK.BRAND) || {};
+
+  function applyTheme(p) {
+    if (!p) return;
+    var th = p.theme || {};
+    var primary = th.primary || (w.CLASSDECK && w.CLASSDECK.BRAND && w.CLASSDECK.BRAND.primary) || '#0506ae';
+    var accent = th.accent || (w.CLASSDECK && w.CLASSDECK.BRAND && w.CLASSDECK.BRAND.accent) || '#964eec';
     try {
-      document.title = (document.title || '')
-        .replace(/ADEWALE CLASSROOM DECK/ig, b.productName || 'ADEWALE CLASSROOM DECK')
-        .replace(/ClassDeck|Class Deck/ig, b.shortName || 'Classroom Deck')
-        .replace(/ADEWALE CLASSROOM/ig, b.studioName || 'ADEWALE CLASSROOM');
+      var r = d.documentElement.style;
+      r.setProperty('--brand', primary);
+      r.setProperty('--brand-2', accent);
+      r.setProperty('--primary', primary);
+      r.setProperty('--accent', accent);
+      r.setProperty('--sc-primary', primary);
+      r.setProperty('--sc-accent', accent);
     } catch (e) {}
-    // Replace visible brand strings once DOM ready
-    function rewrite(root) {
-      var walk = document.createTreeWalker(root || document.body, NodeFilter.SHOW_TEXT, null);
-      var node, nodes = [];
-      while ((node = walk.nextNode())) nodes.push(node);
-      nodes.forEach(function (n) {
-        if (!n.nodeValue || !n.nodeValue.trim()) return;
-        var v = n.nodeValue;
-        var nv = v
-          .replace(/ADEWALE CLASSROOM DECK/g, b.productName || 'ADEWALE CLASSROOM DECK')
-          .replace(/ADEWALE CLASSROOM DECK/g, b.productName || 'ADEWALE CLASSROOM DECK')
-          .replace(/ADEWALE CLASSROOM/g, b.studioName || 'ADEWALE CLASSROOM')
-          .replace(/ClassDeck/g, b.shortName || 'Classroom Deck')
-          .replace(/CLASS DECK/g, (b.shortName || 'CLASSROOM DECK').toUpperCase());
-        if (nv !== v) n.nodeValue = nv;
+    // Update brand text in topbar without touching buttons
+    try {
+      var brandSpan = d.querySelector('.topbar .brand span');
+      var name = p.name || (w.CLASSDECK && w.CLASSDECK.BRAND && w.CLASSDECK.BRAND.productName) || 'ADEWALE CLASSROOM DECK';
+      if (brandSpan) brandSpan.textContent = name;
+      var brandImg = d.querySelector('.topbar .brand img');
+      var logo = p.logoUrl || (w.CLASSDECK && w.CLASSDECK.BRAND && w.CLASSDECK.BRAND.logoUrl);
+      if (brandImg && logo) {
+        // Prefer portal logo if path resolves
+        var tryLogo = logo;
+        if (logo.indexOf('assets/') === 0) tryLogo = '../' + logo;
+        brandImg.src = tryLogo;
+        brandImg.onerror = function () { this.onerror = null; this.src = 'assets/icon-96.png'; };
+      }
+      d.title = name + ' · Live teach';
+    } catch (e) {}
+  }
+
+  function installChip() {
+    if (d.getElementById('acd-portal-chip')) return;
+    var b = (w.CLASSDECK && w.CLASSDECK.BRAND) || {};
+    var p = readPractice() || {};
+    var studio = p.name || b.studioName || 'ADEWALE CLASSROOM';
+    var chip = d.createElement('div');
+    chip.id = 'acd-portal-chip';
+    // CRITICAL: do not cover the top toolbar. Place as a slim bar ABOVE the
+    // studio by growing --toolbar offset, with pointer-events only on links.
+    chip.innerHTML =
+      '<a href="../class-deck.html" style="color:#fff;text-decoration:none;font-weight:700">← ' + studio + '</a>' +
+      '<span style="opacity:.85">· Classroom Deck</span>' +
+      (hasSbSession() ? '<span style="color:#bbf7d0;margin-left:6px">· signed in</span>' : '') +
+      '<span style="flex:1"></span>' +
+      '<a href="../sessions.html" style="color:#e0e7ff;text-decoration:none;font-size:11px">Sessions</a>';
+    chip.setAttribute('role', 'navigation');
+    chip.style.cssText = [
+      'position:fixed', 'left:0', 'right:0', 'top:0',
+      'height:28px', 'z-index:5000',
+      'display:flex', 'align-items:center', 'gap:8px', 'flex-wrap:nowrap',
+      'padding:0 10px',
+      'background:linear-gradient(135deg,#0506ae,#964eec)',
+      'color:#fff', 'font:600 12px/28px system-ui,sans-serif',
+      'box-shadow:0 2px 10px rgba(5,6,174,.3)',
+      'pointer-events:auto'
+    ].join(';');
+    d.body.appendChild(chip);
+    // Push the whole studio down so topbar buttons stay clickable
+    try {
+      d.documentElement.style.setProperty('--acd-chip-h', '28px');
+      var st = d.getElementById('acd-chip-style');
+      if (!st) {
+        st = d.createElement('style');
+        st.id = 'acd-chip-style';
+        st.textContent = [
+          'body{padding-top:28px !important; box-sizing:border-box;}',
+          '.studio{height:calc(100dvh - 28px) !important;}',
+          /* ensure topbar stays above workspace, below chip only */
+          '.topbar{position:relative;z-index:20;}',
+          '.topbar .btn{pointer-events:auto !important; position:relative; z-index:21;}',
+          '#authGate,.auth-gate{display:none !important; pointer-events:none !important;}'
+        ].join('\\n');
+        d.head.appendChild(st);
+      }
+    } catch (e) {}
+  }
+
+  function killAuthGate() {
+    try {
+      w.HMG_AUTH_OK = true;
+      w.ACD_AUTH_OK = true;
+      var gate = d.getElementById('authGate');
+      if (gate) { gate.style.display = 'none'; gate.setAttribute('hidden', 'true'); try { gate.remove(); } catch (e) {} }
+      d.querySelectorAll('.auth-gate').forEach(function (el) {
+        el.style.display = 'none'; el.style.pointerEvents = 'none';
       });
+    } catch (e) {}
+  }
+
+  function boot() {
+    killAuthGate();
+    applyTheme(readPractice());
+    installChip();
+    // Re-apply after late scripts
+    setTimeout(function () { killAuthGate(); applyTheme(readPractice()); }, 100);
+    setTimeout(killAuthGate, 800);
+  }
+
+  if (d.readyState === 'loading') d.addEventListener('DOMContentLoaded', boot);
+  else boot();
+
+  // Load parent PRACTICE if available (same origin)
+  try {
+    if (!w.PRACTICE) {
+      var s = d.createElement('script');
+      s.src = '../assets/js/config.js';
+      s.async = true;
+      s.onload = function () { applyTheme(readPractice()); };
+      d.head.appendChild(s);
     }
-    if (document.body) rewrite(document.body);
-    else document.addEventListener('DOMContentLoaded', function () { rewrite(document.body); });
-    // Header chip
-    document.addEventListener('DOMContentLoaded', function () {
-      if (document.getElementById('acd-portal-chip')) return;
-      var chip = document.createElement('div');
-      chip.id = 'acd-portal-chip';
-      chip.innerHTML = '<a href="../class-deck.html" style="color:inherit;text-decoration:none">← ADEWALE CLASSROOM</a>' +
-        ' · <strong>' + (b.productName || 'Classroom Deck') + '</strong>' +
-        (hasSbSession() ? ' · <span style="color:#bbf7d0">Portal session active</span>' : '');
-      chip.style.cssText = 'position:fixed;z-index:99999;left:8px;right:8px;top:0;background:linear-gradient(135deg,#0506ae,#964eec);color:#fff;font:600 12px/1.4 system-ui,sans-serif;padding:6px 10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;box-shadow:0 4px 16px rgba(5,6,174,.35)';
-      document.body.style.paddingTop = '32px';
-      document.body.appendChild(chip);
-    });
-  }
-  function guardTeacher() {
-    /* V35: no gate. Deck is open inside ADEWALE CLASSROOM. Portal chip still shows. */
-    return;
-  }
-  brandPaint();
-  guardTeacher();
-  w.ACDPortal = { hasSbSession: hasSbSession, brand: function () { return (w.CLASSDECK && w.CLASSDECK.BRAND) || {}; } };
-})(window);
+  } catch (e) {}
+
+  w.ACDPortal = {
+    hasSbSession: hasSbSession,
+    applyTheme: applyTheme,
+    brand: function () { return (w.CLASSDECK && w.CLASSDECK.BRAND) || {}; }
+  };
+})(window, document);

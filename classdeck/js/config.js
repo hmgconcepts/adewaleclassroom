@@ -1,10 +1,4 @@
-/* ADEWALE CLASSROOM DECK — live teaching workspace
-   Tailored for ADEWALE CLASSROOM (Tutoring Connect studio).
-   Founder: Adewale Samson Adeagbo — HMG Concepts Ecosystem.
-   No separate Class Deck login: teachers already signed into ADEWALE CLASSROOM.
-   Students still join free with a room code / link (no account required).
-   No AI API. Free PeerJS / browser WebRTC stack.
-*/
+/* ADEWALE CLASSROOM DECK — branded live teaching workspace (V36) */
 window.CLASSDECK = window.CLASSDECK || {};
 window.CLASSDECK.BRAND = {
   productName: 'ADEWALE CLASSROOM DECK',
@@ -20,13 +14,13 @@ window.CLASSDECK.BRAND = {
   portalSessions: '../sessions.html',
   portalCalendar: '../calendar.html',
   portalLogin: '../login.html',
+  logoUrl: '../assets/img/logo.svg',
   primary: '#0506ae',
   accent: '#964eec',
-  requirePortalSession: false,  // teacher studio checks Adewale Classroom auth
+  requirePortalSession: false,
   studentJoinFree: true
 };
-// Back-compat aliases many Class Deck scripts read
 window.CD_CONFIG = Object.assign({}, window.CD_CONFIG || {}, window.CLASSDECK.BRAND);
-window.APP_NAME = 'ADEWALE CLASSROOM DECK';
-window.SCHOOL_NAME = 'ADEWALE CLASSROOM';
-console.log('[ADEWALE CLASSROOM DECK] ready — synced with ADEWALE CLASSROOM portal');
+window.APP_NAME = window.CLASSDECK.BRAND.productName;
+window.SCHOOL_NAME = window.CLASSDECK.BRAND.studioName;
+console.log('[Classroom Deck] branded for', window.CLASSDECK.BRAND.studioName);
