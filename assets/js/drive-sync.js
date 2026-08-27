@@ -1,3 +1,8 @@
+/* BUGFIX (idempotency guard): this file can be pulled in twice - once by the
+   page's own <script> tag and once by app.js's lazy loader. A second
+   execution used to re-declare the top-level `const DriveSync` and throw a
+   SyntaxError that aborted the entire page. Re-running is now a no-op. */
+if (!window.DriveSync) (function () {
 /* Google Drive backup & sync — same free GIS + drive.file model as School Connect. */
 const DriveSync = {
   SCOPE: 'https://www.googleapis.com/auth/drive.file',
@@ -481,4 +486,6 @@ window.DriveSync = DriveSync;
   document.addEventListener('DOMContentLoaded', () => setTimeout(tick, 3000));
   document.addEventListener('visibilitychange', () => { if (!document.hidden) setTimeout(() => DriveSync.autoSyncCheck(), 2000); });
   setInterval(() => { if (!document.hidden) DriveSync.autoSyncCheck(); }, 30 * 60000);
+})();
+
 })();

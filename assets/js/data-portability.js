@@ -1,3 +1,8 @@
+/* BUGFIX (idempotency guard): this file can be pulled in twice - once by the
+   page's own <script> tag and once by app.js's lazy loader. A second
+   execution used to re-declare the top-level `const DataPortability` and throw a
+   SyntaxError that aborted the entire page. Re-running is now a no-op. */
+if (!window.DataPortability) (function () {
 /* SHA-256 sealed JSON backup / restore. Shared by Admin Data and DriveSync. */
 const DataPortability = {
   VERSION: 'tc-portable-v2',
@@ -130,3 +135,5 @@ const DataPortability = {
   }
 };
 window.DataPortability = DataPortability;
+
+})();

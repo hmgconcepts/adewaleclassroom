@@ -40,16 +40,28 @@
 
     /* Each probe = one function, the pack that installs it, and what breaks
        without it. Ordered oldest → newest. */
+    /* Everything below is installed by database/complete-schema.sql, which is
+       a verified superset of every individual pack. `pack` is retained only
+       so the operator can search the file for the object. */
+    EXPECTED: 'V37',
+
+    /* BUGFIX: each probe MUST carry the real argument list. Probing
+       tc_cbt_get_exam with {} made PostgREST reply PGRST202 ("...without
+       parameters ... no matches were found"), and the doctor reported a
+       function that plainly exists as missing — which is what produced the
+       bogus "at V4 but these files expect V9 / run v6-cbt-modes.sql" banner. */
     PROBES: [
-      { fn: 'tc_current_role',       pack: 'complete-schema.sql', v: 'V4',
+      { fn: 'tc_current_role',       args: {}, pack: 'complete-schema.sql', v: 'V4',
         breaks: 'sign-in role resolution' },
-      { fn: 'tc_cbt_get_exam',       pack: 'database/v6-cbt-modes.sql', v: 'V6',
+      { fn: 'tc_cbt_get_exam',       args: { p_code: '__probe__', p_student_no: '' },
+        pack: 'complete-schema.sql', v: 'V6',
         breaks: 'quiz codes / student-ID sign-in for CBT' },
-      { fn: 'is_family_of_learner',  pack: 'database/v7-family-access-fix.sql', v: 'V7',
+      { fn: 'is_family_of_learner',  args: { p_learner: '00000000-0000-0000-0000-000000000000' },
+        pack: 'complete-schema.sql', v: 'V7',
         breaks: 'parent and learner access — family dashboards return nothing' },
-      { fn: 'tc_keep_alive_status',  pack: 'database/v9-keepalive-and-drive.sql', v: 'V9',
+      { fn: 'tc_keep_alive_status',  args: {}, pack: 'complete-schema.sql', v: 'V9',
         breaks: 'keep-alive monitoring and the Drive status panel' },
-      { fn: 'tc_schema_info',        pack: 'database/v12-quota-guard.sql', v: 'V12',
+      { fn: 'tc_schema_info',        args: {}, pack: 'complete-schema.sql', v: 'V12',
         breaks: 'schema version reporting and the free-tier quota guard' }
     ],
 
@@ -181,13 +193,24 @@
       /* V12: ask the database what version it is. This is one round-trip and
          is authoritative. Probing function-by-function (below) remains as the
          fallback for studios installed before the registry existed. */
+      /* BUGFIX: the old code compared version against a hard-coded 'V12'
+         fallback. complete-schema.sql stamps the registry at V37 while the
+         shipped tc_schema_info() still claimed expected='V24', so a perfectly
+         installed database never matched, the registry answer was discarded,
+         and we fell through to the (then broken) probe. Trust the database's
+         own up_to_date flag; only fall through if it is genuinely behind. */
       try {
         var reg = await sb.rpc('tc_schema_info');
         if (!reg.error && reg.data && reg.data.version) {
           var v = String(reg.data.version);
-          if (v === (reg.data.expected || 'V12')) {
-            return { missing: [], present: this.PROBES.slice(), deployed: v, source: 'registry' };
+          var exp = String(reg.data.expected || this.EXPECTED);
+          var ok = (typeof reg.data.up_to_date === 'boolean') ? reg.data.up_to_date : (v === exp);
+          if (ok) {
+            return { missing: [], present: this.PROBES.slice(), deployed: v,
+                     expected: exp, source: 'registry' };
           }
+          return { missing: [], present: this.PROBES.slice(), deployed: v,
+                   expected: exp, behind: true, source: 'registry' };
         }
       } catch (e) { /* fall through to probing */ }
 
@@ -195,11 +218,18 @@
       for (var i = 0; i < this.PROBES.length; i++) {
         var p = this.PROBES[i];
         try {
-          var r = await sb.rpc(p.fn, p.fn === 'is_family_of_learner'
-            ? { p_learner: '00000000-0000-0000-0000-000000000000' } : {});
-          // PGRST202 = the function itself is absent. Any other error (e.g. a
-          // permission error) still proves the function EXISTS.
-          if (r.error && /PGRST202|Could not find the function/i.test(r.error.message || '')) missing.push(p);
+          var r = await sb.rpc(p.fn, p.args || {});
+          var em = (r.error && (r.error.message || '')) || '';
+          var ed = (r.error && (r.error.details || '')) || '';
+          /* A permission error (42501) proves the function EXISTS.
+             So does a signature mismatch: PostgREST says it searched
+             "without parameters or with a single unnamed json/jsonb
+             parameter" — that is us asking the wrong question, not the
+             database lacking the object. Only a genuine lookup failure,
+             with no such qualifier, counts as missing. */
+          var sigMismatch = /without parameters|single unnamed json/i.test(ed + ' ' + em);
+          var notFound = /PGRST202|Could not find the function/i.test(em);
+          if (r.error && notFound && !sigMismatch) missing.push(p);
           else present.push(p);
         } catch (e) { present.push(p); }
       }
@@ -217,7 +247,7 @@
 
     banner: function (res) {
       if (d.getElementById('tc-schema-banner')) return;
-      var worst = res.missing[0];
+      var worst = res.missing[0] || null;
       var packs = [];
       res.missing.forEach(function (m) { if (packs.indexOf(m.pack) === -1) packs.push(m.pack); });
 
@@ -229,12 +259,16 @@
         'font:600 14px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;color:#fff;' +
         'background:#b42318;box-shadow:0 3px 14px rgba(0,0,0,.28);display:flex;gap:12px;' +
         'align-items:center;justify-content:center;flex-wrap:wrap';
+      /* BUGFIX: this said "expect V9" no matter what, and named individual
+         packs. complete-schema.sql is a verified superset of every pack, so
+         that is the only file anyone should ever be told to run. */
       el.innerHTML =
-        '<span>🗄️ <b>Your database is out of date</b> — it is at <b>' + res.deployed +
-        '</b> but these files expect <b>V9</b>. ' + res.missing.length +
-        ' missing function(s); this breaks ' + this.escape(worst.breaks) + '.</span>' +
+        '<span>🗄️ <b>Your database is out of date</b> — it is at <b>' + this.escape(res.deployed) +
+        '</b> but these files expect <b>' + this.escape(res.expected || this.EXPECTED) + '</b>. ' +
+        (res.missing.length ? res.missing.length + ' missing function(s); this breaks ' +
+          this.escape(worst ? worst.breaks : 'some features') + '.' : '') + '</span>' +
         '<span style="background:rgba(255,255,255,.18);padding:4px 10px;border-radius:8px">Run: <code>' +
-        this.escape(packs.join(' + ')) + '</code></span>' +
+        'database/complete-schema.sql</code> then <code>notify pgrst, \'reload schema\';</code></span>' +
         '<a href="platform-health.html" style="color:#fff;text-decoration:underline">Details</a>' +
         '<button type="button" id="tc-schema-x" aria-label="Dismiss" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer">×</button>';
       (d.body || d.documentElement).appendChild(el);
@@ -258,12 +292,12 @@
       if (!res) { host.innerHTML = '<p class="muted">Connect Supabase to check the schema version.</p>'; return; }
       if (!res.missing.length) {
         host.innerHTML = '<div class="card" style="border-left:4px solid #047857;background:#f0fdf4">' +
-          '<b>✅ Database schema is up to date (V12)</b>' +
+          '<b>✅ Database schema is up to date (' + this.escape(res.deployed || this.EXPECTED) + ')</b>' +
           '<p style="margin:6px 0 0">Every function this build needs is installed.</p></div>';
         return;
       }
       host.innerHTML = '<div class="card" style="border-left:4px solid #b42318;background:#fef2f2">' +
-        '<b>🗄️ Database is at ' + this.escape(res.deployed) + ' — these files expect V12</b>' +
+        '<b>🗄️ Database is at ' + this.escape(res.deployed) + ' — these files expect ' + this.escape(res.expected || this.EXPECTED) + '</b>' +
         '<p style="margin:6px 0">Missing objects, and what each one breaks:</p>' +
         '<ul style="margin:0 0 8px 18px">' +
         res.missing.map(function (m) {
@@ -286,7 +320,7 @@
         if (!res) return;
         localStorage.setItem(this.LS_KEY, String(Date.now()));
         w.TC_SCHEMA = res;
-        if (!res.missing.length) return;
+        if (!res.missing.length && !res.behind) return;
         // Only an owner can act on this, and only once per browser session.
         if (!this.isOwner()) return;
         try { if (sessionStorage.getItem('tc-schema-dismissed')) return; } catch (_) {}

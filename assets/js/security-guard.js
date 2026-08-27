@@ -1,3 +1,8 @@
+/* BUGFIX (idempotency guard): this file can be pulled in twice - once by the
+   page's own <script> tag and once by app.js's lazy loader. A second
+   execution used to re-declare the top-level `const SecurityGuard` and throw a
+   SyntaxError that aborted the entire page. Re-running is now a no-op. */
+if (!window.SecurityGuard) (function () {
 /* ====================================================================
    security-guard.js — Tutoring Connect V6.0 "Sovereign Edition"
    ====================================================================
@@ -176,3 +181,5 @@ const SecurityGuard = {
 window.SecurityGuard = SecurityGuard;
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => SecurityGuard.init());
 else SecurityGuard.init();
+
+})();

@@ -1765,9 +1765,66 @@ function toast(msg, type, ms) {
 function handleSignIn(e) { return App.handleSignIn(e); }
 function handleSignUp(e) { return App.handleSignUp(e); }
 
-(function () { if (window.DataPortability) return; const s = document.createElement('script'); s.src = 'assets/js/data-portability.js'; s.defer = true; document.head.appendChild(s); })();
-(function () { if (window.DriveSync) return; const s = document.createElement('script'); s.src = 'assets/js/drive-sync.js'; s.defer = true; document.head.appendChild(s); })();
-(function () { if (window.SecurityGuard) return; const s = document.createElement('script'); s.src = 'assets/js/security-guard.js'; s.defer = true; document.head.appendChild(s); })();
+(function () { /* BUGFIX: also bail when the page already has a <script> tag for this
+     module. The global is only defined once that file EXECUTES, so on a page that
+     lists data-portability.js AFTER app.js the old check was still false here and injected a
+     SECOND copy - both ran, and the top-level `const DataPortability` was declared twice,
+     throwing "Identifier 'DataPortability' has already been declared" and killing the page. */
+  function need() {
+    if (window.DataPortability) return false;
+    if (document.querySelector('script[src$="data-portability.js"]')) return false;
+    return true;
+  }
+  function load() {
+    if (!need()) return;
+    const s = document.createElement('script'); s.src = 'assets/js/data-portability.js'; s.defer = true; document.head.appendChild(s);
+  }
+  /* Wait for the parser to finish: a tag further down the page does not exist
+     in the DOM yet while app.js is executing, so checking now would still
+     produce a redundant second download. */
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
+  else load();
+})();
+(function () { /* BUGFIX: also bail when the page already has a <script> tag for this
+     module. The global is only defined once that file EXECUTES, so on a page that
+     lists drive-sync.js AFTER app.js the old check was still false here and injected a
+     SECOND copy - both ran, and the top-level `const DriveSync` was declared twice,
+     throwing "Identifier 'DriveSync' has already been declared" and killing the page. */
+  function need() {
+    if (window.DriveSync) return false;
+    if (document.querySelector('script[src$="drive-sync.js"]')) return false;
+    return true;
+  }
+  function load() {
+    if (!need()) return;
+    const s = document.createElement('script'); s.src = 'assets/js/drive-sync.js'; s.defer = true; document.head.appendChild(s);
+  }
+  /* Wait for the parser to finish: a tag further down the page does not exist
+     in the DOM yet while app.js is executing, so checking now would still
+     produce a redundant second download. */
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
+  else load();
+})();
+(function () { /* BUGFIX: also bail when the page already has a <script> tag for this
+     module. The global is only defined once that file EXECUTES, so on a page that
+     lists security-guard.js AFTER app.js the old check was still false here and injected a
+     SECOND copy - both ran, and the top-level `const SecurityGuard` was declared twice,
+     throwing "Identifier 'SecurityGuard' has already been declared" and killing the page. */
+  function need() {
+    if (window.SecurityGuard) return false;
+    if (document.querySelector('script[src$="security-guard.js"]')) return false;
+    return true;
+  }
+  function load() {
+    if (!need()) return;
+    const s = document.createElement('script'); s.src = 'assets/js/security-guard.js'; s.defer = true; document.head.appendChild(s);
+  }
+  /* Wait for the parser to finish: a tag further down the page does not exist
+     in the DOM yet while app.js is executing, so checking now would still
+     produce a redundant second download. */
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
+  else load();
+})();
 
 window.App = App;
 window.toast = toast;
