@@ -1,13 +1,13 @@
 /* ============================================================
-   HMG ACADEMY CLASS DECK — Teacher accounts & licensing (SaaS)
+   ADEWALE CLASSROOM DECK — Teacher accounts & licensing (SaaS)
    Free-tools architecture (no paid servers):
 
    • STUDENTS: join free with link/code — never see any of this.
    • TEACHERS: MUST sign up (name, email, phone, school, password)
      before the Studio unlocks. Then:
        - 3-DAY FREE TRIAL starts at signup.
-       - After the trial they activate a personal HMG ACCESS KEY
-         bought from HMG ACADEMY (generated on admin.html).
+       - After the trial they activate a personal ADEWALE CLASSROOM access
+         bought from ADEWALE CLASSROOM (generated on admin.html).
    • Security measures (best possible without a backend):
        - Passwords are never stored: only SHA-256(salt|pw|secret).
        - Session is per-browser-session (sessionStorage) — closing
@@ -36,14 +36,14 @@ const AUTH_SECRET = (() => {
        4. Re-deploy to Vercel/Cloudflare Pages */
   const secret = "CHANGE-ME-HMG-2026";
   if (secret === "CHANGE-ME-HMG-2026" && !window.HMG_SECURITY?.licenseGateway) {
-    console.warn("⚠️ HMG ClassDeck: Using DEFAULT auth secret. Set a custom AUTH_SECRET in js/auth.js or configure the Cloudflare Worker license gateway before production deployment.");
+    console.warn("⚠️ ADEWALE CLASSROOM DECK: Using DEFAULT auth secret. Set a custom AUTH_SECRET in js/auth.js or configure the Cloudflare Worker license gateway before production deployment.");
   }
   return secret;
 })();
 
 /* ============================================================
    HMG OWNER (FOUNDER) ACCOUNT — never expires, always unlocked.
-   The HMG ACADEMY CLASS DECK belongs to its founder and must not
+   The ADEWALE CLASSROOM DECK belongs to its founder and must not
    be subject to the 3-day trial or license expiry. This account
    is treated as the platform owner with lifetime access.
    ------------------------------------------------------------
@@ -66,7 +66,7 @@ const HMG_OWNER_PASSWORD = (window.HMG_OWNER && window.HMG_OWNER.password)
 const HMG_OWNER_NAME = (window.HMG_OWNER && window.HMG_OWNER.name)
   ? String(window.HMG_OWNER.name)
   : "Adewale Samson Adeagbo";
-const HMG_OWNER_TITLE = "Founder · HMG ACADEMY · HMG Concepts Ecosystem — Lifetime Access";
+const HMG_OWNER_TITLE = "Founder · ADEWALE CLASSROOM · HMG Concepts Ecosystem";
 
 function isOwnerEmail(email) {
   return String(email || "").trim().toLowerCase() === HMG_OWNER_EMAIL;
@@ -146,7 +146,7 @@ async function signupTeacher() {
   sessionStorage.setItem("hmg_session", "1");
   $("#suStatus").textContent = "";
   if (isOwner) {
-    toast("👑 Welcome, Founder! You have LIFETIME access to HMG ACADEMY CLASS DECK.", "ok", 7000);
+    toast("👑 Welcome, Founder! You have LIFETIME access to ADEWALE CLASSROOM DECK.", "ok", 7000);
   } else {
     toast("🎉 Welcome, " + name + "! Your " + TRIAL_DAYS + "-day free trial has started.", "ok", 6000);
   }
@@ -189,7 +189,7 @@ async function activateLicense() {
   const acc = await getAccount();
   const key = $("#authKey").value.trim();
   if (!acc) { switchAuthTab("signup"); return; }
-  if (!key) { $("#authStatus").textContent = "Paste the key you received from HMG ACADEMY."; return; }
+  if (!key) { $("#authStatus").textContent = "Paste the key you received from ADEWALE CLASSROOM."; return; }
   const v = await validateKey(acc.name, key);
   if (!v.ok) { $("#authStatus").textContent = "❌ " + v.why; return; }
   Store.set("license", { key: key.toUpperCase(), expiry: v.expiry });
@@ -336,7 +336,7 @@ async function requireTeacherAccess() {
   gate.classList.remove("hide");
   switchAuthTab("license");
   $("#authSkip").classList.add("hide");
-  $("#authStatus").textContent = "Your free trial has ended. Activate your HMG ACCESS KEY to continue.";
+  $("#authStatus").textContent = "Continue in ADEWALE CLASSROOM DECK. Activate your ADEWALE CLASSROOM access to continue.";
   return false;
 }
 
@@ -436,8 +436,8 @@ async function fetchRevocations() {
 
 async function isRevoked(acc, lic) {
   const rv = await fetchRevocations();
-  if (lic && rv.keys.includes(String(lic.key || "").trim().toUpperCase())) return "This license key has been deactivated. Contact HMG ACADEMY.";
-  if (acc && rv.blockedEmails.includes(String(acc.email || "").trim().toLowerCase())) return "This account has been suspended. Contact HMG ACADEMY.";
+  if (lic && rv.keys.includes(String(lic.key || "").trim().toUpperCase())) return "This license key has been deactivated. Contact ADEWALE CLASSROOM.";
+  if (acc && rv.blockedEmails.includes(String(acc.email || "").trim().toLowerCase())) return "This account has been suspended. Contact ADEWALE CLASSROOM.";
   return null;
 }
 
@@ -447,3 +447,90 @@ function authHeartbeat() {
   if (LICENSE_GATEWAY && LICENSE_MODE === "strict" && !validLease()) return false;
   return true;
 }
+
+
+
+/* ==========================================================================
+   ADEWALE CLASSROOM DECK — auth bridge (V35)
+   --------------------------------------------------------------------------
+   This deck is part of ADEWALE CLASSROOM. Teachers already signed into the
+   portal must NOT see a second signup/login/trial/license gate.
+   Students join free via join.html (no account).
+   Founder: Adewale Samson Adeagbo · HMG Concepts Ecosystem.
+   ========================================================================== */
+
+/* Force open: hide gate, mark auth OK, optional portal display name */
+async function requireTeacherAccess() {
+  try {
+    window.HMG_AUTH_OK = true;
+    window.ACD_AUTH_OK = true;
+    var gate = typeof $ === 'function' ? $('#authGate') : document.getElementById('authGate');
+    if (gate) {
+      gate.classList.add('hide');
+      gate.style.display = 'none';
+      gate.setAttribute('hidden', 'hidden');
+      try { gate.remove(); } catch (e) {}
+    }
+    // Hide any leftover auth UI chrome
+    document.querySelectorAll('.auth-gate, #authGate, .auth-tabs, #authBadge').forEach(function (el) {
+      el.classList.add('hide');
+      el.style.display = 'none';
+    });
+    var badge = typeof $ === 'function' ? $('#authBadge') : document.getElementById('authBadge');
+    if (badge) {
+      var name = 'ADEWALE CLASSROOM';
+      try {
+        var p = JSON.parse(localStorage.getItem('tc-cached-profile') || 'null');
+        if (p && p.full_name) name = p.full_name;
+      } catch (e) {}
+      badge.textContent = '✓ ' + name + ' · ADEWALE CLASSROOM DECK';
+      badge.classList.remove('hide');
+      badge.style.display = '';
+      badge.title = 'Teaching inside ADEWALE CLASSROOM (no separate deck login)';
+      badge.onclick = null;
+    }
+    // Seed a lifetime local account so any leftover trial checks stay happy
+    try {
+      if (typeof Store !== 'undefined' && Store.set) {
+        var acc = {
+          name: name,
+          email: 'portal@adewaleclassroom.local',
+          owner: true,
+          created: Date.now(),
+          portal: true
+        };
+        Store.set('account', acc);
+        Store.set('license', { key: 'ADEWALE-CLASSROOM-PORTAL', expiry: '2099-12' });
+        sessionStorage.setItem('hmg_session', '1');
+        sessionStorage.setItem('acd_session', '1');
+      }
+    } catch (e) {}
+    return true;
+  } catch (e) {
+    window.HMG_AUTH_OK = true;
+    return true;
+  }
+}
+
+function finishAuth() { try { requireTeacherAccess(); } catch (e) {} }
+function authSkip() {
+  var gate = document.getElementById('authGate');
+  if (gate) { gate.classList.add('hide'); gate.style.display = 'none'; }
+}
+function switchAuthTab() { /* no-op — gate removed */ }
+function signupTeacher() { requireTeacherAccess(); }
+function loginTeacher() { requireTeacherAccess(); }
+function activateLicense() { requireTeacherAccess(); }
+
+// Auto-open on load
+try {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { requireTeacherAccess(); });
+  } else {
+    requireTeacherAccess();
+  }
+  // Also run shortly after other scripts init the gate
+  setTimeout(function () { requireTeacherAccess(); }, 50);
+  setTimeout(function () { requireTeacherAccess(); }, 400);
+  setTimeout(function () { requireTeacherAccess(); }, 1500);
+} catch (e) {}

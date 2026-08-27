@@ -38,7 +38,7 @@ window.HMG_SECURITY = {
   licenseMode: "strict",
   leaseMinutes: 30,
   heartbeatMinutes: 5,
-  appName: "HMG ACADEMY CLASS DECK",
+  appName: "ADEWALE CLASSROOM DECK",
   supportWhatsApp: "https://wa.me/2348100866322"
 };
 ```

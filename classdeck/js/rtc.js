@@ -1,5 +1,5 @@
 /* ============================================================
-   HMG ClassDeck — Live classroom engine (PeerJS / WebRTC)
+   ADEWALE CLASSROOM DECK — Live classroom engine (PeerJS / WebRTC)
    100% free: uses the public PeerJS cloud broker + Google STUN.
    No backend server. Teacher is the "hub"; students connect
    directly to the teacher (mesh-star topology).

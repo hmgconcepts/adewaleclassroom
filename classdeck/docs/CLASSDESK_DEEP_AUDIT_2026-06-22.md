@@ -1,8 +1,8 @@
 # CLASSDESK Deep Audit, Diagnosis, Fix Report and Deployment Guide
 
 Date: 2026-06-22
-Target: `https://hmgacademyclassdeck.vercel.app/`
-Repo baseline: `hmgacademyhub/hmgacademyclassdeck`
+Target: `https://adewaleclassroom.vercel.app/`
+Repo baseline: `adewaleclassroomhub/adewaleclassroom`
 Working package folder: `classdesk/`
 
 ---

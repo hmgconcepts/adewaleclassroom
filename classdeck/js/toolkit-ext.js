@@ -1,5 +1,5 @@
 /* ============================================================
-   HMG ACADEMY CLASS DECK v6 — Toolkit extensions
+   ADEWALE CLASSROOM DECK v6 — Toolkit extensions
    Adds 14 extension interactive tools + an 181-card reference library
    (toolkit-data.js) to the v5 Toolkit class = 202 tool modes.
 

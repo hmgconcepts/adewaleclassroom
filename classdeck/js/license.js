@@ -1,5 +1,5 @@
 /* ============================================================
-   HMG ACADEMY CLASS DECK — License & Subscription Engine
+   ADEWALE CLASSROOM DECK — License & Subscription Engine
    ------------------------------------------------------------
    For the HMG-owned ClassDeck, this is a LIFETIME license stub —
    the platform never expires (owner account is always unlocked).
@@ -10,7 +10,7 @@
 
 window.CD_LICENSE = {
   model: "lifetime",        // lifetime = never locks
-  plan: "HMG ACADEMY — Platform Owner (Lifetime)",
+  plan: "ADEWALE CLASSROOM — Platform Owner (Lifetime)",
   cycle: "",
   price: "",
   started_on: "",

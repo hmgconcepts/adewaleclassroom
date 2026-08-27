@@ -33,9 +33,9 @@
     var b = (w.CLASSDECK && w.CLASSDECK.BRAND) || {};
     try {
       document.title = (document.title || '')
-        .replace(/HMG ACADEMY CLASS DECK/ig, b.productName || 'ADEWALE CLASSROOM DECK')
+        .replace(/ADEWALE CLASSROOM DECK/ig, b.productName || 'ADEWALE CLASSROOM DECK')
         .replace(/ClassDeck|Class Deck/ig, b.shortName || 'Classroom Deck')
-        .replace(/HMG ACADEMY/ig, b.studioName || 'ADEWALE CLASSROOM');
+        .replace(/ADEWALE CLASSROOM/ig, b.studioName || 'ADEWALE CLASSROOM');
     } catch (e) {}
     // Replace visible brand strings once DOM ready
     function rewrite(root) {
@@ -46,9 +46,9 @@
         if (!n.nodeValue || !n.nodeValue.trim()) return;
         var v = n.nodeValue;
         var nv = v
-          .replace(/HMG ACADEMY CLASS DECK/g, b.productName || 'ADEWALE CLASSROOM DECK')
-          .replace(/HMG Academy Class Deck/g, b.productName || 'ADEWALE CLASSROOM DECK')
-          .replace(/HMG ACADEMY/g, b.studioName || 'ADEWALE CLASSROOM')
+          .replace(/ADEWALE CLASSROOM DECK/g, b.productName || 'ADEWALE CLASSROOM DECK')
+          .replace(/ADEWALE CLASSROOM DECK/g, b.productName || 'ADEWALE CLASSROOM DECK')
+          .replace(/ADEWALE CLASSROOM/g, b.studioName || 'ADEWALE CLASSROOM')
           .replace(/ClassDeck/g, b.shortName || 'Classroom Deck')
           .replace(/CLASS DECK/g, (b.shortName || 'CLASSROOM DECK').toUpperCase());
         if (nv !== v) n.nodeValue = nv;
@@ -70,23 +70,8 @@
     });
   }
   function guardTeacher() {
-    var b = (w.CLASSDECK && w.CLASSDECK.BRAND) || {};
-    if (!b.requirePortalSession) return;
-    if (!isTeachPage()) return;
-    if (hasSbSession()) return;
-    // Allow demo query for local preview
-    if (/[?&]demo=1/.test(location.search)) return;
-    document.addEventListener('DOMContentLoaded', function () {
-      var gate = document.createElement('div');
-      gate.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,.72);display:flex;align-items:center;justify-content:center;padding:20px';
-      gate.innerHTML = '<div style="background:#fff;color:#0f172a;max-width:420px;width:100%;border-radius:16px;padding:24px;font-family:system-ui,sans-serif">' +
-        '<h2 style="margin:0 0 8px">Sign in to ADEWALE CLASSROOM first</h2>' +
-        '<p style="margin:0 0 14px;line-height:1.5;color:#334155">Classroom Deck is part of your studio. Teachers use the same portal session — there is no separate Class Deck login.</p>' +
-        '<a href="../login.html?next=class-deck.html" style="display:inline-block;background:#0506ae;color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;text-decoration:none">Sign in to portal</a> ' +
-        '<a href="../class-deck.html" style="margin-left:8px;color:#0506ae">Back to hub</a>' +
-        '<p style="margin:14px 0 0;font-size:.8rem;color:#64748b">Students join free via join.html — they do not need a portal account.</p></div>';
-      document.body.appendChild(gate);
-    });
+    /* V35: no gate. Deck is open inside ADEWALE CLASSROOM. Portal chip still shows. */
+    return;
   }
   brandPaint();
   guardTeacher();

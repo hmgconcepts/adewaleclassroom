@@ -1,5 +1,5 @@
 /* =========================================================
-   HMG ClassDeck — Whiteboard engine
+   ADEWALE CLASSROOM DECK — Whiteboard engine
    Multi-page, vector-stroke based (crisp at any size),
    pen / highlighter / eraser / shapes / text, undo-redo,
    autosave to localStorage, PNG export.

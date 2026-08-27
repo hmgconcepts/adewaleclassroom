@@ -1,5 +1,5 @@
 /* ============================================================
-   HMG ACADEMY CLASS DECK v6 — Toolkit library, volume 2
+   ADEWALE CLASSROOM DECK v6 — Toolkit library, volume 2
    ~100 additional reference cards spanning NURSERY → SENIOR
    SECONDARY. Same card format as toolkit-data.js; merged into
    TK_CARDS at the bottom of this file.

@@ -1,5 +1,5 @@
 /* ============================================================
-   HMG ACADEMY CLASS DECK v6 — Toolkit reference library
+   ADEWALE CLASSROOM DECK v6 — Toolkit reference library
    93 curriculum reference cards, joined by 16
    interactive tools in toolkit.js  →  202 tool modes total (181 reference cards + 21 interactive tools).
    Each card: [category, id, name, lines[]]

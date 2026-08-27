@@ -1,8 +1,8 @@
-# HMG ACADEMY CLASS DECK — Deep Analysis, Diagnosis and Fix Report
+# ADEWALE CLASSROOM DECK — Deep Analysis, Diagnosis and Fix Report
 
 **Audit date:** 25 August 2026  
-**Live target:** <https://hmgacademyclassdeck.vercel.app/>  
-**Repository:** <https://github.com/hmgacademyhub/hmgacademyclassdeck>  
+**Live target:** <https://adewaleclassroom.vercel.app/>  
+**Repository:** <https://github.com/adewaleclassroomhub/adewaleclassroom>  
 **Local baseline commit:** `49ed0ee3da6b6f70737f227cadb0a19bde00dc6f` (`Add files via upload`, 22 June 2026)  
 **Fixed package version:** `11.1.1-classdesk-v3`, build 6
 
@@ -17,7 +17,7 @@ The following checks were performed before changing the working copy:
 - The live landing page, Teacher Studio, student join page and Social Live page returned HTTP 200.
 - The live `teach.html`, `join.html`, `stream.html`, `sw.js` and `manifest.webmanifest` bodies matched the cloned repository byte-for-byte at audit time.
 - The repository contains 67 source/assets/document files before the fixes and is a static site with no root `package.json` or build step.
-- The original working tree was copied before modification and packaged as `hmgacademyclassdeck-original.zip` (67 files; SHA-256 `f8ed762fa2fe49e0a8293ff58a7f851e86fbcc5abf1cf4fd7541d9f394694a20`).
+- The original working tree was copied before modification and packaged as `adewaleclassroom-original.zip` (67 files; SHA-256 `f8ed762fa2fe49e0a8293ff58a7f851e86fbcc5abf1cf4fd7541d9f394694a20`).
 - The stale `manifest.json` referenced `assets/screenshot1.png`, but that asset returned HTTP 404 on the live site. This was a real deployment defect.
 - The repository's existing `scripts/validate.sh` passed its original JavaScript, JSON and HTML-reference checks, but it did not check the legacy manifest, service-worker shell, inline scripts, or runtime classroom behavior. Those checks were expanded in the fixed package.
 
@@ -27,7 +27,7 @@ The original archive contains the original source tree and excludes only Git's i
 
 ## 2. What the product is actually for
 
-HMG ACADEMY CLASS DECK is a **tablet-first teaching studio and lightweight virtual classroom**. Its main product insight is that a teacher should not need to run a whiteboard app, a PDF app and Google Meet in Android split-screen at the same time.
+ADEWALE CLASSROOM DECK is a **tablet-first teaching studio and lightweight virtual classroom**. Its main product insight is that a teacher should not need to run a whiteboard app, a PDF app and Google Meet in Android split-screen at the same time.
 
 Instead, the teacher opens one web/PWA application containing:
 
@@ -115,7 +115,7 @@ The landing page presents three task-oriented doors:
 - **I'm a Student** → `join.html`
 - **Teaching on Meet / Zoom?** → `teach.html?meet=1`
 
-It also explains the split-screen workspace, built-in live classroom, teaching tools, quizzes, recording, social streaming, whiteboard, classroom controls, student boards, activities, Reader Cast and offline/PWA behavior. HMG Academy branding and the founder card are embedded locally.
+It also explains the split-screen workspace, built-in live classroom, teaching tools, quizzes, recording, social streaming, whiteboard, classroom controls, student boards, activities, Reader Cast and offline/PWA behavior. ADEWALE CLASSROOM branding and the founder card are embedded locally.
 
 ### 4.2 Teacher Studio — `teach.html`
 
@@ -302,7 +302,7 @@ The fixed source was counted rather than trusting the older documentation:
 
 **Before:** Canonical, Open Graph, sitemap and robots sitemap URLs pointed at the GitHub Pages address while the requested/live site is Vercel.
 
-**Fixed:** Public SEO URLs now point at `https://hmgacademyclassdeck.vercel.app/` and the sitemap date is updated to the fixed release date.
+**Fixed:** Public SEO URLs now point at `https://adewaleclassroom.vercel.app/` and the sitemap date is updated to the fixed release date.
 
 #### Vercel did not consume `_headers`
 
@@ -434,8 +434,8 @@ Additional checks performed:
 
 ## 9. Recommended deployment order
 
-1. Keep `hmgacademyclassdeck-original.zip` as the rollback backup.
-2. Upload the contents of the fixed `hmgacademyclassdeck` package to the GitHub repository root.
+1. Keep `adewaleclassroom-original.zip` as the rollback backup.
+2. Upload the contents of the fixed `adewaleclassroom` package to the GitHub repository root.
 3. Deploy/redeploy the repository as a static Vercel project.
 4. Confirm the response headers from `vercel.json` are present.
 5. Hard-refresh or clear the old service-worker cache once after deployment.

@@ -1,5 +1,5 @@
 /* ============================================================
-   HMG ClassDeck — Teacher Studio controller
+   ADEWALE CLASSROOM DECK — Teacher Studio controller
    • Dual-pane app loader (whiteboard / pdf / web / notes / image)
    • Resizable split, layout cycling, pane swap
    • Composite broadcaster: draws both panes onto one canvas and
@@ -1051,7 +1051,7 @@ function drawComposite() {
   ctx.fillStyle = "#9aa3cf";
   ctx.font = "13px system-ui, sans-serif";
   ctx.textBaseline = "middle";
-  ctx.fillText("HMG ACADEMY CLASS DECK • " + new Date().toLocaleTimeString(), W - 292, H - 15);
+  ctx.fillText("ADEWALE CLASSROOM DECK • " + new Date().toLocaleTimeString(), W - 292, H - 15);
 }
 
 function drawPaneInto(ctx, side, x, y, w, h, headH) {
@@ -1837,7 +1837,7 @@ function stopCountdown() {
    v6 (issue 5): YOUTUBE-READY BRANDED RECORDING. A dedicated 1280×720
    recording canvas composes:
      • the two split panes (the workspace),
-     • a branded header: HMG ACADEMY logo + Subject · Topic · Class,
+     • a branded header: ADEWALE CLASSROOM logo + Subject · Topic · Class,
      • the teacher camera (bottom-right PiP, when on),
      • optionally the student camera tiles (toggle in the dialog),
      • a footer strip with the HMG CONCEPTS channel credit + date.
@@ -1978,7 +1978,7 @@ function drawRecordingFrame() {
   ctx.fillStyle = "#9aa3cf";
   ctx.font = Math.round(footH * 0.5) + "px system-ui, sans-serif";
   ctx.textAlign = "left"; ctx.textBaseline = "middle";
-  ctx.fillText(recMeta.footer || ("Recorded with HMG ACADEMY CLASS DECK"), 12, H - footH / 2, W * 0.6);
+  ctx.fillText(recMeta.footer || ("Recorded with ADEWALE CLASSROOM DECK"), 12, H - footH / 2, W * 0.6);
   ctx.textAlign = "right";
   ctx.fillText(new Date().toLocaleDateString() + "  ·  " + new Date().toLocaleTimeString(), W - 12, H - footH / 2);
   ctx.textAlign = "left";
@@ -2818,7 +2818,7 @@ function buildReport() {
   const dur = s.start ? fmtTime((endAt - s.start) / 1000) : "—";
   const lb = dataRoom.leaderboard();
   const lines = [
-    "HMG ClassDeck — Class report",
+    "ADEWALE CLASSROOM DECK — Class report",
     "Generated: " + nowStamp(),
     "Room: " + dataRoom.code + (dataRoom.roomName ? "  (" + dataRoom.roomName + ")" : ""),
     "",
@@ -2856,7 +2856,7 @@ function buildWhatsAppSummary() {
   const lb = dataRoom.leaderboard().slice(0, 5);
   const endAt = room ? Date.now() : (s.end || Date.now());
   return [
-    "HMG ClassDeck class summary",
+    "ADEWALE CLASSROOM DECK class summary",
     "Room: " + dataRoom.code,
     dataRoom.roomName ? ("Class: " + dataRoom.roomName) : "",
     "Duration: " + (s.start ? fmtTime((endAt - s.start) / 1000) : "—"),
@@ -2879,7 +2879,7 @@ $("#reportWhatsApp").addEventListener("click", () => {
   const openBtn = $("#btnSettings");
   openBtn.addEventListener("click", () => {
     $("#setPin").value = Store.get("pin", "");
-    $("#setBrand").value = Store.get("brand", "HMG ACADEMY CLASS DECK");
+    $("#setBrand").value = Store.get("brand", "ADEWALE CLASSROOM DECK");
     $("#setAccent").value = Store.get("accent", "#ffb347");
     if ($("#setSecureInvite")) $("#setSecureInvite").checked = Store.get("secure_invite", false);
     if ($("#setWatermark")) $("#setWatermark").checked = Store.get("security_watermark", true);
@@ -2889,7 +2889,7 @@ $("#reportWhatsApp").addEventListener("click", () => {
     const pin = $("#setPin").value.trim();
     Store.set("pin", pin);
     if (room) room.pin = pin;
-    const brand = $("#setBrand").value.trim() || "HMG ClassDeck";
+    const brand = $("#setBrand").value.trim() || "ADEWALE CLASSROOM DECK";
     Store.set("brand", brand);
     const accent = $("#setAccent").value;
     Store.set("accent", accent);
@@ -2950,7 +2950,7 @@ const _origDrawComposite = drawComposite;
 drawComposite = function () {
   _origDrawComposite();
   const brand = Store.get("brand", "");
-  if (brand && brand !== "HMG ACADEMY CLASS DECK") {
+  if (brand && brand !== "ADEWALE CLASSROOM DECK") {
     const ctx = COMP.ctx;
     ctx.font = "bold 13px system-ui, sans-serif";
     const w = ctx.measureText(brand).width + 26;
@@ -3066,7 +3066,7 @@ function cleanOutputUrl() {
 }
 function obsSetupText() {
   return [
-    "HMG ACADEMY CLASS DECK — FREE SOCIAL LIVE / OBS SETUP",
+    "ADEWALE CLASSROOM DECK — FREE SOCIAL LIVE / OBS SETUP",
     "Generated: " + new Date().toLocaleString(),
     "",
     "1) In ClassDeck Teacher Studio:",
@@ -3228,7 +3228,7 @@ function createVerticalSocialStream(fps) {
   tabletLive.canvas = document.createElement("canvas");
   tabletLive.canvas.width = 720; tabletLive.canvas.height = 1280;
   const ctx = tabletLive.canvas.getContext("2d");
-  const brand = Store.get("brand", "HMG ACADEMY CLASS DECK");
+  const brand = Store.get("brand", "ADEWALE CLASSROOM DECK");
   const draw = () => {
     tabletLive.raf = requestAnimationFrame(draw);
     try { drawComposite(); } catch {}
@@ -3250,7 +3250,7 @@ function createVerticalSocialStream(fps) {
     ctx.fillStyle = "#eef1ff"; ctx.font = "22px system-ui"; ctx.textAlign = "left";
     ctx.fillText("Live class with Adewale Samson Adeagbo", 32, 1070, 656);
     ctx.fillStyle = "#9aa3cf"; ctx.font = "17px system-ui";
-    ctx.fillText("HMG Academy · HMG Concepts · Lagos, Nigeria", 32, 1102, 656);
+    ctx.fillText("ADEWALE CLASSROOM · HMG Concepts · Lagos, Nigeria", 32, 1102, 656);
     ctx.fillStyle = "rgba(255,255,255,.08)"; ctx.fillRect(32, 1140, 656, 1);
     ctx.fillStyle = "#ffb347"; ctx.font = "bold 18px system-ui"; ctx.textAlign = "center";
     ctx.fillText("Learning Deliberately. Teaching Authentically.", 360, 1194, 650);
@@ -3535,7 +3535,7 @@ async function enterClassDeckPiP() {
     await v.requestPictureInPicture();
     pipActive = true; startPipPump();
     if ("mediaSession" in navigator) {
-      navigator.mediaSession.metadata = new MediaMetadata({ title: "HMG ClassDeck live lesson", artist: "Adewale Samson Adeagbo · HMG Academy" });
+      navigator.mediaSession.metadata = new MediaMetadata({ title: "ADEWALE CLASSROOM DECK live lesson", artist: "Adewale Samson Adeagbo · ADEWALE CLASSROOM" });
     }
     $("#btnPiP")?.classList.add("active");
     audit("pip-start", "Teacher started Picture-in-Picture continuity preview");
@@ -3605,7 +3605,7 @@ document.addEventListener("keydown", (e) => {
    Students (join.html) are never gated. The Teacher Studio
    checks: valid license → OK ; else 3-day trial → OK ;
    else locked until a key is activated. Keys are generated
-   on admin.html by HMG ACADEMY after payment.
+   on admin.html by ADEWALE CLASSROOM after payment.
    ------------------------------------------------------------ */
 if (typeof requireTeacherAccess === "function") {
   requireTeacherAccess();

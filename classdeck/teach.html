@@ -735,7 +735,7 @@ Not sure</textarea>
   <div class="modal">
     <h3>⚙ Settings</h3>
     <label>Your display name</label>
-    <input class="input" id="setName" placeholder="e.g. Mr Adewale (HMG Academy)" />
+    <input class="input" id="setName" placeholder="e.g. Mr Adewale (ADEWALE CLASSROOM)" />
     <label style="margin-top:10px">🔑 Custom room code (letters + numbers, 4–10 chars — students join with this)</label>
     <input class="input" id="setRoomCode" placeholder="e.g. CHEM22ABC  (leave blank for auto-generated)" maxlength="10" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:2px;font-weight:700" />
     <p style="font-size:11.5px;color:var(--text-dim);margin:4px 0 0">Wanted a memorable room code you made yourself? Set it here — it becomes your shareable room code. Only letters A–Z and numbers 0–9, 4 to 10 characters.</p>
@@ -746,7 +746,7 @@ Not sure</textarea>
       <option value="composite">Composite (recommended on tablets) — streams whiteboard/PDF/notes/image panes</option>
       <option value="screen">Share screen (laptops / where supported) — streams everything incl. browser/system audio where supported</option>
     </select>
-    <p style="font-size:12px;color:var(--text-dim);margin:6px 0 0">Need to screen-share your full device inside ClassDeck? Select <b>Share screen</b>, save, then tap <b>▶ Go Live</b>. Students join from the normal invite link — no Google Meet/Zoom required.</p>
+    <p style="font-size:12px;color:var(--text-dim);margin:6px 0 0">Need to screen-share your full device inside Classroom Deck? Select <b>Share screen</b>, save, then tap <b>▶ Go Live</b>. Students join from the normal invite link — no Google Meet/Zoom required.</p>
     <label style="margin-top:10px">Broadcast quality</label>
     <select class="input" id="setQuality">
       <option value="1280x720x8">720p @ 8 fps — best for slow networks (default)</option>
@@ -761,7 +761,7 @@ Not sure</textarea>
     </div>
     <hr class="sep" />
     <label>📡 Tablet Social Live — no OBS</label>
-    <p style="font-size:12px;color:var(--text-dim);margin:4px 0 8px">Broadcast the ClassDeck lesson from this tablet to YouTube/Facebook/Instagram/TikTok through a free WebRTC→RTMP relay gateway. No OBS is required. If a browser cannot capture the whole Android system screen, ClassDeck still streams its own full teaching workspace directly.</p>
+    <p style="font-size:12px;color:var(--text-dim);margin:4px 0 8px">Broadcast the Classroom Deck lesson from this tablet to YouTube/Facebook/Instagram/TikTok through a free WebRTC→RTMP relay gateway. No OBS is required. If a browser cannot capture the whole Android system screen, Classroom Deck still streams its own full teaching workspace directly.</p>
     <div class="row">
       <button class="btn small primary" id="btnTabletLive">📡 Tablet Live</button>
       <button class="btn small" id="btnTryScreenShare">🖥 Try full tablet screen</button>
@@ -784,7 +784,7 @@ Not sure</textarea>
     <input class="input" id="setPin" placeholder="e.g. 2468" maxlength="8" inputmode="numeric" />
     <hr class="sep" />
     <label>🎨 Branding — academy name (shows on the broadcast watermark &amp; student welcome)</label>
-    <input class="input" id="setBrand" placeholder="e.g. HMG Academy" />
+    <input class="input" id="setBrand" placeholder="e.g. ADEWALE CLASSROOM" />
     <label style="margin-top:8px">Accent colour</label>
     <div class="row">
       <input type="color" id="setAccent" value="#ffb347" style="width:48px;height:36px;border:none;background:none;cursor:pointer" />
@@ -845,7 +845,7 @@ Not sure</textarea>
     <ol style="font-size:14px;line-height:1.8;margin:10px 0 10px 20px">
       <li><b>Meet picture-in-picture:</b> in Google Meet (Android), tap <b>Home</b> while in the call — Meet shrinks to a floating window showing participants <i>on top of</i> this app. Drag it to a corner. (Zoom: enable <i>Settings → Meeting → Show my video in PiP</i>.)</li>
       <li><b>Split second device:</b> join the Meet/Zoom call muted on your phone and lay it beside the tablet as a dedicated "student monitor".</li>
-      <li><b>ClassDeck hybrid:</b> have students ALSO open your ClassDeck room link (no audio needed) and share their cameras here — open the 👥 drawer to see the camera grid while Meet handles audio/screen.</li>
+      <li><b>Classroom Deck hybrid:</b> have students ALSO open your Classroom Deck room link (no audio needed) and share their cameras here — open the 👥 drawer to see the camera grid while Meet handles audio/screen.</li>
     </ol>
     <p style="font-size:13px;color:var(--text-dim)">Tip: your own camera → tap <b>📷 Cam</b>. Your face appears in a floating window on this screen, so it is included in the screen share and students see you. Drag it anywhere; tap it to cycle size.</p>
     <button class="btn primary" onclick="closeModal('#mMeetPip')">Got it</button>
@@ -853,297 +853,7 @@ Not sure</textarea>
 </div>
 
 <!-- v6: full-screen teacher auth gate (signup / login / license) -->
-<div id="authGate" class="auth-gate hide">
-  <div class="auth-card">
-    <div class="auth-brand">
-      <img src="assets/hmg-academy-logo.png" alt="ADEWALE CLASSROOM" />
-      <div>
-        <b>ADEWALE CLASSROOM DECK</b>
-        <span>Teacher Studio — sign in to start teaching</span>
-      </div>
-    </div>
-    <div class="auth-tabs">
-      <button class="auth-tab active" data-tab="signup" onclick="switchAuthTab('signup')">Create account</button>
-      <button class="auth-tab" data-tab="login" onclick="switchAuthTab('login')">Log in</button>
-      <button class="auth-tab" data-tab="license" onclick="switchAuthTab('license')">Activate key</button>
-    </div>
-
-    <div class="auth-pane" data-tab="signup">
-      <p class="auth-note">Free for <b>3 days</b> — no card needed. Students always join free.</p>
-      <input class="input" id="suName" placeholder="Full name (e.g. Mrs Funke Ojo)" autocomplete="name" />
-      <input class="input" id="suEmail" type="email" placeholder="Email address" autocomplete="email" />
-      <input class="input" id="suPhone" type="tel" placeholder="WhatsApp / phone number" autocomplete="tel" />
-      <input class="input" id="suSchool" placeholder="School / organisation (optional)" />
-      <input class="input" id="suPw" type="password" placeholder="Password (min 8 characters)" autocomplete="new-password" />
-      <input class="input" id="suPw2" type="password" placeholder="Confirm password" autocomplete="new-password" />
-      <p class="auth-err" id="suStatus"></p>
-      <button class="btn primary auth-cta" onclick="signupTeacher()">Start my free trial ➜</button>
-    </div>
-
-    <div class="auth-pane hide" data-tab="login">
-      <p class="auth-note">Welcome back! Log in to continue.</p>
-      <input class="input" id="liEmail" type="email" placeholder="Email address" autocomplete="email" />
-      <input class="input" id="liPw" type="password" placeholder="Password" autocomplete="current-password" />
-      <p class="auth-err" id="liStatus"></p>
-      <button class="btn primary auth-cta" onclick="loginTeacher()">Log in ➜</button>
-    </div>
-
-    <div class="auth-pane hide" data-tab="license">
-      <p class="auth-note">Get your <b>HMG ACCESS KEY</b> from
-        <a href="https://hmgacademy.pages.dev" target="_blank" rel="noopener">hmgacademy.pages.dev</a> —
-        pay the small license fee and receive the key on WhatsApp within minutes.</p>
-      <input class="input" id="authKey" placeholder="HMG-202612-XXXXXXXXXX" style="text-transform:uppercase" />
-      <p class="auth-err" id="authStatus"></p>
-      <button class="btn primary auth-cta" onclick="activateLicense()">Activate ➜</button>
-      <button class="btn ghost auth-cta hide" id="authSkip" onclick="authSkip()">Continue trial for now</button>
-    </div>
-
-    <p class="auth-foot">Built by ADEWALE CLASSROOM · Lagos, Nigeria — your data stays on your device.</p>
-  </div>
-</div>
-
-<!-- HMG ENHANCED RECORDING SETUP (Staff, Lower Thirds, Ads, Intro) -->
-<div class="modal-back" id="mHmgRecSetup">
-  <div class="modal" style="max-width:620px">
-    <h3>🎬 HMG ClassDeck — Professional Recording Studio</h3>
-    <p style="color:var(--text-dim);font-size:13px;margin-bottom:12px">Record YouTube-ready tutoring videos with your brand, staff credentials, scrolling lower thirds, and intermittent text ads. Each video opens with an intro and closes with an outro.</p>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div class="field">
-        <label>Subject</label>
-        <input class="input hmgRecField" data-key="subject" placeholder="e.g. Mathematics" />
-      </div>
-      <div class="field">
-        <label>Topic</label>
-        <input class="input hmgRecField" data-key="topic" placeholder="e.g. Simultaneous Equations" />
-      </div>
-      <div class="field">
-        <label>Class / Level</label>
-        <input class="input hmgRecField" data-key="klass" placeholder="e.g. SS2" />
-      </div>
-      <div class="field">
-        <label>Brand Name</label>
-        <input class="input hmgRecField" data-key="brand" value="ADEWALE CLASSROOM DECK" />
-      </div>
-    </div>
-
-    <hr class="sep" />
-    <b style="font-size:13px">👨‍🏫 Staff Credentials (appears in intro + intermittent popups)</b>
-    <div class="field-row" style="margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div class="field">
-        <label>Your Name</label>
-        <input class="input hmgRecField" data-key="staffName" value="Adewale Adeagbo" />
-      </div>
-      <div class="field">
-        <label>Your Title</label>
-        <input class="input hmgRecField" data-key="staffTitle" value="Virtual Tutor | Data Scientist | AI-Augmented Solutions Developer" />
-      </div>
-    </div>
-
-    <hr class="sep" />
-    <b style="font-size:13px">📜 Lower Thirds — Scrolling Text Banner</b>
-    <div class="field" style="margin-top:6px">
-      <label>Text that scrolls at the bottom of the video</label>
-      <input class="input hmgRecField" data-key="lowerThird" value="If you want to book virtual classes with us, contact Adewale on 08100866322, 08094481488" />
-    </div>
-
-    <hr class="sep" />
-    <b style="font-size:13px">📢 Text Ad / Announcement Overlay</b>
-    <div class="field" style="margin-top:6px">
-      <label>Ad text (appears intermittently during the recording)</label>
-      <input class="input hmgRecField" data-key="adText" placeholder="e.g. Subscribe to our YouTube channel for more lessons!" />
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-      <div class="field">
-        <label>Show ad every (seconds)</label>
-        <input class="input hmgRecField" data-key="adInterval" type="number" value="60" min="15" max="300" />
-      </div>
-      <div class="field">
-        <label>Show staff popup every (seconds)</label>
-        <input class="input hmgRecField" data-key="pulseInterval" type="number" value="30" min="10" max="120" />
-      </div>
-    </div>
-
-    <div style="display:flex;align-items:center;gap:8px;margin:8px 0">
-      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-dim)">
-        <input type="checkbox" id="hmgShowStaffPulse" checked /> Show staff credentials popup during recording
-      </label>
-    </div>
-
-    <div class="field">
-      <label>Footer credit line</label>
-      <input class="input hmgRecField" data-key="footer" value="Learning Deliberately. Teaching Authentically." />
-    </div>
-
-    <div class="row" style="margin-top:10px">
-      <button class="btn small" id="hmgRecLogoBtn">🖼 Upload custom logo</button>
-      <input type="file" id="hmgRecLogoFile" class="hide" accept="image/*" />
-      <span id="hmgRecLogoStatus" style="font-size:12px;color:var(--text-dim)">Logo: ADEWALE CLASSROOM default</span>
-    </div>
-    <div class="row" style="margin-top:6px">
-      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-dim)">
-        <input type="checkbox" id="hmgRecIncludeCams" /> Include student cameras
-      </label>
-    </div>
-
-    <hr class="sep" />
-    <b style="font-size:13px">🔗 CBT / Quiz Link (shown in recorded video)</b>
-    <div class="field" style="margin-top:6px">
-      <label>Paste the link to your CBT or quiz page (appears as a bottom banner in recorded video)</label>
-      <input class="input hmgRecField" data-key="cbtLink" placeholder="e.g. https://your-cbt-platform.vercel.app/exam/abc123" />
-    </div>
-
-    <hr class="sep" />
-    <b style="font-size:13px">📄 Advertising Flyer (shown in recorded video end screen)</b>
-    <div class="field" style="margin-top:6px">
-      <label>Upload a flyer image (PNG/JPG) that will appear in the video for promotion</label>
-      <button class="btn small" id="hmgRecFlyerBtn">🖼 Upload flyer image</button>
-      <input type="file" id="hmgRecFlyerFile" class="hide" accept="image/*" />
-      <span id="hmgRecFlyerStatus" style="font-size:12px;color:var(--text-dim);margin-left:8px"></span>
-      <button class="btn small ghost" id="hmgRecFlyerClear" style="font-size:11px">✕ Clear</button>
-    </div>
-
-    <div class="row" style="margin-top:14px">
-      <button class="btn primary" id="hmgRecBegin">🎬 Start Recording with Branding</button>
-      <button class="btn" onclick="closeModal('#mHmgRecSetup')">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- v6: recording setup (YouTube-ready branded video) -->
-<div class="modal-back" id="mRecSetup">
-  <div class="modal">
-    <h3>⏺ Record lesson (YouTube-ready)</h3>
-    <p style="color:var(--text-dim);font-size:13px">Records the two split panes under a branded header — <b>your own brand, logo and name</b> — plus your camera (bottom-right) when it is on. Ready to post on your channel.</p>
-    <label>Subject</label>
-    <input class="input" id="recSubject" placeholder="e.g. Mathematics" />
-    <label style="margin-top:8px">Topic</label>
-    <input class="input" id="recTopic" placeholder="e.g. Simultaneous Equations — Elimination Method" />
-    <label style="margin-top:8px">Class</label>
-    <input class="input" id="recClass" placeholder="e.g. SS2" />
-    <label style="margin-top:8px">Brand name on the video (your academy / your name)</label>
-    <input class="input" id="recBrand" placeholder="e.g. Funke's Tutorials" />
-    <label style="margin-top:8px">Footer credit (e.g. your YouTube / WhatsApp)</label>
-    <input class="input" id="recFooter" placeholder="e.g. ▶ Funke's Tutorials on YouTube · 0803-xxx-xxxx" />
-    <div class="row" style="margin-top:6px">
-      <button class="btn small" id="recLogoBtn">🖼 Upload your logo (optional)</button>
-      <input type="file" id="recLogoFile" class="hide" accept="image/*" />
-      <span id="recLogoStatus" style="font-size:12px;color:var(--text-dim)"></span>
-    </div>
-    <div class="row" style="margin-top:8px">
-      <label style="display:flex;align-items:center;gap:8px;margin:0">
-        <input type="checkbox" id="recStudents" /> Include student cameras (up to 3 tiles, left edge)
-      </label>
-    </div>
-    <div class="row" style="margin-top:10px">
-      <button class="btn primary" id="recBegin">⏺ Start recording</button>
-      <button class="btn" onclick="closeModal('#mRecSetup')">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- v3: class report modal -->
-<div class="modal-back" id="mReport">
-  <div class="modal">
-    <h3>📈 Class report</h3>
-    <div id="reportBody" style="font-size:14px;line-height:1.7"></div>
-    <div class="row" style="margin-top:10px">
-      <button class="btn primary" id="reportDownload">⬇ Download report (.txt)</button>
-      <button class="btn" id="reportWhatsApp">📲 WhatsApp summary</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-back" id="mTabletLive">
-  <div class="modal" style="max-width:760px">
-    <h3>📡 Tablet Social Live — direct, no OBS</h3>
-    <p style="color:var(--text-dim);font-size:13px">This sends your ClassDeck teaching screen from the tablet browser to a WebRTC relay gateway, then the gateway publishes to social RTMP platforms. This is the realistic browser-safe way to go live without OBS because YouTube/Facebook/Instagram/TikTok still use RTMP/RTMPS ingest.</p>
-    <div class="row" style="gap:8px;flex-wrap:wrap;margin:6px 0">
-      <span class="badge">Source: ClassDeck workspace</span>
-      <span class="badge">No OBS</span>
-      <span class="badge">No AI API</span>
-      <span class="badge">Works from tablet browser</span>
-    </div>
-    <label>Relay gateway base URL</label>
-    <input class="input" id="tlGateway" placeholder="https://live.yourdomain.com" />
-    <label style="margin-top:8px">Relay secret/token (optional, configured on your relay)</label>
-    <input class="input" id="tlSecret" placeholder="keep this private" type="password" />
-    <div class="row" style="margin-top:8px">
-      <div style="flex:1;min-width:180px">
-        <label>Stream name</label>
-        <input class="input" id="tlStream" placeholder="classdeck" />
-      </div>
-      <div style="flex:1;min-width:180px">
-        <label>Output format</label>
-        <select class="input" id="tlFormat">
-          <option value="landscape">Landscape 16:9 — YouTube/Facebook</option>
-          <option value="vertical">Vertical 9:16 — TikTok/Instagram/Reels style</option>
-        </select>
-      </div>
-    </div>
-    <hr class="sep" />
-    <label>Destinations (full RTMP/RTMPS publish URL, including stream key)</label>
-    <p style="font-size:11.5px;color:var(--text-dim);margin:4px 0">Keys are stored only in this browser if you tick remember. Never commit them to GitHub. Leave a destination blank if not used.</p>
-    <input class="input tlDest" data-name="youtube" placeholder="YouTube full URL e.g. rtmp://a.rtmp.youtube.com/live2/YOUR-KEY" />
-    <input class="input tlDest" data-name="facebook" placeholder="Facebook full RTMPS URL from Live Producer" style="margin-top:6px" />
-    <input class="input tlDest" data-name="instagram" placeholder="Instagram full RTMPS URL from Live Producer" style="margin-top:6px" />
-    <input class="input tlDest" data-name="tiktok" placeholder="TikTok full RTMP URL from Live Center/Producer" style="margin-top:6px" />
-    <input class="input tlDest" data-name="custom" placeholder="Custom RTMP/RTMPS publish URL" style="margin-top:6px" />
-    <label style="display:flex;align-items:center;gap:8px;margin-top:8px"><input type="checkbox" id="tlRemember" /> Remember gateway and destinations on this tablet</label>
-    <div class="row" style="margin-top:10px">
-      <button class="btn primary" id="tlStart">📡 Start tablet social live</button>
-      <button class="btn danger" id="tlStop">⏹ Stop social live</button>
-      <button class="btn" id="tlHealth">Check relay</button>
-      <button class="btn" onclick="closeModal('#mTabletLive')">Close</button>
-    </div>
-    <p id="tlStatus" style="font-size:12.5px;color:var(--text-dim);margin-top:8px">Deploy the included relay in <code>relay/no-obs-social-relay/</code>, paste its URL here, then start.</p>
-    <hr class="sep" />
-    <b style="font-size:13px">No relay yet?</b>
-    <p style="font-size:12px;color:var(--text-dim);margin:4px 0">Use the Social Centre for setup steps, or open a browser-based studio such as YouTube Live Control Room, Facebook Live Producer, Instagram Live Producer, TikTok Live Center, StreamYard or Restream. Those are no-OBS options but may have account/eligibility/free-plan limits.</p>
-    <div class="row">
-      <button class="btn small" id="tlOpenCentre">🌐 Open Social Centre</button>
-      <a class="btn small" href="https://studio.youtube.com" target="_blank" rel="noopener">YouTube Studio</a>
-      <a class="btn small" href="https://www.facebook.com/live/producer" target="_blank" rel="noopener">Facebook Live</a>
-      <a class="btn small" href="https://www.instagram.com" target="_blank" rel="noopener">Instagram</a>
-      <a class="btn small" href="https://livecenter.tiktok.com" target="_blank" rel="noopener">TikTok Live</a>
-    </div>
-  </div>
-</div>
-
-<div class="modal-back" id="mNoise">
-  <div class="modal">
-    <h3>🔊 Noise meter</h3>
-    <p style="color:var(--text-dim);font-size:13px">Free local microphone analyser. Nothing is recorded or uploaded. When open, the gauge is also painted into the live broadcast/recording overlay so students can self-regulate.</p>
-    <div id="noiseGauge" style="height:30px;background:#eef1ff;border-radius:999px;overflow:hidden;border:1px solid var(--line);margin:10px 0"><i style="display:block;height:100%;width:0%;background:linear-gradient(90deg,#1d8f4f,#f59e0b,#e02b2b)"></i></div>
-    <div class="row" style="align-items:center">
-      <span style="font-size:13px;color:var(--text-dim)">Threshold</span>
-      <input type="range" id="noiseThreshold" min="20" max="95" value="70" style="flex:1" />
-      <b id="noiseLevel">0%</b>
-    </div>
-    <div class="row" style="margin-top:10px">
-      <button class="btn primary" id="noiseStart">▶ Start meter</button>
-      <button class="btn danger" id="noiseStop">⏹ Stop</button>
-      <button class="btn" onclick="closeModal('#mNoise')">Close</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-back" id="mTimer">
-  <div class="modal">
-    <h3>⏱ Countdown timer</h3>
-    <p style="color:var(--text-dim);font-size:13px">Great for exercises: “You have 5 minutes for question 3.”</p>
-    <div class="row">
-      <button class="btn" data-min="1">1 min</button>
-      <button class="btn" data-min="2">2 min</button>
-      <button class="btn" data-min="5">5 min</button>
-      <button class="btn" data-min="10">10 min</button>
-      <input class="input" id="timerCustom" type="number" placeholder="mins" style="width:90px" min="1" />
-      <button class="btn primary" id="timerStartCustom">Start</button>
-    </div>
-    <button class="btn danger" id="timerStop" style="margin-top:6px">Stop timer</button>
-  </div>
-</div>
-
+<!-- authGate removed: ADEWALE CLASSROOM DECK uses portal session only -->
 <script src="vendor/peerjs.min.js"></script>
 <script src="vendor/pdf.min.js"></script>
 <script src="vendor/qrcode.min.js"></script>

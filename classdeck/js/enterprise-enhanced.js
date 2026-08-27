@@ -44,7 +44,7 @@ window.drawHMGWatermark = function(ctx, W, H) {
   try { ctx.save(); ctx.globalAlpha = .075; ctx.fillStyle = "#fff";
     ctx.font = "bold 16px system-ui"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.translate(W/2, H/2); ctx.rotate(-Math.PI/6);
-    var t = "HMG ACADEMY CLASS DECK * buildingmyictcareer@gmail.com * " + new Date().getFullYear();
+    var t = "ADEWALE CLASSROOM DECK * buildingmyictcareer@gmail.com * " + new Date().getFullYear();
     for(var y = -600; y < 600; y += 130) { ctx.fillText(t, 0, y, W*1.6); }
     ctx.restore(); } catch(e) {}
 };

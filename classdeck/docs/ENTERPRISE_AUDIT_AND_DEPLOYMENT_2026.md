@@ -1,4 +1,4 @@
-# HMG ACADEMY CLASS DECK — Expert Audit, Fix Log & Deployment Guide
+# ADEWALE CLASSROOM DECK — Expert Audit, Fix Log & Deployment Guide
 
 Date: 2026-06-19
 

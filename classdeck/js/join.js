@@ -1,5 +1,5 @@
 /* ============================================================
-   HMG ClassDeck — Student view controller
+   ADEWALE CLASSROOM DECK — Student view controller
    Full-screen stage video (the teacher's split-screen),
    draggable teacher-cam PiP, hand raise, chat, polls,
    camera/mic sharing under teacher control.

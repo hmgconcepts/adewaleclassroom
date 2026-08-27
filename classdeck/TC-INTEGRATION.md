@@ -1,6 +1,6 @@
 # ADEWALE CLASSROOM DECK
 
-This folder is the live-teaching runtime for **ADEWALE CLASSROOM**, tailored from the HMG Academy Class Deck blueprint by founder **Adewale Samson Adeagbo**.
+This folder is the live-teaching runtime for **ADEWALE CLASSROOM**, tailored from the ADEWALE CLASSROOM DECK blueprint by founder **Adewale Samson Adeagbo**.
 
 ## Login model
 - **Teachers:** use the existing ADEWALE CLASSROOM portal session (no second login).

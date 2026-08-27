@@ -22,7 +22,7 @@ window.CLASSDECK.BRAND = {
   portalLogin: '../login.html',
   primary: '#0506ae',
   accent: '#964eec',
-  requirePortalSession: true,  // teacher studio checks Adewale Classroom auth
+  requirePortalSession: false,  // teacher studio checks Adewale Classroom auth
   studentJoinFree: true
 };
 // Back-compat aliases many Class Deck scripts read

@@ -1,4 +1,4 @@
-# 🚀 HMG ACADEMY CLASS DECK — Complete Deployment Guide (Final)
+# 🚀 ADEWALE CLASSROOM DECK — Complete Deployment Guide (Final)
 
 **Goal:** get the fixed, complete platform live on a free host, and understand exactly how to deploy client decks from the generator.
 
@@ -8,13 +8,13 @@
 
 ---
 
-## PART A — Deploy YOUR HMG ACADEMY CLASS DECK (your own platform)
+## PART A — Deploy YOUR ADEWALE CLASSROOM DECK (your own platform)
 
 ### A1. Get the final files
 Use the `CLASS_DECK_PACKAGE/HMG-ACADEMY-CLASSDECK/` folder (or `classdeck-two-folder-package.zip`, extract the `HMG-ACADEMY-CLASSDECK/` folder). It contains everything: HTML, css/, js/ (incl. `config.js`, `license.js`, `enhancements.js`, `generator.js`), vendor/, assets/, sw.js, manifests, vercel.json, `_headers`, docs.
 
 ### A2. Push to GitHub
-1. https://github.com/new → create a repo (e.g. `hmgacademyclassdeck`).
+1. https://github.com/new → create a repo (e.g. `adewaleclassroom`).
 2. **Delete all existing files in the repo first** (the web UI lets you delete; or `git rm -r .` then commit).
 3. Upload **every** file/folder from `HMG-ACADEMY-CLASSDECK/` preserving the structure (keep `js/config.js`!).
 4. Commit to `main`.
@@ -102,6 +102,6 @@ You'll see the 👑 **lifetime** badge — the platform never expires for you. T
 - [ ] Companion modes for Meet/Zoom/Teams/FreeConference
 - [ ] Custom room code + `?room=` + QR + PIN all reflect the same code
 
-*HMG ACADEMY CLASS DECK — Learning Deliberately. Teaching Authentically.*  
+*ADEWALE CLASSROOM DECK — Learning Deliberately. Teaching Authentically.*  
 *Part of the HMG Concepts Ecosystem: Academy · Technologies · Media · Gospel.*  
 *No AI APIs · No paid servers · Free tools only.*

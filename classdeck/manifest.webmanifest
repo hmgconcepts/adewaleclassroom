@@ -1,6 +1,6 @@
 {
-  "name": "HMG ACADEMY CLASS DECK — Split-Screen Teaching Studio",
-  "short_name": "HMG ClassDeck",
+  "name": "ADEWALE CLASSROOM DECK — Split-Screen Teaching Studio",
+  "short_name": "ADEWALE CLASSROOM DECK",
   "description": "Tablet-first virtual classroom and split-screen teaching studio with WebRTC live classroom, whiteboard, PDFs, quizzes, captions and no-OBS tablet social live relay workflow.",
   "id": "/",
   "start_url": "./index.html",

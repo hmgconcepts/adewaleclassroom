@@ -1,4 +1,4 @@
-# 🎓 HMG ACADEMY CLASS DECK (v8) — Quick User Guide
+# 🎓 ADEWALE CLASSROOM DECK (v8) — Quick User Guide
 
 Print this or keep it open during your first classes.
 
@@ -149,7 +149,7 @@ and your boards are exactly where you left them (autosave).
 
 ---
 
-*HMG Academy — hmgacademy.pages.dev*
+*ADEWALE CLASSROOM — adewaleclassroom.pages.dev*
 
 ---
 

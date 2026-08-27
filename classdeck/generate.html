@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>ClassDeck Generator — HMG Concepts</title>
-<meta name="description" content="Generate a branded ClassDeck for your school or tutoring brand." />
+<title>Classroom Deck Generator — HMG Concepts</title>
+<meta name="description" content="Generate a branded Classroom Deck for your school or tutoring brand." />
 <link rel="icon" href="assets/icon-96.png" />
 <link rel="stylesheet" href="css/style.css" />
 <style>
@@ -66,8 +66,8 @@
 <div class="gen-wrap">
   <div class="gen-header">
     <p style="font-size:12px;color:var(--text-dim);margin-bottom:4px">⚡ HMG CONCEPTS INTERNAL TOOL</p>
-    <h1>🚀 <span>ClassDeck Generator</span></h1>
-    <p>Enter your client's brand details below to generate a complete branded ClassDeck website. All files are generated in-browser — nothing is uploaded to any server.</p>
+    <h1>🚀 <span>Classroom Deck Generator</span></h1>
+    <p>Enter your client's brand details below to generate a complete branded Classroom Deck website. All files are generated in-browser — nothing is uploaded to any server.</p>
   </div>
 
   <!-- Progress Bar -->
@@ -95,7 +95,7 @@
         <div class="field-row">
           <div class="field">
             <label>Short Name (max 12 chars)</label>
-            <input class="input" id="gShortName" placeholder="e.g. HMG ClassDeck" oninput="updatePreview()" />
+            <input class="input" id="gShortName" placeholder="e.g. ADEWALE CLASSROOM DECK" oninput="updatePreview()" />
           </div>
           <div class="field">
             <label>Tagline</label>
@@ -154,7 +154,7 @@
         </div>
 
         <h3 style="font-size:14px;color:var(--accent);margin:16px 0 8px">💰 Client Billing Model</h3>
-        <p style="font-size:12px;color:var(--text-dim);margin-bottom:8px">Choose how the client pays for this ClassDeck. The generated deck ships with a free browser-based license engine that enforces it.</p>
+        <p style="font-size:12px;color:var(--text-dim);margin-bottom:8px">Choose how the client pays for this Classroom Deck. The generated deck ships with a free browser-based license engine that enforces it.</p>
         <div class="field-row">
           <div class="field">
             <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text);cursor:pointer">
@@ -288,7 +288,7 @@
       <!-- Step 5: Review & Generate -->
       <div class="gen-step" data-step="5">
         <h2>⚡ Step 5: Review & Generate</h2>
-        <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px">Review your client's ClassDeck configuration below, then click Generate to download the complete branded website as a ZIP file.</p>
+        <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px">Review your client's Classroom Deck configuration below, then click Generate to download the complete branded website as a ZIP file.</p>
         <div class="preview-card" id="finalReview">
           <div class="p-logo" id="reviewLogo" style="background:#1e2a78;color:#ffb347">C</div>
           <div class="p-name" id="reviewName">Brand Name</div>
@@ -305,7 +305,7 @@
         <!-- Generate Result -->
         <div class="gen-result" id="genResult">
           <div class="success-icon">🎉</div>
-          <h3 style="color:var(--ok);margin-bottom:8px">Your ClassDeck is Ready!</h3>
+          <h3 style="color:var(--ok);margin-bottom:8px">Your Classroom Deck is Ready!</h3>
           <p style="font-size:13px;color:var(--text-dim);margin-bottom:10px">The branded website has been generated. Download the ZIP and upload to GitHub, Vercel, or Netlify.</p>
           <div class="file-name"><span style="color:var(--accent);font-weight:700">📦</span> <span id="genFileName">classdeck.zip</span></div>
           <button class="btn primary" id="downloadBtn" style="font-size:16px;padding:14px 28px;margin:10px 0">⬇ Download ZIP</button>
@@ -355,16 +355,16 @@
         </div>
       </div>
       <div style="margin-top:16px;padding:10px;background:var(--bg-2);border-radius:10px;font-size:11px;color:var(--text-dim);text-align:center">
-        <strong style="color:var(--accent)">⚡ HMG Concepts</strong> — Generate branded ClassDeck websites for clients. 100% browser-based.
+        <strong style="color:var(--accent)">⚡ HMG Concepts</strong> — Generate branded Classroom Deck websites for clients. 100% browser-based.
       </div>
     </div>
   </div>
 
   <div class="hmg-footer">
-    <b>HMG Concepts ClassDeck Generator</b> — Part of the HMG Ecosystem |
+    <b>HMG Concepts Classroom Deck Generator</b> — Part of the HMG Ecosystem |
     <a href="https://hmgconcepts.pages.dev" target="_blank" rel="noopener">HMG Concepts</a> ·
     <a href="https://hmgtechnologies.pages.dev" target="_blank" rel="noopener">HMG Technologies</a> ·
-    <a href="https://hmgacademy.pages.dev" target="_blank" rel="noopener">HMG Academy</a>
+    <a href="https://adewaleclassroom.pages.dev" target="_blank" rel="noopener">ADEWALE CLASSROOM</a>
   </div>
 </div>
 
@@ -468,7 +468,7 @@ function getConfig() {
   const modelEl = document.querySelector('input[name="gLicenseModel"]:checked');
   return {
     brandName: document.getElementById('gBrandName').value.trim() || 'Your Brand Name',
-    shortName: document.getElementById('gShortName').value.trim() || document.getElementById('gBrandName').value.trim().slice(0,12) || 'ClassDeck',
+    shortName: document.getElementById('gShortName').value.trim() || document.getElementById('gBrandName').value.trim().slice(0,12) || 'Classroom Deck',
     tagline: document.getElementById('gTagline').value.trim() || 'Teach online like a pro',
     motto: document.getElementById('gMotto').value.trim() || '',
     developer: document.getElementById('gDeveloper').value.trim() || 'Adewale Samson Adeagbo',
@@ -580,7 +580,7 @@ async function generateSite() {
   const nextBtn = document.getElementById('nextBtn');
   nextBtn.disabled = true;
   nextBtn.textContent = '⏳ Generating...';
-  toast('Building your branded ClassDeck...', 'ok');
+  toast('Building your branded Classroom Deck...', 'ok');
 
   try {
     const result = await CDGenerator.build(cfg);
@@ -589,7 +589,7 @@ async function generateSite() {
     document.getElementById('genFileName').textContent = '📦 ' + generatedFileName;
     document.getElementById('genResult').classList.add('show');
     nextBtn.textContent = '✅ Generated!';
-    toast('🎉 ' + cfg.brandName + ' ClassDeck generated successfully!', 'ok', 6000);
+    toast('🎉 ' + cfg.brandName + ' Classroom Deck generated successfully!', 'ok', 6000);
   } catch (e) {
     console.error('Generation failed:', e);
     toast('Generation failed: ' + e.message, 'err', 6000);

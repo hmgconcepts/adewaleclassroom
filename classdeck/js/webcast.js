@@ -1,5 +1,5 @@
 /* ============================================================
-   HMG ACADEMY CLASS DECK — Reader Cast engine v7
+   ADEWALE CLASSROOM DECK — Reader Cast engine v7
    WHY: getDisplayMedia (screen capture) does NOT exist on
    Android Chrome/Edge, and browsers forbid drawing an iframe's
    pixels onto a canvas. Reader Cast fetches page CONTENT via

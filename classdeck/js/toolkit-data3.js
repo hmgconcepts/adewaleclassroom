@@ -1,5 +1,5 @@
 /* ============================================================
-   HMG ACADEMY CLASS DECK — Enterprise extra reference cards (181-card library total)
+   ADEWALE CLASSROOM DECK — Enterprise extra reference cards (181-card library total)
    Free/offline content: nursery to secondary, Nigeria-friendly.
    ============================================================ */
 "use strict";

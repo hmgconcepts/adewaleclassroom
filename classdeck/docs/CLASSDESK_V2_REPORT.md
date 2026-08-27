@@ -1,12 +1,12 @@
 # ClassDesk v2 — Expert Diagnosis, Enhancements and Deployment Guide
 
 Date: 2026-06-18  
-Brand: HMG ACADEMY / HMG Concepts  
+Brand: ADEWALE CLASSROOM / HMG Concepts  
 Founder: Adewale Samson Adeagbo — AI-Augmented Solutions Developer · Data Scientist · STEM Educator · Lagos, Nigeria
 
 ## 1. What ClassDesk v2 adds
 
-ClassDesk v2 keeps the existing HMG Academy ClassDeck UI/UX and pre-existing features, then adds the requested direct tablet broadcasting capabilities:
+ClassDesk v2 keeps the existing ADEWALE CLASSROOM DECK UI/UX and pre-existing features, then adds the requested direct tablet broadcasting capabilities:
 
 1. **Direct ClassDeck screen/workspace sharing** without Google Meet or Zoom.
 2. **Best-effort full tablet screen sharing** where the tablet browser supports `getDisplayMedia`.
@@ -141,7 +141,7 @@ Embedded details:
 - Data Scientist.
 - STEM Educator.
 - Founder/Visioner of HMG ecosystem.
-- HMG Academy, HMG Concepts, HMG Technologies, HMG Media, HMG Gospel.
+- ADEWALE CLASSROOM, HMG Concepts, HMG Technologies, HMG Media, HMG Gospel.
 - Lagos, Nigeria.
 - Cost discipline: no paid AI API.
 - HMG values: deliberate learning, authentic teaching, Nigerian context, values-driven technology.

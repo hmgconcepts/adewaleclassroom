@@ -1,4 +1,4 @@
-# 📋 HMG ACADEMY CLASS DECK — Prompt-by-Prompt Audit & Gap Analysis
+# 📋 ADEWALE CLASSROOM DECK — Prompt-by-Prompt Audit & Gap Analysis
 
 **Date:** 2026-08-26  
 **Scope:** every user prompt from the beginning of this chat, audited against what was built.  
@@ -8,7 +8,7 @@
 
 ## ⚠️ MOST IMPORTANT FINDING (why "issues still persist")
 
-The **live site** (`hmgacademyclassdeck.vercel.app`) and the **GitHub repo** (`hmgacademyhub/hmgacademyclassdeck`) are both serving a **Turn-2 snapshot**:
+The **live site** (`adewaleclassroom.vercel.app`) and the **GitHub repo** (`adewaleclassroomhub/adewaleclassroom`) are both serving a **Turn-2 snapshot**:
 
 | Marker checked on live teach.html | Result |
 |---|---|

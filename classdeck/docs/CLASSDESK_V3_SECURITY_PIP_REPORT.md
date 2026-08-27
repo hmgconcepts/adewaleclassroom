@@ -1,7 +1,7 @@
 # ClassDesk v3 — Security, Subscription Protection and Picture-in-Picture Report
 
 Date: 2026-06-18  
-Brand: HMG ACADEMY CLASS DECK / HMG Concepts  
+Brand: ADEWALE CLASSROOM DECK / HMG Concepts  
 Founder: Adewale Samson Adeagbo — AI-Augmented Solutions Developer · Data Scientist · STEM Educator · Lagos, Nigeria
 
 ## 1. Executive summary
@@ -157,7 +157,7 @@ What it does:
 - Opens it in browser Picture-in-Picture mode where supported.
 - Keeps a small floating preview visible when the teacher switches apps/minimises.
 - Starts a background composite pump to reduce canvas freezing while PiP is active.
-- Adds Media Session metadata for HMG ClassDeck.
+- Adds Media Session metadata for ADEWALE CLASSROOM DECK.
 
 Important limitation:
 

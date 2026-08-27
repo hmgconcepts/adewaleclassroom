@@ -28,9 +28,9 @@ const HMGEcosystem = {
 
   subsidiaries: [
     {
-      name: "HMG Academy",
+      name: "ADEWALE CLASSROOM",
       tagline: "Virtual Tutors, Home Schooling, Exam Prep & LMS",
-      url: "https://hmgacademy.pages.dev",
+      url: "https://adewaleclassroom.pages.dev",
       description: "A full-service strictly virtual learning institution covering Nursery through Tertiary with vetted tutors, LMS platforms, exam prep and parent monitoring.",
       services: ["Virtual Tutoring", "Home Schooling", "WAEC/NECO/JAMB Prep", "LMS Platforms", "Parent Monitoring", "School Partnerships"]
     },
@@ -72,11 +72,11 @@ const HMGEcosystem = {
     if (compact) {
       return `
 <div style="margin-top:20px;padding:14px;border-top:1px solid rgba(255,255,255,.12);font-size:11.5px;color:#9aa3cf;text-align:center;line-height:1.7">
-  <b style="color:#ffb347">HMG ACADEMY CLASS DECK</b> — Part of the 
+  <b style="color:#ffb347">ADEWALE CLASSROOM DECK</b> — Part of the 
   <a href="https://hmgconcepts.pages.dev" target="_blank" rel="noopener" style="color:#4f6ef7;text-decoration:none">HMG Concepts Ecosystem</a>
   <br/>
   <span style="font-size:11px">
-    <a href="https://hmgacademy.pages.dev" target="_blank" rel="noopener" style="color:#8fa3d0;text-decoration:none">Academy</a> · 
+    <a href="https://adewaleclassroom.pages.dev" target="_blank" rel="noopener" style="color:#8fa3d0;text-decoration:none">Academy</a> · 
     <a href="https://hmgtechnologies.pages.dev" target="_blank" rel="noopener" style="color:#8fa3d0;text-decoration:none">Technologies</a> · 
     <a href="https://hmgmedia.pages.dev" target="_blank" rel="noopener" style="color:#8fa3d0;text-decoration:none">Media</a> · 
     <a href="https://hmggospel.pages.dev" target="_blank" rel="noopener" style="color:#8fa3d0;text-decoration:none">Gospel</a>
@@ -138,7 +138,7 @@ const HMGEcosystem = {
             "url": "https://cssadewale.pages.dev/"
           },
           "sameAs": [
-            "https://hmgacademy.pages.dev/",
+            "https://adewaleclassroom.pages.dev/",
             "https://hmgtechnologies.pages.dev/",
             "https://hmgmedia.pages.dev/",
             "https://hmggospel.pages.dev/",
@@ -148,7 +148,7 @@ const HMGEcosystem = {
         },
         {
           "@type": "SoftwareApplication",
-          "name": document.title || "HMG ACADEMY CLASS DECK",
+          "name": document.title || "ADEWALE CLASSROOM DECK",
           "applicationCategory": "EducationalApplication",
           "operatingSystem": "Web, Android, iOS, Windows, macOS, Linux",
           "description": "Tablet-first virtual classroom and split-screen teaching studio with WebRTC live classroom, whiteboard, PDFs, quizzes, captions and no-OBS tablet social live relay workflow.",
@@ -172,7 +172,7 @@ const HMGEcosystem = {
     <div style="margin-bottom:8px">Built by <b>Adewale Samson Adeagbo</b> — Lagos, Nigeria</div>
     <div style="display:flex;flex-direction:column;gap:4px">
       <a href="https://hmgconcepts.pages.dev" target="_blank" rel="noopener" style="color:#4f6ef7;text-decoration:none">🌐 HMG Concepts</a>
-      <a href="https://hmgacademy.pages.dev" target="_blank" rel="noopener" style="color:#4f6ef7;text-decoration:none">🎓 HMG Academy</a>
+      <a href="https://adewaleclassroom.pages.dev" target="_blank" rel="noopener" style="color:#4f6ef7;text-decoration:none">🎓 ADEWALE CLASSROOM</a>
       <a href="https://hmgtechnologies.pages.dev" target="_blank" rel="noopener" style="color:#4f6ef7;text-decoration:none">💻 HMG Technologies</a>
       <a href="https://hmgmedia.pages.dev" target="_blank" rel="noopener" style="color:#4f6ef7;text-decoration:none">📺 HMG Media</a>
       <a href="https://hmggospel.pages.dev" target="_blank" rel="noopener" style="color:#4f6ef7;text-decoration:none">✝️ HMG Gospel</a>
@@ -195,7 +195,7 @@ const HMGEcosystem = {
   injectMetaTags: function() {
     const meta = [
       { name: "author", content: this.brand.founder + ", HMG Concepts" },
-      { name: "keywords", content: "HMG Concepts, HMG Academy, HMG Technologies, HMG Media, HMG Gospel, Adewale Samson Adeagbo, online teaching platform Nigeria, virtual classroom, tablet teaching app, WebRTC classroom, no OBS tablet live streaming, Lagos Nigeria EdTech" }
+      { name: "keywords", content: "HMG Concepts, ADEWALE CLASSROOM, HMG Technologies, HMG Media, HMG Gospel, Adewale Samson Adeagbo, online teaching platform Nigeria, virtual classroom, tablet teaching app, WebRTC classroom, no OBS tablet live streaming, Lagos Nigeria EdTech" }
     ];
     meta.forEach(m => {
       if (!document.querySelector(`meta[name="${m.name}"]`)) {

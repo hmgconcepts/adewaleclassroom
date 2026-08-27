@@ -1,5 +1,5 @@
 /* ============================================================
-   HMG ACADEMY CLASS DECK — v5 Educational Toolkit
+   ADEWALE CLASSROOM DECK — v5 Educational Toolkit
    Canvas-rendered instructional materials (so every tool is
    included in the live broadcast & screen shares):
      ⚛ Periodic table (118 elements, interactive)

@@ -1,4 +1,4 @@
-# 🛡️ HMG ACADEMY CLASS DECK v3 — System Audit & Compliance Report
+# 🛡️ ADEWALE CLASSROOM DECK v3 — System Audit & Compliance Report
 
 **Date:** August 26, 2026  
 **Version:** 11.1.2-enterprise  
@@ -35,7 +35,7 @@
 | 4 | **Simultaneous recording + live streaming** | ✅ DONE | Single composite canvas feeds both pipelines |
 | 5 | **Cross-device student joining** | ✅ DONE | Works on phone/tablet/laptop; in-app browser detection |
 | 6 | **Live class security** | ✅ DONE | Rate limiting, message sanitization, auth heartbeat, watermark |
-| 7 | **HMG Academy branding for recordings** | ✅ DONE | Intro/outro with HMG logo, staff credentials, lower thirds |
+| 7 | **ADEWALE CLASSROOM branding for recordings** | ✅ DONE | Intro/outro with HMG logo, staff credentials, lower thirds |
 | 8 | **High-quality social media videos** | ✅ DONE | Branded intro, staff popups, ad overlays, lower thirds |
 | 9 | **Forced app install** | ✅ DONE | Persistent install banner; PWA display_override |
 | 10 | **Video intro with brand/logo/tutor** | ✅ DONE | HMGREC.drawIntroFrame() — 6-second branded intro |
@@ -282,5 +282,5 @@
 
 **✅ System Audit Complete — All Systems Nominal**
 
-*HMG ACADEMY CLASS DECK v3 Enterprise — Adewale Samson Adeagbo*  
+*ADEWALE CLASSROOM DECK v3 Enterprise — Adewale Samson Adeagbo*  
 *Part of the HMG Concepts Ecosystem*

@@ -1,5 +1,5 @@
 /* ============================================================
-   HMG ClassDeck Generator — Template Engine v3 (generator.js)
+   ADEWALE CLASSROOM DECK Generator — Template Engine v3 (generator.js)
    Builds a branded ClassDeck website for a client and packages
    it as a ZIP containing TWO folders:
      1) <BRAND>-CLASSDECK/      → the branded, deployable ClassDeck
@@ -327,14 +327,14 @@ Built by HMG Concepts · ${cfg.hmgLink}
   _brand(path, content, cfg) {
     let html = content;
     const reps = {
-      'HMG ACADEMY CLASS DECK': cfg.brandName,
-      'HMG ACADEMY': cfg.shortName,
-      'HMG ClassDeck': cfg.shortName || 'ClassDeck',
+      'ADEWALE CLASSROOM DECK': cfg.brandName,
+      'ADEWALE CLASSROOM': cfg.shortName,
+      'ADEWALE CLASSROOM DECK': cfg.shortName || 'ClassDeck',
       'CLASS DECK': (cfg.shortName || 'CLASS DECK').toUpperCase(),
       'ClassDeck': cfg.shortName || 'ClassDeck',
       'hmg-academy-logo.png': 'brand-logo.' + cfg.logoExt,
-      'hmgacademyclassdeck.vercel.app': cfg.siteUrl || 'classdeck.example.com',
-      'hmgacademy.pages.dev': String(cfg.hmgLink).replace(/https?:\/\//, ''),
+      'adewaleclassroom.vercel.app': cfg.siteUrl || 'classdeck.example.com',
+      'adewaleclassroom.pages.dev': String(cfg.hmgLink).replace(/https?:\/\//, ''),
       '#1e2a78': cfg.primaryColor,
       '#ffb347': cfg.accentColor,
       '#10142b': cfg.bgColor,

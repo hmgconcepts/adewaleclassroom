@@ -1,7 +1,7 @@
-# HMG ACADEMY CLASS DECK v9 — Diagnosis, Fixes and Enterprise Enhancements
+# ADEWALE CLASSROOM DECK v9 — Diagnosis, Fixes and Enterprise Enhancements
 
 Date: 2026-06-18  
-Prepared for: HMG ACADEMY CLASS DECK repository
+Prepared for: ADEWALE CLASSROOM DECK repository
 
 ## 1. Executive summary
 

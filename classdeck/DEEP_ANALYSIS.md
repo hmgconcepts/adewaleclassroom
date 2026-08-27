@@ -1,9 +1,9 @@
-# HMG ACADEMY CLASS DECK — Deep Analysis & Bug Report
+# ADEWALE CLASSROOM DECK — Deep Analysis & Bug Report
 
 **Date:** August 26, 2026  
 **Version:** v11.1.1 (ClassDesk v3)  
 **Author:** Adewale Samson Adeagbo  
-**Deployed URL:** https://hmgacademyclassdeck.vercel.app/
+**Deployed URL:** https://adewaleclassroom.vercel.app/
 
 ---
 
@@ -22,14 +22,14 @@
 
 ## 1. Project Overview
 
-**HMG Academy ClassDeck** is a free, lightweight, installable (PWA) teaching platform purpose-built for teachers who use tablets (such as the itel Vista Tab 30s). It solves a specific Nigerian-EdTech problem: teachers were being thrown out of Google Meet every time they split-screened a whiteboard with learning materials.
+**ADEWALE CLASSROOM DECK** is a free, lightweight, installable (PWA) teaching platform purpose-built for teachers who use tablets (such as the itel Vista Tab 30s). It solves a specific Nigerian-EdTech problem: teachers were being thrown out of Google Meet every time they split-screened a whiteboard with learning materials.
 
 The core innovation: **The whiteboard, PDF reader, browser, notes, and image viewer all live INSIDE one app, side by side.** There is no need for split-screening two separate apps. Students join free without accounts. Teachers get a 3-day free trial then activate via a license key.
 
 The project targets:
 - **Nigerian primary/secondary school teachers** who teach from tablets
 - **Students** who join via a room code (no account needed)
-- **HMG Academy** as the parent brand with monetisation through license keys
+- **ADEWALE CLASSROOM** as the parent brand with monetisation through license keys
 
 ---
 
@@ -337,7 +337,7 @@ hmg-classdeck/
 
 ### Revenue Model
 - **Free 3-day trial** for teachers (no credit card)
-- **HMG ACCESS KEY** purchase for continued access (one-time or subscription)
+- **ADEWALE CLASSROOM access** purchase for continued access (one-time or subscription)
 - Keys generated on `admin.html` using a secret phrase
 - **Students always join free** — no account needed
 
@@ -390,7 +390,7 @@ hmg-classdeck/
 - **Issue:** Both `manifest.json` and `manifest.webmanifest` exist with DIFFERENT content:
   - `manifest.json` has display "standalone", background_color "#0A3D62"
   - `manifest.webmanifest` has display "standalone", background_color "#10142b"
-  - Different names (`"HMG ACADEMY CLASS DECK v3"` vs `"HMG ACADEMY CLASS DECK — Split-Screen Teaching Studio"`)
+  - Different names (`"ADEWALE CLASSROOM DECK v3"` vs `"ADEWALE CLASSROOM DECK — Split-Screen Teaching Studio"`)
 - **Severity:** LOW (browsers pick one; can cause branding inconsistency)
 
 #### [BUG-9] Tailwind CSS CDN Dependency
@@ -503,7 +503,7 @@ hmg-classdeck/
 
 ## Summary
 
-**HMG Academy ClassDeck** is a remarkably ambitious, well-architected educational platform built 100% client-side. It cleverly solves real problems faced by Nigerian tablet-teachers using standard Web APIs with zero server costs. The codebase demonstrates expert-level knowledge of Canvas rendering, WebRTC mesh networking, and PWA architecture.
+**ADEWALE CLASSROOM DECK** is a remarkably ambitious, well-architected educational platform built 100% client-side. It cleverly solves real problems faced by Nigerian tablet-teachers using standard Web APIs with zero server costs. The codebase demonstrates expert-level knowledge of Canvas rendering, WebRTC mesh networking, and PWA architecture.
 
 The 20 identified bugs range from cosmetic (duplicate CSS classes) to high-severity (default auth secret). The most critical fix required is changing the `AUTH_SECRET` and updating the parent portal to not use hardcoded demo codes in production.
 

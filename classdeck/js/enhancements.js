@@ -1,8 +1,8 @@
 /* ==========================================================================
-   HMG ClassDeck v3 ENTERPRISE ENHANCEMENTS
+   ADEWALE CLASSROOM DECK v3 ENTERPRISE ENHANCEMENTS
    • Crash-safe recording (auto-saves on unexpected close)
    • Simultaneous recording + live streaming
-   • HMG Academy branded intro/outro for recorded videos
+   • ADEWALE CLASSROOM branded intro/outro for recorded videos
    • Lower thirds banner with scrolling text ads
    • Staff credentials overlay (name, title, intermittent popup)
    • 1000+ student scalability via relay mode
@@ -98,7 +98,7 @@ const HMGREC = {
     klass: '',
     staffName: 'Adewale Adeagbo',
     staffTitle: 'Virtual Tutor | Data Scientist | AI-Augmented Solutions Developer',
-    brand: 'HMG ACADEMY CLASS DECK',
+    brand: 'ADEWALE CLASSROOM DECK',
     footer: 'Learning Deliberately. Teaching Authentically.',
     lowerThird: 'If you want to book virtual classes with us, contact Adewale on 08100866322, 08094481488',
     adText: '',
@@ -230,12 +230,12 @@ const HMGREC = {
     // Footer
     ctx.fillStyle = '#9aa3cf';
     ctx.font = Math.round(H * 0.02) + 'px system-ui';
-    ctx.fillText(this.meta.footer || 'HMG ACADEMY', W / 2, H * 0.74);
+    ctx.fillText(this.meta.footer || 'ADEWALE CLASSROOM', W / 2, H * 0.74);
 
     // HMG ecosystem
     ctx.fillStyle = '#6b7591';
     ctx.font = Math.round(H * 0.016) + 'px system-ui';
-    ctx.fillText('HMG Concepts · HMG Academy · HMG Technologies · HMG Media · HMG Gospel', W / 2, H * 0.80);
+    ctx.fillText('HMG Concepts · ADEWALE CLASSROOM · HMG Technologies · HMG Media · HMG Gospel', W / 2, H * 0.80);
 
     // Bottom bar
     ctx.fillStyle = 'rgba(16,20,43,.9)';
@@ -280,7 +280,7 @@ const HMGREC = {
 
     ctx.fillStyle = '#9aa3cf';
     ctx.font = Math.round(H * 0.016) + 'px system-ui';
-    ctx.fillText('HMG Concepts · HMG Academy · HMG Technologies · HMG Media · HMG Gospel', W / 2, H * 0.72);
+    ctx.fillText('HMG Concepts · ADEWALE CLASSROOM · HMG Technologies · HMG Media · HMG Gospel', W / 2, H * 0.72);
 
     ctx.fillStyle = '#ffb347';
     ctx.font = Math.round(H * 0.02) + 'px system-ui';
@@ -711,7 +711,7 @@ window.CDSecurity = CDSecurity;
     prefill("subject", Store.get("rec_subject", ""));
     prefill("topic", Store.get("rec_topic", ""));
     prefill("klass", Store.get("rec_class", ""));
-    prefill("brand", meta.brand || defaultsName("name") || "HMG ACADEMY CLASS DECK");
+    prefill("brand", meta.brand || defaultsName("name") || "ADEWALE CLASSROOM DECK");
     prefill("staffName", meta.staffName || defaults.staffName || "Adewale Adeagbo");
     prefill("staffTitle", meta.staffTitle || defaults.staffTitle || "Virtual Tutor | Data Scientist | AI-Augmented Solutions Developer");
     prefill("lowerThird", meta.lowerThird || defaults.lowerThird || "If you want to book virtual classes with us, contact Adewale on 08100866322, 08094481488");
@@ -724,7 +724,7 @@ window.CDSecurity = CDSecurity;
     const cams = $("#hmgRecIncludeCams");
     if (cams) cams.checked = Store.get("rec_students", false);
     const logoStatus = $("#hmgRecLogoStatus");
-    if (logoStatus) logoStatus.textContent = Store.get("rec_logo", null) ? "✓ custom logo saved" : "Logo: HMG ACADEMY default";
+    if (logoStatus) logoStatus.textContent = Store.get("rec_logo", null) ? "✓ custom logo saved" : "Logo: ADEWALE CLASSROOM default";
     openModal("#mHmgRecSetup");
     return true;
   };
@@ -746,7 +746,7 @@ window.CDSecurity = CDSecurity;
     meta.subject = read("subject");
     meta.topic = read("topic");
     meta.klass = read("klass");
-    meta.brand = read("brand") || "HMG ACADEMY CLASS DECK";
+    meta.brand = read("brand") || "ADEWALE CLASSROOM DECK";
     meta.staffName = read("staffName") || "Adewale Adeagbo";
     meta.staffTitle = read("staffTitle") || "Virtual Tutor | Data Scientist";
     meta.lowerThird = read("lowerThird");

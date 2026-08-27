@@ -1,5 +1,5 @@
 /* =========================================================
-   HMG ClassDeck — common helpers (toast, modal, storage, misc)
+   ADEWALE CLASSROOM DECK — common helpers (toast, modal, storage, misc)
    ========================================================= */
 "use strict";
 

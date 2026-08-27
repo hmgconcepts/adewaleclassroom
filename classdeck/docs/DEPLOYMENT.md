@@ -1,9 +1,9 @@
-# 🚀 HMG ACADEMY CLASS DECK (v9) — Deployment Guide (step by step, free tools only)
+# 🚀 ADEWALE CLASSROOM DECK (v9) — Deployment Guide (step by step, free tools only)
 
 > v9 note: deployment is identical to earlier versions — it is still a pure static site
 > with no build step. If you already deployed an earlier version, just push
 > these files over the old ones (CACHE_VERSION in `sw.js` is already bumped to
-> v9.0.0 so installed apps auto-update). Suggested repo: `hmgacademyclassdeck`
+> v9.0.0 so installed apps auto-update). Suggested repo: `adewaleclassroom`
 > (same repo, new commit) or `hmg-classdeck-v9` to keep versions side-by-side.
 
 This guide assumes **zero prior DevOps experience**. Follow it top-to-bottom once;
@@ -41,7 +41,7 @@ future updates take under a minute.
    `docs/` folders) into the upload box.
    ⚠ Upload the *contents*, not the folder itself, so `index.html` sits at the
    repository root. (If you upload the folder itself, see “Subfolder note” below.)
-6. Scroll down → commit message: `HMG ClassDeck v9.0` → **Commit changes**.
+6. Scroll down → commit message: `ADEWALE CLASSROOM DECK v9.0` → **Commit changes**.
 
 ### Method 1B: With Git (PC / Termux)
 
@@ -49,7 +49,7 @@ future updates take under a minute.
 cd classdesk
 git init
 git add .
-git commit -m "HMG ClassDeck v9.0"
+git commit -m "ADEWALE CLASSROOM DECK v9.0"
 git branch -M main
 git remote add origin https://github.com/<YOUR-USERNAME>/hmg-classdeck.git
 git push -u origin main
@@ -86,7 +86,7 @@ in `sw.js` whenever you change code so installed apps pick up the update.
 
 **Custom domain (optional, still free if you own a domain):**
 Pages project → **Custom domains** → **Set up a custom domain** → e.g.
-`class.hmgacademy.com` → follow the DNS instructions.
+`class.adewaleclassroom.com` → follow the DNS instructions.
 
 ---
 
@@ -200,7 +200,7 @@ If anything fails on step 3–5, check: HTTPS URL? Camera/mic permissions
 
 ---
 
-*Maintained for HMG Academy / HMG Technologies. Questions → see README.md.*
+*Maintained for ADEWALE CLASSROOM / HMG Technologies. Questions → see README.md.*
 
 ---
 
@@ -214,7 +214,7 @@ If anything fails on step 3–5, check: HTTPS URL? Camera/mic permissions
 3. Revenue flow:
    - Teacher gets a 3-day free trial automatically (no signup friction).
    - To continue, they pay your fee via Paystack/Flutterwave payment link,
-     bank transfer or POS (put the details on hmgacademy.pages.dev).
+     bank transfer or POS (put the details on adewaleclassroom.pages.dev).
    - On admin.html: type your secret + their full name + expiry month →
      generate the key → send it on WhatsApp.
    - Teacher enters name + key once in the Studio → licensed until expiry.

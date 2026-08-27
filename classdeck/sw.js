@@ -1,5 +1,5 @@
 /* ============================================================
-   HMG ClassDeck — Service Worker v11.1.1
+   ADEWALE CLASSROOM DECK — Service Worker v11.1.1
    Cache-first for the app shell so the studio opens instantly
    and works offline (live class still needs internet, but the
    whiteboard/PDF/notes work fully offline).
