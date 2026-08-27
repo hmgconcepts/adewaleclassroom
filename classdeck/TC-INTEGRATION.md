@@ -1,19 +1,19 @@
-# Class Deck inside Tutoring Connect
+# ADEWALE CLASSROOM DECK
 
-Full HMG Academy Class Deck runtime, integrated so a studio can teach live
-without leaving Tutoring Connect.
+This folder is the live-teaching runtime for **ADEWALE CLASSROOM**, tailored from the HMG Academy Class Deck blueprint by founder **Adewale Samson Adeagbo**.
+
+## Login model
+- **Teachers:** use the existing ADEWALE CLASSROOM portal session (no second login).
+- **Learners:** join free via `join.html` + room code/link (no portal account required for the live room).
 
 ## Entry points
-
 | Who | URL |
 |---|---|
 | Hub | `/class-deck.html` |
 | Teacher studio | `/classdeck/teach.html` |
 | Meet companion | `/classdeck/teach.html?meet=1` |
-| Student join | `/classdeck/join.html` |
-| Stream / social live | `/classdeck/stream.html` |
+| Learner join | `/classdeck/join.html?room=CODE` |
+| Stream | `/classdeck/stream.html` |
 
-Pass `?room=CODE` to join a specific room. Store the join URL on a session
-row as `meeting_url` if you want it on the calendar.
-
-No AI API. Free PeerJS / browser WebRTC as shipped by Class Deck.
+## Sync
+Store `classdeck/join.html?room=CODE` on session `meeting_url` or class registration links.

@@ -1,38 +1,32 @@
-/* ============================================================
-   HMG ACADEMY CLASS DECK — Deployment Configuration
-   ------------------------------------------------------------
-   Set your platform preferences here. This file is committed to
-   your GitHub repository and controls your own HMG ClassDeck.
-   ============================================================ */
-
-window.HMG_OWNER = {
-  /* 👑 FOUNDER / OWNER ACCOUNT — lifetime access, never expires.
-     The HMG ACADEMY CLASS DECK belongs to you, so this account is
-     always unlocked regardless of trial or license state.
-     You can change the email/password to your own, and it will be
-     honoured automatically by js/auth.js on every deploy. */
-  email: "buildingmyictcareer@gmail.com",
-  password: "Walex@28120215",
-  name: "Adewale Samson Adeagbo"
+/* ADEWALE CLASSROOM DECK — live teaching workspace
+   Tailored for ADEWALE CLASSROOM (Tutoring Connect studio).
+   Founder: Adewale Samson Adeagbo — HMG Concepts Ecosystem.
+   No separate Class Deck login: teachers already signed into ADEWALE CLASSROOM.
+   Students still join free with a room code / link (no account required).
+   No AI API. Free PeerJS / browser WebRTC stack.
+*/
+window.CLASSDECK = window.CLASSDECK || {};
+window.CLASSDECK.BRAND = {
+  productName: 'ADEWALE CLASSROOM DECK',
+  shortName: 'Classroom Deck',
+  studioName: 'ADEWALE CLASSROOM',
+  tagline: 'Teach live inside ADEWALE CLASSROOM — whiteboard, materials and learners in one place.',
+  founder: 'Adewale Samson Adeagbo',
+  ecosystem: 'HMG Concepts Ecosystem',
+  email: 'hmgconcepts@gmail.com',
+  whatsapp: 'https://wa.me/2348100866322',
+  siteUrl: 'https://adewaleclassroom.vercel.app',
+  parentPortal: '../index.html',
+  portalSessions: '../sessions.html',
+  portalCalendar: '../calendar.html',
+  portalLogin: '../login.html',
+  primary: '#0506ae',
+  accent: '#964eec',
+  requirePortalSession: true,  // teacher studio checks Adewale Classroom auth
+  studentJoinFree: true
 };
-
-window.HMG_BRAND = {
-  /* Branding shown on recordings, intro, aluno & broadcast watermark. */
-  name: "HMG ACADEMY CLASS DECK",
-  shortName: "HMG ClassDeck",
-  motto: "Learning Deliberately. Teaching Authentically.",
-  contactPhone: "08100866322, 08094481488",
-  supportWhatsApp: "https://wa.me/2348100866322",
-  ecosystem: ["HMG Concepts", "HMG Academy", "HMG Technologies", "HMG Media", "HMG Gospel"]
-};
-
-window.HMG_RECORDING_DEFAULTS = {
-  /* Defaults for the Recording Studio dialog (all editable in-app). */
-  staffName: "Adewale Adeagbo",
-  staffTitle: "Virtual Tutor | Data Scientist | AI-Augmented Solutions Developer",
-  lowerThird: "If you want to book virtual classes with us, contact Adewale on 08100866322, 08094481488",
-  adText: "",
-  adIntervalSeconds: 60,
-  staffPulseSeconds: 30,
-  footer: "Learning Deliberately. Teaching Authentically."
-};
+// Back-compat aliases many Class Deck scripts read
+window.CD_CONFIG = Object.assign({}, window.CD_CONFIG || {}, window.CLASSDECK.BRAND);
+window.APP_NAME = 'ADEWALE CLASSROOM DECK';
+window.SCHOOL_NAME = 'ADEWALE CLASSROOM';
+console.log('[ADEWALE CLASSROOM DECK] ready — synced with ADEWALE CLASSROOM portal');
