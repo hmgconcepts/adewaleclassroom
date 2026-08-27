@@ -486,15 +486,29 @@ const CBT = {
 
   reviewHTML(result, meta) {
     meta = meta || {};
-    const rows = result.detail.map((d, i) => {
+    const mediaBlock = (d) => {
+      const u = d && (d.media_url || d.image_url || d.image);
+      if (!u) return '';
+      const s = String(u);
+      if (/\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(s) || /drive\.google|imgur|cloudinary|supabase|ibb\.co/i.test(s)) {
+        return `<figure style="margin:10px 0"><img src="${TC.esc(s)}" alt="Question diagram" style="max-width:100%;border-radius:10px;border:1px solid #e2e8f0"><figcaption class="muted" style="font-size:.75rem">Diagram / stimulus</figcaption></figure>`;
+      }
+      return `<p style="margin:8px 0"><a href="${TC.esc(s)}" target="_blank" rel="noopener">Open diagram / media</a></p>`;
+    };
+    const rows = (result.detail || []).map((d, i) => {
+      const givenRaw = Array.isArray(d.given) ? d.given.join(', ') : d.given;
+      const blank = givenRaw == null || givenRaw === '';
       const tone = d.pending ? '#fef3c7' : d.ok ? '#d1fae5' : '#fee2e2';
-      const label = d.pending ? 'Awaiting tutor' : d.ok ? 'Correct' : 'Incorrect';
-      return `<section style="border:1px solid #e4ddd2;border-radius:12px;padding:12px;margin:10px 0;background:${tone}">
-        <div style="font-size:.75rem;text-transform:uppercase">${i+1} · ${label} · ${d.mark}/${d.max}${d.subject?' · '+TC.esc(d.subject):''}</div>
-        <p style="font-weight:700">${TC.esc(d.question)}</p>
-        <p><b>Your answer:</b> ${TC.esc(Array.isArray(d.given)?d.given.join(', '):d.given)}</p>
-        <p><b>Correct answer:</b> ${TC.esc(Array.isArray(d.correct)?d.correct.join(', '):d.correct)}</p>
-        ${d.explanation ? `<p><b>Why:</b> ${TC.esc(d.explanation)}</p>` : ''}
+      const label = d.pending ? 'Awaiting tutor' : d.ok ? 'Correct' : (blank ? 'Blank' : 'Incorrect');
+      const state = d.pending ? 'pending' : d.ok ? 'right' : (blank ? 'blank' : 'wrong');
+      return `<section class="rv-q" data-state="${state}" style="border:1px solid #e4ddd2;border-radius:12px;padding:12px;margin:10px 0;background:${tone}">
+        <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.04em">${i+1} · ${label} · ${d.mark}/${d.max}${d.subject?' · '+TC.esc(d.subject):''}${d.type?' · '+TC.esc(d.type):''}</div>
+        ${d.passage ? `<blockquote style="border-left:3px solid #964eec;padding-left:10px;margin:8px 0;white-space:pre-wrap">${TC.esc(d.passage)}</blockquote>` : ''}
+        ${mediaBlock(d)}
+        <p style="font-weight:700;white-space:pre-wrap">${TC.esc(d.question)}</p>
+        <p><b>Your answer:</b> <span style="white-space:pre-wrap">${TC.esc(givenRaw)}</span></p>
+        <p><b>Correct answer:</b> <span style="white-space:pre-wrap">${TC.esc(Array.isArray(d.correct)?d.correct.join(', '):d.correct)}</span></p>
+        ${d.explanation ? `<p><b>Why:</b> <span style="white-space:pre-wrap">${TC.esc(d.explanation)}</span></p>` : ''}
       </section>`;
     }).join('');
     const subj = Object.keys(result.subject_scores||{}).length > 1
@@ -732,6 +746,98 @@ const CBT = {
   },
 
   PACKS: {
+
+    /* ------------------------------------------------------------------
+       V34 — MULTI-LINE MATH / STRUCTURED STEM  (fractions, matrices, …)
+       The CSV stores ONE cell per field. Multi-line expressions MUST use
+       the platform's plain-text conventions so CBT.esc + white-space:pre-wrap
+       and optional $$…$$ / \\frac markers render without confusion.
+       ------------------------------------------------------------------ */
+    multiline_math: {
+      label: 'Multi-line maths / STEM expressions',
+      role: 'a senior mathematics examiner who writes board-style items with fractions, matrices, indices, logs, simultaneous equations, calculus and statistics — and knows how to encode them in a single CSV cell',
+      mission: 'Produce a paper where EVERY multi-line expression is encoded so Tutoring Connect / ADEWALE CLASSROOM can display it cleanly on phone and desktop. Prefer structured types (multi_numeric, matrix, numeric) over forcing a fraction into a one-line MCQ option.',
+      ref: { multi_numeric: 5, matrix: 4, numeric: 4, mcq: 4, short: 2, case_study: 1 },
+      dominant: 'multi_numeric',
+      sections: [
+        ['ENCODING RULES (MANDATORY)',
+         'Tutoring Connect stores each CSV cell as plain text. For multi-line maths you MUST follow these conventions so the student screen is unambiguous:\\n' +
+         '1. LINE BREAKS inside a cell: use the literal two-character sequence \\\\n (backslash-n) OR a real newline wrapped in quotes in the CSV.\\n' +
+         '2. STACKED FRACTIONS: write  (numerator) / (denominator)  on one line when short; for tall fractions write:\\n' +
+         '     \\\\frac{NUM}{DEN}   or   NUM\\n-----\\n DEN\\n' +
+         '   Prefer \\\\frac{…}{…} — the exam renderer keeps it monospaced with pre-wrap.\\n' +
+         '3. MATRICES: write rows separated by \\\\n and columns by spaces or & :\\n' +
+         '     [ a  b ]\\\\n[ c  d ]   or   \\\\begin{matrix} a & b \\\\\\\\ c & d \\\\end{matrix}\\n' +
+         '4. SIMULTANEOUS EQUATIONS: one equation per line with \\\\n.\\n' +
+         '5. INDICES / LOGS / EXP: use ^ for powers (x^2, e^{2x}, log_10) and keep the whole expression on one visual block.\\n' +
+         '6. NEVER paste a screenshot of maths into Col1. Text only. Diagrams go in Col media_url as an https/Drive LINK.\\n' +
+         '7. Put worked steps in Explanation with the same encoding, numbered 1) 2) 3).'],
+        ['TYPE CHOICE',
+         '• Single numeric answer → type numeric (Col8), answer in Col7, tolerance in Col12 if needed.\\n' +
+         '• Several related blanks (e.g. x=…, y=…) → multi_numeric with JSON parts in Col14.\\n' +
+         '• Same options across several statements → matrix.\\n' +
+         '• Show a worked diagram (graph, shape) → image_mcq / image_based with media_url link + text fallback in Col1.'],
+        ['TOPIC COVERAGE',
+         'Spread items across: fractions/algebraic fractions, indices & surds, logarithms, exponential equations, simultaneous equations (2×2 and simple 3×3), matrices (2×2 ops), polynomials (factor/remainder), differentiation, integration, and basic statistics (mean/median/SD). Tag Col16 with the sub-skill.']
+      ],
+      quality: [
+        'Every multi-line expression uses \\\\frac, matrix block, or explicit \\\\n — never a flattened unreadable line.',
+        'Every numeric item has a defensible key and a realistic tolerance where appropriate.',
+        'Explanations show the working with the SAME encoding the learner saw.',
+        'No item requires the learner to guess formatting; the stem states the expected form (e.g. \"leave as a simplified improper fraction\").'
+      ]
+    },
+
+    image_stimulus: {
+      label: 'Image / diagram stimulus questions',
+      role: 'an examiner who builds papers around diagrams, maps, apparatus, charts and photographs using LINK-ONLY media (no file uploads into free Supabase)',
+      mission: 'Every item that needs a figure must load that figure on the student device via a public https or Google Drive link in media_url, with a full text fallback description so the question is still fair if the image fails to load.',
+      ref: { image_mcq: 8, case_study: 4, mcq: 4, short: 2, hot_text: 2 },
+      dominant: 'image_mcq',
+      sections: [
+        ['MEDIA RULES (MANDATORY)',
+         'Tutoring Connect does NOT upload images into the free database. Use LINKS only.\\n' +
+         '1. Col media_url (or Col14 JSON {"image":"https://..."}) MUST be a direct https URL or a Google Drive link shared as \"anyone with the link\".\\n' +
+         '2. Prefer wide, clear diagrams (min ~800px). White background. No tiny handwriting.\\n' +
+         '3. ALWAYS write a text FALLBACK in the question stem: \"The diagram shows …\" so a learner on a slow network is not blocked.\\n' +
+         '4. One primary image per item. Extra figures go as additional links inside the passage/explanation, not as uploads.\\n' +
+         '5. For Drive links, if possible use the direct-view form: https://drive.google.com/uc?export=view&id=FILE_ID\\n' +
+         '6. Alt/fairness: colour is never the only way to distinguish parts — use labels A/B/C or numbers on the figure.'],
+        ['SUBJECT FIT',
+         'Works for: Biology (apparatus, specimens), Chemistry (setup, molecules), Physics (circuits, rays), Geography (maps, charts), Maths (graphs, geometric figures), Literature (cartoons), ICT (UI screenshots).'],
+        ['CSV SHAPE',
+         'Col1 = question text including the fallback description.\\n' +
+         'Col8 = image_mcq (or image_based).\\n' +
+         'Col media_url / Col14 = https link to the figure.\\n' +
+         'Cols A–D = options that refer to labelled parts of the figure.\\n' +
+         'Col answer = the key.\\n' +
+         'Col explanation = why, referencing labels on the figure.']
+      ],
+      quality: [
+        'Every image item has a working https/Drive link AND a text fallback.',
+        'Options refer to labels on the figure, not to colours alone.',
+        'No item requires downloading a file or signing into Drive mid-exam.',
+        'Explanations name the labelled part the learner should have used.'
+      ]
+    },
+
+    stem_combo: {
+      label: 'Mixed multi-line + image paper',
+      role: 'an assessment architect building a realistic mixed paper for ADEWALE CLASSROOM (WAEC/IGCSE/SAT style) that combines diagram items with multi-line algebra',
+      mission: 'Half the paper uses diagrams via media_url links; half uses multi-line mathematical encoding. The CSV must import cleanly into Quizzes and display without confusion on phones.',
+      ref: { image_mcq: 5, multi_numeric: 4, matrix: 3, numeric: 3, mcq: 3, case_study: 2 },
+      dominant: 'image_mcq',
+      sections: [
+        ['BLEND', 'Alternate diagram items and multi-line calculation items so a candidate cannot skip a skill area.'],
+        ['ENCODING', 'Apply the multiline_math encoding rules AND the image_stimulus media rules together. Never put both a huge matrix and a huge diagram in the same stem without a clear \"Refer to Figure 1\" / \"Refer to the matrix\" split.']
+      ],
+      quality: [
+        'Both media_url items and \\\\frac/matrix items appear.',
+        'Mobile-friendly: stems under 40 words excluding the expression block.',
+        'CSV validates against the platform headers (question,type,a,b,c,d,answer,mark,explanation,passage,media_url,…).'
+      ]
+    },
+
     simple: {
       label: 'Simple recall',
       role: 'a patient classroom teacher who writes clear, confidence-building questions for learners who are still finding their feet',

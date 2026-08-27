@@ -252,7 +252,7 @@
       {
         "id": "class_deck",
         "href": "class-deck.html",
-        "label": "Class Deck (live teach)",
+        "label": "ADEWALE CLASSROOM DECK",
         "icon": "📡",
         "aud": "staff"
       },
