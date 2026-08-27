@@ -359,7 +359,7 @@
       var msg = (e && (e.message || e.error_description || e.details)) || String(e);
       out.innerHTML = '<div class="card" style="border-left:4px solid #b91c1c;background:#fef2f2;padding:18px">' +
         '<b>Could not load the review.</b><p class="muted" style="margin:8px 0 0">' + esc(msg) + '</p>' +
-        '<p class="muted" style="margin:8px 0 0;font-size:.85rem">If this mentions a missing function, run <code>database/v34-cbt-review-lookup.sql</code> (or complete-schema.sql) in the Supabase SQL editor, then retry.</p></div>';
+        '<p class="muted" style="margin:8px 0 0;font-size:.85rem">If this mentions a missing function, run <code>database/v35-cbt-review-lookup.sql</code> (or complete-schema.sql / v35-cbt-review-lookup.sql) in the Supabase SQL editor, then retry.</p></div>';
       hint.textContent = 'Error — see details above.';
     } finally {
       go.disabled = false;
