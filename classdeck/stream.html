@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Tablet Social Live — HMG ACADEMY CLASS DECK</title>
+<meta name="description" content="No-OBS tablet live streaming centre for HMG Academy ClassDeck: direct ClassDeck workspace sharing, WebRTC relay setup, YouTube, Facebook, Instagram, TikTok and free browser-studio workflows." />
+<link rel="canonical" href="https://hmgacademyclassdeck.vercel.app/stream.html" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="assets/icon-96.png" />
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+<meta name="theme-color" content="#1e2a78" />
+<meta property="og:title" content="Tablet Social Live — HMG Academy ClassDeck" />
+<meta property="og:description" content="Stream live classes from a tablet without OBS using ClassDeck and a free WebRTC-to-RTMP relay workflow." />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="assets/hmg-academy-logo.png" />
+<link rel="stylesheet" href="css/style.css" />
+<style>
+  body{background:linear-gradient(135deg,#10142b,#1e2a78);min-height:100vh;color:var(--text)}
+  .wrap{max-width:1180px;margin:0 auto;padding:18px;display:grid;gap:14px}.hero,.card{border-radius:20px;box-shadow:0 18px 55px rgba(0,0,0,.25)}
+  .hero{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);padding:18px}.hero h1{margin:0 0 6px;font-size:clamp(24px,4vw,42px)}
+  .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:14px}.card{background:#fff;color:#10142b;padding:16px}.card h2,.card h3{margin:0 0 9px;color:#1e2a78}.card p,.card li{line-height:1.55}.muted{color:#576079}.tiny{font-size:12px}.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 9px;background:#eef1ff;color:#1e2a78;font-size:12px;font-weight:700;margin:2px}.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#10142b;color:#dfe6ff;border-radius:10px;padding:8px;word-break:break-all}.row2{display:flex;gap:8px;flex-wrap:wrap}.ok-note{border-left:4px solid #1d8f4f;background:#effaf3;padding:10px;border-radius:10px}.warn-note{border-left:4px solid #f59e0b;background:#fff8e8;padding:10px;border-radius:10px}.danger-note{border-left:4px solid #e02b2b;background:#fff1f1;padding:10px;border-radius:10px}.platforms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.plat{border:1px solid #d8def7;border-radius:14px;padding:10px;background:#f8f9ff}.plat b{display:block;color:#1e2a78;margin-bottom:4px}.footer{color:#dfe6ff;text-align:center;font-size:12px;padding:12px}@media(max-width:900px){.grid{grid-template-columns:1fr}.platforms{grid-template-columns:1fr}}
+</style>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"HMG Academy ClassDeck Tablet Social Live","applicationCategory":"EducationalApplication","operatingSystem":"Web","creator":{"@type":"Person","name":"Adewale Samson Adeagbo","url":"https://cssadewale.pages.dev"},"publisher":{"@type":"Organization","name":"HMG Academy","url":"https://hmgacademy.pages.dev"},"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <a class="brand" href="index.html" style="color:#fff;text-decoration:none"><img src="assets/icon-96.png" alt="" /> <span>HMG ACADEMY CLASS DECK</span></a>
+    <h1>📡 Tablet Social Live — No OBS</h1>
+    <p>Broadcast a live ClassDeck lesson from your tablet to YouTube, Facebook, Instagram, TikTok or a custom RTMP destination. The built-in path is <b>ClassDeck tablet → WebRTC relay → social RTMP platforms</b>.</p>
+    <div><span class="pill">Tablet-first</span><span class="pill">No OBS</span><span class="pill">No AI API</span><span class="pill">Free/open-source relay option</span><span class="pill">HMG branded</span></div>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>1. Direct from tablet: recommended workflow</h2>
+      <ol>
+        <li>Deploy the included relay folder: <code>relay/no-obs-social-relay/</code> on a free/low-cost VM with HTTPS.</li>
+        <li>Open <b>Teacher Studio</b> on your tablet.</li>
+        <li>Open <b>⚙ Settings → 📡 Tablet Live</b>.</li>
+        <li>Paste your relay URL and the social platform RTMP/RTMPS publish URLs.</li>
+        <li>Tap <b>Start tablet social live</b>. ClassDeck sends the lesson canvas + mic to the relay; the relay publishes to your platforms.</li>
+      </ol>
+      <div class="row2"><button class="btn primary" id="openTeach">🧑‍🏫 Open Teacher Studio</button><button class="btn" id="copyRelay">Copy default WHIP pattern</button><button class="btn" id="downloadPlan">⬇ Download tablet-live plan</button></div>
+      <div class="ok-note tiny" style="margin-top:10px"><b>Why a relay is needed:</b> the modern web browser can send WebRTC, but social platforms still commonly require RTMP/RTMPS ingest. The relay converts WebRTC to RTMP without needing OBS on the tablet.</div>
+    </section>
+
+    <section class="card">
+      <h2>2. Full tablet screen vs ClassDeck screen</h2>
+      <p>On many Android tablets, browser security does not expose full-system screen capture to websites. ClassDeck therefore provides two routes:</p>
+      <ul>
+        <li><b>ClassDeck workspace capture:</b> always available because the app captures its own teaching canvas.</li>
+        <li><b>Full tablet screen attempt:</b> available only if the tablet/browser supports <code>getDisplayMedia</code>.</li>
+      </ul>
+      <div class="warn-note tiny">If full Android screen capture is not available, your students/social audience still see the whole ClassDeck teaching workspace — whiteboard, PDFs, browser cast, notes, toolkit, camera, captions and overlays.</div>
+    </section>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2>3. Social platform notes</h2>
+      <div class="platforms">
+        <div class="plat"><b>▶ YouTube</b><p class="tiny">Use YouTube Studio/Live Control Room to create a stream and copy the RTMP server + key. Paste the full publish URL into Tablet Live.</p></div>
+        <div class="plat"><b>f Facebook</b><p class="tiny">Use Facebook Live Producer. Copy the secure RTMPS publish URL/key. Some workflows require you to click Go Live in Facebook after the preview appears.</p></div>
+        <div class="plat"><b>📸 Instagram</b><p class="tiny">Use a professional/creator account with Instagram Live Producer. Keys are temporary and usually must be generated for each live session.</p></div>
+        <div class="plat"><b>🎵 TikTok</b><p class="tiny">TikTok Live/RTMP access depends on account eligibility or Live Center access. Use the RTMP URL/key shown by TikTok when available.</p></div>
+      </div>
+      <div class="danger-note tiny" style="margin-top:10px"><b>Protect stream keys:</b> do not commit keys to GitHub. Enter them only on your own tablet and relay over HTTPS.</div>
+    </section>
+
+    <section class="card">
+      <h2>4. No relay yet? Browser-studio fallback</h2>
+      <p class="muted">These are also no-OBS options from a tablet browser, but they depend on each provider's free-plan limits and mobile browser support.</p>
+      <div class="row2">
+        <a class="btn" href="https://studio.youtube.com" target="_blank" rel="noopener">YouTube Studio</a>
+        <a class="btn" href="https://www.facebook.com/live/producer" target="_blank" rel="noopener">Facebook Live Producer</a>
+        <a class="btn" href="https://livecenter.tiktok.com" target="_blank" rel="noopener">TikTok Live Center</a>
+        <a class="btn" href="https://streamyard.com" target="_blank" rel="noopener">StreamYard</a>
+        <a class="btn" href="https://restream.io" target="_blank" rel="noopener">Restream</a>
+      </div>
+      <p class="tiny muted">For best tablet reliability and brand control, use the included relay workflow.</p>
+    </section>
+  </div>
+
+  <div class="card">
+    <h2>5. HMG brand details embedded</h2>
+    <p><b>Adewale Samson Adeagbo</b> — AI-Augmented Solutions Developer, Data Scientist, STEM Educator, EdTech Builder and Founder/Visioner of the HMG ecosystem.</p>
+    <p>HMG Concepts means <b>His Marvellous Grace</b> — Education, Technology, Media and Gospel arms built with cost discipline, Nigerian context awareness and values-driven problem solving.</p>
+    <div class="row2">
+      <a class="btn small" href="https://cssadewale.pages.dev" target="_blank" rel="noopener">Adewale Samson Adeagbo</a>
+      <a class="btn small" href="https://hmgconcepts.pages.dev" target="_blank" rel="noopener">HMG Concepts</a>
+      <a class="btn small" href="https://hmgacademy.pages.dev" target="_blank" rel="noopener">HMG Academy</a>
+      <a class="btn small" href="https://hmgtechnologies.pages.dev" target="_blank" rel="noopener">HMG Technologies</a>
+      <a class="btn small" href="https://hmgmedia.pages.dev" target="_blank" rel="noopener">HMG Media</a>
+      <a class="btn small" href="https://hmggospel.pages.dev" target="_blank" rel="noopener">HMG Gospel</a>
+    </div>
+  </div>
+  <div class="footer">HMG ACADEMY CLASS DECK · Learning Deliberately. Teaching Authentically. · No paid AI API.</div>
+</div>
+<script>
+"use strict";
+const $=(s,r=document)=>r.querySelector(s);
+const base=location.href.replace(/stream\.html.*$/,"");
+$("#openTeach").onclick=()=>window.open(base+"teach.html","_blank","noopener");
+$("#copyRelay").onclick=async()=>{const txt="https://YOUR-RELAY-DOMAIN/rtc/v1/whip/?app=live&stream=classdeck"; try{await navigator.clipboard.writeText(txt); alert("Copied: "+txt);}catch{prompt("Copy WHIP endpoint pattern",txt)}};
+function plan(){return ["HMG CLASSDECK TABLET SOCIAL LIVE PLAN","","1. Deploy relay/no-obs-social-relay on a free/low-cost HTTPS VM.","2. Open teach.html on the tablet.","3. Settings → Tablet Live.","4. Gateway URL: https://YOUR-RELAY-DOMAIN","5. Stream name: classdeck-ROOMCODE","6. Paste full RTMP/RTMPS publish URLs from YouTube/Facebook/Instagram/TikTok.","7. Start tablet social live.","","Reminder: protect stream keys and obtain consent before public streaming minors."].join("\n")}
+$("#downloadPlan").onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([plan()],{type:'text/plain'}));a.download='classdeck-tablet-social-live-plan.txt';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500)};
+</script>
+</body>
+</html>

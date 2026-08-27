@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Join class — HMG ACADEMY CLASS DECK</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="assets/icon-96.png" />
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+<meta name="theme-color" content="#1e2a78" />
+<link rel="stylesheet" href="css/style.css" />
+<style>
+/* Cross-device join improvements */
+.join-steps { display:flex; gap:4px; justify-content:center; margin:6px 0 }
+.join-steps span { width:8px; height:8px; border-radius:50%; background:var(--bg-3); transition:all .2s }
+.join-steps span.active { background:var(--ok); transform:scale(1.3) }
+#deviceCheckExtra { font-size:11px; color:var(--text-dim); margin-top:6px }
+/* Platform diagnostic badges */
+.diag-row { display:flex; gap:4px; flex-wrap:wrap; margin:4px 0 }
+.diag-badge { font-size:10.5px; padding:2px 7px; border-radius:999px; background:var(--bg-2); border:1px solid var(--line) }
+.diag-badge.ok { border-color:var(--ok); color:var(--ok) }
+.diag-badge.fail { border-color:var(--danger); color:var(--danger) }
+/* Install banner for join page too */
+.join-install-banner { display:flex; align-items:center; gap:8px; background:linear-gradient(135deg,#1e2a78,#4f6ef7); color:#fff; border-radius:10px; padding:8px 12px; margin-bottom:8px; font-size:12px; cursor:pointer }
+.join-install-banner:hover { opacity:.92 }
+</style>
+</head>
+<body>
+
+<!-- ===== join gate ===== -->
+<!-- Issue #9: install banner on the student join page too -->
+<div class="join-install-banner hide" id="joinInstallBar" onclick="joinInstall()">
+  <span style="font-size:20px">📲</span>
+  <div style="flex:1"><strong>Install HMG ACADEMY CLASS DECK</strong><div style="font-size:11px;opacity:.9">Join classes faster and get instant access on this device.</div></div>
+  <span style="font-size:18px">✕</span>
+</div>
+
+<div class="join-gate" id="joinGate">
+  <div class="join-card">
+    <img src="assets/icon-192.png" alt="HMG Academy Class Deck" />
+    <h2>HMG ACADEMY CLASS DECK</h2>
+    <p class="sub">Join your class — no account needed. Works on any phone, tablet or laptop.</p>
+    <p class="sub" style="background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:8px;font-size:12px">
+      ℹ The teacher must be <b>LIVE</b> (▶ Go Live pressed on their side) before you can join.
+      If it says "class not found", wait for your teacher to start, then tap Join again.</p>
+    <span id="roomChip" class="badge hide" style="align-self:center;font-size:13px;padding:6px 14px;background:var(--bg-3);color:var(--accent);font-weight:700"></span>
+    <div id="roomFieldWrap">
+      <label style="font-size:13px;color:var(--text-dim)">Room code</label>
+      <input class="input" id="inRoom" placeholder="e.g. K7M2QX" autocapitalize="characters" maxlength="10" style="text-transform:uppercase;letter-spacing:2px;font-weight:700" />
+    </div>
+    <div>
+      <label style="font-size:13px;color:var(--text-dim)">Your name</label>
+      <input class="input" id="inName" placeholder="e.g. Chidinma O." maxlength="40" />
+    </div>
+    <div>
+      <label style="font-size:13px;color:var(--text-dim)">Class PIN (only if your teacher set one)</label>
+      <input class="input" id="inPin" placeholder="e.g. 2468" maxlength="8" inputmode="numeric" />
+    </div>
+    <button class="btn primary" id="btnJoin" style="padding:12px">Join class ➜</button>
+    <p class="sub" id="joinStatus"></p>
+    <div id="joinDiag" class="sub" style="text-align:left;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:11.8px"></div>
+  </div>
+</div>
+
+<!-- ===== live stage ===== -->
+<div class="stage-wrap hide" id="stageWrap">
+  <video id="stageVideo" autoplay playsinline></video>
+</div>
+
+<!-- teacher camera picture-in-picture (draggable) -->
+<div class="teacher-pip" id="teacherPip"><video id="teacherVideo" autoplay playsinline></video></div>
+
+<!-- status chips -->
+<div class="stage-status hide" id="stageStatus">
+  <span class="badge live">● LIVE</span>
+  <span class="badge" id="roomNameChip"></span>
+  <span class="badge" id="countChip">👥 1</span>
+</div>
+
+<!-- tap-to-unmute overlay (autoplay policy) -->
+<div class="modal-back" id="mUnmute">
+  <div class="modal" style="text-align:center">
+    <h3>🔊 Tap to start audio &amp; video</h3>
+    <p style="color:var(--text-dim);font-size:14px;margin-bottom:14px">Your browser requires one tap before sound can play.</p>
+    <button class="btn primary" id="btnUnmute" style="padding:14px 26px;font-size:16px">▶ Start class view</button>
+  </div>
+</div>
+
+<!-- student controls -->
+<div class="stu-controls hidden" id="stuControls">
+  <button class="btn icon" id="sBtnHand" title="Raise hand">✋</button>
+  <button class="btn icon" id="sBtnReact" title="Send a reaction">😀</button>
+  <button class="btn icon" id="sBtnChat" title="Chat">💬</button>
+  <button class="btn icon" id="sBtnCam" title="My camera">📷</button>
+  <button class="btn icon" id="sBtnScreen" title="Share my screen with the teacher">🖥</button>
+  <button class="btn icon" id="sBtnMic" title="My mic (teacher must allow)" disabled>🎙</button>
+  <button class="btn icon" id="sBtnFull" title="Fullscreen">⛶</button>
+  <button class="btn icon danger" id="sBtnLeave" title="Leave">🚪</button>
+</div>
+
+<!-- chat drawer -->
+<aside class="drawer" id="sDrawerChat" style="top:0">
+  <div class="drawer-head">💬 Class chat <button class="btn small ghost" id="sChatClose">✕</button></div>
+  <div class="drawer-body" id="sChatList"></div>
+  <div class="drawer-foot">
+    <label style="display:flex;gap:6px;align-items:center;font-size:12px;color:var(--text-dim);margin-bottom:6px">
+      <input type="checkbox" id="sChatPriv" /> 🔒 Send privately to teacher only
+    </label>
+    <div class="chat-input-row">
+      <input class="input" id="sChatInput" placeholder="Ask a question…" maxlength="500" />
+      <button class="btn primary" id="sChatSend">➤</button>
+    </div>
+  </div>
+</aside>
+
+<!-- v8: personal student whiteboard (teacher-only visibility) -->
+<div id="sBoardWrap" class="hide" style="position:fixed;inset:0;z-index:70;background:rgba(8,10,30,.96);display:flex;flex-direction:column">
+  <div style="display:flex;gap:6px;align-items:center;padding:8px 10px;background:var(--bg-2)">
+    <b style="font-size:14px">🎨 Your whiteboard</b>
+    <span style="font-size:11.5px;color:var(--text-dim)">only your teacher sees this</span>
+    <span style="flex:1"></span>
+    <span class="sb-colors" style="display:flex;gap:4px">
+      <span class="sb-c" data-c="#111111" style="width:24px;height:24px;border-radius:50%;background:#111;cursor:pointer;border:2px solid #fff"></span>
+      <span class="sb-c" data-c="#e02b2b" style="width:24px;height:24px;border-radius:50%;background:#e02b2b;cursor:pointer;border:2px solid transparent"></span>
+      <span class="sb-c" data-c="#1565d8" style="width:24px;height:24px;border-radius:50%;background:#1565d8;cursor:pointer;border:2px solid transparent"></span>
+      <span class="sb-c" data-c="#0a8a3a" style="width:24px;height:24px;border-radius:50%;background:#0a8a3a;cursor:pointer;border:2px solid transparent"></span>
+    </span>
+    <button class="btn small" id="sbUndo">↩</button>
+    <button class="btn small" id="sbClear">🗑</button>
+    <button class="btn small" id="sbMin" title="Back to the lesson view">📺 Lesson</button>
+  </div>
+  <div id="sBoardStage" style="flex:1;position:relative;background:#fff;touch-action:none"></div>
+</div>
+<button id="sbReopen" class="btn icon hide" style="position:fixed;left:14px;bottom:74px;z-index:60" title="Open my whiteboard">🎨</button>
+
+<!-- v8: group banner -->
+<div id="sGroupBanner" class="hide" style="position:fixed;top:0;left:0;right:0;z-index:65;background:#1d6f42;color:#fff;text-align:center;padding:7px;font-weight:700;font-size:15px"></div>
+
+<!-- Enterprise accessibility: live caption banner sent by the teacher's browser speech recognition -->
+<div id="sCaptionBanner" class="hide" aria-live="polite" style="position:fixed;left:50%;bottom:92px;transform:translateX(-50%);z-index:66;max-width:min(92vw,900px);background:rgba(0,0,0,.78);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:10px 14px;font-size:clamp(15px,2.5vw,22px);line-height:1.35;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.35)"></div>
+
+<!-- v8: activity modal -->
+<div class="modal-back" id="mActivity">
+  <div class="modal">
+    <h3 id="sActTitle">🧩 Activity</h3>
+    <div id="sActOpen" class="hide">
+      <textarea class="input" id="sActText" rows="3" maxlength="280" placeholder="Type your answer…"></textarea>
+    </div>
+    <div id="sActExit" class="hide">
+      <label style="font-size:13px;color:var(--text-dim)">How well did you understand today? </label>
+      <div id="sActStars" style="display:flex;gap:6px;font-size:30px;cursor:pointer;margin:6px 0">
+        <span data-r="1">☆</span><span data-r="2">☆</span><span data-r="3">☆</span><span data-r="4">☆</span><span data-r="5">☆</span>
+      </div>
+      <input class="input" id="sActLearned" placeholder="One thing you learned today" style="margin-top:6px" />
+      <input class="input" id="sActConfusing" placeholder="One thing still confusing (optional)" style="margin-top:6px" />
+    </div>
+    <button class="btn primary" id="sActSend" style="margin-top:10px">Send ➜</button>
+    <p id="sActDone" class="hide" style="color:var(--ok);font-weight:700;margin-top:8px">✔ Sent — thank you!</p>
+  </div>
+</div>
+
+<!-- v8: class results modal -->
+<div class="modal-back" id="mActResults">
+  <div class="modal">
+    <h3 id="sResTitle">☁ Class results</h3>
+    <div id="sResBody" style="line-height:2;max-height:60vh;overflow:auto"></div>
+    <button class="btn primary" onclick="closeModal('#mActResults')" style="margin-top:8px">Close</button>
+  </div>
+</div>
+
+<!-- v4: reaction picker -->
+<div id="reactBar" class="hide" style="position:fixed;bottom:74px;left:50%;transform:translateX(-50%);z-index:60;display:flex;gap:6px;background:rgba(16,20,43,.92);border:1px solid var(--line);border-radius:999px;padding:8px 12px">
+  <button class="btn icon ghost react-emo">👍</button>
+  <button class="btn icon ghost react-emo">❤️</button>
+  <button class="btn icon ghost react-emo">😂</button>
+  <button class="btn icon ghost react-emo">🎉</button>
+  <button class="btn icon ghost react-emo">😮</button>
+  <button class="btn icon ghost react-emo">👏</button>
+</div>
+
+<!-- v4: waiting room overlay -->
+<div class="modal-back" id="mWaiting">
+  <div class="modal" style="text-align:center">
+    <h3>🚪 Waiting room</h3>
+    <p style="color:var(--text-dim);font-size:14px;margin:10px 0">You're in the waiting room.<br/>Your teacher will admit you shortly — please stay on this page.</p>
+    <div class="badge live" style="display:inline-block">waiting…</div>
+    <button class="btn ghost" id="btnLeaveWaiting" type="button" style="margin-top:12px">✕ Leave waiting room</button>
+  </div>
+</div>
+
+<!-- v3: quiz modal -->
+<div class="modal-back" id="mQuiz">
+  <div class="modal">
+    <h3 id="sQuizTitle">🏆 Quiz</h3>
+    <p style="color:var(--text-dim);font-size:12.5px">Question <span id="sQuizPos">1/1</span> • answer fast for bonus points! <b id="sQuizTimer"></b></p>
+    <b id="sQuizQ" style="display:block;margin:10px 0;font-size:16px"></b>
+    <div id="sQuizOpts" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div id="sQuizFb" class="hide" style="margin-top:10px;font-weight:700;font-size:15px"></div>
+  </div>
+</div>
+
+<!-- poll modal -->
+<div class="modal-back" id="mPoll">
+  <div class="modal">
+    <h3>📊 Quick poll</h3>
+    <b id="sPollQ" style="display:block;margin-bottom:10px"></b>
+    <div id="sPollOpts" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+</div>
+
+<!-- announcement overlay -->
+<div class="modal-back" id="mAnnounce">
+  <div class="modal" style="text-align:center">
+    <h3>📢 Announcement</h3>
+    <p id="announceText" style="font-size:18px;line-height:1.5;margin:10px 0"></p>
+    <button class="btn primary" onclick="closeModal('#mAnnounce')">OK</button>
+  </div>
+</div>
+
+<script src="vendor/peerjs.min.js"></script>
+<script src="js/common.js"></script>
+<script src="js/config.js"></script>
+<script src="js/license.js"></script>
+<script src="js/rtc.js"></script>
+<script src="js/join.js"></script>
+<script>
+/* Issue #9: force install banner on the join page (re-appears until installed). */
+function joinInstall() {
+  if (window.__joinDeferredInstall) { window.__joinDeferredInstall.prompt(); }
+  else alert('Tap your browser menu → “Add to Home screen” or “Install app”.');
+}
+(function () {
+  try { if (localStorage.getItem('hmgcd_cd_installed')) return; } catch (e) {}
+  if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+    try { localStorage.setItem('hmgcd_cd_installed', '1'); } catch (e) {}
+    return;
+  }
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); window.__joinDeferredInstall = e; });
+  window.addEventListener('appinstalled', function () {
+    try { localStorage.setItem('hmgcd_cd_installed', '1'); } catch (e) {}
+    var b = document.getElementById('joinInstallBar'); if (b) b.classList.add('hide');
+  });
+  setTimeout(function () { var b = document.getElementById('joinInstallBar'); if (b) b.classList.remove('hide'); }, 5000);
+})();
+</script>
+</body>
+</html>

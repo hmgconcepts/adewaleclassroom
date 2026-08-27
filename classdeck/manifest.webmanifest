@@ -1,0 +1,35 @@
+{
+  "name": "HMG ACADEMY CLASS DECK — Split-Screen Teaching Studio",
+  "short_name": "HMG ClassDeck",
+  "description": "Tablet-first virtual classroom and split-screen teaching studio with WebRTC live classroom, whiteboard, PDFs, quizzes, captions and no-OBS tablet social live relay workflow.",
+  "id": "/",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#10142b",
+  "theme_color": "#1e2a78",
+  "lang": "en",
+  "categories": ["education", "productivity"],
+  "display_override": ["window-controls-overlay", "minimal-ui", "standalone"],
+  "edge_side_panel": { "preferred_width": 480 },
+  "handle_links": "preferred",
+  "launch_handler": {
+    "client_mode": ["navigate-new", "focus-existing"]
+  },
+  "icons": [
+    { "src": "assets/icon-96.png",  "sizes": "96x96",   "type": "image/png" },
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Start a class",   "url": "./teach.html",            "description": "Open the teacher studio (built-in live class)" },
+    { "name": "Join a class",    "url": "./join.html",             "description": "Join as a student" },
+    { "name": "Record a lesson", "url": "./teach.html?rec=1",      "description": "Open teacher studio ready to record" },
+    { "name": "Solo workspace",  "url": "./teach.html?solo=1",     "description": "Whiteboard + PDF without a live class" },
+    { "name": "Social Live Centre", "url": "./stream.html",        "description": "No-OBS tablet social live relay workflow" }
+  ],
+  "screenshots": [
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "form_factor": "narrow", "label": "ClassDeck on tablet" }
+  ]
+}

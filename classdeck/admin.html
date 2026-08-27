@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HMG Admin — License Key Generator</title>
+<link rel="icon" href="assets/icon-96.png" />
+<link rel="stylesheet" href="css/style.css" />
+<meta name="robots" content="noindex,nofollow" />
+</head>
+<body>
+<div class="landing">
+  <img class="logo" src="assets/hmg-academy-logo.png" alt="" style="width:auto;max-width:220px;height:auto;border-radius:12px" />
+  <h1>HMG <span>License Generator</span></h1>
+  <p class="tag">Private admin tool — generate HMG ACCESS KEYS for paying teachers.
+  Keep this page private. The static browser generator is convenient for local use, but browser code can be inspected; use the optional Cloudflare Worker for production licensing.</p>
+
+  <div class="card" style="width:min(520px,94vw);margin-top:22px">
+    <label style="font-size:13px;color:var(--text-dim)">Your secret phrase (must match AUTH_SECRET in js/auth.js)</label>
+    <input class="input" id="gSecret" type="password" placeholder="e.g. CHANGE-ME-HMG-2026" />
+    <label style="font-size:13px;color:var(--text-dim);margin-top:10px;display:block">Teacher's full name (exactly as they will type it)</label>
+    <input class="input" id="gName" placeholder="e.g. Mrs Funke Ojo" />
+    <label style="font-size:13px;color:var(--text-dim);margin-top:10px;display:block">License valid until (year & month, inclusive)</label>
+    <div style="display:flex;gap:8px">
+      <input class="input" id="gYear" type="number" value="2026" style="width:110px" />
+      <select class="input" id="gMonth" style="width:90px">
+        <option>01</option><option>02</option><option>03</option><option>04</option><option>05</option><option>06</option>
+        <option>07</option><option>08</option><option>09</option><option>10</option><option>11</option><option selected>12</option>
+      </select>
+    </div>
+    <button class="btn primary" id="gGo" style="margin-top:14px;width:100%">🔑 Generate key</button>
+    <div id="gOut" style="margin-top:14px;font-size:15px;word-break:break-all"></div>
+  </div>
+
+  <div class="card" style="width:min(520px,94vw);margin-top:14px">
+    <h3 style="font-size:15px">How the revenue flow works (all free tools)</h3>
+    <p style="font-size:13px;color:var(--text-dim);line-height:1.7;margin-top:6px">
+      1. A teacher tries CLASS DECK — they get a <b>3-day free trial</b> automatically.<br/>
+      2. To continue, they pay your small fee (Paystack/Flutterwave payment link, bank transfer, POS — your choice).<br/>
+      3. You type their name + expiry here → send them the key on WhatsApp.<br/>
+      4. They enter name + key once in the Teacher Studio → licensed until expiry.<br/>
+      5. Renewal = new key with a later expiry. Students never pay and never see any of this.
+    </p>
+  </div>
+</div>
+<script src="js/common.js"></script>
+<script>
+async function sha256Hex(str){
+  const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+document.getElementById("gGo").addEventListener("click", async () => {
+  const sec = document.getElementById("gSecret").value;
+  const name = document.getElementById("gName").value.trim();
+  const year = Number(document.getElementById("gYear").value);
+  const month = document.getElementById("gMonth").value;
+  const out = document.getElementById("gOut");
+  out.replaceChildren();
+  if (!sec || name.length < 3) { out.textContent = "Fill the secret and the teacher's full name."; return; }
+  if (!Number.isInteger(year) || year < 2000 || year > 9999 || !/^\d{2}$/.test(month)) {
+    out.textContent = "Enter a valid expiry year and month."; return;
+  }
+  const exp = String(year) + month;
+  const sig = (await sha256Hex(sec + "|" + name.toLowerCase() + "|" + exp)).slice(0,10).toUpperCase();
+  const key = "HMG-" + exp + "-" + sig;
+  const strong = document.createElement("b");
+  strong.style.color = "var(--accent)";
+  strong.textContent = key;
+  const detail = document.createElement("span");
+  detail.style.cssText = "font-size:12.5px;color:var(--text-dim)";
+  detail.textContent = "Send to: " + name + " — valid until end of " + exp.slice(0,4) + "-" + exp.slice(4) + ". They activate with this exact name.";
+  out.append(strong, document.createElement("br"), detail);
+});
+</script>
+</body>
+</html>

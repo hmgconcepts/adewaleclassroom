@@ -1,0 +1,1 @@
+{ "version": "11.1.2-enterprise", "build": 7, "channel": "stable", "released": "2026-08-26", "features": ["custom-room-codes", "two-folder-generator", "owner-lifetime-account", "client-subscription-billing", "crash-safe-recording", "branded-intro-outro", "lower-thirds-ads", "multi-platform-companion"] }

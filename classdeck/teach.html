@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Teacher Studio — HMG ACADEMY CLASS DECK</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="assets/icon-96.png" />
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+<meta name="theme-color" content="#1e2a78" />
+<link rel="stylesheet" href="css/style.css" />
+<style>
+/* Force Install Banner */
+.install-banner {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 9997;
+  background: linear-gradient(135deg, #1e2a78, #4f6ef7);
+  color: #fff; padding: 14px 18px; display: flex; align-items: center;
+  gap: 12px; box-shadow: 0 -4px 20px rgba(0,0,0,.4);
+  animation: slideUp .35s ease; font-size: 14px;
+}
+.install-banner .install-content { display: flex; align-items: center; gap: 14px; flex: 1; flex-wrap: wrap; }
+.install-banner .install-icon { font-size: 28px; }
+.install-banner .install-text { flex: 1; min-width: 160px; }
+.install-banner .install-text strong { display: block; font-size: 15px; }
+.install-banner .install-text span { font-size: 12px; opacity: .85; }
+.install-banner .install-actions { display: flex; gap: 8px; }
+.install-banner .install-close { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; opacity: .6; padding: 0 4px; }
+.install-banner .install-close:hover { opacity: 1; }
+@keyframes slideUp { from { transform: translateY(100%) } to { transform: translateY(0) } }
+/* Recording overlay screen */
+.rec-dialog { position: fixed; inset: 0; z-index: 9995; background: rgba(5,8,22,.85); display: flex; align-items: center; justify-content: center; padding: 18px; }
+.rec-dialog .rec-card { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; width: min(540px, 96vw); max-height: 88vh; overflow-y: auto; padding: 24px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+.rec-dialog .rec-card h3 { font-size: 18px; margin-bottom: 12px; }
+.rec-dialog .rec-card label { display: block; font-size: 12.5px; color: var(--text-dim); margin-bottom: 3px; font-weight: 600; }
+.rec-dialog .rec-card .field { margin-bottom: 10px; }
+.rec-dialog .rec-card textarea.input { resize: vertical; min-height: 50px; }
+/* Companion badge */
+.badge.companion { background: #0b8043; color: #fff; font-size: 11px; padding: 3px 10px; border-radius: 999px; }
+</style>
+</head>
+<body>
+<div class="studio">
+
+  <!-- ============ TOP BAR ============ -->
+  <header class="topbar">
+    <a class="brand" href="index.html" title="Home">
+      <img src="assets/icon-96.png" alt="" /> <span>HMG&nbsp;ACADEMY&nbsp;CLASS&nbsp;DECK</span>
+    </a>
+
+    <span id="liveBadge" class="badge hide">● LIVE</span>
+    <span id="pendingBadge" class="badge hide" title="Students waiting for admission"></span>
+    <span id="timerChip" class="badge"><span>⏱</span><b id="timerVal">00:00</b></span>
+
+    <div class="roominfo" id="roomInfo" title="Tap to copy student link">
+      Room <code id="roomCodeLbl">——</code>
+      <span class="dot off" id="sigDot"></span>
+      <span id="stuCount">0 👥</span>
+      <button class="btn small ghost" id="btnNewRoom" title="Generate a fresh room code (multi-teacher: every teacher/device gets their own room)">↺</button>
+    </div>
+
+    <button class="btn small" id="btnQR" title="Show join QR / link">🔗 Invite</button>
+
+    <div class="spacer"></div>
+
+    <button class="btn small primary" id="btnGoLive">▶ Go Live</button>
+    <button class="btn small danger hide" id="btnEndLive">⏹ End</button>
+    <button class="btn small" id="btnCam" title="Toggle your camera">📷 Cam</button>
+    <button class="btn small" id="btnMic" title="Toggle your microphone">🎙 Mic</button>
+    <button class="btn small" id="btnRec" title="Record the lesson locally">⏺ Rec</button>
+    <button class="btn small" id="btnPiP" title="Picture-in-picture: keep a small live preview when you minimise/switch apps">▣ PiP</button>
+
+    <button class="btn small" id="btnStudents" title="Students / monitoring">👥</button>
+    <button class="btn small" id="btnChat" title="Class chat">💬</button>
+    <button class="btn small" id="btnPoll" title="Quick poll">📊</button>
+    <button class="btn small" id="btnQuiz" title="Quiz with auto-scoring &amp; leaderboard">🏆</button>
+    <button class="btn small" id="btnBoards" title="Student whiteboards — every student gets a board only you can see">🎨</button>
+    <button class="btn small" id="btnActivity" title="Activities: open question, word cloud, exit ticket">🧩</button>
+    <button class="btn small" id="btnCalc" title="Floating calculator">🧮</button>
+    <button class="btn small" id="btnTimer" title="Countdown timer">⏱</button>
+
+    <button class="btn small" id="btnLayout" title="Cycle layout: split / left only / right only">◫</button>
+    <button class="btn small" id="btnSwap" title="Swap panes">⇄</button>
+    <button class="btn small" id="btnFocus" title="Focus mode — hide all bars (great while sharing on Google Meet)">🎯</button>
+    <button class="btn small" id="btnLessons" title="Lesson manager — save/load whiteboard decks">📚</button>
+    <button class="btn small" id="btnFull" title="Fullscreen">⛶</button>
+    <button class="btn small" id="btnSettings" title="Settings">⚙</button>
+  </header>
+
+  <!-- floating handle to exit focus mode -->
+  <button id="focusHandle" class="focus-handle hide" title="Show toolbar">☰</button>
+
+  <!-- v6: account badge (tap = logout) -->
+  <span id="authBadge" class="badge hide" style="position:fixed;bottom:8px;left:8px;z-index:400;font-size:10.5px;cursor:pointer"></span>
+
+  <!-- ============ SPLIT WORKSPACE ============ -->
+  <div class="workspace" id="workspace">
+
+    <!-- LEFT PANE -->
+    <div class="pane" id="paneLeft">
+      <div class="pane-head" data-pane="L">
+        <span class="tab active" data-app="board">✏ Whiteboard</span>
+        <span class="tab" data-app="pdf">📄 PDF</span>
+        <span class="tab" data-app="web">🌐 Browser</span>
+        <span class="tab" data-app="notes">🗒 Notes</span>
+        <span class="tab" data-app="image">🖼 Image</span>
+        <span class="tab" data-app="graph">📈 Graph</span>
+        <span class="tab" data-app="video">🎬 Video</span>
+        <span class="tab" data-app="toolkit">🧰 Toolkit</span>
+        <span class="tab" data-app="flash">🃏 Cards</span>
+        <span class="tab" data-app="stopwatch">⏱ Timer</span>
+      </div>
+      <div class="pane-body" id="bodyL"></div>
+    </div>
+
+    <div class="divider" id="divider" title="Drag to resize"></div>
+
+    <!-- RIGHT PANE -->
+    <div class="pane" id="paneRight">
+      <div class="pane-head" data-pane="R">
+        <span class="tab" data-app="board">✏ Whiteboard</span>
+        <span class="tab active" data-app="pdf">📄 PDF</span>
+        <span class="tab" data-app="web">🌐 Browser</span>
+        <span class="tab" data-app="notes">🗒 Notes</span>
+        <span class="tab" data-app="image">🖼 Image</span>
+        <span class="tab" data-app="graph">📈 Graph</span>
+        <span class="tab" data-app="video">🎬 Video</span>
+        <span class="tab" data-app="toolkit">🧰 Toolkit</span>
+        <span class="tab" data-app="flash">🃏 Cards</span>
+        <span class="tab" data-app="stopwatch">⏱ Timer</span>
+      </div>
+      <div class="pane-body" id="bodyR"></div>
+    </div>
+  </div>
+
+  <!-- teacher self view -->
+  <div class="selfview" id="selfView"><video id="selfVideo" autoplay muted playsinline></video></div>
+</div>
+
+<!-- ============ APP TEMPLATES (cloned into panes) ============ -->
+<template id="tpl-board">
+  <section class="app-board active">
+    <div class="wb-toolbar">
+      <button class="tool active" data-tool="pen"      title="Pen">✏️</button>
+      <button class="tool" data-tool="highlight" title="Highlighter">🖍️</button>
+      <button class="tool" data-tool="eraser"    title="Eraser">🧽</button>
+      <button class="tool" data-tool="line"      title="Line">╱</button>
+      <button class="tool" data-tool="arrow"     title="Arrow">→</button>
+      <button class="tool" data-tool="rect"      title="Rectangle">▭</button>
+      <button class="tool" data-tool="ellipse"   title="Ellipse">◯</button>
+      <button class="tool" data-tool="triangle"  title="Triangle">△</button>
+      <button class="tool" data-tool="diamond"   title="Diamond">◇</button>
+      <button class="tool" data-tool="star"      title="Star">☆</button>
+      <button class="tool wb-fill" title="Fill shapes on/off">🪣</button>
+      <button class="tool" data-tool="text"      title="Text">T</button>
+      <button class="tool" data-tool="laser"     title="Laser pointer (fades, not saved)">🔴</button>
+      <span style="width:6px"></span>
+      <div class="wb-colors">
+        <span class="wb-color active" data-c="#111111" style="background:#111"></span>
+        <span class="wb-color" data-c="#e02b2b" style="background:#e02b2b"></span>
+        <span class="wb-color" data-c="#1565d8" style="background:#1565d8"></span>
+        <span class="wb-color" data-c="#0a8a3a" style="background:#0a8a3a"></span>
+        <span class="wb-color" data-c="#f59e0b" style="background:#f59e0b"></span>
+        <span class="wb-color" data-c="#8b5cf6" style="background:#8b5cf6"></span>
+      </div>
+      <input type="range" class="wb-size" min="1" max="14" value="3" title="Stroke size" style="width:80px" />
+      <span style="width:6px"></span>
+      <button class="tool wb-undo"  title="Undo">↩</button>
+      <button class="tool wb-redo"  title="Redo">↪</button>
+      <button class="tool wb-clear" title="Clear page">🗑</button>
+      <select class="input wb-bg" style="width:auto;padding:6px 8px" title="Background">
+        <option value="plain">Plain</option>
+        <option value="grid">Grid</option>
+        <option value="ruled">Ruled</option>
+        <option value="handwriting">Nursery handwriting lines</option>
+        <option value="fourline">4-line letter practice</option>
+        <option value="graphpaper">Fine graph paper</option>
+        <option value="dark">Dark board</option>
+      </select>
+      <button class="tool wb-export" title="Export page as PNG">⬇</button>
+      <button class="tool wb-img" title="Insert image onto the board">🖼</button>
+      <input type="file" class="wb-imgfile hide" accept="image/*" />
+      <button class="tool wb-pdf" title="Export ALL pages as a PDF">🧾</button>
+      <button class="tool wb-penonly" title="Pen-only mode: stylus draws, finger pans (palm rejection)">✍</button>
+      <button class="tool wb-zoomreset" title="Reset zoom (pinch with 2 fingers to zoom this board only)">1:1</button>
+      <span class="wb-zoomlbl" style="font-size:11.5px;color:var(--text-dim);flex:0 0 auto">100%</span>
+    </div>
+    <div class="wb-stage"></div>
+    <div class="wb-pagebar">
+      <button class="wb-prev" title="Previous page">‹</button>
+      <span class="wb-pageinfo">1 / 1</span>
+      <button class="wb-next" title="Next page">›</button>
+      <button class="wb-add"  title="New page">＋</button>
+      <button class="wb-del"  title="Delete page">✕</button>
+    </div>
+  </section>
+</template>
+
+<template id="tpl-pdf">
+  <section class="app-pdf active">
+    <div class="pdf-bar">
+      <button class="btn small pdf-open">📂 Open PDF</button>
+      <input type="file" class="pdf-file hide" accept="application/pdf" />
+      <button class="btn small pdf-prev">‹</button>
+      <span class="pdf-info" style="font-size:13px">– / –</span>
+      <button class="btn small pdf-next">›</button>
+      <button class="btn small pdf-zoomout">−</button>
+      <span class="pdf-zoom" style="font-size:13px">100%</span>
+      <button class="btn small pdf-zoomin">＋</button>
+      <button class="btn small pdf-fit">Fit</button>
+      <input type="number" class="input pdf-goto" placeholder="pg" style="width:64px;padding:5px 8px" min="1" />
+      <button class="btn small pdf-annot" title="Draw on top of this PDF page">✏ Annotate</button>
+      <button class="btn small pdf-annot-clear hide" title="Clear annotations on this page">🧹</button>
+    </div>
+    <div class="pdf-scroll">
+      <div class="pdf-pagewrap" style="position:relative;margin:14px">
+        <canvas class="pdf-canvas" style="margin:0"></canvas>
+        <div class="pdf-annot-stage" style="position:absolute;inset:0;display:none"></div>
+      </div>
+    </div>
+    <div class="drop-hint pdf-hint">
+      <div class="em">📄</div>
+      <b>Open a PDF</b>
+      <span>Tap “Open PDF”, or drop a file here.<br/>Your file stays on this device — nothing is uploaded.</span>
+    </div>
+  </section>
+</template>
+
+<template id="tpl-web">
+  <section class="app-web active">
+    <div class="web-bar">
+      <button class="btn small web-back">‹</button>
+      <button class="btn small web-reload">⟳</button>
+      <input type="text" class="input web-url" placeholder="Type a URL, e.g. en.wikipedia.org" />
+      <button class="btn small primary web-go">Go</button>
+      <button class="btn small web-pop" title="Open in a real browser tab">↗</button>
+      <button class="btn small ok web-cast" title="Cast this page to your students — works on every device">📡 Cast</button>
+      <span class="web-readerbar hide" style="display:flex;gap:4px;align-items:center">
+        <button class="btn small web-fontdn" title="Smaller text">A−</button>
+        <button class="btn small web-fontup" title="Bigger text">A＋</button>
+        <select class="input web-theme" style="width:auto;padding:5px" title="Reading theme">
+          <option value="light">⬜ Light</option>
+          <option value="sepia">📜 Sepia</option>
+          <option value="dark">⬛ Dark</option>
+          <option value="board">🟩 Board</option>
+        </select>
+        <button class="btn small web-livecast hide" title="True live screen capture (desktop browsers only)">🎥 Live</button>
+      </span>
+    </div>
+    <div class="quick-links">
+      <select class="input web-linklib" style="width:auto;max-width:46%;padding:6px 8px" title="Curated education library — Nursery to Senior Secondary">
+        <option value="">📚 Education library…</option>
+        <optgroup label="🧸 Nursery / Early years">
+          <option value="https://storyweaver.org.in">StoryWeaver — free picture story books</option>
+          <option value="https://www.storyberries.com">Storyberries — bedtime stories & poems</option>
+          <option value="https://en.wikibooks.org/wiki/Wikijunior">Wikijunior — books for young children</option>
+          <option value="https://www.monkeypen.com/pages/free-childrens-books">Monkey Pen — free children's books</option>
+          <option value="https://supersimple.com/super-simple-songs/">Super Simple Songs — rhymes & songs</option>
+        </optgroup>
+        <optgroup label="🎒 Primary">
+          <option value="https://simple.wikipedia.org">Simple English Wikipedia</option>
+          <option value="https://kids.nationalgeographic.com">Nat Geo Kids — animals & science</option>
+          <option value="https://www.coolmath4kids.com">CoolMath4Kids — games & lessons</option>
+          <option value="https://www.ducksters.com">Ducksters — history, science, biography</option>
+          <option value="https://www.funbrain.com">Funbrain — reading & maths games</option>
+          <option value="https://www.nasa.gov/learning-resources/nasa-kids-club/">NASA Kids Club</option>
+        </optgroup>
+        <optgroup label="📐 Mathematics">
+          <option value="https://www.desmos.com/calculator">Desmos graphing calculator</option>
+          <option value="https://www.geogebra.org/calculator">GeoGebra — graphing & geometry</option>
+          <option value="https://www.mathsisfun.com">Maths Is Fun — clear explanations</option>
+          <option value="https://www.transum.org">Transum — starters & puzzles</option>
+          <option value="https://nrich.maths.org">NRICH — rich maths problems</option>
+          <option value="https://www.openmiddle.com">Open Middle — challenge problems</option>
+        </optgroup>
+        <optgroup label="🔬 Science">
+          <option value="https://phet.colorado.edu/en/simulations/browse">PhET — interactive simulations</option>
+          <option value="https://ptable.com">Ptable — live periodic table</option>
+          <option value="https://www.bbc.co.uk/bitesize">BBC Bitesize — all subjects</option>
+          <option value="https://www.ck12.org">CK-12 — free STEM textbooks</option>
+          <option value="https://solarsystem.nasa.gov">NASA Solar System</option>
+          <option value="https://www.biologycorner.com">Biology Corner — worksheets</option>
+        </optgroup>
+        <optgroup label="📖 English & Literature">
+          <option value="https://www.gutenberg.org">Project Gutenberg — 70k free books</option>
+          <option value="https://en.wiktionary.org">Wiktionary — dictionary</option>
+          <option value="https://www.poetryfoundation.org">Poetry Foundation</option>
+          <option value="https://openlibrary.org">Open Library — borrow books</option>
+          <option value="https://www.grammarly.com/blog/category/handbook/">Grammar handbook</option>
+        </optgroup>
+        <optgroup label="🌍 Social Studies & ICT">
+          <option value="https://www.britannica.com">Encyclopaedia Britannica</option>
+          <option value="https://en.wikipedia.org/wiki/Nigeria">Wikipedia — Nigeria</option>
+          <option value="https://www.worldometers.info">Worldometers — live world data</option>
+          <option value="https://code.org">Code.org — learn coding</option>
+          <option value="https://scratch.mit.edu">Scratch — block programming</option>
+        </optgroup>
+        <optgroup label="🎓 Exams (Nigeria) & Open courses">
+          <option value="https://www.waeconline.org.ng">WAEC e-Learning portal</option>
+          <option value="https://www.jamb.gov.ng">JAMB official</option>
+          <option value="https://myschool.ng/classroom">Myschool — past questions</option>
+          <option value="https://www.khanacademy.org">Khan Academy — full courses</option>
+          <option value="https://openstax.org/subjects">OpenStax — free textbooks</option>
+          <option value="https://archive.org">Internet Archive</option>
+        </optgroup>
+      </select>
+      <button class="btn small ghost web-quick" data-u="https://simple.wikipedia.org">Simple Wiki</button>
+      <button class="btn small ghost web-quick" data-u="https://www.desmos.com/calculator">Desmos</button>
+      <button class="btn small ghost web-quick" data-u="https://phet.colorado.edu/en/simulations/browse">PhET</button>
+      <button class="btn small ghost web-quick" data-u="https://www.khanacademy.org">Khan</button>
+    </div>
+    <iframe class="web-frame" id="webFrame" style="flex:1;border:none;background:#fff" referrerpolicy="no-referrer"></iframe>
+    <div class="web-reader hide" style="flex:1;position:relative;background:#fff"></div>
+    <div class="web-note">💡 Tap <b>📡 Cast</b> — the page is converted to a clean Reader view that streams to your students on ANY device (tablet included). Tap Cast again to return to normal browsing.</div>
+  </section>
+</template>
+
+<template id="tpl-notes">
+  <section class="app-notes active">
+    <div class="pdf-bar">
+      <button class="btn small notes-save">💾 Save .txt</button>
+      <button class="btn small notes-clear">🗑 Clear</button>
+      <span style="font-size:12px;color:var(--text-dim)">Auto-saves on this device</span>
+    </div>
+    <textarea class="notes-area" id="notesArea" placeholder="Lesson notes… visible to students when this pane is broadcast."></textarea>
+  </section>
+</template>
+
+<template id="tpl-graph">
+  <section class="app-graph active">
+    <div class="pdf-bar">
+      <span style="font-size:13px;flex:0 0 auto">y =</span>
+      <input type="text" class="input gr-fx" placeholder="e.g. x^2 - 3*x + 2   (use ^ for power, sin, cos, tan, sqrt, log, abs)" style="flex:1;min-width:120px" />
+      <button class="btn small primary gr-plot">Plot</button>
+      <button class="btn small gr-add" title="Add as second curve">+ curve</button>
+      <button class="btn small gr-clear">Clear</button>
+      <select class="input gr-preset" style="width:auto;padding:5px" title="Quick graph examples">
+        <option value="">Examples</option>
+        <option value="2*x+1">Linear</option>
+        <option value="x^2-4">Quadratic</option>
+        <option value="x^3-3*x">Cubic</option>
+        <option value="sin(x)">Sine wave</option>
+        <option value="abs(x)">Absolute value</option>
+        <option value="sqrt(x)">Square-root</option>
+        <option value="log(x)">Logarithmic</option>
+        <option value="exp(x/3)">Exponential</option>
+      </select>
+      <button class="btn small gr-zo">−</button>
+      <button class="btn small gr-zi">＋</button>
+      <select class="input gr-bg" style="width:auto;padding:5px" title="Background — improve visibility for students">
+        <option value="light">⬜ White</option>
+        <option value="cream">🟨 Cream</option>
+        <option value="dark">⬛ Dark</option>
+        <option value="board">🟩 Green board</option>
+      </select>
+    </div>
+    <div class="gr-stage" style="flex:1;position:relative;background:#fff;touch-action:none">
+      <canvas class="gr-canvas" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+    </div>
+  </section>
+</template>
+
+<template id="tpl-video">
+  <section class="app-video active">
+    <div class="pdf-bar">
+      <button class="btn small vid-open">🎬 Open video/audio</button>
+      <input type="file" class="vid-file hide" accept="video/*,audio/*" />
+      <button class="btn small vid-slow" title="Slower">🐢</button>
+      <span class="vid-rate" style="font-size:12.5px">1.0×</span>
+      <button class="btn small vid-fastr" title="Faster">🐇</button>
+      <span style="font-size:11.5px;color:var(--text-dim)">Local files only — nothing uploads</span>
+    </div>
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;background:#000;position:relative">
+      <video class="vid-el" controls playsinline style="max-width:100%;max-height:100%"></video>
+      <div class="drop-hint vid-hint"><div class="em">🎬</div><b>Open a video or audio file</b><span>Experiment clips, pronunciation audio, recorded examples…</span></div>
+    </div>
+  </section>
+</template>
+
+<template id="tpl-toolkit">
+  <section class="app-toolkit active">
+    <div class="pdf-bar">
+      <select class="input tk-mode" style="width:auto;padding:6px 8px">
+        <optgroup label="Mathematics">
+          <option value="construct">📐 Geometry construction</option>
+          <option value="mult">✖ Multiplication table</option>
+          <option value="numline">📏 Number line</option>
+          <option value="fraction">🍕 Fraction visualizer</option>
+          <option value="abacus">🧮 Place-value abacus</option>
+          <option value="hundred">🔢 Hundred square</option>
+          <option value="balance">⚖ Algebra balance</option>
+          <option value="clock">🕐 Teaching clock</option>
+          <option value="convert">🔁 Unit converter</option>
+          <option value="units">📏 Units of measurement</option>
+        </optgroup>
+        <optgroup label="Science">
+          <option value="periodic">⚛ Periodic table</option>
+          <option value="lab">🧪 Lab equipment</option>
+          <option value="plant">🌿 Plant cell</option>
+          <option value="animal">🐾 Animal cell</option>
+          <option value="thermo">🌡 Thermometer</option>
+        </optgroup>
+        <optgroup label="Classroom">
+          <option value="random">🎲 Dice · coin · spinner · names</option>
+          <option value="tally">📊 Tally chart</option>
+          <option value="score">🏅 Team scoreboard</option>
+          <option value="letters">🅰 Letter formation</option>
+          <option value="noise">🔊 Noise meter</option>
+        </optgroup>
+        <optgroup label="Library (180+ reference cards)">
+          <option value="cards">📇 Reference library — Maths · Science · English · Social · ICT</option>
+        </optgroup>
+      </select>
+      <!-- construction toolbar -->
+      <span class="tk-conbar hide" style="display:flex;gap:4px;align-items:center;flex-wrap:nowrap">
+        <button class="btn small tk-con active" data-ct="ruler">📏 Ruler</button>
+        <button class="btn small tk-con" data-ct="compass">🧭 Compass</button>
+        <button class="btn small tk-con" data-ct="protractor">📐 Protractor</button>
+        <button class="btn small tk-con" data-ct="perpbis">⊥ Perp. bisector</button>
+        <button class="btn small tk-con" data-ct="angbis">∠ Angle bisector</button>
+        <button class="btn small tk-con" data-ct="point">• Point</button>
+        <button class="btn small tk-con" data-ct="erase">🧽</button>
+        <button class="btn small tk-con-undo">↩</button>
+        <button class="btn small tk-con-clear">🗑</button>
+      </span>
+      <!-- number line bar -->
+      <span class="tk-nlbar hide" style="display:flex;gap:4px;align-items:center">
+        <input class="input tk-nlmin" type="number" value="-10" style="width:70px;padding:5px" title="min" />
+        <input class="input tk-nlmax" type="number" value="10" style="width:70px;padding:5px" title="max" />
+        <select class="input tk-nlstep" style="width:auto;padding:5px"><option>1</option><option>0.5</option><option>0.25</option><option>2</option><option>5</option><option>10</option></select>
+      </span>
+      <!-- fraction bar -->
+      <span class="tk-frbar hide" style="display:flex;gap:4px;align-items:center">
+        <input class="input tk-fn1" type="number" value="1" min="0" style="width:56px;padding:5px" />/<input class="input tk-fd1" type="number" value="2" min="1" style="width:56px;padding:5px" />
+        <span style="font-size:13px">vs</span>
+        <input class="input tk-fn2" type="number" value="2" min="0" style="width:56px;padding:5px" />/<input class="input tk-fd2" type="number" value="3" min="1" style="width:56px;padding:5px" />
+        <select class="input tk-frmode" style="width:auto;padding:5px"><option value="circle">Circle</option><option value="bar">Bar</option></select>
+      </span>
+      <!-- random bar -->
+      <span class="tk-rndbar hide" style="display:flex;gap:4px;align-items:center;flex:1;min-width:0">
+        <select class="input tk-rndmode" style="width:auto;padding:5px">
+          <option value="dice">Dice</option><option value="coin">Coin</option>
+          <option value="spinner">Spinner</option><option value="names">Name picker</option>
+        </select>
+        <select class="input tk-dicen" style="width:auto;padding:5px"><option>1</option><option>2</option><option>3</option></select>
+        <input class="input tk-names" placeholder="Ada, Bayo, Chidi, …" style="flex:1;min-width:60px;padding:5px" />
+      </span>
+      <!-- tally bar -->
+      <span class="tk-tallybar hide" style="display:flex;gap:4px;align-items:center;flex:1;min-width:0">
+        <input class="input tk-tallyitems" placeholder="Option A, Option B, Option C" style="flex:1;min-width:80px;padding:5px" />
+        <button class="btn small tk-tallyset">Set</button>
+      </span>
+      <!-- scoreboard bar -->
+      <span class="tk-scbar hide" style="display:flex;gap:4px;align-items:center">
+        <select class="input tk-scn" style="width:auto;padding:5px"><option>2</option><option>3</option><option>4</option></select>
+        <input class="input tk-scnames" placeholder="Red, Blue" style="width:150px;padding:5px" />
+        <button class="btn small tk-screset">↺ 0</button>
+      </span>
+      <!-- balance bar -->
+      <span class="tk-balbar hide" style="display:flex;gap:4px;align-items:center">
+        <span style="font-size:12.5px">x =</span><input class="input tk-balx" type="number" value="4" style="width:60px;padding:5px" />
+        <span style="font-size:12.5px">+</span><input class="input tk-bala" type="number" value="3" style="width:60px;padding:5px" />
+        <span style="font-size:12.5px">coeff</span><input class="input tk-balm" type="number" value="1" min="1" max="9" style="width:56px;padding:5px" />
+        <button class="btn small tk-balset">New puzzle</button>
+      </span>
+      <!-- hundred square bar -->
+      <span class="tk-hsbar hide" style="display:flex;gap:4px;align-items:center">
+        <span style="font-size:12.5px">Count in</span>
+        <select class="input tk-hskip" style="width:auto;padding:5px"><option value="0">—</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option></select>
+        <button class="btn small tk-hsclear">Clear marks</button>
+      </span>
+      <!-- letters bar -->
+      <span class="tk-ltbar hide" style="display:flex;gap:4px;align-items:center">
+        <input class="input tk-ltchar" maxlength="1" value="A" style="width:56px;padding:5px;text-align:center;font-weight:700" />
+        <button class="btn small tk-ltprev">‹</button><button class="btn small tk-ltnext">›</button>
+      </span>
+      <!-- cards bar -->
+      <span class="tk-cardbar hide" style="display:flex;gap:4px;align-items:center;flex:1;min-width:0">
+        <select class="input tk-cardcat" style="width:auto;padding:5px"></select>
+        <input class="input tk-cardq" placeholder="Search 180+ cards…" style="flex:1;min-width:70px;padding:5px" />
+        <button class="btn small tk-cardprev">‹</button><button class="btn small tk-cardnext">›</button>
+      </span>
+      <span class="tk-convbar hide" style="display:flex;gap:5px;align-items:center;flex:1;min-width:0">
+        <select class="input tk-cat" style="width:auto;padding:5px"></select>
+        <input class="input tk-val" type="number" value="1" style="width:84px;padding:5px" />
+        <select class="input tk-from" style="width:auto;padding:5px"></select>
+        <span style="font-size:13px">→</span>
+        <select class="input tk-to" style="width:auto;padding:5px"></select>
+      </span>
+      <span class="tk-multbar hide" style="display:flex;gap:5px;align-items:center">
+        <span style="font-size:12.5px">up to</span>
+        <select class="input tk-multn" style="width:auto;padding:5px">
+          <option>10</option><option selected>12</option><option>15</option><option>20</option>
+        </select>
+      </span>
+      <span style="font-size:11.5px;color:var(--text-dim)">Interactive — tap items. Students see everything live.</span>
+    </div>
+    <div class="tk-stage" style="flex:1;position:relative;background:#fff"></div>
+  </section>
+</template>
+
+<template id="tpl-flash">
+  <section class="app-flash active">
+    <div class="pdf-bar">
+      <button class="btn small fc-edit">✏ Edit cards</button>
+      <button class="btn small fc-prev">‹</button>
+      <span class="fc-pos" style="font-size:13px">1 / 1</span>
+      <button class="btn small fc-next">›</button>
+      <button class="btn small fc-shuffle">🔀</button>
+      <span style="font-size:11.5px;color:var(--text-dim)">Tap the card to flip — great for definitions, vocabulary &amp; formulas</span>
+    </div>
+    <div class="fc-stage" style="flex:1;position:relative;background:#f6f8ff;display:flex;align-items:center;justify-content:center;cursor:pointer">
+      <div class="fc-card" style="width:min(82%,760px);min-height:55%;background:#fff;border:2px solid #1e2a78;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.18);display:flex;align-items:center;justify-content:center;padding:30px;text-align:center">
+        <span class="fc-text" style="font-size:clamp(18px,3.4vw,34px);color:#1e2a78;font-weight:700;line-height:1.4">Tap ✏ Edit cards to add your flashcards</span>
+      </div>
+    </div>
+    <textarea class="fc-editor input hide" rows="6" style="margin:8px;font-size:13px" placeholder="One card per line:  front | back&#10;Photosynthesis | Process by which green plants make food using sunlight&#10;2 x 9 | 18"></textarea>
+  </section>
+</template>
+
+<template id="tpl-stopwatch">
+  <section class="app-stopwatch active">
+    <div class="pdf-bar">
+      <select class="input sw-mode" style="width:auto;padding:5px"><option value="stopwatch">⏱ Stopwatch</option><option value="countdown">⏳ Countdown</option></select>
+      <span class="sw-cdbar hide" style="display:flex;gap:4px;align-items:center">
+        <input class="input sw-mins" type="number" value="5" min="0" style="width:64px;padding:5px" /><span style="font-size:12px">min</span>
+        <input class="input sw-secs" type="number" value="0" min="0" max="59" style="width:64px;padding:5px" /><span style="font-size:12px">sec</span>
+      </span>
+      <button class="btn small primary sw-start">▶ Start</button>
+      <button class="btn small sw-lap">🏁 Lap</button>
+      <button class="btn small sw-reset">↺ Reset</button>
+    </div>
+    <div class="sw-stage" style="flex:1;background:#10142b;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+      <div class="sw-display" style="font-size:clamp(48px,11vw,130px);font-weight:800;color:#fff;font-variant-numeric:tabular-nums">00:00.0</div>
+      <div class="sw-laps" style="color:#9aa3cf;font-size:14px;max-height:24%;overflow:auto;text-align:center"></div>
+    </div>
+  </section>
+</template>
+
+<template id="tpl-image">
+  <section class="app-image active">
+    <div class="pdf-bar">
+      <button class="btn small img-open">🖼 Open image</button>
+      <input type="file" class="img-file hide" accept="image/*" />
+    </div>
+    <div class="img-scroll"><img class="img-view" alt="" /></div>
+    <div class="drop-hint img-hint"><div class="em">🖼</div><b>Open an image</b><span>Diagrams, charts, screenshots…</span></div>
+  </section>
+</template>
+
+<!-- ============ DRAWERS ============ -->
+<aside class="drawer" id="drawerStudents">
+  <div class="drawer-head">👥 Students <button class="btn small ghost drawer-close">✕</button></div>
+  <div class="drawer-body">
+    <div class="row" style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn small" id="btnLock">🔒 Lock room</button>
+      <button class="btn small" id="btnWaiting" title="Zoom-style waiting room: you admit each student">🚪 Waiting room</button>
+      <button class="btn small" id="btnMuteAll" title="Revoke every student's mic at once">🔇 Mute all</button>
+      <button class="btn small" id="btnAttendance">📋 Attendance CSV</button>
+      <button class="btn small" id="btnAskAllCams">📷 Ask all cams</button>
+      <button class="btn small" id="btnReport">📈 Class report</button>
+      <button class="btn small" id="btnNoiseMeter" title="Live class-volume gauge using the teacher device microphone">🔊 Noise meter</button>
+      <button class="btn small" id="btnGroups" title="Random group maker — students are told their group number">👥 Groups</button>
+      <button class="btn small" id="btnBehaviorCSV" title="Behaviour points export">⭐ Points CSV</button>
+      <button class="btn small" id="btnAuditCSV" title="Security/audit log export">🛡 Audit CSV</button>
+    </div>
+    <hr class="sep" />
+    <div id="waitingList"></div>
+    <div id="rosterList"><p style="color:var(--text-dim);font-size:13px">No students yet. Share the room link.</p></div>
+    <hr class="sep" />
+    <b style="font-size:13px">Student cameras</b>
+    <div class="cam-grid" id="camGrid"></div>
+  </div>
+</aside>
+
+<aside class="drawer" id="drawerChat">
+  <div class="drawer-head">💬 Class chat <button class="btn small ghost drawer-close">✕</button></div>
+  <div class="drawer-body" id="chatList"></div>
+  <div class="drawer-foot">
+    <label style="display:flex;gap:6px;align-items:center;font-size:12px;color:var(--text-dim);margin-bottom:6px">
+      <input type="checkbox" id="chatPrivReply" /> 🔒 Reply privately to the last private sender
+    </label>
+    <div class="chat-input-row">
+      <input class="input" id="chatInput" placeholder="Message the class…" maxlength="500" />
+      <button class="btn primary" id="chatSend">➤</button>
+    </div>
+    <button class="btn small ghost" id="btnAnnounce" style="margin-top:8px">📢 Send full-screen announcement</button>
+    <div class="row" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn small" id="btnCaptions" title="Free browser speech-to-text captions; works best in Chrome/Edge">CC Live captions</button>
+      <button class="btn small ghost" id="btnTranscript" title="Download caption transcript as a text file">⬇ Transcript</button>
+    </div>
+    <p id="captionStatus" style="font-size:11.5px;color:var(--text-dim);margin:6px 0 0">Captions use your browser only; no AI/API key is used.</p>
+  </div>
+</aside>
+
+<aside class="drawer" id="drawerBoards">
+  <div class="drawer-head">🎨 Student whiteboards <button class="btn small ghost drawer-close">✕</button></div>
+  <div class="drawer-body">
+    <p style="font-size:12.5px;color:var(--text-dim)">Every student gets a personal board that <b>only you</b> can see — perfect for "everyone solve this now". Push your current whiteboard page as their background.</p>
+    <div class="row" style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn primary" id="boardsStart">▶ Start boards</button>
+      <button class="btn danger hide" id="boardsStop">⏹ Stop</button>
+      <button class="btn small" id="boardsPush" title="Send your current whiteboard page to all student boards as a background">📤 Push my board</button>
+    </div>
+    <div id="boardsGrid" class="cam-grid" style="margin-top:8px"></div>
+  </div>
+</aside>
+
+<aside class="drawer" id="drawerActivity">
+  <div class="drawer-head">🧩 Activities <button class="btn small ghost drawer-close">✕</button></div>
+  <div class="drawer-body">
+    <div id="actSetup">
+      <label>Type</label>
+      <select class="input" id="actKind">
+        <option value="open">💬 Open question — students type, you see all answers</option>
+        <option value="cloud">☁ Word cloud — one-word answers build a live cloud</option>
+        <option value="board">🧱 Collaborate board — sticky-note wall for ideas / examples / questions</option>
+        <option value="exit">🎟 Exit ticket — rating + learned + still confusing</option>
+      </select>
+      <label style="margin-top:8px">Prompt</label>
+      <input class="input" id="actPrompt" placeholder="e.g. In one word, how do you feel about today's topic?" />
+      <button class="btn primary" id="actStart" style="margin-top:10px">Start activity</button>
+    </div>
+    <div id="actLive" class="hide">
+      <b id="actLiveTitle"></b>
+      <p style="font-size:12.5px;color:var(--text-dim)"><span id="actCount">0</span> response(s)</p>
+      <div id="actResponses" style="display:flex;flex-direction:column;gap:6px;max-height:46vh;overflow:auto"></div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn ok" id="actEndShare">End &amp; show class results</button>
+        <button class="btn" id="actEndQuiet">End quietly</button>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<aside class="drawer" id="drawerQuiz">
+  <div class="drawer-head">🏆 Quiz &amp; leaderboard <button class="btn small ghost drawer-close">✕</button></div>
+  <div class="drawer-body">
+    <div id="quizSetup">
+      <label>Quiz title</label>
+      <input class="input" id="quizTitle" placeholder="e.g. Quadratics check" />
+      <label style="margin-top:8px">Seconds per question</label>
+      <input class="input" id="quizSecs" type="number" value="30" min="5" max="300" style="width:110px" />
+      <label style="margin-top:8px">Questions</label>
+      <p style="font-size:12px;color:var(--text-dim);margin-bottom:6px">
+        Format — one block per question, blank line between blocks:<br/>
+        line 1 = the question · following lines = options · put <b>*</b> before the correct option.
+      </p>
+      <textarea class="input" id="quizText" rows="9" placeholder="What is 54 ÷ 6?
+*9
+8
+7
+
+Solve x+2=5
+2
+*3
+4"></textarea>
+      <div class="row" style="margin-top:8px">
+        <button class="btn primary" id="quizStart">Start quiz</button>
+        <button class="btn small" id="quizSaveBank" title="Save these questions on this device">💾 Save bank</button>
+        <select class="input" id="quizBankSel" style="width:auto"><option value="">Load saved…</option></select>
+      </div>
+      <hr class="sep" />
+      <b style="font-size:13px">📤 Or upload a CSV file</b>
+      <p style="font-size:11.5px;color:var(--text-dim);margin:4px 0">
+        Format (with or without a header row):<br/>
+        <code>Question, A, B, C, D, Correct option, Explanation/working</code><br/>
+        Correct option = A/B/C/D (or 1–4). Explanation is shown to students after they answer.
+      </p>
+      <div class="row">
+        <button class="btn small" id="quizCsvBtn">📂 Choose CSV file</button>
+        <input type="file" id="quizCsvFile" class="hide" accept=".csv,text/csv" />
+        <button class="btn small ghost" id="quizCsvTemplate">⬇ Sample CSV</button>
+      </div>
+      <p id="quizCsvStatus" style="font-size:12px;color:var(--text-dim)"></p>
+    </div>
+    <div id="quizLive" class="hide">
+      <b id="quizLiveTitle"></b>
+      <p id="quizLiveQ" style="margin:6px 0;font-size:14px"></p>
+      <p style="font-size:13px;color:var(--text-dim)"><span id="quizAnswered">0</span> answered • Q <span id="quizPos">1/1</span></p>
+      <div id="quizTally" style="margin:8px 0"></div>
+      <div class="row">
+        <button class="btn primary" id="quizNext">Next question ➜</button>
+        <button class="btn danger" id="quizEnd">End quiz</button>
+      </div>
+    </div>
+    <hr class="sep" />
+    <b style="font-size:13px">Leaderboard (this class)</b>
+    <div id="leaderList" style="display:flex;flex-direction:column;gap:6px"></div>
+    <div class="row" style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn small" id="scoreReset">↺ Reset all scores</button>
+      <button class="btn small" id="scoreExport" title="Per-student scores as CSV — open in Excel/Sheets for your records">📥 Scores CSV</button>
+    </div>
+  </div>
+</aside>
+
+<aside class="drawer" id="drawerPoll">
+  <div class="drawer-head">📊 Quick poll <button class="btn small ghost drawer-close">✕</button></div>
+  <div class="drawer-body">
+    <div id="pollSetup">
+      <label>Question</label>
+      <input class="input" id="pollQ" placeholder="e.g. Did you understand this step?" />
+      <label style="margin-top:8px">Options (one per line, 2–6)</label>
+      <textarea class="input" id="pollOpts" rows="4">Yes
+No
+Not sure</textarea>
+      <button class="btn primary" id="pollStart" style="margin-top:10px">Start poll</button>
+    </div>
+    <div id="pollLive" class="hide">
+      <b id="pollLiveQ"></b>
+      <div id="pollLiveBars" style="margin-top:8px"></div>
+      <button class="btn danger" id="pollEnd" style="margin-top:10px">End poll &amp; show results</button>
+    </div>
+  </div>
+</aside>
+
+<!-- ============ MODALS ============ -->
+<div class="modal-back" id="mInvite">
+  <div class="modal">
+    <h3>🔗 Invite students</h3>
+    <div id="inviteLiveWarn" style="background:#3a2626;border:1px solid var(--danger);border-radius:10px;padding:10px;font-size:13.5px;margin-bottom:10px">
+      ⚠ <b>You are not LIVE yet.</b> Students can only join AFTER you tap <b>▶ Go Live</b>.
+      Order: 1) Go Live → 2) send this link → 3) students join.
+    </div>
+    <p style="color:var(--text-dim);font-size:13.5px">Students open this link (or scan the QR) in any browser — phone, tablet or laptop. No app, no account. The link only works on your <b>deployed https:// address</b> (not on a file opened from your device).</p>
+    <div class="row"><input class="input" id="inviteLink" readonly /><button class="btn primary" id="copyLink">Copy</button></div>
+    <div id="qrBox" style="background:#fff;padding:14px;border-radius:12px;width:fit-content;margin:12px auto"></div>
+    <p style="text-align:center;font-size:14px">Room code: <code id="inviteCode" style="color:var(--accent);font-size:20px;font-weight:700"></code>
+      <span id="invitePin" style="display:block;font-size:13px;color:var(--text-dim)"></span>
+      <span id="inviteWaitroom" style="display:block;font-size:13px"></span></p>
+    <p style="font-size:12.5px;color:var(--text-dim)">🔑 To require a PIN: <b>⚙ Settings → Class PIN</b>. Students then type it on the join screen.</p>
+  </div>
+</div>
+
+<div class="modal-back" id="mSettings">
+  <div class="modal">
+    <h3>⚙ Settings</h3>
+    <label>Your display name</label>
+    <input class="input" id="setName" placeholder="e.g. Mr Adewale (HMG Academy)" />
+    <label style="margin-top:10px">🔑 Custom room code (letters + numbers, 4–10 chars — students join with this)</label>
+    <input class="input" id="setRoomCode" placeholder="e.g. CHEM22ABC  (leave blank for auto-generated)" maxlength="10" autocapitalize="characters" style="text-transform:uppercase;letter-spacing:2px;font-weight:700" />
+    <p style="font-size:11.5px;color:var(--text-dim);margin:4px 0 0">Wanted a memorable room code you made yourself? Set it here — it becomes your shareable room code. Only letters A–Z and numbers 0–9, 4 to 10 characters.</p>
+    <label style="margin-top:10px">Class / room name (students see this)</label>
+    <input class="input" id="setRoomName" placeholder="e.g. SS2 Mathematics — Simultaneous Equations" />
+    <label style="margin-top:10px">Broadcast mode</label>
+    <select class="input" id="setBroadcast">
+      <option value="composite">Composite (recommended on tablets) — streams whiteboard/PDF/notes/image panes</option>
+      <option value="screen">Share screen (laptops / where supported) — streams everything incl. browser/system audio where supported</option>
+    </select>
+    <p style="font-size:12px;color:var(--text-dim);margin:6px 0 0">Need to screen-share your full device inside ClassDeck? Select <b>Share screen</b>, save, then tap <b>▶ Go Live</b>. Students join from the normal invite link — no Google Meet/Zoom required.</p>
+    <label style="margin-top:10px">Broadcast quality</label>
+    <select class="input" id="setQuality">
+      <option value="1280x720x8">720p @ 8 fps — best for slow networks (default)</option>
+      <option value="1280x720x15">720p @ 15 fps</option>
+      <option value="1920x1080x10">1080p @ 10 fps — strong network only</option>
+    </select>
+    <div class="row" style="margin-top:10px">
+      <label style="display:flex;align-items:center;gap:8px;margin:0"><input type="checkbox" id="setWake" checked /> Keep screen awake during class</label>
+    </div>
+    <div class="row">
+      <label style="display:flex;align-items:center;gap:8px;margin:0"><input type="checkbox" id="setPromo" /> Show promotion overlays on the live broadcast (lower-thirds banner + staff popup + text ads)</label>
+    </div>
+    <hr class="sep" />
+    <label>📡 Tablet Social Live — no OBS</label>
+    <p style="font-size:12px;color:var(--text-dim);margin:4px 0 8px">Broadcast the ClassDeck lesson from this tablet to YouTube/Facebook/Instagram/TikTok through a free WebRTC→RTMP relay gateway. No OBS is required. If a browser cannot capture the whole Android system screen, ClassDeck still streams its own full teaching workspace directly.</p>
+    <div class="row">
+      <button class="btn small primary" id="btnTabletLive">📡 Tablet Live</button>
+      <button class="btn small" id="btnTryScreenShare">🖥 Try full tablet screen</button>
+      <button class="btn small" id="btnOpenStreamCentre">🌐 Social centre</button>
+      <button class="btn small ghost" id="btnObsSetup">⬇ Setup notes</button>
+    </div>
+    <div class="row">
+      <label style="display:flex;align-items:center;gap:8px;margin:0"><input type="checkbox" id="setNewRoom" /> Generate a new room code next time</label>
+    </div>
+    <hr class="sep" />
+    <label>🔐 Security & anti-piracy controls</label>
+    <div class="row" style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:8px;margin:0"><input type="checkbox" id="setSecureInvite" /> Require secure invite link token</label>
+      <label style="display:flex;align-items:center;gap:8px;margin:0"><input type="checkbox" id="setWatermark" checked /> Add forensic watermark to broadcast/recording</label>
+      <label style="display:flex;align-items:center;gap:8px;margin:0"><input type="checkbox" id="setAutoPiP" /> Remind me to start PiP before live/background</label>
+    </div>
+    <p style="font-size:11.5px;color:var(--text-dim);margin:5px 0 0">For strongest subscription protection, deploy the included Cloudflare Worker license gateway and set its URL in <code>js/security-config.js</code>.</p>
+    <hr class="sep" />
+    <label>🔑 Class PIN (optional — students must enter it to join; leave empty for none)</label>
+    <input class="input" id="setPin" placeholder="e.g. 2468" maxlength="8" inputmode="numeric" />
+    <hr class="sep" />
+    <label>🎨 Branding — academy name (shows on the broadcast watermark &amp; student welcome)</label>
+    <input class="input" id="setBrand" placeholder="e.g. HMG Academy" />
+    <label style="margin-top:8px">Accent colour</label>
+    <div class="row">
+      <input type="color" id="setAccent" value="#ffb347" style="width:48px;height:36px;border:none;background:none;cursor:pointer" />
+      <button class="btn small" id="setAccentReset">Reset colour</button>
+    </div>
+    <hr class="sep" />
+    <label>💾 Backup &amp; restore (settings, lessons, notes, boards — one file)</label>
+    <div class="row">
+      <button class="btn small" id="setBackup">⬇ Backup everything</button>
+      <button class="btn small" id="setRestoreBtn">⬆ Restore from file</button>
+      <input type="file" id="setRestoreFile" class="hide" accept="application/json" />
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn primary" id="setSave">Save</button>
+      <button class="btn install-btn hide" onclick="promptInstall()">⬇ Install app</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="mLessons">
+  <div class="modal">
+    <h3>📚 Lesson manager</h3>
+    <p style="color:var(--text-dim);font-size:13px">Save the current whiteboard deck (all pages) under a lesson name, and reload it any time — e.g. prepare boards before class. Stored on this device; use Export/Import to move between devices.</p>
+    <div class="row">
+      <input class="input" id="lessonName" placeholder="Lesson name, e.g. SS2 Quadratics — Week 3" style="flex:1" />
+      <button class="btn primary" id="lessonSave">💾 Save</button>
+    </div>
+    <div id="lessonList" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"></div>
+    <hr class="sep" />
+    <div class="row">
+      <button class="btn small" id="lessonExport">⬇ Export current deck (.json)</button>
+      <button class="btn small" id="lessonImportBtn">⬆ Import deck (.json)</button>
+      <input type="file" id="lessonImportFile" class="hide" accept="application/json" />
+    </div>
+  </div>
+</div>
+
+<!-- v4: full scientific calculator -->
+<div id="calcBox" class="calc-box hide">
+  <div class="calc-head" id="calcDrag">🧮 Scientific calculator
+    <span>
+      <button class="btn small ghost" id="calcDeg" title="Angle unit">DEG</button>
+      <button class="btn small ghost" id="calcClose">✕</button>
+    </span>
+  </div>
+  <div class="calc-hist" id="calcHist"></div>
+  <input class="input calc-display" id="calcDisplay" readonly value="0" />
+  <div class="calc-grid sci" id="calcKeys"></div>
+</div>
+
+<!-- v4: how to see student cameras in Meet/Zoom companion mode -->
+<div class="modal-back" id="mMeetPip">
+  <div class="modal">
+    <h3>📺 Seeing your students while teaching here</h3>
+    <p style="font-size:14px;line-height:1.7;color:var(--text-dim)">
+      While Google Meet / Zoom shares your screen, you have <b>three free ways</b> to keep an eye on students:
+    </p>
+    <ol style="font-size:14px;line-height:1.8;margin:10px 0 10px 20px">
+      <li><b>Meet picture-in-picture:</b> in Google Meet (Android), tap <b>Home</b> while in the call — Meet shrinks to a floating window showing participants <i>on top of</i> this app. Drag it to a corner. (Zoom: enable <i>Settings → Meeting → Show my video in PiP</i>.)</li>
+      <li><b>Split second device:</b> join the Meet/Zoom call muted on your phone and lay it beside the tablet as a dedicated "student monitor".</li>
+      <li><b>ClassDeck hybrid:</b> have students ALSO open your ClassDeck room link (no audio needed) and share their cameras here — open the 👥 drawer to see the camera grid while Meet handles audio/screen.</li>
+    </ol>
+    <p style="font-size:13px;color:var(--text-dim)">Tip: your own camera → tap <b>📷 Cam</b>. Your face appears in a floating window on this screen, so it is included in the screen share and students see you. Drag it anywhere; tap it to cycle size.</p>
+    <button class="btn primary" onclick="closeModal('#mMeetPip')">Got it</button>
+  </div>
+</div>
+
+<!-- v6: full-screen teacher auth gate (signup / login / license) -->
+<div id="authGate" class="auth-gate hide">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <img src="assets/hmg-academy-logo.png" alt="HMG ACADEMY" />
+      <div>
+        <b>HMG ACADEMY CLASS DECK</b>
+        <span>Teacher Studio — sign in to start teaching</span>
+      </div>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-tab="signup" onclick="switchAuthTab('signup')">Create account</button>
+      <button class="auth-tab" data-tab="login" onclick="switchAuthTab('login')">Log in</button>
+      <button class="auth-tab" data-tab="license" onclick="switchAuthTab('license')">Activate key</button>
+    </div>
+
+    <div class="auth-pane" data-tab="signup">
+      <p class="auth-note">Free for <b>3 days</b> — no card needed. Students always join free.</p>
+      <input class="input" id="suName" placeholder="Full name (e.g. Mrs Funke Ojo)" autocomplete="name" />
+      <input class="input" id="suEmail" type="email" placeholder="Email address" autocomplete="email" />
+      <input class="input" id="suPhone" type="tel" placeholder="WhatsApp / phone number" autocomplete="tel" />
+      <input class="input" id="suSchool" placeholder="School / organisation (optional)" />
+      <input class="input" id="suPw" type="password" placeholder="Password (min 8 characters)" autocomplete="new-password" />
+      <input class="input" id="suPw2" type="password" placeholder="Confirm password" autocomplete="new-password" />
+      <p class="auth-err" id="suStatus"></p>
+      <button class="btn primary auth-cta" onclick="signupTeacher()">Start my free trial ➜</button>
+    </div>
+
+    <div class="auth-pane hide" data-tab="login">
+      <p class="auth-note">Welcome back! Log in to continue.</p>
+      <input class="input" id="liEmail" type="email" placeholder="Email address" autocomplete="email" />
+      <input class="input" id="liPw" type="password" placeholder="Password" autocomplete="current-password" />
+      <p class="auth-err" id="liStatus"></p>
+      <button class="btn primary auth-cta" onclick="loginTeacher()">Log in ➜</button>
+    </div>
+
+    <div class="auth-pane hide" data-tab="license">
+      <p class="auth-note">Get your <b>HMG ACCESS KEY</b> from
+        <a href="https://hmgacademy.pages.dev" target="_blank" rel="noopener">hmgacademy.pages.dev</a> —
+        pay the small license fee and receive the key on WhatsApp within minutes.</p>
+      <input class="input" id="authKey" placeholder="HMG-202612-XXXXXXXXXX" style="text-transform:uppercase" />
+      <p class="auth-err" id="authStatus"></p>
+      <button class="btn primary auth-cta" onclick="activateLicense()">Activate ➜</button>
+      <button class="btn ghost auth-cta hide" id="authSkip" onclick="authSkip()">Continue trial for now</button>
+    </div>
+
+    <p class="auth-foot">Built by HMG ACADEMY · Lagos, Nigeria — your data stays on your device.</p>
+  </div>
+</div>
+
+<!-- HMG ENHANCED RECORDING SETUP (Staff, Lower Thirds, Ads, Intro) -->
+<div class="modal-back" id="mHmgRecSetup">
+  <div class="modal" style="max-width:620px">
+    <h3>🎬 HMG ClassDeck — Professional Recording Studio</h3>
+    <p style="color:var(--text-dim);font-size:13px;margin-bottom:12px">Record YouTube-ready tutoring videos with your brand, staff credentials, scrolling lower thirds, and intermittent text ads. Each video opens with an intro and closes with an outro.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="field">
+        <label>Subject</label>
+        <input class="input hmgRecField" data-key="subject" placeholder="e.g. Mathematics" />
+      </div>
+      <div class="field">
+        <label>Topic</label>
+        <input class="input hmgRecField" data-key="topic" placeholder="e.g. Simultaneous Equations" />
+      </div>
+      <div class="field">
+        <label>Class / Level</label>
+        <input class="input hmgRecField" data-key="klass" placeholder="e.g. SS2" />
+      </div>
+      <div class="field">
+        <label>Brand Name</label>
+        <input class="input hmgRecField" data-key="brand" value="HMG ACADEMY CLASS DECK" />
+      </div>
+    </div>
+
+    <hr class="sep" />
+    <b style="font-size:13px">👨‍🏫 Staff Credentials (appears in intro + intermittent popups)</b>
+    <div class="field-row" style="margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="field">
+        <label>Your Name</label>
+        <input class="input hmgRecField" data-key="staffName" value="Adewale Adeagbo" />
+      </div>
+      <div class="field">
+        <label>Your Title</label>
+        <input class="input hmgRecField" data-key="staffTitle" value="Virtual Tutor | Data Scientist | AI-Augmented Solutions Developer" />
+      </div>
+    </div>
+
+    <hr class="sep" />
+    <b style="font-size:13px">📜 Lower Thirds — Scrolling Text Banner</b>
+    <div class="field" style="margin-top:6px">
+      <label>Text that scrolls at the bottom of the video</label>
+      <input class="input hmgRecField" data-key="lowerThird" value="If you want to book virtual classes with us, contact Adewale on 08100866322, 08094481488" />
+    </div>
+
+    <hr class="sep" />
+    <b style="font-size:13px">📢 Text Ad / Announcement Overlay</b>
+    <div class="field" style="margin-top:6px">
+      <label>Ad text (appears intermittently during the recording)</label>
+      <input class="input hmgRecField" data-key="adText" placeholder="e.g. Subscribe to our YouTube channel for more lessons!" />
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="field">
+        <label>Show ad every (seconds)</label>
+        <input class="input hmgRecField" data-key="adInterval" type="number" value="60" min="15" max="300" />
+      </div>
+      <div class="field">
+        <label>Show staff popup every (seconds)</label>
+        <input class="input hmgRecField" data-key="pulseInterval" type="number" value="30" min="10" max="120" />
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;margin:8px 0">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-dim)">
+        <input type="checkbox" id="hmgShowStaffPulse" checked /> Show staff credentials popup during recording
+      </label>
+    </div>
+
+    <div class="field">
+      <label>Footer credit line</label>
+      <input class="input hmgRecField" data-key="footer" value="Learning Deliberately. Teaching Authentically." />
+    </div>
+
+    <div class="row" style="margin-top:10px">
+      <button class="btn small" id="hmgRecLogoBtn">🖼 Upload custom logo</button>
+      <input type="file" id="hmgRecLogoFile" class="hide" accept="image/*" />
+      <span id="hmgRecLogoStatus" style="font-size:12px;color:var(--text-dim)">Logo: HMG ACADEMY default</span>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-dim)">
+        <input type="checkbox" id="hmgRecIncludeCams" /> Include student cameras
+      </label>
+    </div>
+
+    <hr class="sep" />
+    <b style="font-size:13px">🔗 CBT / Quiz Link (shown in recorded video)</b>
+    <div class="field" style="margin-top:6px">
+      <label>Paste the link to your CBT or quiz page (appears as a bottom banner in recorded video)</label>
+      <input class="input hmgRecField" data-key="cbtLink" placeholder="e.g. https://your-cbt-platform.vercel.app/exam/abc123" />
+    </div>
+
+    <hr class="sep" />
+    <b style="font-size:13px">📄 Advertising Flyer (shown in recorded video end screen)</b>
+    <div class="field" style="margin-top:6px">
+      <label>Upload a flyer image (PNG/JPG) that will appear in the video for promotion</label>
+      <button class="btn small" id="hmgRecFlyerBtn">🖼 Upload flyer image</button>
+      <input type="file" id="hmgRecFlyerFile" class="hide" accept="image/*" />
+      <span id="hmgRecFlyerStatus" style="font-size:12px;color:var(--text-dim);margin-left:8px"></span>
+      <button class="btn small ghost" id="hmgRecFlyerClear" style="font-size:11px">✕ Clear</button>
+    </div>
+
+    <div class="row" style="margin-top:14px">
+      <button class="btn primary" id="hmgRecBegin">🎬 Start Recording with Branding</button>
+      <button class="btn" onclick="closeModal('#mHmgRecSetup')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- v6: recording setup (YouTube-ready branded video) -->
+<div class="modal-back" id="mRecSetup">
+  <div class="modal">
+    <h3>⏺ Record lesson (YouTube-ready)</h3>
+    <p style="color:var(--text-dim);font-size:13px">Records the two split panes under a branded header — <b>your own brand, logo and name</b> — plus your camera (bottom-right) when it is on. Ready to post on your channel.</p>
+    <label>Subject</label>
+    <input class="input" id="recSubject" placeholder="e.g. Mathematics" />
+    <label style="margin-top:8px">Topic</label>
+    <input class="input" id="recTopic" placeholder="e.g. Simultaneous Equations — Elimination Method" />
+    <label style="margin-top:8px">Class</label>
+    <input class="input" id="recClass" placeholder="e.g. SS2" />
+    <label style="margin-top:8px">Brand name on the video (your academy / your name)</label>
+    <input class="input" id="recBrand" placeholder="e.g. Funke's Tutorials" />
+    <label style="margin-top:8px">Footer credit (e.g. your YouTube / WhatsApp)</label>
+    <input class="input" id="recFooter" placeholder="e.g. ▶ Funke's Tutorials on YouTube · 0803-xxx-xxxx" />
+    <div class="row" style="margin-top:6px">
+      <button class="btn small" id="recLogoBtn">🖼 Upload your logo (optional)</button>
+      <input type="file" id="recLogoFile" class="hide" accept="image/*" />
+      <span id="recLogoStatus" style="font-size:12px;color:var(--text-dim)"></span>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <label style="display:flex;align-items:center;gap:8px;margin:0">
+        <input type="checkbox" id="recStudents" /> Include student cameras (up to 3 tiles, left edge)
+      </label>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn primary" id="recBegin">⏺ Start recording</button>
+      <button class="btn" onclick="closeModal('#mRecSetup')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- v3: class report modal -->
+<div class="modal-back" id="mReport">
+  <div class="modal">
+    <h3>📈 Class report</h3>
+    <div id="reportBody" style="font-size:14px;line-height:1.7"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn primary" id="reportDownload">⬇ Download report (.txt)</button>
+      <button class="btn" id="reportWhatsApp">📲 WhatsApp summary</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="mTabletLive">
+  <div class="modal" style="max-width:760px">
+    <h3>📡 Tablet Social Live — direct, no OBS</h3>
+    <p style="color:var(--text-dim);font-size:13px">This sends your ClassDeck teaching screen from the tablet browser to a WebRTC relay gateway, then the gateway publishes to social RTMP platforms. This is the realistic browser-safe way to go live without OBS because YouTube/Facebook/Instagram/TikTok still use RTMP/RTMPS ingest.</p>
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin:6px 0">
+      <span class="badge">Source: ClassDeck workspace</span>
+      <span class="badge">No OBS</span>
+      <span class="badge">No AI API</span>
+      <span class="badge">Works from tablet browser</span>
+    </div>
+    <label>Relay gateway base URL</label>
+    <input class="input" id="tlGateway" placeholder="https://live.yourdomain.com" />
+    <label style="margin-top:8px">Relay secret/token (optional, configured on your relay)</label>
+    <input class="input" id="tlSecret" placeholder="keep this private" type="password" />
+    <div class="row" style="margin-top:8px">
+      <div style="flex:1;min-width:180px">
+        <label>Stream name</label>
+        <input class="input" id="tlStream" placeholder="classdeck" />
+      </div>
+      <div style="flex:1;min-width:180px">
+        <label>Output format</label>
+        <select class="input" id="tlFormat">
+          <option value="landscape">Landscape 16:9 — YouTube/Facebook</option>
+          <option value="vertical">Vertical 9:16 — TikTok/Instagram/Reels style</option>
+        </select>
+      </div>
+    </div>
+    <hr class="sep" />
+    <label>Destinations (full RTMP/RTMPS publish URL, including stream key)</label>
+    <p style="font-size:11.5px;color:var(--text-dim);margin:4px 0">Keys are stored only in this browser if you tick remember. Never commit them to GitHub. Leave a destination blank if not used.</p>
+    <input class="input tlDest" data-name="youtube" placeholder="YouTube full URL e.g. rtmp://a.rtmp.youtube.com/live2/YOUR-KEY" />
+    <input class="input tlDest" data-name="facebook" placeholder="Facebook full RTMPS URL from Live Producer" style="margin-top:6px" />
+    <input class="input tlDest" data-name="instagram" placeholder="Instagram full RTMPS URL from Live Producer" style="margin-top:6px" />
+    <input class="input tlDest" data-name="tiktok" placeholder="TikTok full RTMP URL from Live Center/Producer" style="margin-top:6px" />
+    <input class="input tlDest" data-name="custom" placeholder="Custom RTMP/RTMPS publish URL" style="margin-top:6px" />
+    <label style="display:flex;align-items:center;gap:8px;margin-top:8px"><input type="checkbox" id="tlRemember" /> Remember gateway and destinations on this tablet</label>
+    <div class="row" style="margin-top:10px">
+      <button class="btn primary" id="tlStart">📡 Start tablet social live</button>
+      <button class="btn danger" id="tlStop">⏹ Stop social live</button>
+      <button class="btn" id="tlHealth">Check relay</button>
+      <button class="btn" onclick="closeModal('#mTabletLive')">Close</button>
+    </div>
+    <p id="tlStatus" style="font-size:12.5px;color:var(--text-dim);margin-top:8px">Deploy the included relay in <code>relay/no-obs-social-relay/</code>, paste its URL here, then start.</p>
+    <hr class="sep" />
+    <b style="font-size:13px">No relay yet?</b>
+    <p style="font-size:12px;color:var(--text-dim);margin:4px 0">Use the Social Centre for setup steps, or open a browser-based studio such as YouTube Live Control Room, Facebook Live Producer, Instagram Live Producer, TikTok Live Center, StreamYard or Restream. Those are no-OBS options but may have account/eligibility/free-plan limits.</p>
+    <div class="row">
+      <button class="btn small" id="tlOpenCentre">🌐 Open Social Centre</button>
+      <a class="btn small" href="https://studio.youtube.com" target="_blank" rel="noopener">YouTube Studio</a>
+      <a class="btn small" href="https://www.facebook.com/live/producer" target="_blank" rel="noopener">Facebook Live</a>
+      <a class="btn small" href="https://www.instagram.com" target="_blank" rel="noopener">Instagram</a>
+      <a class="btn small" href="https://livecenter.tiktok.com" target="_blank" rel="noopener">TikTok Live</a>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="mNoise">
+  <div class="modal">
+    <h3>🔊 Noise meter</h3>
+    <p style="color:var(--text-dim);font-size:13px">Free local microphone analyser. Nothing is recorded or uploaded. When open, the gauge is also painted into the live broadcast/recording overlay so students can self-regulate.</p>
+    <div id="noiseGauge" style="height:30px;background:#eef1ff;border-radius:999px;overflow:hidden;border:1px solid var(--line);margin:10px 0"><i style="display:block;height:100%;width:0%;background:linear-gradient(90deg,#1d8f4f,#f59e0b,#e02b2b)"></i></div>
+    <div class="row" style="align-items:center">
+      <span style="font-size:13px;color:var(--text-dim)">Threshold</span>
+      <input type="range" id="noiseThreshold" min="20" max="95" value="70" style="flex:1" />
+      <b id="noiseLevel">0%</b>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn primary" id="noiseStart">▶ Start meter</button>
+      <button class="btn danger" id="noiseStop">⏹ Stop</button>
+      <button class="btn" onclick="closeModal('#mNoise')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-back" id="mTimer">
+  <div class="modal">
+    <h3>⏱ Countdown timer</h3>
+    <p style="color:var(--text-dim);font-size:13px">Great for exercises: “You have 5 minutes for question 3.”</p>
+    <div class="row">
+      <button class="btn" data-min="1">1 min</button>
+      <button class="btn" data-min="2">2 min</button>
+      <button class="btn" data-min="5">5 min</button>
+      <button class="btn" data-min="10">10 min</button>
+      <input class="input" id="timerCustom" type="number" placeholder="mins" style="width:90px" min="1" />
+      <button class="btn primary" id="timerStartCustom">Start</button>
+    </div>
+    <button class="btn danger" id="timerStop" style="margin-top:6px">Stop timer</button>
+  </div>
+</div>
+
+<script src="vendor/peerjs.min.js"></script>
+<script src="vendor/pdf.min.js"></script>
+<script src="vendor/qrcode.min.js"></script>
+<script src="js/common.js"></script>
+<script src="js/config.js"></script>
+<script src="js/license.js"></script>
+<script src="js/whiteboard.js"></script>
+<script src="js/webcast.js"></script>
+<script src="js/toolkit.js"></script>
+<script src="js/toolkit-data.js"></script>
+<script src="js/toolkit-data2.js"></script>
+<script src="js/toolkit-data3.js"></script>
+<script src="js/toolkit-ext.js"></script>
+<script src="js/security-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/rtc.js"></script>
+<script src="js/teach.js"></script>
+<script src="js/enhancements.js"></script>
+<script src="js/ecosystem-branding.js"></script>
+<script src="js/enterprise-enhanced.js"></script>
+<div id="hmgEcosystemFooterCompact" style="max-width:100%;padding:0 14px"></div>
+</body>
+</html>

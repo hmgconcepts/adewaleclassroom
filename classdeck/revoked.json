@@ -1,0 +1,6 @@
+{
+  "comment": "HMG ADMIN: central kill-switch. Add any leaked/refunded license key to 'keys' and push to GitHub - every installed app blocks it within minutes. 'minTrialBuild' lets you force-expire old trial clocks if abused.",
+  "keys": [],
+  "blockedEmails": [],
+  "minTrialBuild": 1
+}

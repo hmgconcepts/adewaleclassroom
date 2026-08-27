@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parent Portal — HMG ACADEMY CLASS DECK v3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <div class="max-w-lg mx-auto pt-8 px-4">
+        <div class="bg-white shadow border rounded-[3rem] p-5">
+            <div class="flex items-center mb-4">
+                <div>
+                    <span class="font-extrabold text-2xl text-[#0A3D62]">HMG</span>
+                    <span class="font-bold">Parent Portal</span>
+                </div>
+                <div class="ml-auto px-3 py-1 bg-sky-100 text-sky-700 rounded-3xl px-3 text-xs font-extrabold">v3.2</div>
+            </div>
+            
+            <div class="text-sm">
+                <div class="font-extrabold text-base">View your child's weekly progress, portfolio, and badges.</div>
+                <div class="mt-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800"><b>Static demo:</b> this repository has no parent-data backend. The sample report opens only with the demo code <b>PAR-8K2M</b>; connect a real authenticated API before production use.</div>
+                
+                <div class="mt-5">
+                    <label class="text-xs font-bold">Parent code (from teacher)</label>
+                    <div class="flex">
+                        <input id="parent-code" type="text" value="PAR-8K2M" class="flex-1 border px-4 py-[9px] rounded-l-[2rem] text-sm font-semibold">
+                        <button onclick="viewReport()" class="px-5 text-sm font-extrabold bg-[#0A3D62] text-white rounded-r-[2rem]">View report</button>
+                    </div>
+                </div>
+                
+                <div class="text-xs mt-2 px-1">Don't have a code? Ask the teacher to generate one from Teacher Studio → Roster.</div>
+            </div>
+            
+            <!-- Report Preview -->
+            <div id="report-section" class="hidden mt-6 border-t pt-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="font-extrabold">Chioma Eze</div>
+                        <div class="text-xs">JSS2 • HMG Academy</div>
+                    </div>
+                    <div>
+                        <button onclick="printReport()" class="px-3 py-1 text-xs bg-white border rounded-[2rem] px-4 font-extrabold flex items-center"><i class="fas fa-print mr-1"></i> <span class="text-xs">PDF</span></button>
+                    </div>
+                </div>
+                
+                <div class="mt-3 grid grid-cols-2 gap-2">
+                    <div class="border rounded-2xl p-3">
+                        <div class="text-xs font-extrabold">Recent Grades</div>
+                        <div class="mt-2 text-sm">
+                            <div class="flex justify-between"><span class="text-xs">Maths Quiz 3</span> <span class="font-bold text-emerald-700">92%</span></div>
+                            <div class="flex justify-between"><span class="text-xs">Essay: Climate</span> <span class="font-bold text-emerald-700">85%</span></div>
+                            <div class="flex justify-between"><span class="text-xs">CBT Practice</span> <span class="font-bold text-emerald-700">88%</span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="border rounded-2xl p-3">
+                        <div class="text-xs font-extrabold">Badges earned (7)</div>
+                        <div class="mt-2 flex flex-wrap gap-1">
+                            <div class="px-1.5 text-xs py-[1px] bg-emerald-100 text-emerald-700 rounded px-2 font-extrabold">Attendance Streak</div>
+                            <div class="px-1.5 text-xs py-[1px] bg-emerald-100 text-emerald-700 rounded px-2 font-extrabold">Top Contributor</div>
+                            <div class="px-1.5 text-xs py-[1px] bg-emerald-100 text-emerald-700 rounded px-2 font-extrabold">CBT Master</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="font-extrabold text-xs px-1">Portfolio Highlights</div>
+                    <div class="mt-1 flex gap-2">
+                        <div class="px-2 py-1 border rounded-2xl text-xs w-1/2">
+                            <div class="font-bold">Whiteboard work</div>
+                            <div class="text-xs">4 submissions this week</div>
+                        </div>
+                        <div class="px-2 py-1 border rounded-2xl text-xs w-1/2">
+                            <div class="font-bold">Voice notes</div>
+                            <div class="text-xs">2 recordings</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 px-1">
+                    <div class="text-xs font-bold">Teacher's note</div>
+                    <div class="text-xs bg-slate-50 p-2 mt-1 rounded-xl">"Chioma is improving greatly in algebra. Keep up the good work!"</div>
+                </div>
+                
+                <div class="mt-3 px-1">
+                    <button onclick="requestWhatsApp()" class="text-xs px-3 py-1 flex items-center font-extrabold bg-sky-700 text-white px-4 rounded-[2rem]">
+                        <i class="fas fa-comments mr-1"></i> <span>Message teacher via WhatsApp</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="px-2 mt-6 text-xs">
+            <div class="font-extrabold">What is new in v3:</div>
+            <ul class="text-xs mt-1 px-1">
+                <li class="flex gap-1 items-center"><i class="fas fa-check text-emerald-600"></i> <span>Weekly automated reports</span></li>
+                <li class="flex gap-1 items-center"><i class="fas fa-check text-emerald-600"></i> <span>Full portfolio export</span></li>
+                <li class="flex gap-1 items-center"><i class="fas fa-check text-emerald-600"></i> <span>Real-time badge updates</span></li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        function viewReport() {
+            const code = document.getElementById('parent-code').value.trim().toUpperCase();
+            if (!/^PAR-[A-Z0-9]{4,12}$/.test(code)) {
+                alert('Enter a parent code in the format PAR-8K2M.');
+                return;
+            }
+            if (code !== 'PAR-8K2M') {
+                alert('⚠️ This static demo accepts only code PAR-8K2M for demonstration. In production, replace this hardcoded check with a secure backend API call. Student data must never be accessible via hardcoded codes.');
+                return;
+            }
+            document.getElementById('report-section').classList.remove('hidden');
+            document.getElementById('report-section').scrollIntoView({behavior: 'smooth'});
+        }
+        
+        function printReport() {
+            window.print();
+        }
+        
+        function requestWhatsApp() {
+            window.open('https://wa.me/2348100866322?text=Hi%20teacher%2C%20this%20is%20a%20parent%20of%20Chioma%20Eze%20(JSS2).', '_blank', 'noopener,noreferrer');
+        }
+        
+        // Preload demo
+        window.onload = function() {
+            // Allow auto demo if parameter
+            if (window.location.search.includes('demo=1')) {
+                setTimeout(() => {
+                    document.getElementById('parent-code').value = 'PAR-8K2M';
+                    document.getElementById('report-section').classList.remove('hidden');
+                }, 1200);
+            }
+        }
+    </script>
+</body>
+</html>

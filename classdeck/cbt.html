@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBT Practice — HMG ACADEMY CLASS DECK v3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <div class="max-w-screen-xl mx-auto px-4 pt-5">
+        <div class="flex items-center mb-4">
+            <div class="flex items-center">
+                <i class="fas fa-laptop-code fa-2x text-violet-600"></i>
+                <div class="ml-3">
+                    <span class="font-extrabold text-3xl text-violet-700">CBT Practice</span>
+                </div>
+            </div>
+            <div class="ml-auto px-3 py-1 bg-violet-100 text-violet-700 rounded-3xl px-3 text-xs font-extrabold">JAMB • WAEC • NECO • BECE</div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            
+            <!-- Exams -->
+            <div class="lg:col-span-5 bg-white rounded-3xl p-5 border">
+                <div class="font-extrabold mb-2">Available Tests</div>
+                
+                <div class="space-y-2">
+                    <div onclick="startCBT('JAMB')" class="cursor-pointer flex justify-between items-center px-4 py-3 hover:bg-violet-50 border rounded-[2rem]">
+                        <div>
+                            <span class="font-extrabold">JAMB UTME</span>
+                            <div class="text-xs">30 mins • 40 questions</div>
+                        </div>
+                        <div><i class="fas fa-play text-violet-600"></i></div>
+                    </div>
+                    
+                    <div onclick="startCBT('WAEC')" class="cursor-pointer flex justify-between items-center px-4 py-3 hover:bg-violet-50 border rounded-[2rem]">
+                        <div>
+                            <span class="font-extrabold">WAEC SSCE</span>
+                            <div class="text-xs">45 mins • 50 questions</div>
+                        </div>
+                        <div><i class="fas fa-play text-violet-600"></i></div>
+                    </div>
+                    
+                    <div onclick="startCBT('NECO')" class="cursor-pointer flex justify-between items-center px-4 py-3 hover:bg-violet-50 border rounded-[2rem]">
+                        <div>
+                            <span class="font-extrabold">NECO SSCE</span>
+                            <div class="text-xs">40 mins • 45 questions</div>
+                        </div>
+                        <div><i class="fas fa-play text-violet-600"></i></div>
+                    </div>
+                    
+                    <div onclick="startCBT('BECE')" class="cursor-pointer flex justify-between items-center px-4 py-3 hover:bg-violet-50 border rounded-[2rem]">
+                        <div>
+                            <span class="font-extrabold">BECE (JSS3)</span>
+                            <div class="text-xs">35 mins • 40 questions</div>
+                        </div>
+                        <div><i class="fas fa-play text-violet-600"></i></div>
+                    </div>
+                </div>
+                
+                <div class="mt-3 text-xs px-1">
+                    <button onclick="showCSVImport()" class="px-4 py-1 text-xs flex items-center bg-white border font-extrabold rounded-[2rem]">
+                        <i class="fas fa-upload mr-1"></i> Bulk import questions (CSV)
+                    </button>
+                </div>
+            </div>
+            
+            <div class="lg:col-span-7 bg-white rounded-3xl p-5 border">
+                <div class="font-extrabold">Recent Attempts</div>
+                <div id="attempts-list" class="text-xs mt-2 space-y-1">
+                    <!-- Populated by JS -->
+                </div>
+                
+                <div class="mt-4 px-1 text-xs">
+                    <span class="font-extrabold">How it works:</span><br>
+                    • Timer starts immediately<br>
+                    • Auto-marking + explanations<br>
+                    • Badges awarded: Perfect, Streak, JAMB Ready<br>
+                    • 100% offline (IndexedDB)
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    
+    <!-- CBT Test Modal -->
+    <div id="cbt-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-[200]">
+        <div class="w-full max-w-xl mx-4 bg-white rounded-3xl p-5">
+            <div class="flex justify-between">
+                <div id="cbt-title" class="font-extrabold text-xl"></div>
+                <div id="cbt-timer" class="px-3 bg-violet-100 text-violet-700 font-extrabold rounded-[2rem] px-4 flex items-center text-sm">30:00</div>
+            </div>
+            
+            <div class="mt-4" id="cbt-content">
+                <!-- Questions populated here -->
+            </div>
+            
+            <div class="mt-4 flex gap-2">
+                <button onclick="submitCBT()" class="flex-1 py-2 font-extrabold bg-violet-700 text-white rounded-[2rem]">Submit Test</button>
+                <button onclick="closeCBT()" class="flex-1 py-2 font-extrabold border rounded-[2rem]">Exit</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        'use strict';
+        let currentExam = '';
+        let timerInterval = null;
+        let questions = [];
+        let answers = {};
+        let testSubmitted = false;
+        const examMinutes = { JAMB: 30, WAEC: 45, NECO: 40, BECE: 35 };
+
+        const sampleQuestions = {
+            'JAMB': [
+                {q: "What is the capital of Nigeria?", a: "Abuja", b: "Lagos", c: "Kano", d: "Ibadan", correct: "A", expl: "Abuja became the capital in 1991."},
+                {q: "Solve for x: 2x + 4 = 10", a: "2", b: "3", c: "4", d: "5", correct: "B", expl: "x = 3."},
+                {q: "Which is NOT a primary colour?", a: "Red", b: "Blue", c: "Green", d: "Yellow", correct: "C", expl: "Green is a secondary colour."}
+            ],
+            'WAEC': [
+                {q: "What is the chemical formula for water?", a: "H2O", b: "CO2", c: "O2", d: "NaCl", correct: "A", expl: "H2O is water."},
+                {q: "Who wrote Things Fall Apart?", a: "Wole Soyinka", b: "Chinua Achebe", c: "Ngugi wa Thiong'o", d: "Chimamanda Adichie", correct: "B", expl: "Chinua Achebe."}
+            ],
+            'NECO': [
+                {q: "The sum of angles in a triangle is?", a: "90°", b: "180°", c: "360°", d: "270°", correct: "B", expl: "180 degrees."}
+            ],
+            'BECE': [
+                {q: "What is 12 x 8?", a: "84", b: "96", c: "108", d: "100", correct: "B", expl: "96."}
+            ]
+        };
+
+        function escapeHtml(value) {
+            return String(value).replace(/[&<>"']/g, (c) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+        }
+        function startCBT(exam) {
+            currentExam = exam;
+            questions = (sampleQuestions[exam] || sampleQuestions.JAMB).slice();
+            answers = {};
+            testSubmitted = false;
+            document.getElementById('cbt-title').textContent = exam + ' Practice';
+            document.getElementById('cbt-modal').classList.remove('hidden');
+            document.getElementById('cbt-modal').classList.add('flex');
+            renderQuestions();
+            startTimer(examMinutes[exam] || 30);
+        }
+        function renderQuestions() {
+            const container = document.getElementById('cbt-content');
+            container.replaceChildren();
+            questions.forEach((q, i) => {
+                const div = document.createElement('div');
+                div.className = 'mb-4 border px-3 py-3 rounded-2xl';
+                const prompt = document.createElement('div');
+                prompt.className = 'font-bold mb-2';
+                prompt.textContent = (i + 1) + '. ' + q.q;
+                div.appendChild(prompt);
+                const grid = document.createElement('div');
+                grid.className = 'grid grid-cols-1 gap-1 text-sm';
+                ['A', 'B', 'C', 'D'].forEach((letter) => {
+                    const option = document.createElement('button');
+                    option.type = 'button';
+                    option.className = 'px-3 py-1 flex items-center text-left cursor-pointer rounded-xl hover:bg-violet-100';
+                    option.id = 'opt-' + i + '-' + letter;
+                    option.innerHTML = '<span class="font-bold w-5">' + letter + '.</span> ' + escapeHtml(q[letter.toLowerCase()]);
+                    option.addEventListener('click', () => selectAnswer(i, letter));
+                    grid.appendChild(option);
+                });
+                div.appendChild(grid);
+                container.appendChild(div);
+            });
+        }
+        function selectAnswer(qIndex, option) {
+            if (testSubmitted) return;
+            answers[qIndex] = option;
+            document.querySelectorAll('[id^="opt-' + qIndex + '-"]').forEach((el) => el.classList.remove('bg-violet-200'));
+            const selected = document.getElementById('opt-' + qIndex + '-' + option);
+            if (selected) selected.classList.add('bg-violet-200');
+        }
+        function startTimer(minutes) {
+            let time = Math.max(1, Math.floor(minutes * 60));
+            const timerEl = document.getElementById('cbt-timer');
+            clearInterval(timerInterval);
+            const paint = () => {
+                const m = Math.floor(time / 60);
+                const sec = time % 60;
+                timerEl.textContent = m + ':' + (sec < 10 ? '0' + sec : sec);
+            };
+            paint();
+            timerInterval = setInterval(() => {
+                time -= 1;
+                paint();
+                if (time <= 0) {
+                    clearInterval(timerInterval);
+                    alert('Time is up! Submitting test automatically.');
+                    submitCBT();
+                }
+            }, 1000);
+        }
+        function submitCBT() {
+            if (testSubmitted || !questions.length) return;
+            testSubmitted = true;
+            clearInterval(timerInterval);
+            let score = 0;
+            let resultsHTML = '';
+            questions.forEach((q, i) => {
+                const userAns = answers[i] || '';
+                const isCorrect = userAns === q.correct;
+                if (isCorrect) score++;
+                resultsHTML += '<div class="px-2 py-[2px] flex justify-between items-center text-xs"><span>' +
+                    escapeHtml((i + 1) + '. ' + q.q) + '</span><span class="' + (isCorrect ? 'text-emerald-600' : 'text-red-600') +
+                    ' font-bold">' + (isCorrect ? '✓' : '✗') + ' ' + escapeHtml(userAns || '-') + ' (Correct: ' + escapeHtml(q.correct) + ')</span></div>' +
+                    '<div class="text-xs px-2 mb-2 text-slate-500">' + escapeHtml(q.expl) + '</div>';
+            });
+            const percent = Math.round((score / questions.length) * 100);
+            document.getElementById('cbt-content').innerHTML =
+                '<div class="text-center py-1"><div class="text-5xl font-extrabold">' + percent + '%</div>' +
+                '<div class="text-xs">Score: ' + score + ' / ' + questions.length + '</div>' +
+                '<div class="mt-4 text-left">' + resultsHTML + '</div><div class="mt-4">' +
+                (percent === 100 ? '<div class="px-3 py-1 text-xs bg-emerald-100 text-emerald-700 font-extrabold rounded-2xl inline-block">CBT Perfect Badge Earned!</div>' : '') +
+                (percent >= 80 ? '<div class="mt-1 px-3 py-1 text-xs bg-violet-100 text-violet-700 font-extrabold rounded-2xl inline-block">JAMB Ready Badge!</div>' : '') +
+                '</div></div>';
+            saveAttempt(currentExam, percent, score);
+        }
+        function readAttempts() {
+            try {
+                const parsed = JSON.parse(localStorage.getItem('hmg_cbt_attempts') || '[]');
+                return Array.isArray(parsed) ? parsed : [];
+            } catch { return []; }
+        }
+        function saveAttempt(exam, percent, score) {
+            const attempts = readAttempts();
+            attempts.unshift({ exam: exam, percent: percent, score: score, date: new Date().toLocaleDateString() });
+            try { localStorage.setItem('hmg_cbt_attempts', JSON.stringify(attempts.slice(0, 8))); } catch {}
+            loadAttempts();
+        }
+        function loadAttempts() {
+            const container = document.getElementById('attempts-list');
+            const attempts = readAttempts();
+            container.replaceChildren();
+            if (!attempts.length) {
+                container.textContent = 'No attempts yet. Start a practice test!';
+                return;
+            }
+            attempts.forEach((a) => {
+                const row = document.createElement('div');
+                row.className = 'flex justify-between px-3 py-[3px] text-xs border-b';
+                const label = document.createElement('span');
+                label.textContent = String(a.exam || 'Exam') + ' • ' + String(a.date || '');
+                const mark = document.createElement('span');
+                mark.className = 'font-bold';
+                mark.textContent = String(Number(a.percent) || 0) + '%';
+                row.append(label, mark);
+                container.appendChild(row);
+            });
+        }
+        function closeCBT() {
+            clearInterval(timerInterval);
+            timerInterval = null;
+            testSubmitted = false;
+            document.getElementById('cbt-modal').classList.add('hidden');
+            document.getElementById('cbt-modal').classList.remove('flex');
+            loadAttempts();
+        }
+        function parseCSV(text) {
+            const rows = [];
+            let row = [], field = '', quoted = false;
+            for (let i = 0; i < text.length; i++) {
+                const ch = text[i];
+                if (quoted) {
+                    if (ch === '"' && text[i + 1] === '"') { field += '"'; i++; }
+                    else if (ch === '"') quoted = false;
+                    else field += ch;
+                } else if (ch === '"') quoted = true;
+                else if (ch === ',') { row.push(field.trim()); field = ''; }
+                else if (ch === '\n') { row.push(field.trim()); rows.push(row); row = []; field = ''; }
+                else if (ch !== '\r') field += ch;
+            }
+            if (field.length || row.length) { row.push(field.trim()); rows.push(row); }
+            return rows.filter((r) => r.some((x) => x));
+        }
+        function showCSVImport() {
+            document.querySelectorAll('[data-cbt-import]').forEach((x) => x.remove());
+            const modal = document.createElement('div');
+            modal.dataset.cbtImport = '1';
+            modal.className = 'fixed inset-0 bg-black/40 flex items-center justify-center z-[210]';
+            modal.innerHTML = '<div class="max-w-md w-full mx-4 bg-white rounded-3xl p-5"><div class="font-extrabold">Bulk CSV Import</div>' +
+                '<div class="text-xs mt-1">Upload CSV with columns: question,option_a,option_b,option_c,option_d,correct,explanation</div>' +
+                '<div class="mt-4"><input type="file" id="csv-input" accept=".csv,text/csv" class="text-xs"><div class="mt-3 px-1"><button type="button" data-import-button class="px-5 py-2 text-xs font-extrabold bg-violet-600 text-white rounded-3xl">Import Questions</button></div></div>' +
+                '<div class="mt-4 text-xs">Example: <span class="font-mono text-xs">What is 2+2?,2,3,4,5,B,Basic addition</span></div></div>';
+            modal.querySelector('[data-import-button]').addEventListener('click', () => importCSV(modal));
+            document.body.appendChild(modal);
+        }
+        function importCSV(modal) {
+            const fileInput = modal.querySelector('#csv-input');
+            if (!fileInput || !fileInput.files.length) { alert('Please select a CSV file'); return; }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const rows = parseCSV(String(e.target.result || ''));
+                const start = rows.length && /^question$/i.test(rows[0][0]) ? 1 : 0;
+                const imported = [];
+                rows.slice(start).forEach((parts) => {
+                    const correct = String(parts[5] || '').trim().toUpperCase();
+                    if (parts.length >= 6 && parts[0] && ['A','B','C','D'].includes(correct)) {
+                        imported.push({ q: parts[0], a: parts[1] || '', b: parts[2] || '', c: parts[3] || '', d: parts[4] || '', correct, expl: parts[6] || 'No explanation' });
+                    }
+                });
+                if (!imported.length) { alert('No valid rows found. Check the CSV columns and correct option (A-D).'); return; }
+                sampleQuestions.JAMB = sampleQuestions.JAMB.concat(imported);
+                alert(imported.length + ' question(s) imported into this browser session.');
+                modal.remove();
+            };
+            reader.readAsText(fileInput.files[0]);
+        }
+        function init() {
+            loadAttempts();
+            if (!localStorage.getItem('hmg_cbt_attempts')) {
+                try { localStorage.setItem('hmg_cbt_attempts', JSON.stringify([
+                    {exam: 'JAMB', percent: 85, score: 34, date: '2026-06-10'},
+                    {exam: 'WAEC', percent: 78, score: 39, date: '2026-06-08'}
+                ])); } catch {}
+                loadAttempts();
+            }
+        }
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

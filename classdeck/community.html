@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Community — HMG ACADEMY CLASS DECK v3</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <div class="max-w-screen-lg mx-auto px-4 pt-5">
+        <div class="flex items-center mb-4">
+            <div class="flex items-center">
+                <i class="fas fa-users fa-2x mr-3 text-pink-600"></i>
+                <div>
+                    <span class="font-extrabold text-3xl">HMG Teacher Community</span>
+                </div>
+            </div>
+            <div class="ml-auto px-3 py-1 bg-pink-100 text-pink-700 rounded-3xl px-3 text-xs font-extrabold">v3.2</div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <!-- Feed -->
+            <div class="lg:col-span-7 bg-white p-5 rounded-3xl border">
+                <div class="flex justify-between mb-3 px-1">
+                    <span class="font-extrabold">Community Feed</span>
+                    <div class="px-2 bg-emerald-100 text-emerald-600 rounded px-3 py-px text-xs font-extrabold">1,293 members</div>
+                </div>
+                
+                <div class="space-y-4 text-xs">
+                    <!-- Pinned -->
+                    <div class="border rounded-2xl p-3">
+                        <div class="flex"><span class="px-2 py-px text-xs font-extrabold bg-amber-100 text-amber-700 rounded">PINNED</span> <span class="ml-auto text-xs">Adewale S.</span></div>
+                        <div class="font-bold mt-1">New NERDC lesson templates available for SS2 Physics</div>
+                        <div class="mt-1">Download the templates from the teacher studio. 142 teachers have already used them.</div>
+                        <div class="flex items-center mt-2 text-xs"><span class="px-3">👍 212</span> <span class="px-2">💬 48</span></div>
+                    </div>
+                    
+                    <div class="border rounded-2xl p-3">
+                        <div class="font-bold">Best practices for using ClassDeck offline?</div>
+                        <div class="text-xs mt-1">I am teaching in a remote area with no internet. Any tips?</div>
+                        <div class="px-2 mt-2 text-xs flex items-center"><span class="font-extrabold">Reply from founder:</span> Use the offline mode fully — everything saves locally.</div>
+                    </div>
+                    
+                    <div class="border rounded-2xl p-3">
+                        <div class="font-bold">CBT question banks shared for 2026 WAEC</div>
+                        <div class="mt-1 text-xs">I uploaded 200+ questions for English. Feel free to import into your CBT.</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="lg:col-span-5 bg-white p-5 rounded-3xl border">
+                <div class="font-extrabold">Post a new lesson or question</div>
+                <div class="mt-1 text-xs text-slate-500">Static demo: posts are stored only in this browser; there is no shared community backend in this repository.</div>
+                
+                <div class="mt-3">
+                    <input id="community-title" type="text" placeholder="Title of post" class="w-full px-3 py-2 rounded-2xl border text-xs" maxlength="120">
+                    <textarea id="community-body" class="w-full mt-2 px-3 py-2 border rounded-2xl text-xs" placeholder="Share lesson plan, question or resource..." rows="3" maxlength="1000"></textarea>
+                    
+                    <div class="flex mt-2 items-center gap-x-2">
+                        <select id="community-category" class="text-xs border px-2 py-1 rounded-2xl">
+                            <option>JSS2 Maths</option>
+                            <option>SS3 English</option>
+                            <option>Primary 5</option>
+                        </select>
+                        
+                        <button onclick="postToCommunity()" class="px-4 text-xs flex-shrink-0 font-extrabold py-1 bg-pink-600 text-white rounded-[2rem]">Post</button>
+                    </div>
+                </div>
+                
+                <div class="mt-4 text-xs">
+                    <div class="font-extrabold">Your posts</div>
+                    <div class="px-1 text-xs mt-1">You have posted 14 lessons. 3,284 views.</div>
+                </div>
+            </div>
+            
+        </div>
+        
+        <div class="mt-5 px-1">
+            <div class="text-xs font-extrabold">Connect with founder: <a href="https://wa.me/2348100866322" class="text-pink-700 font-bold">WhatsApp Adewale</a></div>
+        </div>
+    </div>
+    
+    <script>
+        'use strict';
+        const postKey = 'hmg_community_posts';
+        const feed = document.querySelector('.space-y-4');
+        function readPosts() {
+            try {
+                const value = JSON.parse(localStorage.getItem(postKey) || '[]');
+                return Array.isArray(value) ? value : [];
+            } catch { return []; }
+        }
+        function addPostToFeed(post, persist) {
+            const card = document.createElement('div');
+            card.className = 'border rounded-2xl p-3';
+            const meta = document.createElement('div');
+            meta.className = 'flex text-xs';
+            const category = document.createElement('span');
+            category.className = 'px-2 py-px font-extrabold bg-pink-100 text-pink-700 rounded';
+            category.textContent = post.category;
+            const author = document.createElement('span');
+            author.className = 'ml-auto';
+            author.textContent = 'You · ' + post.date;
+            meta.append(category, author);
+            const title = document.createElement('div');
+            title.className = 'font-bold mt-1';
+            title.textContent = post.title;
+            const body = document.createElement('div');
+            body.className = 'mt-1 text-xs';
+            body.textContent = post.body;
+            card.append(meta, title, body);
+            feed.prepend(card);
+            if (persist) {
+                const posts = [post, ...readPosts()].slice(0, 20);
+                try { localStorage.setItem(postKey, JSON.stringify(posts)); } catch {}
+            }
+        }
+        function postToCommunity() {
+            const title = document.getElementById('community-title').value.trim();
+            const body = document.getElementById('community-body').value.trim();
+            const category = document.getElementById('community-category').value;
+            if (title.length < 3 || body.length < 5) {
+                alert('Add a title and a short lesson/question before posting.');
+                return;
+            }
+            addPostToFeed({ title: title.slice(0, 120), body: body.slice(0, 1000), category, date: new Date().toLocaleDateString() }, true);
+            document.getElementById('community-title').value = '';
+            document.getElementById('community-body').value = '';
+            alert('Post saved locally in this browser. It is not shared with other users until a backend is connected.');
+        }
+        readPosts().reverse().forEach((post) => addPostToFeed(post, false));
+    </script>
+</body>
+</html>

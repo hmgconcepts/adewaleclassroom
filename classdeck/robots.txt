@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /revoked.json
+Sitemap: https://hmgacademyclassdeck.vercel.app/sitemap.xml
