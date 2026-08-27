@@ -130,6 +130,9 @@
               <option value="reading_article">Reading — article</option>
               <option value="reading_video">Reading — video</option>
               <option value="reading_pack">Reading — pack (article + video mix)</option>
+              <option value="multiline_math">Multi-line maths / STEM (fractions, matrices, calculus…)</option>
+              <option value="image_stimulus">Image / diagram stimulus (link-only media)</option>
+              <option value="stem_combo">Mixed multi-line + image paper</option>
               <optgroup label="School Connect parity">
                 <option value="mcq_only">MCQ-only strict CSV</option>
                 <option value="exam_board">Exam-board paper (WAEC / UTME / IGCSE / SAT…)</option>
@@ -186,6 +189,16 @@
         </div>
         <button class="btn btn-primary" type="button" id="build">Build prompt</button>
         <button class="btn btn-outline" type="button" id="copy">Copy</button>
+        
+      <div class="card" id="prompt-encoding-help" style="margin-top:14px;border-left:4px solid #0506ae">
+        <h3 style="margin:0 0 6px">How multi-line maths &amp; images work in CSV</h3>
+        <ul style="margin:0;padding-left:1.2rem;line-height:1.55;font-size:.92rem">
+          <li><b>Fractions / matrices / simultaneous equations:</b> put the expression in the question cell using <code>\frac{a}{b}</code>, matrix rows separated by <code>\n</code>, or one equation per line. The student screen uses monospaced <code>pre-wrap</code> so lines stay aligned.</li>
+          <li><b>Images / diagrams:</b> put a public <code>https://</code> or Google Drive link in <code>media_url</code> (or Col14 JSON <code>{"image":"https://..."}</code>). Always add a text fallback in the stem (“The diagram shows…”). Nothing is uploaded into free Supabase storage.</li>
+          <li><b>After the chat returns CSV:</b> paste it in the box below → Save as .csv → upload on <a href="practice.html">Quizzes</a>. Preview a sit on <a href="cbt-exam.html">Take a quiz</a>.</li>
+        </ul>
+      </div>
+
         <textarea class="form-textarea" id="out" rows="16" style="margin-top:12px"></textarea>
       </div>
     </main>

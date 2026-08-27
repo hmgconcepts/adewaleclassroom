@@ -4,7 +4,7 @@
 <script src="assets/js/auth-guard.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Quiz review + PDF • ADEWALE CLASSROOM</title>
+<title>Review my paper • ADEWALE CLASSROOM</title>
 <meta name="robots" content="noindex,nofollow">
 <meta name="description" content="After a quiz the learner sees every item, their answer, the key and the explanation, then saves a study PDF.">
 <meta name="theme-color" content="#0506ae">
@@ -85,6 +85,7 @@
 <script src="assets/js/legibility.js" defer></script>
 <script src="assets/js/ux-enhance.js" defer></script>
 <script src="assets/js/ops-desk.js"></script>
+<script src="assets/js/cbt-exam-kit.js"></script>
 </head>
 <body>
 <div class="app-layout" data-require-role="any" id="app-layout">
@@ -105,170 +106,368 @@
     </header>
     <main class="app-content">
       <section class="help-card page-intro">
-        <div class="page-intro-head"><strong>Quiz review + PDF</strong><span class="page-intro-badge" style="background:#7c2d12">🔑 Quiz code required</span></div>
-        <p class="page-intro-what">After a quiz the learner sees every item, their answer, the key and the explanation, then saves a study PDF. Reachable without a portal password, but useless without a valid quiz code plus the learner's student ID. The code is the gate.</p>
-        <p class="page-intro-who"><b>Who it is for.</b> Tutors author the content, learners work through it, parents watch the progress.</p>
-        <p class="page-intro-why"><b>Why it matters.</b> This is the actual teaching product. Everything a parent judges you on — scores, mastery, homework — originates from what is planned here.</p>
-        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Pick the engagement, and the learner if it is a group.</li><li>Add or import the items you need — topics, tasks, questions or reading links.</li><li>Publish, so the learner sees it on their own dashboard.</li><li>Track completion and scores as the work comes back in.</li></ol></details>
-        <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Can open any paper and see every candidate.</li><li><b>Tutor:</b> Can open the papers assigned to them.</li><li><b>Parent:</b> No access — a parent does not sit the paper.</li><li><b>Learner:</b> Opens their own paper with the quiz code and their student ID.</li></ul></details>
-        <p class="page-intro-rel"><b>Related:</b> <a href="practice.html">practice</a> · <a href="cbt-exam.html">cbt exam</a> · <a href="cbt-multi.html">cbt multi</a> · <a href="cbt-prompts.html">cbt prompts</a> · <a href="cbt-results.html">cbt results</a> · <a href="exam-targets.html">exam targets</a></p>
+        <div class="page-intro-head"><strong>Review my paper</strong><span class="page-intro-badge" style="background:#7c2d12">🔑 Quiz code + student ID</span></div>
+        <p class="page-intro-what">Open your latest attempt for any quiz: every question, <b>your answer</b>, the <b>correct key</b>, the <b>explanation</b>, diagrams/media, subject breakdown, filters, calculator, maths keyboard, and a printable study PDF. The gate is the quiz code plus the student ID (or guest name) you used when you sat.</p>
+        <p class="page-intro-who"><b>Who it is for.</b> Learners reviewing their own paper; tutors checking a candidate’s attempt with the same code + ID; parents only if the studio shares the link deliberately.</p>
+        <p class="page-intro-why"><b>Why it matters.</b> A score alone does not teach. Side-by-side answer / key / explanation is how gaps close before the next class.</p>
+        <details class="page-intro-how" open><summary>How to use this page</summary>
+          <ol>
+            <li>Enter the <b>quiz code</b> from your tutor (e.g. ADC-MATH-01).</li>
+            <li>Enter your <b>student ID</b> (e.g. TC-0001) <i>or</i> the exact <b>name</b> you typed on a guest paper.</li>
+            <li>Press <b>Load my review</b> (or Enter). Your latest released attempt appears below.</li>
+            <li>Filter wrong / blank / correct, open the calculator or maths keyboard while you study, then <b>Save / print PDF</b>.</li>
+            <li>If the paper is still being marked, auto-marked items show now; open responses appear when the tutor releases them.</li>
+          </ol>
+        </details>
+        <details class="page-intro-roles"><summary>What each role sees here</summary>
+          <ul>
+            <li><b>Learner:</b> Own attempt only (code + their ID/name).</li>
+            <li><b>Tutor / admin:</b> Can load any candidate’s attempt with that candidate’s code + ID.</li>
+            <li><b>Parent:</b> No menu entry by default; may open a shared link if given one.</li>
+          </ul>
+        </details>
+        <p class="page-intro-rel"><b>Related:</b>
+          <a href="cbt-exam.html">Take a quiz</a> ·
+          <a href="practice.html">Quizzes</a> ·
+          <a href="cbt-results.html">CBT results</a> ·
+          <a href="cbt-prompts.html">Question bank prompts</a> ·
+          <a href="scoresheet.html">Scoresheet</a>
+        </p>
       </section>
-      <div class="card" style="max-width:620px;margin:0 auto 18px">
-        <h3 style="margin:0 0 4px">Review my paper</h3>
-        <p class="muted" style="margin:0 0 12px;font-size:.88rem">Enter the quiz code and the student ID you sat with — or, for an open (guest) paper, the code and the name you typed. Your latest attempt for that paper opens below, with your answer, the key and the explanation for every question. Nothing is stored on this page; the code is the gate.</p>
+
+      <div class="card" style="max-width:720px;margin:0 auto 16px">
+        <h3 style="margin:0 0 4px">Load an attempt</h3>
+        <p class="muted" style="margin:0 0 12px;font-size:.88rem">
+          Tip: after sitting a paper, this page can be opened with
+          <code>?code=ADC-MATH-01&amp;sid=TC-0001</code> already filled.
+        </p>
         <div class="grid grid-2">
-          <div class="form-group" style="margin:0"><label>Quiz code</label><input class="form-input" id="rv-code" placeholder="ADC-MATH-01" autocomplete="off"></div>
-          <div class="form-group" style="margin:0"><label>Student ID / name</label><input class="form-input" id="rv-sid" placeholder="TC-0001 or your name" autocomplete="off"></div>
+          <div class="form-group" style="margin:0">
+            <label for="rv-code">Quiz code *</label>
+            <input class="form-input" id="rv-code" placeholder="ADC-MATH-01" autocomplete="off" autocapitalize="characters">
+          </div>
+          <div class="form-group" style="margin:0">
+            <label for="rv-sid">Student ID or name *</label>
+            <input class="form-input" id="rv-sid" placeholder="TC-0001 or the name you typed" autocomplete="off">
+          </div>
         </div>
-        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center">
           <button class="btn btn-primary" type="button" id="rv-go">🔍 Load my review</button>
           <button class="btn btn-outline" type="button" id="rv-pdf" style="display:none">💾 Save / print PDF</button>
+          <button class="btn btn-ghost" type="button" id="rv-clear">Clear</button>
+          <a class="btn btn-ghost" href="cbt-exam.html" id="rv-sit">Sit a quiz →</a>
         </div>
-        <p class="muted" id="rv-hint" style="font-size:.8rem;margin:10px 0 0"></p>
+        <p class="muted" id="rv-hint" style="font-size:.85rem;margin:12px 0 0" role="status" aria-live="polite"></p>
       </div>
-      
-      <div id="rv-tools" class="card" style="margin:12px 0;display:none">
+
+      <div id="rv-tools" class="card" style="margin:0 0 16px;display:none">
         <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
           <button type="button" class="btn btn-outline btn-sm" id="rv-calc">🧮 Calculator</button>
           <button type="button" class="btn btn-outline btn-sm" id="rv-kb">⌨️ Maths keyboard</button>
-          <button type="button" class="btn btn-outline btn-sm" id="rv-filter-all">All questions</button>
+          <button type="button" class="btn btn-outline btn-sm" id="rv-filter-all">All</button>
           <button type="button" class="btn btn-outline btn-sm" id="rv-filter-wrong">Wrong only</button>
           <button type="button" class="btn btn-outline btn-sm" id="rv-filter-blank">Blank only</button>
           <button type="button" class="btn btn-outline btn-sm" id="rv-filter-right">Correct only</button>
+          <button type="button" class="btn btn-outline btn-sm" id="rv-filter-pending">Pending mark</button>
+          <label class="muted" style="font-size:.8rem;display:flex;gap:6px;align-items:center;margin-left:4px">
+            <input type="checkbox" id="rv-compact"> Compact view
+          </label>
           <span id="rv-score" class="muted" style="margin-left:auto;font-weight:700"></span>
         </div>
       </div>
 
-      <div id="rv-out"></div>
+      <div id="rv-out" aria-live="polite"></div>
     </main>
-  </div>
-</div>
-<div id="toast-container" class="toast-container"></div>
-<script>
-
-</script>
-
-<script>
-(function(){
-  var out = document.getElementById('rv-out');
-  var hint = document.getElementById('rv-hint');
-  var code = document.getElementById('rv-code');
-  var sid = document.getElementById('rv-sid');
-  var pdf = document.getElementById('rv-pdf');
-  try { if (localStorage.getItem('tc-last-code')) code.value = localStorage.getItem('tc-last-code'); } catch(_){}
-  try { if (localStorage.getItem('tc-student-no')) sid.value = localStorage.getItem('tc-student-no'); } catch(_){}
-  async function run(){
-    var c = code.value.trim(), s = sid.value.trim();
-    if (!c) { hint.textContent = 'Enter the quiz code first.'; return; }
-    out.innerHTML = '<p class="muted">Looking up your attempt…</p>';
-    if (!window.sb) { out.innerHTML = '<div class="card"><p class="muted">No database connected — review needs the studio database. See DEPLOYMENT-GUIDE.md.</p></div>'; return; }
-    try {
-      var { data, error } = await window.sb.rpc('tc_cbt_recent_result', { p_code: c, p_student_no: s || null });
-      if (error) throw error;
-      if (!data || !data.ok) {
-        out.innerHTML = '<div class="card" style="text-align:center;padding:30px"><div style="font-size:2rem">🔍</div><h3>No attempt found</h3><p class="muted">Check the code and student ID, or sit the paper first from <a href="cbt-exam.html">Take a quiz</a>.</p></div>';
-        hint.textContent = '';
-        return;
-      }
-      pdf.style.display = '';
-      var result = {
-        pct: data.pct, got: data.score, max: data.max_score,
-        correct: (data.detail || []).filter(function(x){ return x && x.ok && !x.pending; }).length,
-        pending: data.pending || 0, detail: data.detail || [],
-        subject_scores: data.subject_scores || {}
-      };
-      var meta = {
-        title: data.exam_title, student_no: data.student_no, full_name: data.candidate_name,
-        quiz_kind: data.quiz_kind
-      };
-      if (data.marking_status && data.marking_status !== 'complete') {
-        out.innerHTML = '<div class="card" style="border-left:4px solid #b45309;background:#fffbeb;margin-bottom:12px"><b>✍️ Still being marked.</b> Your auto-marked questions are shown below; the tutor's marks for open questions appear once released.</div>' + (window.CBT ? CBT.reviewHTML(result, meta) : '');
-      } else {
-        out.innerHTML = window.CBT ? CBT.reviewHTML(result, meta) : '<p class="muted">Review renderer unavailable — reload the page.</p>';
-      }
-      hint.textContent = 'Attempt finished ' + new Date(data.finished_at).toLocaleString();
-    } catch (e) {
-      out.innerHTML = '<div class="card" style="border-left:4px solid #b42318;background:#fef2f2;padding:18px"><b>Heads up.</b> Could not load the review: ' + TC.esc(e && e.message || e) + '</div>';
-    }
-  }
-  document.getElementById('rv-go').onclick = run;
-  pdf.onclick = function(){ if (window.CBT && CBT.printReview) CBT.printReview(); else window.print(); };
-  code.addEventListener('keydown', function(e){ if (e.key === 'Enter') run(); });
-  sid.addEventListener('keydown', function(e){ if (e.key === 'Enter') run(); });
-  // Pre-fill from URL (?code=...&sid=...)
-  var qs = new URLSearchParams(location.search);
-  if (qs.get('code')) { code.value = qs.get('code'); }
-  if (qs.get('sid')) { sid.value = qs.get('sid'); }
-})();
-</script>
 <script src="assets/js/cbt-exam-kit.js"></script>
 
 <script>
-(function(){
-  function $(id){ return document.getElementById(id); }
-  function wireTools(){
-    var tools=$('rv-tools'); if(!tools) return;
-    var go=$('rv-go');
-    if(go){
-      var _orig=go.onclick;
-      // after load show tools
-      var obs=new MutationObserver(function(){
-        if(($('rv-out')||{}).innerHTML && $('rv-out').innerHTML.length>40){
-          tools.style.display='';
-          summarize();
-        }
+/* V34 — Review my paper controller (self-contained, resilient) */
+(function () {
+  'use strict';
+  function $(id) { return document.getElementById(id); }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+  function toast(m, k) {
+    try {
+      if (window.App && App.toast) return App.toast(m, k || 'info');
+      if (window.toast) return window.toast(m, k || 'info');
+    } catch (_) {}
+    var h = $('rv-hint'); if (h) h.textContent = m;
+  }
+
+  var out, hint, code, sid, pdf, go, tools;
+  var lastResult = null;
+
+  function bind() {
+    out = $('rv-out'); hint = $('rv-hint'); code = $('rv-code');
+    sid = $('rv-sid'); pdf = $('rv-pdf'); go = $('rv-go'); tools = $('rv-tools');
+    if (!go || !out) return;
+
+    try { if (!code.value && localStorage.getItem('tc-last-code')) code.value = localStorage.getItem('tc-last-code'); } catch(_){}
+    try { if (!sid.value && localStorage.getItem('tc-student-no')) sid.value = localStorage.getItem('tc-student-no'); } catch(_){}
+    try {
+      var qs = new URLSearchParams(location.search);
+      if (qs.get('code')) code.value = qs.get('code');
+      if (qs.get('sid') || qs.get('student') || qs.get('id')) sid.value = qs.get('sid') || qs.get('student') || qs.get('id');
+      if (qs.get('autoloads') === '1' || qs.get('go') === '1') setTimeout(run, 200);
+    } catch(_){}
+
+    go.addEventListener('click', function (e) { e.preventDefault(); run(); });
+    if (pdf) pdf.addEventListener('click', function () {
+      if (window.CBT && CBT.printReview) CBT.printReview(); else window.print();
+    });
+    var clr = $('rv-clear');
+    if (clr) clr.addEventListener('click', function () {
+      code.value = ''; sid.value = ''; out.innerHTML = ''; hint.textContent = '';
+      if (pdf) pdf.style.display = 'none';
+      if (tools) tools.style.display = 'none';
+      lastResult = null;
+    });
+    code.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); run(); } });
+    sid.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); run(); } });
+
+    // tools
+    var calc = $('rv-calc'); if (calc) calc.onclick = function () { if (window.ExamKit && ExamKit.toggleCalculator) ExamKit.toggleCalculator(); else toast('Calculator loading…', 'warning'); };
+    var kb = $('rv-kb'); if (kb) kb.onclick = function () { if (window.ExamKit && ExamKit.toggleMathKeyboard) ExamKit.toggleMathKeyboard(); else toast('Keyboard loading…', 'warning'); };
+    [['rv-filter-all', null], ['rv-filter-wrong', 'wrong'], ['rv-filter-right', 'right'], ['rv-filter-blank', 'blank'], ['rv-filter-pending', 'pending']]
+      .forEach(function (pair) {
+        var b = $(pair[0]); if (!b) return;
+        b.onclick = function () { filterQs(pair[1]); };
       });
-      obs.observe($('rv-out'),{childList:true,subtree:true,characterData:true});
-    }
-    function cards(){ return [].slice.call(document.querySelectorAll('#rv-out .card, #rv-out [data-q], #rv-out .q-card, #rv-out .review-item')); }
-    function summarize(){
-      var el=$('rv-score'); if(!el) return;
-      var html=($('rv-out')&&$('rv-out').innerHTML)||'';
-      var right=(html.match(/correct|right|✓|✅/gi)||[]).length;
-      var wrong=(html.match(/wrong|incorrect|✗|❌/gi)||[]).length;
-      el.textContent = 'Review loaded' + (right||wrong ? (' · marks signals ~ '+right+' ok / '+wrong+' check') : '');
-    }
-    function filter(mode){
-      var nodes=cards();
-      if(!nodes.length){
-        // fallback: show/hide sections by keyword
-        var kids=[].slice.call(($('rv-out')||{children:[]}).children||[]);
-        kids.forEach(function(n){
-          var t=(n.textContent||'').toLowerCase();
-          var show=true;
-          if(mode==='wrong') show=/wrong|incorrect|✗|not correct|0\//.test(t) && !/all correct/.test(t);
-          if(mode==='right') show=/correct|✓|full mark|1\//.test(t);
-          if(mode==='blank') show=/blank|no answer|unanswered|skipped/.test(t);
-          n.style.display=show?'':'none';
-        });
+    var compact = $('rv-compact');
+    if (compact) compact.onchange = function () {
+      out.classList.toggle('rv-compact', !!compact.checked);
+    };
+  }
+
+  function waitForSb(maxMs) {
+    maxMs = maxMs || 4000;
+    return new Promise(function (resolve) {
+      if (window.sb) return resolve(window.sb);
+      var t0 = Date.now();
+      var iv = setInterval(function () {
+        if (window.sb) { clearInterval(iv); resolve(window.sb); }
+        else if (Date.now() - t0 > maxMs) { clearInterval(iv); resolve(null); }
+      }, 100);
+    });
+  }
+
+  async function run() {
+    var c = (code.value || '').trim();
+    var s = (sid.value || '').trim();
+    hint.textContent = '';
+    if (!c) { hint.textContent = 'Enter the quiz code first.'; code.focus(); return; }
+    if (!s) { hint.textContent = 'Enter your student ID (e.g. TC-0001) or the name you used when sitting.'; sid.focus(); return; }
+
+    go.disabled = true;
+    var oldLabel = go.textContent;
+    go.textContent = 'Loading…';
+    out.innerHTML = '<div class="card" style="text-align:center;padding:28px"><div class="pulse muted">Looking up your attempt…</div></div>';
+
+    try {
+      try { localStorage.setItem('tc-last-code', c); } catch(_){}
+      try { localStorage.setItem('tc-student-no', s); } catch(_){}
+
+      var sb = await waitForSb(5000);
+      if (!sb) {
+        out.innerHTML = '<div class="card" style="border-left:4px solid #b45309;background:#fffbeb;padding:18px">' +
+          '<b>Database not connected.</b> This page needs the studio Supabase project. ' +
+          'An admin must paste keys into <code>assets/js/config.js</code> (see DEPLOYMENT-GUIDE.md). ' +
+          'Until then, reviews cannot load.</div>';
         return;
       }
-      nodes.forEach(function(n){
-        var t=(n.textContent||'').toLowerCase();
-        var show=true;
-        if(mode==='wrong') show=/wrong|incorrect|✗/.test(t);
-        if(mode==='right') show=/correct|✓/.test(t) && !/incorrect|wrong/.test(t);
-        if(mode==='blank') show=/blank|no answer|unanswered/.test(t);
-        n.style.display=show?'':'none';
-      });
-    }
-    var map={ 'rv-filter-all':null,'rv-filter-wrong':'wrong','rv-filter-right':'right','rv-filter-blank':'blank' };
-    Object.keys(map).forEach(function(id){
-      var b=$(id); if(!b) return;
-      b.onclick=function(){
-        if(!map[id]){ cards().forEach(function(n){ n.style.display=''; }); 
-          [].slice.call(($('rv-out')||{children:[]}).children||[]).forEach(function(n){ n.style.display=''; });
-        }
-        else filter(map[id]);
+
+      var res = await sb.rpc('tc_cbt_recent_result', { p_code: c, p_student_no: s });
+      if (res.error) throw res.error;
+      var data = res.data;
+
+      // Some PostgREST setups wrap JSON
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch(_){}
+      }
+
+      if (!data || data.ok === false) {
+        var why = (data && (data.error || data.reason)) || 'not_found';
+        out.innerHTML = '<div class="card" style="text-align:center;padding:32px;max-width:560px;margin:0 auto">' +
+          '<div style="font-size:2rem">🔍</div>' +
+          '<h3 style="margin:8px 0">No attempt found</h3>' +
+          '<p class="muted" style="margin:0 0 12px">' + esc(typeof why === 'string' ? why.replace(/_/g,' ') : 'Check the code and student ID/name.') + '</p>' +
+          '<ul class="muted" style="text-align:left;display:inline-block;margin:0;padding-left:1.2rem;font-size:.9rem">' +
+            '<li>Did you sit this paper on <a href="cbt-exam.html?code=' + encodeURIComponent(c) + '">Take a quiz</a>?</li>' +
+            '<li>Use the same student ID you entered when sitting (not a different spelling).</li>' +
+            '<li>For guest papers, use the exact name you typed.</li>' +
+            '<li>Graded papers appear here only after the tutor releases results.</li>' +
+          '</ul></div>';
+        if (pdf) pdf.style.display = 'none';
+        if (tools) tools.style.display = 'none';
+        return;
+      }
+
+      lastResult = data;
+      if (pdf) pdf.style.display = '';
+      if (tools) tools.style.display = '';
+
+      var detail = data.detail;
+      if (typeof detail === 'string') {
+        try { detail = JSON.parse(detail); } catch(_) { detail = []; }
+      }
+      if (!Array.isArray(detail)) detail = [];
+
+      var result = {
+        pct: data.pct, got: data.score, max: data.max_score,
+        correct: detail.filter(function (x) { return x && x.ok && !x.pending; }).length,
+        wrong: detail.filter(function (x) { return x && !x.ok && !x.pending; }).length,
+        blank: detail.filter(function (x) {
+          if (!x || x.pending) return false;
+          var g = x.given; return g == null || g === '' || (Array.isArray(g) && !g.length);
+        }).length,
+        pending: data.pending || 0,
+        detail: detail,
+        subject_scores: data.subject_scores || {}
       };
-    });
-    var c=$('rv-calc'); if(c) c.onclick=function(){ if(window.ExamKit&&ExamKit.toggleCalculator) ExamKit.toggleCalculator(); };
-    var k=$('rv-kb'); if(k) k.onclick=function(){ if(window.ExamKit&&ExamKit.toggleMathKeyboard) ExamKit.toggleMathKeyboard(); };
+      var meta = {
+        title: data.exam_title,
+        student_no: data.student_no,
+        full_name: data.candidate_name,
+        quiz_kind: data.quiz_kind,
+        exam_code: data.exam_code || c,
+        finished_at: data.finished_at
+      };
+
+      var banner = '';
+      if (data.marking_status && data.marking_status !== 'complete') {
+        banner = '<div class="card" style="border-left:4px solid #b45309;background:#fffbeb;margin-bottom:12px">' +
+          '<b>✍️ Still being marked.</b> Auto-marked questions are below. Open-response marks appear when your tutor releases them.</div>';
+      }
+
+      var html = '';
+      if (window.CBT && typeof CBT.reviewHTML === 'function') {
+        html = CBT.reviewHTML(result, meta);
+      } else {
+        html = fallbackReview(result, meta);
+      }
+      out.innerHTML = banner + html;
+      summarize(result, data);
+      hint.textContent = 'Loaded · finished ' + (data.finished_at ? new Date(data.finished_at).toLocaleString() : '—') +
+        ' · code ' + (data.exam_code || c);
+      toast('Review loaded', 'success');
+    } catch (e) {
+      console.error('[cbt-review]', e);
+      var msg = (e && (e.message || e.error_description || e.details)) || String(e);
+      out.innerHTML = '<div class="card" style="border-left:4px solid #b91c1c;background:#fef2f2;padding:18px">' +
+        '<b>Could not load the review.</b><p class="muted" style="margin:8px 0 0">' + esc(msg) + '</p>' +
+        '<p class="muted" style="margin:8px 0 0;font-size:.85rem">If this mentions a missing function, run <code>database/v34-cbt-review-lookup.sql</code> (or complete-schema.sql) in the Supabase SQL editor, then retry.</p></div>';
+      hint.textContent = 'Error — see details above.';
+    } finally {
+      go.disabled = false;
+      go.textContent = oldLabel || '🔍 Load my review';
+    }
   }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',wireTools);
-  else wireTools();
+
+  function fallbackReview(result, meta) {
+    var rows = (result.detail || []).map(function (d, i) {
+      var tone = d.pending ? '#fef3c7' : d.ok ? '#d1fae5' : '#fee2e2';
+      var label = d.pending ? 'Awaiting tutor' : d.ok ? 'Correct' : 'Incorrect';
+      var given = Array.isArray(d.given) ? d.given.join(', ') : d.given;
+      var correct = Array.isArray(d.correct) ? d.correct.join(', ') : d.correct;
+      var media = '';
+      if (d.media_url) {
+        var u = String(d.media_url);
+        if (/\.(png|jpe?g|gif|webp|svg)(\?|$)/i.test(u) || /drive\.google|imgur|cloudinary/i.test(u))
+          media = '<img src="' + esc(u) + '" alt="" style="max-width:100%;border-radius:8px;margin:8px 0">';
+        else
+          media = '<p><a href="' + esc(u) + '" target="_blank" rel="noopener">Open diagram / media</a></p>';
+      }
+      return '<section class="rv-q" data-state="' + (d.pending ? 'pending' : d.ok ? 'right' : (given == null || given === '' ? 'blank' : 'wrong')) + '" style="border:1px solid #e4ddd2;border-radius:12px;padding:12px;margin:10px 0;background:' + tone + '">' +
+        '<div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.04em">' + (i + 1) + ' · ' + label +
+        ' · ' + esc(d.mark) + '/' + esc(d.max) + (d.subject ? ' · ' + esc(d.subject) : '') + '</div>' +
+        (d.passage ? '<blockquote style="border-left:3px solid #964eec;padding-left:10px;margin:8px 0;white-space:pre-wrap">' + esc(d.passage) + '</blockquote>' : '') +
+        media +
+        '<p style="font-weight:700;white-space:pre-wrap">' + esc(d.question) + '</p>' +
+        '<p><b>Your answer:</b> <span style="white-space:pre-wrap">' + esc(given) + '</span></p>' +
+        '<p><b>Correct answer:</b> <span style="white-space:pre-wrap">' + esc(correct) + '</span></p>' +
+        (d.explanation ? '<p><b>Why:</b> <span style="white-space:pre-wrap">' + esc(d.explanation) + '</span></p>' : '') +
+        '</section>';
+    }).join('');
+    return '<div id="cbt-review-print" class="card" style="padding:18px">' +
+      '<h2 style="margin-top:0">' + esc(meta.title || 'Practice review') + '</h2>' +
+      '<p class="muted">' + esc(meta.student_no || '') + ' · ' + esc(meta.full_name || '') + ' · ' + esc(meta.quiz_kind || '') + '</p>' +
+      '<div class="grid grid-4" style="margin:12px 0">' +
+        '<div class="stat-card"><div class="stat-value">' + esc(result.pct) + '%</div><div class="stat-label">Score</div></div>' +
+        '<div class="stat-card"><div class="stat-value">' + esc(result.got) + '/' + esc(result.max) + '</div><div class="stat-label">Marks</div></div>' +
+        '<div class="stat-card"><div class="stat-value">' + esc(result.correct) + '</div><div class="stat-label">Correct</div></div>' +
+        '<div class="stat-card"><div class="stat-value">' + esc(result.pending) + '</div><div class="stat-label">Pending</div></div>' +
+      '</div>' + rows + '</div>';
+  }
+
+  function summarize(result, data) {
+    var el = $('rv-score');
+    if (!el) return;
+    el.textContent = (result.pct != null ? result.pct + '% · ' : '') +
+      (result.got != null ? result.got + '/' + result.max + ' · ' : '') +
+      result.correct + ' correct · ' + (result.wrong || 0) + ' wrong · ' +
+      (result.blank || 0) + ' blank' +
+      (result.pending ? ' · ' + result.pending + ' pending' : '');
+  }
+
+  function filterQs(mode) {
+    var nodes = out.querySelectorAll('.rv-q, #cbt-review-print section, #rv-out section');
+    if (!nodes.length) nodes = out.children;
+    [].forEach.call(nodes, function (n) {
+      if (!mode) { n.style.display = ''; return; }
+      var st = (n.getAttribute('data-state') || '').toLowerCase();
+      var text = (n.textContent || '').toLowerCase();
+      var show = true;
+      if (mode === 'wrong') show = st === 'wrong' || (!st && /incorrect|wrong|✗/.test(text));
+      if (mode === 'right') show = st === 'right' || (!st && /correct|✓/.test(text) && !/incorrect|wrong/.test(text));
+      if (mode === 'blank') show = st === 'blank' || (!st && /blank|no answer|unanswered|skipped/.test(text));
+      if (mode === 'pending') show = st === 'pending' || (!st && /awaiting tutor|pending/.test(text));
+      n.style.display = show ? '' : 'none';
+    });
+  }
+
+  // Enhance CBT.reviewHTML to show media + pre-wrap math when available
+  function patchReviewHTML() {
+    if (!window.CBT || !CBT.reviewHTML || CBT._v34Review) return;
+    CBT._v34Review = true;
+    var orig = CBT.reviewHTML.bind(CBT);
+    CBT.reviewHTML = function (result, meta) {
+      var html = orig(result, meta);
+      // Add data-state hooks for filters if missing
+      if (html.indexOf('data-state') === -1 && result && result.detail) {
+        // rebuild with states via fallback for consistency
+        return fallbackReview(result, meta || {});
+      }
+      return html;
+    };
+  }
+
+  function boot() {
+    bind();
+    patchReviewHTML();
+    // Re-patch when CBT loads late
+    var n = 0;
+    var iv = setInterval(function () {
+      patchReviewHTML();
+      if (window.CBT || ++n > 50) clearInterval(iv);
+    }, 100);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 })();
 </script>
+<style>
+  #rv-out.rv-compact section { padding:8px 10px !important; margin:6px 0 !important; }
+  #rv-out.rv-compact p { margin:4px 0 !important; font-size:.92rem; }
+  #cbt-review-print .stat-card { text-align:center; padding:10px; border:1px solid #e2e8f0; border-radius:12px; background:#fff; }
+  #cbt-review-print .stat-value { font-size:1.4rem; font-weight:800; color:#0506ae; }
+  #cbt-review-print .stat-label { font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:#64748b; }
+  #rv-out img { max-width:100%; height:auto; border-radius:8px; }
+  #rv-out blockquote, #rv-out p { overflow-wrap:anywhere; }
+</style>
 
 </body>
-</html>
