@@ -82,11 +82,10 @@
 <script src="assets/js/cert-studio.js"></script>
 <script src="assets/js/desk-kit.js"></script>
 <script src="assets/js/nav.js"></script>
+<script src="assets/js/directory-desk.js"></script>
 <script src="assets/js/legibility.js" defer></script>
 <script src="assets/js/ux-enhance.js" defer></script>
 <script src="assets/js/ops-desk.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
 </head>
 <body>
 <div class="app-layout" data-require-role="any" id="app-layout">
@@ -115,8 +114,8 @@
         <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access.</li><li><b>Tutor:</b> Full access for the learners and groups assigned to them, and nothing else.</li><li><b>Parent:</b> No access.</li><li><b>Learner:</b> No access.</li></ul></details>
         <p class="page-intro-rel"><b>Related:</b> <a href="learners.html">learners</a> · <a href="parents.html">parents</a> · <a href="tutors.html">tutors</a> · <a href="groups.html">groups</a> · <a href="engagements.html">engagements</a> · <a href="subjects.html">subjects</a></p>
       </section>
-      <div id="crud-root"></div>
-      <script>document.addEventListener('DOMContentLoaded',()=>{ if(window.CRUD) CRUD.renderList('directory'); });</script>
+      <div id="directory-root"></div>
+      
     </main>
   </div>
 </div>

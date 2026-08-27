@@ -85,8 +85,6 @@
 <script src="assets/js/legibility.js" defer></script>
 <script src="assets/js/ux-enhance.js" defer></script>
 <script src="assets/js/ops-desk.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
 </head>
 <body>
 <div class="app-layout" data-require-role="any" id="app-layout">
@@ -128,6 +126,19 @@
         </div>
         <p class="muted" id="rv-hint" style="font-size:.8rem;margin:10px 0 0"></p>
       </div>
+      
+      <div id="rv-tools" class="card" style="margin:12px 0;display:none">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+          <button type="button" class="btn btn-outline btn-sm" id="rv-calc">🧮 Calculator</button>
+          <button type="button" class="btn btn-outline btn-sm" id="rv-kb">⌨️ Maths keyboard</button>
+          <button type="button" class="btn btn-outline btn-sm" id="rv-filter-all">All questions</button>
+          <button type="button" class="btn btn-outline btn-sm" id="rv-filter-wrong">Wrong only</button>
+          <button type="button" class="btn btn-outline btn-sm" id="rv-filter-blank">Blank only</button>
+          <button type="button" class="btn btn-outline btn-sm" id="rv-filter-right">Correct only</button>
+          <span id="rv-score" class="muted" style="margin-left:auto;font-weight:700"></span>
+        </div>
+      </div>
+
       <div id="rv-out"></div>
     </main>
   </div>
@@ -190,5 +201,74 @@
   if (qs.get('sid')) { sid.value = qs.get('sid'); }
 })();
 </script>
+<script src="assets/js/cbt-exam-kit.js"></script>
+
+<script>
+(function(){
+  function $(id){ return document.getElementById(id); }
+  function wireTools(){
+    var tools=$('rv-tools'); if(!tools) return;
+    var go=$('rv-go');
+    if(go){
+      var _orig=go.onclick;
+      // after load show tools
+      var obs=new MutationObserver(function(){
+        if(($('rv-out')||{}).innerHTML && $('rv-out').innerHTML.length>40){
+          tools.style.display='';
+          summarize();
+        }
+      });
+      obs.observe($('rv-out'),{childList:true,subtree:true,characterData:true});
+    }
+    function cards(){ return [].slice.call(document.querySelectorAll('#rv-out .card, #rv-out [data-q], #rv-out .q-card, #rv-out .review-item')); }
+    function summarize(){
+      var el=$('rv-score'); if(!el) return;
+      var html=($('rv-out')&&$('rv-out').innerHTML)||'';
+      var right=(html.match(/correct|right|✓|✅/gi)||[]).length;
+      var wrong=(html.match(/wrong|incorrect|✗|❌/gi)||[]).length;
+      el.textContent = 'Review loaded' + (right||wrong ? (' · marks signals ~ '+right+' ok / '+wrong+' check') : '');
+    }
+    function filter(mode){
+      var nodes=cards();
+      if(!nodes.length){
+        // fallback: show/hide sections by keyword
+        var kids=[].slice.call(($('rv-out')||{children:[]}).children||[]);
+        kids.forEach(function(n){
+          var t=(n.textContent||'').toLowerCase();
+          var show=true;
+          if(mode==='wrong') show=/wrong|incorrect|✗|not correct|0\//.test(t) && !/all correct/.test(t);
+          if(mode==='right') show=/correct|✓|full mark|1\//.test(t);
+          if(mode==='blank') show=/blank|no answer|unanswered|skipped/.test(t);
+          n.style.display=show?'':'none';
+        });
+        return;
+      }
+      nodes.forEach(function(n){
+        var t=(n.textContent||'').toLowerCase();
+        var show=true;
+        if(mode==='wrong') show=/wrong|incorrect|✗/.test(t);
+        if(mode==='right') show=/correct|✓/.test(t) && !/incorrect|wrong/.test(t);
+        if(mode==='blank') show=/blank|no answer|unanswered/.test(t);
+        n.style.display=show?'':'none';
+      });
+    }
+    var map={ 'rv-filter-all':null,'rv-filter-wrong':'wrong','rv-filter-right':'right','rv-filter-blank':'blank' };
+    Object.keys(map).forEach(function(id){
+      var b=$(id); if(!b) return;
+      b.onclick=function(){
+        if(!map[id]){ cards().forEach(function(n){ n.style.display=''; }); 
+          [].slice.call(($('rv-out')||{children:[]}).children||[]).forEach(function(n){ n.style.display=''; });
+        }
+        else filter(map[id]);
+      };
+    });
+    var c=$('rv-calc'); if(c) c.onclick=function(){ if(window.ExamKit&&ExamKit.toggleCalculator) ExamKit.toggleCalculator(); };
+    var k=$('rv-kb'); if(k) k.onclick=function(){ if(window.ExamKit&&ExamKit.toggleMathKeyboard) ExamKit.toggleMathKeyboard(); };
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',wireTools);
+  else wireTools();
+})();
+</script>
+
 </body>
 </html>

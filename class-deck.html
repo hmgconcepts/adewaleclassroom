@@ -4,9 +4,8 @@
 <script src="assets/js/auth-guard.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Learners • ADEWALE CLASSROOM</title>
-<meta name="robots" content="noindex,nofollow">
-<meta name="description" content="Learners — ADEWALE CLASSROOM">
+<title>Class Deck · live teaching studio • Tutoring Connect</title>
+<meta name="description" content="ADEWALE CLASSROOM — a product of HMG Technologies / HMG Concepts.">
 <meta name="theme-color" content="#0506ae">
 <meta name="author" content="HMG Technologies · HMG Concepts">
 <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
@@ -14,8 +13,8 @@
 <link rel="apple-touch-icon" href="assets/img/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;800&display=swap" rel="stylesheet">
-<meta property="og:title" content="Learners • ADEWALE CLASSROOM">
-<meta property="og:description" content="Learners — ADEWALE CLASSROOM">
+<meta property="og:title" content="About • ADEWALE CLASSROOM">
+<meta property="og:description" content="ADEWALE CLASSROOM — a product of HMG Technologies / HMG Concepts.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="assets/css/style.css">
@@ -82,14 +81,12 @@
 <script src="assets/js/cert-studio.js"></script>
 <script src="assets/js/desk-kit.js"></script>
 <script src="assets/js/nav.js"></script>
-<script src="assets/js/people-link-desk.js"></script>
-<script src="assets/js/account-link.js"></script>
 <script src="assets/js/legibility.js" defer></script>
 <script src="assets/js/ux-enhance.js" defer></script>
 <script src="assets/js/ops-desk.js"></script>
 </head>
 <body>
-<div class="app-layout" data-require-role="any" id="app-layout">
+<div class="app-layout" data-require-role="" id="app-layout">
   <aside class="app-sidebar" id="app-sidebar">
     <div class="app-brand"><img data-logo src="assets/img/logo.svg" alt=""><div><strong data-practice-name>ADEWALE CLASSROOM</strong><span class="muted">Tutoring Connect</span></div></div>
     <nav class="app-nav" id="app-nav" aria-label="Studio menu" data-nav="model">
@@ -99,7 +96,7 @@
   <div class="app-main">
     <header class="app-topbar">
       <button class="mobile-toggle" type="button" aria-label="Menu">☰</button>
-      <h1 class="app-page-title">Learners</h1>
+      <h1 class="app-page-title">About</h1>
       <div class="user-chip"><strong id="user-display-name" data-user-name></strong>
         <span id="user-display-role" data-user-role></span>
         <button class="btn btn-sm btn-ghost" id="btn-dark" type="button">Theme</button>
@@ -107,17 +104,56 @@
     </header>
     <main class="app-content">
       <section class="help-card page-intro">
-        <div class="page-intro-head"><strong>Learners</strong><span class="page-intro-badge" style="background:#334155">🎓 Staff only</span></div>
-        <p class="page-intro-what">Learner records: identity, timezone, exam board, learning style, accommodations, guardian, Drive photo. A learner may sit in one or many engagements independently. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.</p>
-        <p class="page-intro-who"><b>Who it is for.</b> Owner, admin and tutors do the data entry. Parents and learners only ever see their own linked records.</p>
-        <p class="page-intro-why"><b>Why it matters.</b> This is master data. If it is wrong here it is wrong everywhere downstream — bookings, invoices, analytics and reports all read from it.</p>
-        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Open the page — the list loads with a search box and filters at the top.</li><li>Click <b>Add / New</b> to create a record. Only the marked fields are required; the rest can be completed later.</li><li>Click any row to open the full record, edit it inline, and save.</li><li>Use <b>Export CSV</b> whenever you want a copy — the data belongs to the studio, not the platform.</li><li><b>Link portal login (admin):</b> use the blue panel above the register — same <code>user_id</code> pattern as School Connect / GOSA.</li></ol></details>
-        <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access.</li><li><b>Tutor:</b> Full access for the learners and groups assigned to them, and nothing else.</li><li><b>Parent:</b> No access.</li><li><b>Learner:</b> No access.</li></ul></details>
-        <p class="page-intro-rel"><b>Related:</b> <a href="parents.html">parents</a> · <a href="tutors.html">tutors</a> · <a href="groups.html">groups</a> · <a href="engagements.html">engagements</a> · <a href="subjects.html">subjects</a> · <a href="family-links.html">family links</a></p>
+        <div class="page-intro-head"><strong>Class Deck</strong><span class="page-intro-badge" style="background:#0506ae">📡 Live class</span></div>
+        <p class="page-intro-what">Full <b>HMG Academy Class Deck</b> is integrated into this studio: split-screen whiteboard + materials, built-in live classroom, Meet/Zoom/Teams companion mode, student join links, quizzes &amp; leaderboards, toolkit, and no-OBS social live — <b>no AI API</b>.</p>
+        <p class="page-intro-who"><b>Who it is for.</b> Tutors run the teacher studio; learners join free with a room code or link; admins can bookmark room URLs on session rows.</p>
+        <p class="page-intro-why"><b>Why it matters.</b> You no longer leave Tutoring Connect for a separate teaching app. Session → Class Deck → attendance/scores stay in one practice.</p>
+      <details class="page-intro-roles"><summary>What each role sees here</summary><ul>
+        <li><b>Owner / admin:</b> Full hub and Class Deck runtime; can store join URLs on sessions.</li>
+        <li><b>Tutor:</b> Opens Teacher Studio and companion mode; shares join links with their learners.</li>
+        <li><b>Parent:</b> No teacher studio; may open a join link they were sent.</li>
+        <li><b>Learner:</b> Joins free via room code/link — no portal account required for the live room.</li>
+        </ul></details>
       </section>
-      <div id="people-link-desk"></div>
-      <div id="crud-root"></div>
-      <script>document.addEventListener('DOMContentLoaded',()=>{ if(window.CRUD) CRUD.renderList('learners'); });</script>
+
+      <div class="grid grid-2" style="gap:14px;margin-bottom:18px">
+        <a class="card" style="display:block;padding:18px;text-decoration:none;border:2px solid #0506ae" href="classdeck/teach.html">
+          <div style="font-size:1.6rem">🧑‍🏫</div>
+          <h3 style="margin:6px 0">Teacher Studio</h3>
+          <p class="muted" style="margin:0">Whiteboard, PDF, browser, toolkit, go-live, roster, polls, quizzes, student boards.</p>
+          <span class="btn btn-primary btn-sm" style="margin-top:10px;display:inline-block">Open teach.html</span>
+        </a>
+        <a class="card" style="display:block;padding:18px;text-decoration:none" href="classdeck/teach.html?meet=1">
+          <div style="font-size:1.6rem">🟢</div>
+          <h3 style="margin:6px 0">Meet / Zoom companion</h3>
+          <p class="muted" style="margin:0">Share entire screen in Meet/Zoom/Teams; teach split-screen from one app so Android does not kill the call.</p>
+        </a>
+        <a class="card" style="display:block;padding:18px;text-decoration:none" href="classdeck/join.html">
+          <div style="font-size:1.6rem">🎓</div>
+          <h3 style="margin:6px 0">Student join</h3>
+          <p class="muted" style="margin:0">Learners join free with room code or invite link — no portal account required for the live room.</p>
+        </a>
+        <a class="card" style="display:block;padding:18px;text-decoration:none" href="classdeck/stream.html">
+          <div style="font-size:1.6rem">📡</div>
+          <h3 style="margin:6px 0">Social live / stream</h3>
+          <p class="muted" style="margin:0">No-OBS tablet social live workflow (YouTube, Facebook, TikTok, custom RTMP via free relay).</p>
+        </a>
+      </div>
+
+      <section class="card">
+        <h3 style="margin-top:0">How to attach Class Deck to a Tutoring Connect session</h3>
+        <ol style="line-height:1.6">
+          <li>Open <b>Teacher Studio</b> and note your <b>room code</b> (or set a custom code in Class Deck settings).</li>
+          <li>Copy the student link: <code>classdeck/join.html?room=YOURCODE</code> (same origin as this portal).</li>
+          <li>Paste that URL into the session’s <b>Meeting URL</b> field (Sessions / Calendar) or send it on WhatsApp.</li>
+          <li>Start Meet/Zoom if you want companion mode, share entire screen, then teach inside Class Deck.</li>
+          <li>After class, mark attendance and complete-a-class as usual in Tutoring Connect.</li>
+        </ol>
+        <p class="muted">Bundled runtime path: <code>/classdeck/</code> — full upstream feature set (whiteboard, toolkit 200+, live classroom, activities, behaviour points, captions, PiP). See <code>classdeck/docs/FEATURES.md</code>.</p>
+        <p><a class="btn btn-outline" href="classdeck/docs/FEATURES.md" target="_blank" rel="noopener">Feature reference</a>
+           <a class="btn btn-outline" href="sessions.html">Sessions</a>
+           <a class="btn btn-outline" href="class-links.html">Class registration links</a></p>
+      </section>
     </main>
   </div>
 </div>
