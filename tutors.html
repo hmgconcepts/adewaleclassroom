@@ -82,11 +82,11 @@
 <script src="assets/js/cert-studio.js"></script>
 <script src="assets/js/desk-kit.js"></script>
 <script src="assets/js/nav.js"></script>
+<script src="assets/js/people-link-desk.js"></script>
+<script src="assets/js/account-link.js"></script>
 <script src="assets/js/legibility.js" defer></script>
 <script src="assets/js/ux-enhance.js" defer></script>
 <script src="assets/js/ops-desk.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
 </head>
 <body>
 <div class="app-layout" data-require-role="any" id="app-layout">
@@ -111,7 +111,7 @@
         <p class="page-intro-what">Solo or multi-tutor practice. Availability, subjects, hourly cost, timezone, specialisms. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.</p>
         <p class="page-intro-who"><b>Who it is for.</b> Owner, admin and tutors do the data entry. Parents and learners only ever see their own linked records.</p>
         <p class="page-intro-why"><b>Why it matters.</b> This is master data. If it is wrong here it is wrong everywhere downstream — bookings, invoices, analytics and reports all read from it.</p>
-        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Open the page — the list loads with a search box and filters at the top.</li><li>Click <b>Add / New</b> to create a record. Only the marked fields are required; the rest can be completed later.</li><li>Click any row to open the full record, edit it inline, and save.</li><li>Use <b>Export CSV</b> whenever you want a copy — the data belongs to the studio, not the platform.</li></ol></details>
+        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Open the page — the list loads with a search box and filters at the top.</li><li>Click <b>Add / New</b> to create a record. Only the marked fields are required; the rest can be completed later.</li><li>Click any row to open the full record, edit it inline, and save.</li><li>Use <b>Export CSV</b> whenever you want a copy — the data belongs to the studio, not the platform.</li><li><b>Link portal login (admin):</b> use the blue panel above the register — same <code>user_id</code> pattern as School Connect / GOSA.</li></ol></details>
         <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access.</li><li><b>Tutor:</b> Full access for the learners and groups assigned to them, and nothing else.</li><li><b>Parent:</b> No access.</li><li><b>Learner:</b> No access.</li></ul></details>
         <p class="page-intro-rel"><b>Related:</b> <a href="learners.html">learners</a> · <a href="parents.html">parents</a> · <a href="groups.html">groups</a> · <a href="engagements.html">engagements</a> · <a href="subjects.html">subjects</a> · <a href="family-links.html">family links</a></p>
       </section>
@@ -144,6 +144,7 @@
       </div>
       <div id="scope-check-root"></div>
 
+      <div id="people-link-desk"></div>
       <div id="crud-root"></div>
       <script>document.addEventListener('DOMContentLoaded',()=>{ if(window.CRUD) CRUD.renderList('tutors'); });</script>
     </main>
