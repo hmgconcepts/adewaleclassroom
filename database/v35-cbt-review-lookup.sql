@@ -1,4 +1,3 @@
--- Superseded by v35-cbt-review-lookup.sql (fixes duration_seconds column error).
 
 -- ---------------------------------------------------------------------------
 -- V35 — REVIEW LOOKUP (fixes duration_seconds / missing column errors)
