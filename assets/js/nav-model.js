@@ -248,6 +248,13 @@
         "label": "Meeting links",
         "icon": "🔗",
         "aud": "staff"
+      }      ,
+      {
+        "id": "class_deck",
+        "href": "class-deck.html",
+        "label": "Class Deck (live teach)",
+        "icon": "📡",
+        "aud": "staff"
       },
       {
         "id": "whiteboard",

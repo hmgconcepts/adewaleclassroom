@@ -83,6 +83,8 @@ const SiteHelp = {
     'profile': 'Your name, phone, timezone, photo (Drive link), password change.',
     'hmg-ecosystem': 'HMG Concepts ecosystem — Concepts, Technologies, Academy, Media, Gospel. Founder Adewale Samson Adeagbo.',
     'feature-guide': 'Every module explained: why it exists, who uses it, how it connects.',
+    'class-deck': 'Integrated HMG Class Deck — teach live with split-screen whiteboard, Meet companion, student join links and toolkit. No AI API.',
+    'directory': 'Searchable directory of learners, parents, tutors and staff with portal-link status, WhatsApp and CSV export.',
     'default': 'Every page has (1) this Page Help, (2) the feature card at the top, (3) the studio assistant. New here? Start at the Dashboard. Admins: confirm Platform Health is green.'
   },
 

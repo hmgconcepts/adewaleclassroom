@@ -177,6 +177,7 @@
     { id: 'makeups', name: 'Make-up Sessions', group: 'Sessions', file: 'makeups.html', desc: 'Policy-aware make-ups. Hours can be restored or consumed depending on who cancelled.', flag: 'new' },
     { id: 'cancellations', name: 'Cancellations', group: 'Sessions', file: 'cancellations.html', desc: 'Who cancelled, notice hours, fee applied, hours returned. Transparent for parents.', flag: 'new' },
     { id: 'session_notes', name: 'Session Notes', group: 'Sessions', file: 'session-notes.html', desc: 'Per-session, optionally per-learner notes. Shareable to the parent portal. Drive recording link.', flag: 'core' },
+    { id: 'class_deck', name: 'Class Deck', group: 'Sessions', file: 'class-deck.html', desc: 'Integrated HMG Class Deck: split-screen teach, live classroom, Meet companion, student join, toolkit. No AI API.', flag: 'new' },
     { id: 'meetings', name: 'Meeting Links', group: 'Sessions', file: 'meetings.html', desc: 'Jitsi (free), Google Meet or Zoom links stored per session or as a standing room. No paid classroom required.', flag: 'core' },
     { id: 'whiteboard', name: 'Whiteboard Rooms', group: 'Sessions', file: 'whiteboard.html', desc: 'Free Excalidraw / Google Jamboard / FigJam links per engagement. Opens in a new tab.', flag: 'new' },
     { id: 'diagnostics', name: 'Diagnostics', group: 'Learning', file: 'diagnostics.html', desc: 'Baseline tests at the start of an engagement. Locks the value-added starting point.', flag: 'core' },

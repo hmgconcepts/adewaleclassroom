@@ -6,6 +6,37 @@
    ==========================================================================*/
 (function (w) {
   var PAGE_GUIDE = {
+ "class-deck": {
+  "page": "class-deck",
+  "file": "class-deck.html",
+  "title": "Class Deck — live teaching studio",
+  "group": "Sessions",
+  "access": "staff",
+  "archetype": "hub",
+  "detail": "Integrated HMG Academy Class Deck: split-screen whiteboard and materials, built-in live classroom, Meet/Zoom/Teams companion mode, student join links, toolkit, quizzes and leaderboards. No AI API.",
+  "purpose": "Teach live without leaving Tutoring Connect.",
+  "audience": "Tutors and admins. Learners join free via room code.",
+  "why": "Keeps session delivery, attendance and scoring in one studio.",
+  "how": [
+    "Open Teacher Studio (classdeck/teach.html) or Meet companion (?meet=1).",
+    "Share the student join link classdeck/join.html?room=CODE on WhatsApp or on the session Meeting URL.",
+    "Teach; then mark attendance / complete-a-class in Tutoring Connect."
+  ],
+  "connects": "Sessions, calendar, class links, CBT, attendance.",
+  "related": ["sessions", "calendar", "class-links", "whiteboard", "meetings"],
+  "sections": [
+    {"name": "Teacher Studio", "what": "Full Class Deck teach runtime."},
+    {"name": "Student join", "what": "Free join by room code or invite."},
+    {"name": "Companion mode", "what": "Screen-share friendly Meet/Zoom/Teams layout."}
+  ],
+  "roleViews": {
+    "owner": "Full access to hub and runtime.",
+    "tutor": "Open studio and share join links for their classes.",
+    "parent": "No access to teacher studio; may receive join links.",
+    "learner": "Join live rooms free via link/code."
+  }
+ },
+
  "about": {
   "page": "about",
   "file": "about.html",

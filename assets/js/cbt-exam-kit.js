@@ -1,3 +1,5 @@
+/* V33: CBT runtime is client-side after fetch — scales to large concurrent sittings;
+   prefer insert-only result writes, avoid realtime on cbt-exam page. */
 /* ============================================================================
    cbt-exam-kit.js — Tutoring Connect V14
    ----------------------------------------------------------------------------
@@ -306,6 +308,16 @@
      2 · THE EXAM KIT UI
      ========================================================================== */
   var ExamKit = {
+    _kbExtraGroups: [
+      ['Calculus', ['∫','∬','∭','∮','∂','∇','Δ','δ','lim','∞','∑','∏','d/dx','∂/∂x']],
+      ['Algebra+', ['√','∛','∜','²','³','ⁿ','₀','₁','₂','₃','₄','₅','≤','≥','≠','≈','≡','∝','±','∓']],
+      ['Sets & logic', ['∈','∉','⊂','⊃','⊆','⊇','∪','∩','∅','∀','∃','¬','∧','∨','⇒','⇔','∴','∵']],
+      ['Greek+', ['α','β','γ','δ','ε','θ','λ','μ','π','ρ','σ','τ','φ','χ','ψ','ω','Γ','Δ','Θ','Λ','Π','Σ','Φ','Ω']],
+      ['Trig+', ['sin','cos','tan','asin','acos','atan','sinh','cosh','tanh','°','∠','⊥','∥','ℝ','ℤ','ℕ','ℚ','ℂ']],
+      ['Chemistry+', ['→','←','⇌','↔','↑','↓','°C','°F','mol','ΔH','ΔG','pH','aq']],
+      ['Statistics+', ['x̄','μ','σ','σ²','ρ','χ²','H₀','H₁','±','%']],
+      ['Arrows+', ['→','←','↔','⇒','⇔','↑','↓','⋯','…','△','□','○','●']]
+    ],
     cfg: {},
     violations: [],
     onViolation: null,
@@ -701,6 +713,7 @@
 
     /* ---------------- 2e. maths keyboard ---------------- */
     toggleMathKeyboard: function () {
+      /* extra groups merged after GROUPS is declared */
       var box = d.getElementById('tc-mathkb');
       if (box) { box.remove(); return; }
       box = d.createElement('div');
@@ -803,6 +816,8 @@
                           'm/s', 'm/s²', 'N', 'J', 'W', 'Hz', 'Pa', 'mol', 'cd',
                           '×10ⁿ', '≈']]
       ];
+      try { if (this._kbExtraGroups && this._kbExtraGroups.length) { GROUPS = GROUPS.concat(this._kbExtraGroups); } } catch(e){}
+
       var total = GROUPS.reduce(function (a, g) { return a + g[1].length; }, 0);
       box.innerHTML =
         '<div class="tc-tool-top"><b>⌨️ Maths keyboard</b>' +

@@ -24,7 +24,7 @@ window.PRACTICE = {
     css: 'Plus+Jakarta+Sans:wght@300;400;500;600;700;800' },
   address: 'Lagos, Nigeria — strictly virtual',
   phone: '2348100866322',
-  email: 'hello@adewaleclassroom.com',
+  email: 'hmgconcepts@gmail.com',
   siteUrl: 'https://adewaleclassroom.vercel.app',
   timezone: 'Africa/Lagos',
   currency: '₦',

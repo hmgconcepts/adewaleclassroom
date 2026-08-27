@@ -3,7 +3,7 @@ const CRUD = {
   sb: null,
   init(client) { this.sb = client || window.sb || null; },
   WRITE: {
-    engagements: ['tutor'], learners: ['tutor'], groups: ['tutor'], parents: [], tutors: [],
+    engagements: ['tutor'], learners: ['tutor'], groups: ['tutor'], parents: [], tutors: ['tutor'], parent_links: [], directory: [],
     subjects: ['tutor'], inquiries: ['tutor'], waitlist: ['tutor'], trials: ['tutor'],
     sessions: ['tutor'], attendance: ['tutor'], session_notes: ['tutor'], assignments: ['tutor'],
     goals: ['tutor'], mastery: ['tutor'], curriculum: ['tutor'], diagnostics: ['tutor'],
@@ -32,6 +32,8 @@ const CRUD = {
     ]},
     learners: { table: 'learners', title: 'Learner', cols: [
       { key: 'full_name', label: 'Full name', type: 'text', required: true },
+      { key: 'student_no', label: 'Student ID', type: 'text', help: 'Auto TC-0001 style if left blank on insert.' },
+      { key: 'user_id', label: 'Portal login account (link)', type: 'ref', refTable: 'profiles', refValue: 'full_name', refExtra: ['email','role'], refStore: 'id', refFilter: { role: 'student' }, searchable: true, adminOnly: true, help: 'ADMIN ONLY — link this learner to their portal sign-in (profiles.role = student/learner). Same pattern as School Connect students.user_id. After linking, My Profile / family portal / CBT identity resolve correctly.' },
       { key: 'preferred_name', label: 'Preferred name', type: 'text' },
       { key: 'email', label: 'Email', type: 'email' },
       { key: 'phone', label: 'Phone', type: 'tel' },
@@ -52,6 +54,7 @@ const CRUD = {
     ]},
     parents: { table: 'parents', title: 'Parent', cols: [
       { key: 'full_name', label: 'Full name', type: 'text', required: true },
+      { key: 'user_id', label: 'Portal login account (link)', type: 'ref', refTable: 'profiles', refValue: 'full_name', refExtra: ['email','role'], refStore: 'id', refFilter: { role: 'parent' }, searchable: true, adminOnly: true, help: 'ADMIN ONLY — link this parent/guardian to their portal sign-in. Same pattern as School Connect. Required before the parent can see their children.' },
       { key: 'email', label: 'Email', type: 'email' },
       { key: 'phone', label: 'Phone / WhatsApp', type: 'tel' },
       { key: 'timezone', label: 'Timezone', type: 'text' },
@@ -71,6 +74,7 @@ const CRUD = {
     ]},
     tutors: { table: 'tutors', title: 'Tutor', cols: [
       { key: 'full_name', label: 'Full name', type: 'text', required: true },
+      { key: 'user_id', label: 'Portal login account (link)', type: 'ref', refTable: 'profiles', refValue: 'full_name', refExtra: ['email','role'], refStore: 'id', refFilter: { role: 'tutor' }, searchable: true, adminOnly: true, help: 'ADMIN ONLY — link this tutor record to the tutor portal sign-in. Tutors cannot link other tutors. Same pattern as School Connect staff.user_id.' },
       { key: 'email', label: 'Email', type: 'email' },
       { key: 'phone', label: 'Phone', type: 'tel' },
       { key: 'timezone', label: 'Timezone', type: 'text' },
@@ -671,7 +675,19 @@ const CRUD = {
     return this.SCHEMA[id] || this.SCHEMA[moduleId] || null;
   },
 
+  isAdminUser() {
+    try {
+      const r = String((window.App && (App.currentRole || App.role)) || (window.TC_PROFILE && TC_PROFILE.role) || '').toLowerCase();
+      return ['admin','owner','administrator','super_admin','superadmin','director','lead_tutor','proprietor'].includes(r.replace(/\s+/g,'_'));
+    } catch (_) { return false; }
+  },
+  visibleCols(cols) {
+    const admin = this.isAdminUser();
+    return (cols || []).filter(c => !c.adminOnly || admin);
+  },
   canWrite(moduleId) {
+    /* V33: tutors may edit the tutors register for their own workflow fields,
+       but only admins may CREATE new tutor rows or set user_id (enforced in UI). */
     /* ITEMS 7/10/11 — a role with READ access must not be offered Add, Edit,
        Copy or Delete. Before this, "can see the page" and "can change the
        page" were the same thing, so a parent who could read the attendance
@@ -1320,7 +1336,10 @@ const CRUD = {
   },
 
   async openForm(moduleId, row) {
-    const schema = this.def(moduleId) || this.SCHEMA[moduleId];
+    /* V33 — adminOnly columns (portal login link) hidden from non-admins */
+    let schema = this.def(moduleId) || this.SCHEMA[moduleId];
+    if (!schema) { try { toast('Unknown form', 'danger'); } catch(_){} return; }
+    schema = Object.assign({}, schema, { cols: this.visibleCols(schema.cols || []) });
     let host = document.getElementById('crud-modal');
     if (!host) {
       host = document.createElement('div');

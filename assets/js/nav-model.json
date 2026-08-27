@@ -226,6 +226,13 @@
         "aud": "staff"
       },
       {
+        "id": "class_deck",
+        "href": "class-deck.html",
+        "label": "Class Deck (live teach)",
+        "icon": "📡",
+        "aud": "staff"
+      },
+      {
         "id": "whiteboard",
         "href": "whiteboard.html",
         "label": "Whiteboard rooms",

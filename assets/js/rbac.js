@@ -139,7 +139,7 @@
     'at-risk', 'predictions', 'value-added',
     'sessions', 'session-complete', 'practice', 'exam-targets', 'idcards',
     'makeup-credits',
-    'learners', 'engagements', 'groups', 'tutors', 'parents', 'subjects',
+    'learners', 'engagements', 'groups', 'parents', 'subjects',
     'availability', 'substitutions', 'rooms', 'payroll', 'finance',
     'approvals', 'admin-data', 'activity-log', 'compliance', 'safeguarding',
     'security-centre', 'license', 'settings', 'developer', 'builder',
@@ -169,7 +169,7 @@
     'safeguarding', 'application-links', 'activity-log'
   ];
   var STAFF_READ = ['invoices', 'payments', 'fees', 'wallet', 'payment-plans',
-                    'scholarships', 'packages'];
+                    'scholarships', 'packages', 'directory'];
 
   /* The four real roles this matrix understands. ANYTHING ELSE — 'guest',
      'pending', 'demo', an empty string, or a value we have not seen — is NOT
