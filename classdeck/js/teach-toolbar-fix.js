@@ -1,239 +1,262 @@
-/* teach-toolbar-fix.js — V36
-   Ensures every topbar control works even if an earlier script threw,
-   a modal is missing, or an overlay intercepted clicks.
+/* teach-toolbar-fix.js — V37
+   Robust topbar for ADEWALE CLASSROOM DECK / client Classroom Deck.
 */
 (function (w, d) {
   'use strict';
-  function $(s, r) { return (r || d).querySelector(s); }
-  function toast(m, t) {
-    try { if (typeof w.toast === 'function') return w.toast(m, t || '', 3200); } catch (e) {}
-    console.log('[deck]', m);
+
+  function $(sel, root) {
+    try { return (root || d).querySelector(sel); } catch (e) { return null; }
   }
-  function openModalSafe(id) {
+  function toast(msg, type, ms) {
+    try { if (typeof w.toast === 'function') return w.toast(msg, type || '', ms || 3500); } catch (e) {}
+    console.log('[deck-toolbar]', msg);
+  }
+  function openModal(id) {
     var m = $(id);
-    if (!m) { toast('Panel not available on this page', 'err'); return; }
+    if (!m) { toast('Panel not available', 'err'); return false; }
     m.classList.add('open');
+    return true;
   }
-  function toggleDrawerSafe(id) {
+  function toggleDrawer(id) {
     var el = $(id);
-    if (!el) { toast('Drawer not available', 'err'); return; }
-    // close others
-    d.querySelectorAll('.drawer.open').forEach(function (x) {
-      if (x !== el) x.classList.remove('open');
-    });
+    if (!el) { toast('Panel not available — reload', 'err'); return false; }
+    d.querySelectorAll('.drawer.open').forEach(function (x) { if (x !== el) x.classList.remove('open'); });
     el.classList.toggle('open');
+    return true;
   }
   function ensureTimerModal() {
     if ($('#mTimer')) return;
     var m = d.createElement('div');
     m.id = 'mTimer';
     m.className = 'modal-back';
-    m.innerHTML = '<div class="modal" style="max-width:360px">' +
-      '<h3 style="margin:0 0 10px">⏱ Class countdown</h3>' +
-      '<label class="muted" style="font-size:12px">Minutes</label>' +
+    m.innerHTML = '<div class="modal" style="max-width:360px"><h3 style="margin:0 0 10px">⏱ Class countdown</h3>' +
+      '<label style="font-size:12px;opacity:.75">Minutes</label>' +
       '<input class="input" id="acdTimerMins" type="number" min="1" max="180" value="40" style="margin:6px 0 12px">' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
       '<button type="button" class="btn primary" id="acdTimerStart">Start</button>' +
       '<button type="button" class="btn" id="acdTimerStop">Stop</button>' +
-      '<button type="button" class="btn ghost" data-close="#mTimer">Close</button>' +
-      '</div></div>';
+      '<button type="button" class="btn ghost" id="acdTimerClose">Close</button></div></div>';
     d.body.appendChild(m);
-    m.addEventListener('click', function (e) {
-      if (e.target === m) m.classList.remove('open');
-      if (e.target && e.target.getAttribute('data-close')) m.classList.remove('open');
-    });
     var iv = null;
-    $('#acdTimerStart').onclick = function () {
-      var mins = Math.max(1, Number($('#acdTimerMins').value) || 40);
+    m.addEventListener('click', function (e) { if (e.target === m) m.classList.remove('open'); });
+    d.getElementById('acdTimerClose').onclick = function () { m.classList.remove('open'); };
+    d.getElementById('acdTimerStart').onclick = function () {
+      var mins = Math.max(1, Number(d.getElementById('acdTimerMins').value) || 40);
       var left = mins * 60;
-      var chip = $('#timerVal');
+      var chip = d.getElementById('timerVal');
       if (iv) clearInterval(iv);
       iv = setInterval(function () {
         left--;
-        if (chip) {
-          var mm = String(Math.floor(Math.max(0, left) / 60)).padStart(2, '0');
-          var ss = String(Math.max(0, left) % 60).padStart(2, '0');
-          chip.textContent = mm + ':' + ss;
-        }
-        if (left <= 0) {
-          clearInterval(iv); iv = null;
-          toast('Time is up', 'ok');
-          try { if (w.room && w.room.announce) w.room.announce('⏱ Time is up'); } catch (e) {}
-        }
+        if (chip) chip.textContent = String(Math.floor(Math.max(0, left) / 60)).padStart(2, '0') + ':' + String(Math.max(0, left) % 60).padStart(2, '0');
+        if (left <= 0) { clearInterval(iv); iv = null; toast('Time is up', 'ok'); }
       }, 1000);
       m.classList.remove('open');
-      toast('Timer started · ' + mins + ' min', 'ok');
+      toast('Timer · ' + mins + ' min', 'ok');
     };
-    $('#acdTimerStop').onclick = function () {
-      if (iv) clearInterval(iv); iv = null;
-      toast('Timer stopped');
-      m.classList.remove('open');
-    };
+    d.getElementById('acdTimerStop').onclick = function () { if (iv) clearInterval(iv); iv = null; m.classList.remove('open'); toast('Timer stopped'); };
+  }
+  function killBlockers() {
+    try {
+      w.HMG_AUTH_OK = true;
+      w.ACD_AUTH_OK = true;
+      d.querySelectorAll('#authGate, .auth-gate').forEach(function (g) {
+        g.style.display = 'none';
+        g.style.pointerEvents = 'none';
+        try { g.remove(); } catch (e) {}
+      });
+      var end = d.getElementById('btnEndLive');
+      var live = d.getElementById('liveBadge');
+      if (end && live && live.classList.contains('hide')) end.classList.add('hide');
+    } catch (e) {}
   }
 
-  function bind(id, fn) {
+  function on(id, fn) {
     var el = d.getElementById(id);
     if (!el) return;
-    // Remove disabled leftovers
     el.disabled = false;
-    el.classList.remove('hide');
     el.style.pointerEvents = 'auto';
-    el.style.zIndex = '30';
-    // Capture phase so we still fire if something stops bubbling
+    el.style.zIndex = '50';
+    if (el.dataset.acdBound === '1') return;
+    el.dataset.acdBound = '1';
     el.addEventListener('click', function (e) {
-      try { fn(e); } catch (err) {
+      try { fn(e); }
+      catch (err) {
         console.error('[toolbar]', id, err);
-        toast((err && err.message) || ('Could not open ' + id), 'err');
+        toast((err && err.message) || String(err), 'err', 5500);
       }
     }, true);
   }
 
   function wire() {
+    killBlockers();
     ensureTimerModal();
-    // Kill any residual full-screen blockers
-    d.querySelectorAll('#authGate, .auth-gate').forEach(function (g) {
-      g.style.display = 'none';
-      g.style.pointerEvents = 'none';
-      try { g.remove(); } catch (e) {}
-    });
+    var tb = d.querySelector('.topbar');
+    if (tb) {
+      tb.style.overflowX = 'auto';
+      tb.style.flexWrap = 'nowrap';
+      tb.style.webkitOverflowScrolling = 'touch';
+    }
 
-    bind('btnSettings', function () {
-      if (typeof w.openModal === 'function' && $('#mSettings')) openModalSafe('#mSettings');
-      else openModalSafe('#mSettings');
-    });
-    bind('btnStudents', function () {
-      try { if (typeof w.renderRoster === 'function') w.renderRoster(); } catch (e) {}
-      try { if (typeof w.renderWaiting === 'function') w.renderWaiting(); } catch (e) {}
+    on('btnSettings', function (e) { e.preventDefault(); e.stopPropagation(); openModal('#mSettings'); });
+    on('btnStudents', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      try { if (typeof w.renderRoster === 'function') w.renderRoster(); } catch (err) {}
+      try { if (typeof w.renderWaiting === 'function') w.renderWaiting(); } catch (err) {}
       if (typeof w.toggleDrawer === 'function') w.toggleDrawer('#drawerStudents');
-      else toggleDrawerSafe('#drawerStudents');
+      else toggleDrawer('#drawerStudents');
     });
-    bind('btnChat', function () {
+    on('btnChat', function (e) {
+      e.preventDefault(); e.stopPropagation();
       if (typeof w.toggleDrawer === 'function') w.toggleDrawer('#drawerChat');
-      else toggleDrawerSafe('#drawerChat');
+      else toggleDrawer('#drawerChat');
     });
-    bind('btnPoll', function () {
+    on('btnPoll', function (e) {
+      e.preventDefault(); e.stopPropagation();
       if (typeof w.toggleDrawer === 'function') w.toggleDrawer('#drawerPoll');
-      else toggleDrawerSafe('#drawerPoll');
+      else toggleDrawer('#drawerPoll');
     });
-    bind('btnQuiz', function () {
-      try { if (typeof w.refreshQuizBanks === 'function') w.refreshQuizBanks(); } catch (e) {}
-      try { if (typeof w.renderLeaderboard === 'function') w.renderLeaderboard(); } catch (e) {}
+    on('btnQuiz', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      try { if (typeof w.refreshQuizBanks === 'function') w.refreshQuizBanks(); } catch (err) {}
+      try { if (typeof w.renderLeaderboard === 'function') w.renderLeaderboard(); } catch (err) {}
       if (typeof w.toggleDrawer === 'function') w.toggleDrawer('#drawerQuiz');
-      else toggleDrawerSafe('#drawerQuiz');
+      else toggleDrawer('#drawerQuiz');
     });
-    bind('btnBoards', function () {
+    on('btnBoards', function (e) {
+      e.preventDefault(); e.stopPropagation();
       if (typeof w.toggleDrawer === 'function') w.toggleDrawer('#drawerBoards');
-      else toggleDrawerSafe('#drawerBoards');
+      else toggleDrawer('#drawerBoards');
     });
-    bind('btnActivity', function () {
+    on('btnActivity', function (e) {
+      e.preventDefault(); e.stopPropagation();
       if (typeof w.toggleDrawer === 'function') w.toggleDrawer('#drawerActivity');
-      else toggleDrawerSafe('#drawerActivity');
+      else toggleDrawer('#drawerActivity');
     });
-    bind('btnCalc', function () {
-      var box = $('#calcBox');
-      if (!box) { toast('Calculator not on this page', 'err'); return; }
+    on('btnCalc', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      var box = d.getElementById('calcBox');
+      if (!box) { toast('Calculator missing', 'err'); return; }
       box.classList.toggle('hide');
+      box.style.zIndex = '7000';
     });
-    bind('btnTimer', function () { openModalSafe('#mTimer'); });
-    bind('btnLessons', function () {
-      try { if (typeof w.renderLessons === 'function') w.renderLessons(); } catch (e) {}
-      openModalSafe('#mLessons');
+    on('btnTimer', function (e) { e.preventDefault(); e.stopPropagation(); openModal('#mTimer'); });
+    on('btnLessons', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      try { if (typeof w.renderLessons === 'function') w.renderLessons(); } catch (err) {}
+      openModal('#mLessons');
     });
-    bind('btnFocus', function () {
+    on('btnFocus', function (e) {
+      e.preventDefault(); e.stopPropagation();
       if (typeof w.setFocus === 'function') w.setFocus(true);
       else {
-        var st = $('.studio');
-        if (st) st.classList.add('focus');
-        var h = $('#focusHandle'); if (h) h.classList.remove('hide');
+        var st = d.querySelector('.studio'); if (st) st.classList.add('focus');
+        var h = d.getElementById('focusHandle'); if (h) h.classList.remove('hide');
       }
     });
-    bind('btnFull', function () {
+    on('btnFull', function (e) {
+      e.preventDefault(); e.stopPropagation();
       if (typeof w.setFocus === 'function') w.setFocus(true);
       var el = d.documentElement;
-      if (el.requestFullscreen) el.requestFullscreen().catch(function () {});
-      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      try {
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+      } catch (err) {}
     });
-    bind('btnLayout', function () {
-      // fall through to original if present by dispatching a trusted secondary path
+    on('btnLayout', function (e) {
+      e.preventDefault(); e.stopPropagation();
       try {
         var modes = ['split', 'left', 'right'];
-        var cur = (w.layoutMode || 'split');
-        var i = modes.indexOf(cur);
-        var next = modes[(i + 1) % modes.length];
+        var cur = (typeof w.layoutMode === 'string' && w.layoutMode) || 'split';
+        var next = modes[(Math.max(0, modes.indexOf(cur)) + 1) % 3];
         w.layoutMode = next;
         if (typeof w.applyLayout === 'function') w.applyLayout(next);
-        else {
-          var studio = $('.studio');
-          if (studio) {
-            studio.classList.remove('layout-split', 'layout-left', 'layout-right');
-            studio.classList.add('layout-' + next);
-          }
-        }
+        else if (typeof w.setLayout === 'function') w.setLayout(next);
         toast('Layout: ' + next);
-      } catch (e) { toast('Layout change failed', 'err'); }
+      } catch (err) { toast((err && err.message) || 'Layout failed', 'err'); }
     });
-    bind('btnSwap', function () {
+    on('btnSwap', function (e) {
+      e.preventDefault(); e.stopPropagation();
       try {
         if (typeof w.swapPanes === 'function') w.swapPanes();
-        else toast('Swap panes');
-      } catch (e) { toast('Swap failed', 'err'); }
+      } catch (err) { toast((err && err.message) || 'Swap failed', 'err'); }
     });
-    bind('btnPiP', function () {
+    on('btnPiP', function (e) {
+      e.preventDefault(); e.stopPropagation();
       try {
         if (d.pictureInPictureElement) {
           if (typeof w.exitClassDeckPiP === 'function') w.exitClassDeckPiP();
-          else d.exitPictureInPicture();
+          else if (d.exitPictureInPicture) d.exitPictureInPicture();
         } else if (typeof w.enterClassDeckPiP === 'function') {
           w.enterClassDeckPiP();
         } else {
-          toast('PiP: start Go Live first, then try again', 'err');
+          toast('Go Live first, then tap PiP', 'err');
         }
-      } catch (e) { toast('PiP not available on this device', 'err'); }
+      } catch (err) { toast((err && err.message) || 'PiP unavailable', 'err'); }
     });
-    bind('btnQR', function () {
+    on('btnRec', function (e) {
+      e.preventDefault(); e.stopPropagation();
       try {
-        if (typeof w.openModal === 'function' && $('#mInvite')) openModalSafe('#mInvite');
-        else if ($('#mQR')) openModalSafe('#mQR');
-        else {
-          var code = ($('#roomCodeLbl') && $('#roomCodeLbl').textContent) || '';
-          var url = location.origin + location.pathname.replace(/teach\\.html.*/, 'join.html') + '?room=' + encodeURIComponent(code.trim());
-          if (navigator.clipboard) navigator.clipboard.writeText(url);
-          toast('Invite link copied: ' + url, 'ok', 5000);
-        }
-      } catch (e) { toast('Invite failed', 'err'); }
+        if (w.HMGREC && typeof w.HMGREC.open === 'function') return w.HMGREC.open();
+        if (d.getElementById('mHmgRecSetup')) return openModal('#mHmgRecSetup');
+        if (d.getElementById('mRec')) return openModal('#mRec');
+        if (typeof w.startRecording === 'function') return w.startRecording();
+        toast('Use Rec after Go Live, or Settings → Recording', 'err');
+      } catch (err) { toast((err && err.message) || 'Recording failed', 'err'); }
     });
-    bind('btnGoLive', function () {
-      if (typeof w.goLive === 'function') w.goLive();
-      else toast('Go Live is starting…');
-    });
-    bind('btnEndLive', function () {
-      if (typeof w.endLive === 'function') w.endLive();
-    });
-    bind('btnMic', function () {
-      var b = $('#btnMic');
-      if (b) b.click(); // allow original handler if ours is capture-only double - skip
-    });
-    // focus handle exits focus
-    var fh = $('#focusHandle');
-    if (fh) fh.addEventListener('click', function () {
-      if (typeof w.setFocus === 'function') w.setFocus(false);
+    on('btnQR', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      if (d.getElementById('mInvite')) openModal('#mInvite');
+      else if (d.getElementById('mQR')) openModal('#mQR');
       else {
-        var st = $('.studio'); if (st) st.classList.remove('focus');
-        fh.classList.add('hide');
+        var code = ((d.getElementById('roomCodeLbl') || {}).textContent || '').trim();
+        var url = location.href.replace(/teach\.html.*/, 'join.html') + '?room=' + encodeURIComponent(code);
+        try { navigator.clipboard.writeText(url); toast('Invite link copied', 'ok'); }
+        catch (err) { prompt('Copy invite link', url); }
       }
-    }, true);
+    });
+    on('btnGoLive', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      if (typeof w.goLive === 'function') w.goLive();
+      else toast('Go Live not ready yet', 'err');
+    });
+    on('btnEndLive', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      try {
+        if (typeof w.endLive === 'function') w.endLive();
+        else toast('End not ready', 'err');
+      } catch (err) { toast((err && err.message) || 'End failed', 'err', 5500); }
+    });
 
-    // Make topbar scroll horizontally on narrow screens instead of crushing buttons
-    var tb = $('.topbar');
-    if (tb) {
-      tb.style.flexWrap = 'nowrap';
-      tb.style.overflowX = 'auto';
-      tb.style.overflowY = 'hidden';
-      tb.style.webkitOverflowScrolling = 'touch';
+    var fh = d.getElementById('focusHandle');
+    if (fh && fh.dataset.acdBound !== '1') {
+      fh.dataset.acdBound = '1';
+      fh.addEventListener('click', function (e) {
+        e.preventDefault();
+        try {
+          if (typeof w.setFocus === 'function') w.setFocus(false);
+          else {
+            var st = d.querySelector('.studio'); if (st) st.classList.remove('focus');
+            fh.classList.add('hide');
+          }
+        } catch (err) { toast((err && err.message) || 'Exit focus failed', 'err'); }
+      }, true);
     }
-    toast('Classroom Deck toolbar ready', 'ok', 1600);
+
+    try {
+      var end = d.getElementById('btnEndLive');
+      var live = d.getElementById('liveBadge');
+      if (end && live && live.classList.contains('hide')) end.classList.add('hide');
+    } catch (e) {}
+
+    w.ACDToolbar = { rewire: wire, openModal: openModal, toggleDrawer: toggleDrawer };
   }
 
-  if (d.readyState === 'loading') d.addEventListener('DOMContentLoaded', function () { setTimeout(wire, 0); setTimeout(wire, 600); });
-  else { setTimeout(wire, 0); setTimeout(wire, 600); }
+  function start() {
+    wire();
+    setTimeout(wire, 300);
+    setTimeout(wire, 1200);
+    setTimeout(wire, 3000);
+  }
+  if (d.readyState === 'loading') d.addEventListener('DOMContentLoaded', start);
+  else start();
 })(window, document);

@@ -501,3 +501,12 @@ hr.sep { border: none; border-top: 1px solid var(--line); margin: 10px 0; }
   .calc-grid.sci { grid-template-columns: repeat(4, minmax(44px, 1fr)); }
   .calc-grid.sci button:nth-last-child(2) { grid-column: span 1; }
 }
+
+/* V37 — calculator + drawers above portal chip; End stays hidden via .hide */
+.calc-box { z-index: 8000 !important; top: 96px !important; }
+.calc-box.hide { display: none !important; }
+.drawer { z-index: 6500 !important; }
+.topbar { position: relative; z-index: 30; }
+.topbar .btn { position: relative; z-index: 31; pointer-events: auto !important; }
+#btnEndLive.hide { display: none !important; }
+#acd-portal-chip { height: 28px !important; max-height: 28px !important; overflow: hidden; }

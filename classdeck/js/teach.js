@@ -10,6 +10,24 @@
    ============================================================ */
 "use strict";
 
+/* V37 — hoist mutable live-class state to the top of the file so no handler
+   (Focus, Fullscreen, End, PiP, Rec, captions, composite) can hit a TDZ
+   "Cannot access before initialization" error. Values are the same defaults
+   as the original later declarations. */
+var room = null;
+var lastEndedRoom = null;
+var micStream = null, camStream = null;
+var micOn = false, camOn = false;
+var stageStream = null;
+var classStartTs = 0, classTickInt = null;
+var recorder = null, recChunks = [], recStream = null;
+var focusOn = false;
+var capRec = null, capOn = false, capLines = [];
+var pipVideo = null, pipStream = null, pipPump = null, pipActive = false;
+var tabletLive = { pc: null, stream: null, resource: "", gateway: "", streamName: "classdeck", format: "landscape", raf: null, canvas: null, ownsComposite: false };
+var lastPrivatePeer = null;
+
+
 /* ------------------------------------------------------------
    0. PDF.js worker
    ------------------------------------------------------------ */
@@ -1248,12 +1266,12 @@ function wrapText(ctx, text, x, y, maxW, lineH) {
 /* ------------------------------------------------------------
    5. Live class
    ------------------------------------------------------------ */
-let room = null;
-let lastEndedRoom = null;
-let micStream = null, camStream = null;
-let micOn = false, camOn = false;
-let stageStream = null;
-let classStartTs = 0, classTickInt = null;
+/* room hoisted */
+/* lastEndedRoom hoisted */
+/* mic/cam streams hoisted */
+/* micOn/camOn hoisted */
+/* stageStream hoisted */
+/* class timer hoisted */
 
 /* Issue #13: shareable deep-link codes — teach.html?room=MYCODE lets a teacher
    paste ANY letters/numbers code into the URL, attach it to the site, and share
@@ -1577,7 +1595,7 @@ function endLive(force = false) {
 
 /* ---- room events ---- */
 const camTiles = new Map();
-let lastPrivatePeer = null;   /* v5: most recent private-chat sender */
+/* lastPrivatePeer hoisted */
 function onRoomEvent(type, p) {
   switch (type) {
     case "student-joined":
@@ -1842,7 +1860,7 @@ function stopCountdown() {
      • optionally the student camera tiles (toggle in the dialog),
      • a footer strip with the HMG CONCEPTS channel credit + date.
    Saved as .webm — upload directly to the HMG CONCEPTS YouTube channel. */
-let recorder = null, recChunks = [], recStream = null;
+/* recorder hoisted */
 let recCanvas = null, recCtx = null, recRaf = null;
 let recMeta = { subject: "", topic: "", klass: "", students: false, brand: "", footer: "" };
 /* v7 (issue 4): each teacher records under THEIR OWN brand.
@@ -2255,7 +2273,7 @@ $("#ftPgNext", focusTools).addEventListener("click", () => activeBoards().forEac
 $("#ftPgAdd",  focusTools).addEventListener("click", () => activeBoards().forEach((i) => { i.wb.addPage(); $(".wb-pageinfo", i.el).textContent = (i.wb.pageIndex + 1) + " / " + i.wb.pages.length; }));
 $("#ftLayout", focusTools).addEventListener("click", () => $("#btnLayout").click());
 
-let focusOn = false;
+/* focusOn hoisted */
 function setFocus(on) {
   focusOn = on;
   studioEl.classList.toggle("focus", on);
@@ -3184,7 +3202,7 @@ drawComposite = function () { _drawCompositeBeforeNoise(); if (noiseOn) drawNois
    This module publishes the ClassDeck composite MediaStream to a WebRTC WHIP
    relay (included in relay/no-obs-social-relay). The relay converts to RTMP.
    ------------------------------------------------------------ */
-let tabletLive = { pc: null, stream: null, resource: "", gateway: "", streamName: "classdeck", format: "landscape", raf: null, canvas: null, ownsComposite: false };
+tabletLive = { pc: null, stream: null, resource: "", gateway: "", streamName: "classdeck", format: "landscape", raf: null, canvas: null, ownsComposite: false };
 function tlSetStatus(msg, ok) {
   const el = $("#tlStatus"); if (el) { el.textContent = msg; el.style.color = ok ? "var(--ok)" : "var(--text-dim)"; }
 }
@@ -3402,7 +3420,7 @@ if ($("#tlOpenCentre")) $("#tlOpenCentre").addEventListener("click", openStreamC
 if ($("#btnTryScreenShare")) $("#btnTryScreenShare").addEventListener("click", tryFullTabletScreenShare);
 
 /* Free speech-to-text captions: browser Web Speech API only (no paid AI/API). */
-let capRec = null, capOn = false, capLines = [];
+/* captions hoisted */
 function releaseTeacherMicIfUnused() {
   if (room || recorder || capOn || (tabletLive && tabletLive.pc)) return;
   try { if (micStream) micStream.getTracks().forEach((t) => t.stop()); } catch {}
@@ -3506,7 +3524,7 @@ drawComposite = function () { _drawCompositeBeforeSecurityWatermark(); drawForen
 
 /* PiP continuity: the browser requires a user gesture; once started, the app
    keeps a small live preview when the teacher switches/minimises. */
-let pipVideo = null, pipStream = null, pipPump = null, pipActive = false;
+/* pip hoisted */
 function ensurePipVideo() {
   if (pipVideo) return pipVideo;
   pipVideo = document.createElement("video");
@@ -3925,3 +3943,26 @@ onRoomEvent = function (type, p) {
     } catch (e) { /* never break the broadcast */ }
   };
 })();
+
+/* V37 — export studio APIs for toolbar-fix / portal bridge */
+try {
+  window.setFocus = typeof setFocus === 'function' ? setFocus : window.setFocus;
+  window.goLive = typeof goLive === 'function' ? goLive : window.goLive;
+  window.endLive = typeof endLive === 'function' ? endLive : window.endLive;
+  window.toggleDrawer = typeof toggleDrawer === 'function' ? toggleDrawer : window.toggleDrawer;
+  window.openModal = typeof openModal === 'function' ? openModal : window.openModal;
+  window.closeModal = typeof closeModal === 'function' ? closeModal : window.closeModal;
+  window.swapPanes = typeof swapPanes === 'function' ? swapPanes : window.swapPanes;
+  window.applyLayout = typeof applyLayout === 'function' ? applyLayout : window.applyLayout;
+  window.enterClassDeckPiP = typeof enterClassDeckPiP === 'function' ? enterClassDeckPiP : window.enterClassDeckPiP;
+  window.exitClassDeckPiP = typeof exitClassDeckPiP === 'function' ? exitClassDeckPiP : window.exitClassDeckPiP;
+  window.startRecording = typeof startRecording === 'function' ? startRecording : window.startRecording;
+  window.stopRecording = typeof stopRecording === 'function' ? stopRecording : window.stopRecording;
+  window.renderRoster = typeof renderRoster === 'function' ? renderRoster : window.renderRoster;
+  window.renderWaiting = typeof renderWaiting === 'function' ? renderWaiting : window.renderWaiting;
+  window.renderLessons = typeof renderLessons === 'function' ? renderLessons : window.renderLessons;
+  window.refreshQuizBanks = typeof refreshQuizBanks === 'function' ? refreshQuizBanks : window.refreshQuizBanks;
+  window.renderLeaderboard = typeof renderLeaderboard === 'function' ? renderLeaderboard : window.renderLeaderboard;
+  window.focusOn = typeof focusOn !== 'undefined' ? focusOn : false;
+} catch (e) { console.warn('[deck exports]', e); }
+

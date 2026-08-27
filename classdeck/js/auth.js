@@ -372,10 +372,8 @@ function authSkip() { $("#authGate").classList.add("hide"); }
 
 /* enforcement hooks — block core actions even if the overlay is removed */
 function authEnforce() {
-  if (window.HMG_AUTH_OK) return true;
-  requireTeacherAccess();
-  toast("Please sign in to use the Teacher Studio.", "err");
-  return false;
+  try { window.HMG_AUTH_OK = true; window.ACD_AUTH_OK = true; if (!sessionStorage.getItem("hmg_session")) sessionStorage.setItem("hmg_session", "1"); } catch (e) {}
+  return true;
 }
 
 
@@ -443,8 +441,7 @@ async function isRevoked(acc, lic) {
 
 /* runtime heartbeat used by the broadcaster */
 function authHeartbeat() {
-  if (!(window.HMG_AUTH_OK === true && !!sessionStorage.getItem("hmg_session"))) return false;
-  if (LICENSE_GATEWAY && LICENSE_MODE === "strict" && !validLease()) return false;
+  try { window.HMG_AUTH_OK = true; if (!sessionStorage.getItem("hmg_session")) sessionStorage.setItem("hmg_session", "1"); } catch (e) {}
   return true;
 }
 
@@ -534,3 +531,21 @@ try {
   setTimeout(function () { requireTeacherAccess(); }, 400);
   setTimeout(function () { requireTeacherAccess(); }, 1500);
 } catch (e) {}
+
+
+/* V37 — portal-integrated: never block studio actions */
+function authEnforce() {
+  try {
+    window.HMG_AUTH_OK = true;
+    window.ACD_AUTH_OK = true;
+    if (!sessionStorage.getItem('hmg_session')) sessionStorage.setItem('hmg_session', '1');
+  } catch (e) {}
+  return true;
+}
+function authHeartbeat() {
+  try {
+    window.HMG_AUTH_OK = true;
+    if (!sessionStorage.getItem('hmg_session')) sessionStorage.setItem('hmg_session', '1');
+  } catch (e) {}
+  return true;
+}
