@@ -4,6 +4,13 @@
 (function (w, d) {
   'use strict';
 
+  /* Buttons wired by js/teach.js itself. */
+  var TEACH_OWNED = [
+    'btnSettings','btnStudents','btnChat','btnPoll','btnQuiz','btnBoards',
+    'btnActivity','btnCalc','btnTimer','btnFocus','btnFull','btnLayout',
+    'btnSwap','btnPiP','btnRec','btnQR','btnGoLive','btnEndLive'
+  ];
+
   function $(sel, root) {
     try { return (root || d).querySelector(sel); } catch (e) { return null; }
   }
@@ -76,6 +83,13 @@
     el.disabled = false;
     el.style.pointerEvents = 'auto';
     el.style.zIndex = '50';
+    /* V38: teach.js owns every one of these buttons. When it initialises
+       cleanly it sets __DECK_TEACH_READY__, and binding here as well would
+       double-fire the action in the capture phase (swapPanes() twice = no
+       visible change; layout cycling two steps at a time). Only take over
+       when teach.js actually failed. The cosmetic/reliability work below
+       (killBlockers, topbar scrolling, timer modal) still runs either way. */
+    if (w.__DECK_TEACH_READY__ && TEACH_OWNED.indexOf(id) !== -1) return;
     if (el.dataset.acdBound === '1') return;
     el.dataset.acdBound = '1';
     el.addEventListener('click', function (e) {
@@ -228,7 +242,7 @@
     });
 
     var fh = d.getElementById('focusHandle');
-    if (fh && fh.dataset.acdBound !== '1') {
+    if (fh && !w.__DECK_TEACH_READY__ && fh.dataset.acdBound !== '1') {
       fh.dataset.acdBound = '1';
       fh.addEventListener('click', function (e) {
         e.preventDefault();

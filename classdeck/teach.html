@@ -880,11 +880,130 @@ Not sure</textarea>
 <div id="mTimer" class="modal-back">
   <div class="modal" style="max-width:360px">
     <h3 style="margin:0 0 10px">⏱ Class countdown</h3>
-    <label style="font-size:12px;color:var(--text-dim)">Minutes</label>
-    <input class="input" id="timerMins" type="number" min="1" max="180" value="40" style="margin:6px 0 12px" />
+
+    <!-- V38 FIX: teach.js binds #mTimer [data-min] quick-picks, #timerCustom,
+         #timerStartCustom and #timerStop. They were missing from this modal,
+         and $("#timerStartCustom").addEventListener() threw a TypeError that
+         aborted the whole of teach.js. Markup restored to match the JS. -->
+    <label style="font-size:12px;color:var(--text-dim)">Quick pick</label>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 12px">
+      <button type="button" class="btn" data-min="1">1 min</button>
+      <button type="button" class="btn" data-min="5">5 min</button>
+      <button type="button" class="btn" data-min="10">10 min</button>
+      <button type="button" class="btn" data-min="15">15 min</button>
+      <button type="button" class="btn" data-min="20">20 min</button>
+      <button type="button" class="btn" data-min="30">30 min</button>
+      <button type="button" class="btn" data-min="40">40 min</button>
+      <button type="button" class="btn" data-min="60">60 min</button>
+    </div>
+
+    <label style="font-size:12px;color:var(--text-dim)">Custom minutes</label>
+    <input class="input" id="timerCustom" type="number" min="1" max="180" value="40" style="margin:6px 0 12px" />
+    <input type="hidden" id="timerMins" value="40" />
+
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button type="button" class="btn primary" id="timerStartBtn">Start</button>
+      <button type="button" class="btn primary" id="timerStartCustom">Start</button>
+      <button type="button" class="btn" id="timerStartBtn" hidden>Start</button>
+      <button type="button" class="btn" id="timerStop">Stop</button>
       <button type="button" class="btn ghost" onclick="closeModal('#mTimer')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==========================================================================
+     V38 FIX — four modals that teach.js drives but that had gone missing from
+     this file. Their absence is what broke Rec, Report, Noise meter and
+     Tablet Live, and (via #recBegin etc.) contributed to the fatal abort.
+     Every id/class below matches exactly what teach.js queries.
+     ========================================================================== -->
+
+<!-- Recording setup — drives $("#btnRec") / startRecording() -->
+<div id="mRecSetup" class="modal-back">
+  <div class="modal" style="max-width:420px">
+    <h3 style="margin:0 0 10px">⏺ Recording setup</h3>
+    <label style="font-size:12px;color:var(--text-dim)">Subject</label>
+    <input class="input" id="recSubject" placeholder="e.g. Mathematics" style="margin:6px 0 10px" />
+    <label style="font-size:12px;color:var(--text-dim)">Topic</label>
+    <input class="input" id="recTopic" placeholder="e.g. Simultaneous equations" style="margin:6px 0 10px" />
+    <label style="font-size:12px;color:var(--text-dim)">Class</label>
+    <input class="input" id="recClass" placeholder="e.g. SS2" style="margin:6px 0 10px" />
+    <label style="font-size:12px;color:var(--text-dim)">Brand name shown on the recording</label>
+    <input class="input" id="recBrand" placeholder="e.g. ADEWALE CLASSROOM" style="margin:6px 0 10px" />
+    <label style="font-size:12px;color:var(--text-dim)">Footer line</label>
+    <input class="input" id="recFooter" placeholder="e.g. HMG Concepts · Lagos, Nigeria" style="margin:6px 0 10px" />
+    <div style="display:flex;align-items:center;gap:8px;margin:10px 0">
+      <button type="button" class="btn" id="recLogoBtn">🖼 Upload logo</button>
+      <input type="file" id="recLogoFile" accept="image/*" hidden />
+      <span id="recLogoStatus" style="font-size:12px;color:var(--ok)"></span>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:6px 0 14px">
+      <input type="checkbox" id="recStudents" /> Include student cameras in the recording
+    </label>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button type="button" class="btn primary" id="recBegin">Start recording</button>
+      <button type="button" class="btn ghost" onclick="closeModal('#mRecSetup')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Class report — drives $("#btnReport") -->
+<div id="mReport" class="modal-back">
+  <div class="modal" style="max-width:560px">
+    <h3 style="margin:0 0 10px">📊 Class report</h3>
+    <div id="reportBody" style="max-height:52vh;overflow:auto;background:rgba(255,255,255,.04);border-radius:10px;padding:12px"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+      <button type="button" class="btn primary" id="reportDownload">⬇ Download .txt</button>
+      <button type="button" class="btn" id="reportWhatsApp">🟢 Send on WhatsApp</button>
+      <button type="button" class="btn ghost" onclick="closeModal('#mReport')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Noise meter — drives $("#btnNoiseMeter") -->
+<div id="mNoise" class="modal-back">
+  <div class="modal" style="max-width:380px">
+    <h3 style="margin:0 0 10px">🔊 Classroom noise meter</h3>
+    <p style="font-size:12.5px;color:var(--text-dim);margin:0 0 10px">Shows a live loudness bar on the broadcast and warns when the room goes over your threshold.</p>
+    <label style="font-size:12px;color:var(--text-dim)">Alert threshold — <b id="noiseThresholdVal">70</b>%</label>
+    <input class="input" id="noiseThreshold" type="range" min="10" max="100" value="70" style="margin:6px 0 12px" oninput="var v=document.getElementById('noiseThresholdVal');if(v)v.textContent=this.value" />
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button type="button" class="btn primary" id="noiseStart">Start meter</button>
+      <button type="button" class="btn" id="noiseStop">Stop</button>
+      <button type="button" class="btn ghost" onclick="closeModal('#mNoise')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tablet social live (no OBS) — drives $("#btnTabletLive") -->
+<div id="mTabletLive" class="modal-back">
+  <div class="modal" style="max-width:480px">
+    <h3 style="margin:0 0 10px">📱 Tablet Live — stream to social (no OBS)</h3>
+    <label style="font-size:12px;color:var(--text-dim)">Relay gateway URL</label>
+    <input class="input" id="tlGateway" placeholder="https://your-relay.example.com" style="margin:6px 0 10px" />
+    <label style="font-size:12px;color:var(--text-dim)">Gateway secret</label>
+    <input class="input" id="tlSecret" type="password" placeholder="shared secret" style="margin:6px 0 10px" />
+    <label style="font-size:12px;color:var(--text-dim)">Stream name</label>
+    <input class="input" id="tlStream" placeholder="classdeck-room" style="margin:6px 0 10px" />
+    <label style="font-size:12px;color:var(--text-dim)">Format</label>
+    <select class="input" id="tlFormat" style="margin:6px 0 10px">
+      <option value="landscape">Landscape 16:9 — YouTube / Facebook</option>
+      <option value="vertical">Vertical 9:16 — TikTok / Instagram</option>
+    </select>
+    <label style="font-size:12px;color:var(--text-dim)">Destinations (RTMP URL + key)</label>
+    <input class="input tlDest" data-name="youtube"   placeholder="YouTube RTMP…"   style="margin:6px 0" />
+    <input class="input tlDest" data-name="facebook"  placeholder="Facebook RTMP…"  style="margin:6px 0" />
+    <input class="input tlDest" data-name="instagram" placeholder="Instagram RTMP…" style="margin:6px 0" />
+    <input class="input tlDest" data-name="tiktok"    placeholder="TikTok RTMP…"    style="margin:6px 0 10px" />
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:6px 0 10px">
+      <input type="checkbox" id="tlRemember" checked /> Remember the gateway secret and stream keys on this device
+    </label>
+    <div id="tlStatus" style="font-size:12.5px;color:var(--text-dim);margin-bottom:10px"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button type="button" class="btn primary" id="tlStart">▶ Start social live</button>
+      <button type="button" class="btn" id="tlStop">■ Stop</button>
+      <button type="button" class="btn" id="tlHealth">🩺 Check relay</button>
+      <button type="button" class="btn" id="tlOpenCentre">🎛 Stream centre</button>
+      <button type="button" class="btn ghost" onclick="closeModal('#mTabletLive')">Close</button>
     </div>
   </div>
 </div>
