@@ -64,6 +64,8 @@
 <script src="assets/js/enterprise.js"></script>
 <script src="assets/js/crud.js"></script>
 <script src="assets/js/insights.js"></script>
+<script src="assets/js/cbt-richtext.js"></script>
+<script src="assets/js/cbt-speech.js"></script>
 <script src="assets/js/cbt.js"></script>
 <script src="assets/js/cbt-types.js"></script>
 <script src="assets/js/proctor.js"></script>
@@ -133,6 +135,10 @@
               <option value="multiline_math">Multi-line maths / STEM (fractions, matrices, calculus…)</option>
               <option value="image_stimulus">Image / diagram stimulus (link-only media)</option>
               <option value="stem_combo">Mixed multi-line + image paper</option>
+              <!-- V39 item 5 — pinned-stimulus packs. passage_set is the
+                   subject-neutral blueprint; utme_english is one dialect of it. -->
+              <option value="passage_set">Passage / stimulus set — pinned stimulus, any subject</option>
+              <option value="utme_english">UTME / JAMB English — comprehension, summary, lexis, structure</option>
               <optgroup label="School Connect parity">
                 <option value="mcq_only">MCQ-only strict CSV</option>
                 <option value="exam_board">Exam-board paper (WAEC / UTME / IGCSE / SAT…)</option>
@@ -193,7 +199,11 @@
       <div class="card" id="prompt-encoding-help" style="margin-top:14px;border-left:4px solid #0506ae">
         <h3 style="margin:0 0 6px">How multi-line maths &amp; images work in CSV</h3>
         <ul style="margin:0;padding-left:1.2rem;line-height:1.55;font-size:.92rem">
-          <li><b>Fractions / matrices / simultaneous equations:</b> put the expression in the question cell using <code>\frac{a}{b}</code>, matrix rows separated by <code>\n</code>, or one equation per line. The student screen uses monospaced <code>pre-wrap</code> so lines stay aligned.</li>
+          <li><b>Fractions, roots, indices, matrices:</b> write real LaTeX in the cell — <code>\frac{a}{b}</code>, <code>\sqrt[3]{27}</code>, <code>x^{n+1}</code>, <code>\begin{pmatrix} 2 &amp; -1 \\ 3 &amp; 4 \end{pmatrix}</code>. Since <b>V39</b> the candidate screen draws these as genuine typeset maths (stacked fraction with a bar, full-height matrix brackets), not as raw backslash text. No CDN, no MathJax — it renders offline.</li>
+          <li><b>Line breaks inside a cell:</b> use the two characters <code>\n</code>. They become real line breaks on the candidate screen. Safe next to maths: <code>\neq</code> still renders as ≠.</li>
+          <li><b>Pinned passages:</b> repeat the full passage in Col14 <code>{"passage":"…"}</code> on every row of a comprehension set and tag them <code>set:P1</code>. The platform then shows that passage <i>once</i>, pinned above the question, for every question in the set — with a live “3 of 5 answered” counter — instead of it disappearing between questions.</li>
+          <li><b>Read-aloud:</b> candidates can have any question and its options spoken by their own device (free, offline, no API key). Maths is spoken in words — <code>\frac{3x+6}{9}</code> is read as “the fraction 3x plus 6, over 9” — which only works if you use the commands above rather than flattening to <code>3x+6/9</code>.</li>
+          <li><b>Randomisation:</b> question order and option order can be randomised per candidate in the CBT setup. Marking compares answer <i>text</i>, never the A–D letter, so shuffling cannot change a score — but it does mean <b>explanations must name the answer in words</b>, not as “Option B”.</li>
           <li><b>Images / diagrams:</b> put a public <code>https://</code> or Google Drive link in <code>media_url</code> (or Col14 JSON <code>{"image":"https://..."}</code>). Always add a text fallback in the stem (“The diagram shows…”). Nothing is uploaded into free Supabase storage.</li>
           <li><b>After the chat returns CSV:</b> paste it in the box below → Save as .csv → upload on <a href="practice.html">Quizzes</a>. Preview a sit on <a href="cbt-exam.html">Take a quiz</a>.</li>
         </ul>

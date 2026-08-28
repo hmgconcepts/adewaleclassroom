@@ -64,6 +64,8 @@
 <script src="assets/js/enterprise.js"></script>
 <script src="assets/js/crud.js"></script>
 <script src="assets/js/insights.js"></script>
+<script src="assets/js/cbt-richtext.js"></script>
+<script src="assets/js/cbt-speech.js"></script>
 <script src="assets/js/cbt.js"></script>
 <script src="assets/js/cbt-types.js"></script>
 <script src="assets/js/proctor.js"></script>
@@ -350,6 +352,7 @@
         html = fallbackReview(result, meta);
       }
       out.innerHTML = banner + html;
+      mountReviewSpeech();   /* V39 item 4 */
       summarize(result, data);
       hint.textContent = 'Loaded · finished ' + (data.finished_at ? new Date(data.finished_at).toLocaleString() : '—') +
         ' · code ' + (data.exam_code || c);
@@ -365,6 +368,45 @@
       go.disabled = false;
       go.textContent = oldLabel || '🔍 Load my review';
     }
+  }
+
+  /* ---------------------------------------------------------------------
+     V39 items 1, 4 and 6 — the review sheet is where the learning happens.
+
+     rich()  renders the same LaTeX/newline subset the exam screen renders,
+             so a worked solution in Col7 shows real fractions instead of
+             \frac{3x+6}{9}. A review sheet that is harder to read than the
+             question is worse than no review sheet.
+
+     The read-aloud control is added here as well as in the exam. During the
+     exam it reads the question; here it reads the whole entry INCLUDING the
+     correct answer and the explanation, which is the one place where doing
+     so is not only safe but the point.
+     --------------------------------------------------------------------- */
+  function rich(x) {
+    if (window.CBTRich) return CBTRich.html(x);
+    return esc(String(x == null ? '' : x).replace(/\\n/g, '\n')).replace(/\n/g, '<br>');
+  }
+
+  function mountReviewSpeech() {
+    if (!window.CBTSpeech || !window.CBTRich) return;
+    var secs = out.querySelectorAll('.rv-q, #cbt-review-print section');
+    [].forEach.call(secs, function (sec) {
+      if (sec.querySelector('.rv-speak')) return;
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'rv-speak tcs-btn';
+      btn.style.cssText = 'margin-top:8px;font-size:.82rem;padding:5px 11px';
+      btn.innerHTML = '<span aria-hidden="true">🔊</span> Read this explanation';
+      btn.addEventListener('click', function () {
+        if (CBTSpeech.isSpeaking()) { CBTSpeech.stop(); return; }
+        /* Strip the button's own label out of the spoken text. */
+        var clone = sec.cloneNode(true);
+        var b = clone.querySelector('.rv-speak'); if (b) b.remove();
+        CBTSpeech.speak(CBTRich.plain(clone.textContent || ''));
+      });
+      sec.appendChild(btn);
+    });
   }
 
   function fallbackReview(result, meta) {
@@ -384,12 +426,12 @@
       return '<section class="rv-q" data-state="' + (d.pending ? 'pending' : d.ok ? 'right' : (given == null || given === '' ? 'blank' : 'wrong')) + '" style="border:1px solid #e4ddd2;border-radius:12px;padding:12px;margin:10px 0;background:' + tone + '">' +
         '<div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.04em">' + (i + 1) + ' · ' + label +
         ' · ' + esc(d.mark) + '/' + esc(d.max) + (d.subject ? ' · ' + esc(d.subject) : '') + '</div>' +
-        (d.passage ? '<blockquote style="border-left:3px solid #964eec;padding-left:10px;margin:8px 0;white-space:pre-wrap">' + esc(d.passage) + '</blockquote>' : '') +
+        (d.passage ? '<blockquote style="border-left:3px solid #964eec;padding-left:10px;margin:8px 0">' + rich(d.passage) + '</blockquote>' : '') +
         media +
-        '<p style="font-weight:700;white-space:pre-wrap">' + esc(d.question) + '</p>' +
-        '<p><b>Your answer:</b> <span style="white-space:pre-wrap">' + esc(given) + '</span></p>' +
-        '<p><b>Correct answer:</b> <span style="white-space:pre-wrap">' + esc(correct) + '</span></p>' +
-        (d.explanation ? '<p><b>Why:</b> <span style="white-space:pre-wrap">' + esc(d.explanation) + '</span></p>' : '') +
+        '<p style="font-weight:700">' + rich(d.question) + '</p>' +
+        '<p><b>Your answer:</b> <span>' + rich(given) + '</span></p>' +
+        '<p><b>Correct answer:</b> <span>' + rich(correct) + '</span></p>' +
+        (d.explanation ? '<div class="rv-why"><b>Why:</b> <span>' + rich(d.explanation) + '</span></div>' : '') +
         '</section>';
     }).join('');
     return '<div id="cbt-review-print" class="card" style="padding:18px">' +

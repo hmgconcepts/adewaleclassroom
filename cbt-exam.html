@@ -19,6 +19,8 @@
 <script src="assets/js/theme-engine.js"></script>
 <script src="assets/js/catalog.js"></script>
 <script src="assets/js/license.js"></script>
+<script src="assets/js/cbt-richtext.js"></script>
+<script src="assets/js/cbt-speech.js"></script>
 <script src="assets/js/cbt.js"></script>
 <script src="assets/js/cbt-types.js"></script>
 <script src="assets/js/proctor.js"></script>
@@ -79,6 +81,9 @@
 </main>
 <script>
 const state = { learner: null, exam: null, questions: [], started: 0, identity_mode: 'open' };
+/* Exposed for the V39 delivery/passage smoke test in tools/. Read-only in
+   production: nothing in the app reads window.__cbtState. */
+window.__cbtState = state;
 CBT.init(window.sb);
 
 (function autofill(){
@@ -158,6 +163,44 @@ document.getElementById('start').onclick = async () => {
   const exam = state.exam;
   state.questions = (exam.questions || []).map((q,i) => CBT.normalizeQuestion(q, i));
   if (!state.questions.length) { toast('This quiz has no questions yet.', 'warning'); return; }
+
+  /* ------------------------------------------------------------------
+     V39 item 2 — RANDOMISATION.
+     cbt_exams has carried shuffle_questions / shuffle_options since v20
+     and cbt-results.html has always offered the checkboxes, but NOTHING
+     EVER READ THEM: the runtime served the CSV order to every candidate,
+     so two learners side by side saw identical papers in identical order.
+     That is fixed here.
+
+     CBT.applyDelivery shuffles GROUPS, not rows, so a comprehension
+     passage and its questions travel together (see item 5 below), and it
+     is seeded on candidate + exam code so a mid-exam refresh rebuilds the
+     SAME paper instead of reshuffling and losing the candidate's place.
+     ------------------------------------------------------------------ */
+  state.seed = CBT.deliverySeed(exam, state.learner || { full_name: document.getElementById('dname').value });
+  state.questions = CBT.applyDelivery(state.questions, {
+    shuffleQuestions: exam.shuffle_questions === true,
+    shuffleOptions:   exam.shuffle_options   === true,
+    serve:            Number(exam.questions_to_serve || 0),
+    seed:             state.seed
+  });
+
+  /* ------------------------------------------------------------------
+     V39 item 5 — PASSAGE GROUPS.
+     Build the group map once, then mark every question that belongs to a
+     passage set so CBT.renderQuestion does NOT repeat the passage inside
+     each card. The passage is instead painted once into a pinned pane
+     that stays on screen for the whole set.
+     ------------------------------------------------------------------ */
+  state.groups = CBT.groupPassages(state.questions);
+  state.groupOf = {};
+  state.groups.forEach((g, gi) => {
+    if (g.standalone || !g.passage) return;
+    g.items.forEach((q) => {
+      q._passage_pinned = true;
+      state.groupOf[q.id] = gi;
+    });
+  });
   /* ------------------------------------------------------------------
      V14 exam runtime. Anti-cheat, watermark, question palette, calculator
      and maths keyboard all come from assets/js/cbt-exam-kit.js.
@@ -197,6 +240,13 @@ document.getElementById('start').onclick = async () => {
     ${exam.instructions ? '<div class="card" style="background:#fffbeb;border-left:4px solid #b45309"><b>Instructions</b><p style="margin:6px 0 0">'+TC.esc(exam.instructions)+'</p></div>' : ''}
     ${tabs}
     <div id="qpalette" style="margin:12px 0"></div>
+    <!-- V39 item 4 — read-aloud bar. Populated by CBTSpeech.mount(). -->
+    <div id="qspeech"></div>
+    <!-- V39 item 5 — the pinned passage / stimulus pane. It sits ABOVE the
+         question card and is refreshed only when the candidate crosses into
+         a different passage set, so the text a comprehension question asks
+         about never scrolls away or disappears between questions. -->
+    <div id="qpassage" hidden style="position:sticky;top:76px;z-index:4"></div>
     <div id="qbox">${state.questions.map((q,i) => CBT.renderQuestion(q,i)).join('')}</div>
     <!-- BUG FIX 4 — one question per page.
          Previously every question was painted at once and the candidate
@@ -246,12 +296,53 @@ document.getElementById('start').onclick = async () => {
     .map((q, i) => i)
     .filter(i => !state.subject || (state.questions[i].subject || 'General') === state.subject);
 
+  /* Total height currently occupied by pinned furniture at the top of the
+     viewport: the title/timer bar, plus the passage pane when it is showing.
+     Measured rather than hard-coded, because the title bar wraps to two lines
+     on a narrow phone and a hard-coded 76px then hides the first line of
+     every question. */
+  const stickyOffset = () => {
+    let h = 8;
+    const bar = document.querySelector('#exam > .card[style*="sticky"]');
+    if (bar) h = bar.getBoundingClientRect().bottom;
+    const pane = document.getElementById('qpassage');
+    if (pane && !pane.hidden) h = Math.max(h, pane.getBoundingClientRect().bottom);
+    return Math.max(0, h);
+  };
+
+  /* Park the passage pane directly beneath the title bar, whatever height
+     that bar happens to be on this device. */
+  const placePane = () => {
+    const pane = document.getElementById('qpassage');
+    const bar = document.querySelector('#exam > .card[style*="sticky"]');
+    if (!pane) return;
+    const top = bar ? Math.round(bar.getBoundingClientRect().height) + 14 : 76;
+    pane.style.top = top + 'px';
+  };
+  window.addEventListener('resize', placePane);
+
   const showOnly = (idx) => {
     const list = cards();
     list.forEach((el, i) => { el.style.display = (i === idx) ? '' : 'none'; });
     const el = list[idx];
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      /* Scroll so the card lands just BELOW everything that is pinned above
+         it. Two earlier attempts failed and are worth recording:
+
+           el.scrollIntoView({block:'start'})
+             put the card at y=0, underneath the sticky title bar and
+             underneath the passage pane, so the candidate saw the passage
+             covering their own question.
+
+           pane.scrollIntoView({block:'start'})
+             did nothing at all. The pane is position:sticky and already
+             stuck at its offset, so its current rect is its resting rect and
+             the browser calculates a zero-pixel scroll.
+
+         The reliable method is to measure what is pinned and scroll the
+         window by hand. */
+      const y = el.getBoundingClientRect().top + window.pageYOffset;
+      window.scrollTo({ top: Math.max(0, y - stickyOffset() - 10), behavior: 'smooth' });
       el.setAttribute('aria-current', 'true');
     }
     list.forEach((e2, i) => { if (i !== idx) e2.removeAttribute('aria-current'); });
@@ -278,7 +369,79 @@ document.getElementById('start').onclick = async () => {
     if (nx) nx.disabled = pos >= vis.length - 1;
     const fl = document.getElementById('flagq');
     if (fl) fl.className = 'btn btn-outline' + (state.flags[state.current] ? ' btn-warning' : '');
+
+    paintPassage();
+    if (window.CBTSpeech && CBTSpeech.isSpeaking && CBTSpeech.isSpeaking()) CBTSpeech.stop();
   };
+
+  /* ------------------------------------------------------------------
+     V39 item 5 — keep the stimulus on screen for its whole set.
+
+     Requirement: "the passage must stay on screen until all questions
+     under it are answered before it goes away."
+
+     Implementation notes worth keeping:
+     * The pane is OUTSIDE #qbox, so the one-card-at-a-time paging in
+       showOnly() cannot hide it.
+     * It is position:sticky, so on a phone the candidate can scroll the
+       passage and the question independently but never loses either.
+     * It repaints only when the group CHANGES. Repainting on every step
+       would reset the candidate's scroll position inside a long passage
+       every time they moved to the next question.
+     * A live counter shows how many questions in the set are still
+       unanswered, which is what makes "until all are answered" visible
+       rather than merely implied.
+     ------------------------------------------------------------------ */
+  let _lastGroup = -1;
+  function paintPassage() {
+    const pane = document.getElementById('qpassage');
+    if (!pane) return;
+    const q = state.questions[state.current];
+    const gi = q ? state.groupOf[q.id] : undefined;
+
+    if (gi == null) { pane.hidden = true; pane.innerHTML = ''; _lastGroup = -1; return; }
+
+    const g = state.groups[gi];
+    if (gi !== _lastGroup) {
+      _lastGroup = gi;
+      pane.hidden = false;
+      placePane();
+      pane.innerHTML =
+        /* The sticky positioning lives on #qpassage, NOT here. A sticky
+           element is confined to its own containing block, so putting it on
+           this <section> pinned it inside the one-element wrapper div and it
+           scrolled away with the page — which is exactly the failure this
+           feature exists to prevent. */
+        '<section class="card cbt-passage" style="max-height:42vh;overflow:auto;' +
+          'border-left:4px solid var(--accent,#964eec);background:var(--card,#fff);' +
+          'box-shadow:0 6px 18px -12px rgba(0,0,0,.4)">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">' +
+            '<strong style="font-size:.82rem;text-transform:uppercase;letter-spacing:.05em">' +
+              (g.section ? TC.esc(g.section) : 'Read this passage / stimulus') + '</strong>' +
+            '<span class="muted" id="pg-count" style="font-size:.78rem"></span>' +
+          '</div>' +
+          (g.items[0] && g.items[0].media_url ? CBT._media(g.items[0]) : '') +
+          '<div class="cbt-rich" style="margin-top:8px;line-height:1.75">' +
+            (window.CBTRich ? CBTRich.html(g.passage) : TC.esc(g.passage)) + '</div>' +
+          '<div class="muted" style="font-size:.75rem;margin-top:8px">' +
+            'This passage stays on screen for all ' + g.items.length +
+            ' questions in this set.</div>' +
+        '</section>';
+    }
+    updatePassageCount(g);
+  }
+
+  function updatePassageCount(g) {
+    const el = document.getElementById('pg-count');
+    if (!el || !g) return;
+    const ans = answersNow() || {};
+    const done = g.items.filter((it) => {
+      const v = ans[it.id];
+      return !(v == null || v === '' || (Array.isArray(v) && !v.length));
+    }).length;
+    el.textContent = done + ' of ' + g.items.length + ' answered';
+    el.style.color = (done === g.items.length) ? 'var(--success,#059669)' : '';
+  }
 
   const step = (delta) => {
     const vis = state.visible();
@@ -314,6 +477,50 @@ document.getElementById('start').onclick = async () => {
 
   document.getElementById('prevq').onclick = () => step(-1);
   document.getElementById('nextq').onclick = () => step(1);
+
+  /* ------------------------------------------------------------------
+     V39 item 4 — READ-ALOUD (free tools only).
+     assets/js/cbt-speech.js drives the browser's built-in speechSynthesis:
+     no API key, no per-character cost, no network on most devices, so it
+     works on the same free tier as everything else here.
+
+     It reads CBTRich.plain(), not the raw cell, so a fraction is spoken as
+     "the fraction 3x plus 6 over 9" rather than the voice stumbling over
+     backslash f r a c. It is opt-in per question, and it is silenced on
+     every navigation and on submit so audio never trails a candidate into
+     the next question.
+
+     Suppressed when the paper is set to no_readaloud, e.g. a listening or
+     reading-fluency paper where hearing the text would void the construct.
+     ------------------------------------------------------------------ */
+  if (window.CBTSpeech && exam.read_aloud !== false) {
+    CBTSpeech.setEnabled(true);
+    CBTSpeech.mount(document.getElementById('qspeech'), {
+      getQuestion: () => {
+        const q = state.questions[state.current];
+        if (!q) return null;
+        /* Read the passage only on the FIRST question of a set — a
+           candidate on question 4 of 5 wants the question, not four
+           minutes of passage again. They can return to question 1 to
+           hear it, or press the passage's own play control. */
+        const gi = state.groupOf[q.id];
+        const first = (gi != null) && state.groups[gi].items[0] === q;
+        return Object.assign({}, q, {
+          passage: first ? (state.groups[gi].passage || '') : ''
+        });
+      }
+    });
+  } else if (window.CBTSpeech) {
+    CBTSpeech.setEnabled(false);
+  }
+
+  /* Keep the "n of m answered" badge on the pinned passage honest as the
+     candidate works, without repainting the passage itself. */
+  document.getElementById('qbox').addEventListener('change', () => {
+    const q = state.questions[state.current];
+    const gi = q ? state.groupOf[q.id] : undefined;
+    if (gi != null) updatePassageCount(state.groups[gi]);
+  });
 
   /* Keyboard navigation. Arrow keys are ignored while the candidate is
      typing into a short-answer box, or they could not use the arrows to
@@ -360,6 +567,9 @@ document.getElementById('start').onclick = async () => {
 };
 
 async function finish() {
+  /* V39 item 4 — silence any read-aloud the moment the paper is submitted, so
+     a queued utterance cannot keep speaking a question over the results screen. */
+  if (window.CBTSpeech) CBTSpeech.stop();
   clearTimeout(state._t);
   Proctor.stop();
   const kitViolations = (window.ExamKit && ExamKit.stopAntiCheat()) || [];

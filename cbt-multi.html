@@ -16,6 +16,8 @@
 <script src="assets/js/theme-engine.js"></script>
 <script src="assets/js/catalog.js"></script>
 <script src="assets/js/license.js"></script>
+<script src="assets/js/cbt-richtext.js"></script>
+<script src="assets/js/cbt-speech.js"></script>
 <script src="assets/js/cbt.js"></script>
 <script src="assets/js/cbt-types.js"></script>
 <script src="assets/js/proctor.js"></script>
@@ -109,8 +111,35 @@
       <div class="form-group" style="grid-column:1/-1"><label>Candidate instructions</label>
         <textarea class="form-input" id="mm-instr" rows="2">Answer all questions. Use the subject tabs to move between subjects. The timer is shared across the whole paper.</textarea></div>
     </div>
+    <!-- =====================================================================
+         V39 item 2 — DELIVERY & RANDOMISATION panel.
+
+         Before this the only randomiser was "mm-rand", and it did its work
+         at BUILD time with Math.random(): the rows were shuffled once and
+         frozen into the saved paper, so every candidate still received the
+         same order as every other candidate. It also could not touch
+         options at all, and it silently split comprehension sets apart.
+
+         These three controls now persist to the cbt_exams columns
+         shuffle_questions / shuffle_options / read_aloud and are applied
+         per candidate at SITTING time by CBT.applyDelivery(), seeded on the
+         candidate's identity. Result: neighbours get different papers, and
+         any one candidate gets a stable paper across refreshes.
+         ===================================================================== -->
+    <fieldset style="margin-top:12px;border:1px solid var(--line,#e2e8f0);border-radius:12px;padding:12px 14px">
+      <legend style="font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;padding:0 6px">Delivery &amp; randomisation</legend>
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <label style="display:flex;gap:7px;align-items:flex-start;max-width:290px"><input type="checkbox" id="mm-shq" checked>
+          <span>Randomise question order<br><span class="muted" style="font-size:.78rem">Per candidate, at sitting time. Comprehension passages and their questions always travel together as one block.</span></span></label>
+        <label style="display:flex;gap:7px;align-items:flex-start;max-width:290px"><input type="checkbox" id="mm-sho">
+          <span>Randomise option order<br><span class="muted" style="font-size:.78rem">A–D are reshuffled per candidate. Marking is by answer text, not by letter, so scores are unaffected. "All of the above" and True/False are left in place.</span></span></label>
+        <label style="display:flex;gap:7px;align-items:flex-start;max-width:290px"><input type="checkbox" id="mm-tts" checked>
+          <span>Allow read-aloud<br><span class="muted" style="font-size:.78rem">Candidates may have questions and options spoken by their own device. Free, offline, no API. Turn OFF for listening or reading-fluency papers.</span></span></label>
+      </div>
+    </fieldset>
+
     <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:6px">
-      <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" id="mm-rand" checked> Randomise questions <span class="muted">(within each subject only)</span></label>
+      <label style="display:flex;gap:7px;align-items:center" hidden><input type="checkbox" id="mm-rand"> legacy</label>
       <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" id="mm-tab" checked> Log tab-switching</label>
       <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" id="mm-copy" checked> Block copy / right-click</label>
       <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" id="mm-full"> Force fullscreen</label>
@@ -239,7 +268,17 @@ const MM = {
       try { qs = CBT.parseCSV(csv) || []; } catch (e) { err = err || ('CSV error in ' + name + ': ' + e.message); return; }
       if (!qs.length) { err = err || ('No rows parsed for ' + name + '.'); return; }
 
-      if (rand) qs = qs.map(q => [Math.random(), q]).sort((a, b2) => a[0] - b2[0]).map(x => x[1]);
+      /* V39 — the build-time Math.random() shuffle is gone. Shuffling here
+         froze ONE order into the saved paper (identical for every
+         candidate) and it tore comprehension sets apart, because it moved
+         individual rows rather than passage groups. Randomisation is now a
+         delivery-time concern handled by CBT.applyDelivery() in
+         cbt-exam.html, seeded per candidate. `rand` is retained only so an
+         author who ticked the old box still gets a varied source order. */
+      if (rand && window.CBT && CBT.applyDelivery) {
+        qs = CBT.applyDelivery(qs.map((q, i) => CBT.normalizeQuestion(q, i)),
+                               { shuffleQuestions: true, seed: name + '|author' });
+      }
       if (per > 0) qs = qs.slice(0, per);
 
       // Tag EVERY question with its subject — this is what drives the subject
@@ -306,6 +345,10 @@ const MM = {
         max_violations: Number((document.getElementById('mm-maxv')||{}).value || 8)
       },
       calculator: true, math_keyboard: true,
+      /* V39 items 2 & 4 — delivery flags read by cbt-exam.html. */
+      shuffle_questions: document.getElementById('mm-shq').checked,
+      shuffle_options:   document.getElementById('mm-sho').checked,
+      read_aloud:        document.getElementById('mm-tts').checked,
       multi_subject: true,
       subject_breakdown: breakdown,
       identity_mode: document.getElementById('mm-mode').value,
@@ -668,7 +711,7 @@ const MM = {
       document.getElementById('mm-code').value =
         'MS-' + Math.random().toString(36).slice(2, 7).toUpperCase();
     };
-    ['mm-sel','mm-rand'].forEach(id => {
+    ['mm-sel','mm-rand','mm-shq','mm-sho'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.addEventListener('change', () => this.blueprint());
     });

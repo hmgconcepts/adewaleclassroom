@@ -64,6 +64,8 @@
 <script src="assets/js/enterprise.js"></script>
 <script src="assets/js/crud.js"></script>
 <script src="assets/js/insights.js"></script>
+<script src="assets/js/cbt-richtext.js"></script>
+<script src="assets/js/cbt-speech.js"></script>
 <script src="assets/js/cbt.js"></script>
 <script src="assets/js/cbt-types.js"></script>
 <script src="assets/js/proctor.js"></script>
@@ -371,8 +373,12 @@
                 { key: 'duration_min', label: 'Minutes', type: 'number' },
                 { key: 'pass_mark', label: 'Pass mark %', type: 'number' },
                 { key: 'questions_to_serve', label: 'Questions to serve (0 = all)', type: 'number' },
-                { key: 'shuffle_questions', label: 'Shuffle questions', type: 'checkbox' },
-                { key: 'shuffle_options', label: 'Shuffle options', type: 'checkbox' },
+                /* V39 — these two were always here but the exam runtime
+                   ignored them until cbt-exam.html learned to call
+                   CBT.applyDelivery(). They are live settings now. */
+                { key: 'shuffle_questions', label: 'Shuffle question order (per candidate)', type: 'checkbox' },
+                { key: 'shuffle_options', label: 'Shuffle option order (per candidate)', type: 'checkbox' },
+                { key: 'read_aloud', label: 'Allow read-aloud (text to speech)', type: 'checkbox' },
                 { key: 'calculator', label: 'Allow calculator', type: 'checkbox' },
                 { key: 'math_keyboard', label: 'Allow maths keyboard', type: 'checkbox' },
                 { key: 'show_review', label: 'Release review after submit', type: 'checkbox' },
