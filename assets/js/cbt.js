@@ -156,6 +156,43 @@ const CBT = {
        marking queue can find it. */
     const _tutorMarked = this.TUTOR_MARKED_TYPES.indexOf(type) > -1;
 
+    /* ---------------------------------------------------------------------
+       V39 items 3 & 5 — lift the stimulus out of the structured Items cell.
+
+       The 17-column HMG header has no Passage column and no Media column:
+       both live inside Col14 (Items) as JSON, which is exactly what the
+       case_study, image and passage-set prompts instruct. Until now only
+       cbt-types.js looked inside there, so CBT.normalizeQuestion returned an
+       empty q.passage and an empty q.media_url for those rows. That was
+       invisible while the passage was only ever rendered by CBTTypes, but the
+       new pinned-passage pane groups on q.passage — an empty string would
+       have put every comprehension question in its own group and defeated the
+       whole feature. Same for q.media_url and the figure pane.
+
+       Flat columns still win where present; this only fills the gaps.
+       --------------------------------------------------------------------- */
+    let _passage = pick('passage','context','case_text','comprehension') || '';
+    let _media   = pick('media_url','image','audio_url','video_url','image_url') || '';
+    if (_items && typeof _items === 'object' && !Array.isArray(_items)) {
+      if (!_passage) _passage = _items.passage || _items.context || _items.text ||
+                                _items.stimulus || _items.case || '';
+      if (!_media)   _media   = _items.image || _items.media || _items.media_url ||
+                                _items.figure || _items.diagram || '';
+    }
+    /* A placeholder figure is not a URL — keep it out of the <img src>, but
+       keep it visible to the tutor so they know a link is still owed. */
+    let _mediaPending = '';
+    if (/^\s*\[\[FIGURE:/i.test(String(_media))) { _mediaPending = String(_media); _media = ''; }
+
+    /* The passage-set contract tags a set as  set:P1  in Col16 (Tags).
+       Promote it to a first-class id so CBT.passageKey groups on the author's
+       explicit intent rather than on a hash of the text — which also lets a
+       set survive a one-character typo in one row's passage. */
+    const _tags = String(pick('tags','tag','skills') || '');
+    const _setM = /(?:^|[,;|\s])set\s*:\s*([A-Za-z0-9_-]+)/i.exec(_tags);
+    const _passageId = pick('passage_id','set_id','group_id','stimulus_id') ||
+                       (_setM ? _setM[1] : '');
+
     return {
       id: pick('id') || ('q'+(idx+1)),
       _orig_index: idx,
@@ -163,14 +200,16 @@ const CBT = {
       subject: pick('subject','section','subject_section','exam_subject') || '',
       section: pick('section','subject_section','subject','exam_subject') || '',
       question: pick('question','prompt','text','question_text','questionText') || '',
-      passage: pick('passage','context','case_text','comprehension') || '',
+      passage: _passage,
+      passage_id: _passageId,
+      media_pending: _mediaPending,
       difficulty: pick('difficulty','level') || '',
       accepted_answers: pick('accept','accepted_answers','alternatives','alternates') || '',
       options,
       answer, correct: answer,
       mark: Number(pick('mark','marks','score','points') || 1) || 1,
       explanation: pick('explanation','reason','solution') || '',
-      media_url: pick('media_url','image','audio_url','video_url','image_url') || '',
+      media_url: _media,
       tolerance: pick('tolerance','margin') || '',
       /* -----------------------------------------------------------------
          ITEM 2 — the HMG Academy CBT Pro / School Connect column set.
@@ -368,12 +407,186 @@ const CBT = {
     return { got, max, pct: max ? Math.round(got / max * 1000) / 10 : 0, correct, pending, detail, subject_scores: subjects };
   },
 
+  /* ---------------------------------------------------------------------
+     V39 — RICH TEXT / MATHS  (reported item 1)
+
+     A CSV cell cannot hold a real newline, so the "Multi-Line maths/STEM"
+     prompt writes the two characters backslash+n, and it writes maths as
+     LaTeX (\frac{}{}, \sqrt{}, ^{}, matrices). Every one of those used to
+     be pushed through TC.esc() and printed to the candidate verbatim:
+
+         Solve:\n2x + 3y = 12        <- shown literally, one line
+         Simplify \frac{3x+6}{9}     <- shown literally
+
+     rich() routes display text through assets/js/cbt-richtext.js, which
+     turns literal escapes into real line breaks and the LaTeX subset into
+     real stacked fractions, surds, indices, matrices and Greek letters —
+     with no external library, so the offline PWA shell still works.
+
+     It is used ONLY where text is rendered as content. Anything going into
+     an HTML attribute (value=", src=", name=") must stay on TC.esc(),
+     because rich() legitimately returns markup.
+
+     If cbt-richtext.js is missing the fallback is the old behaviour plus
+     newline handling, so no page can break by loading this file alone.
+     --------------------------------------------------------------------- */
+  rich(x) {
+    if (window.CBTRich) return CBTRich.html(x);
+    return TC.esc(String(x == null ? '' : x).replace(/\\n/g, '\n')).replace(/\n/g, '<br>');
+  },
+
+  /* Plain-text projection of the same cell, for read-aloud and aria labels. */
+  plain(x) {
+    if (window.CBTRich) return CBTRich.plain(x);
+    return String(x == null ? '' : x).replace(/\\n/g, ' ');
+  },
+
+  /* =====================================================================
+     V39 — DELIVERY LAYER: randomisation + passage groups
+     (reported items 2 and 5)
+     ---------------------------------------------------------------------
+     WHY THE TWO LIVE TOGETHER
+     They constrain each other. You cannot shuffle a comprehension paper
+     question-by-question: doing so scatters the five questions that belong
+     to Passage A among the five that belong to Passage B, and the pinned
+     passage would then have to change on every card. So the shuffler works
+     on GROUPS. A group is either a single standalone question or a whole
+     passage set, and a passage set is always emitted contiguously and in
+     its authored order.
+
+     WHY SEEDED, NOT Math.random()
+     cbt-multi.html used Math.random(). That reshuffles on every repaint and
+     on browser refresh, so a candidate who reloaded mid-exam got a
+     different paper and lost their place, and two candidates disputing a
+     result could never be shown the same paper again. seededShuffle is
+     deterministic: the same seed always yields the same order. The seed is
+     the candidate's identity plus the exam code, so every candidate gets a
+     genuinely different paper, but any one candidate gets the SAME paper
+     every time it is rebuilt — on refresh, on review, and in a dispute.
+
+     WHY SHUFFLING OPTIONS IS SAFE HERE
+     Verified before writing this: CBT.normalizeQuestion resolves the
+     CorrectAnswer letter (A–F) to the option TEXT at import time, and both
+     graders (CBT.gradeOne and CBTTypes.grade) compare by normalised value,
+     never by index. Moving an option therefore cannot change the mark. The
+     original letter order is kept on q._orig_options for the review sheet.
+
+     Options are NOT shuffled when any option is positional, because
+     "All of the above" / "None of the above" / "Both A and B" stop making
+     sense once moved. Those are detected and pinned to the bottom.
+     ===================================================================== */
+
+  /* Deterministic shuffle. Same seed in, same order out, forever. */
+  seededShuffle(arr, seed) {
+    const a = arr.slice();
+    let h = 2166136261 >>> 0;
+    const str = String(seed == null ? '' : seed);
+    for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    const rnd = () => { h ^= h << 13; h >>>= 0; h ^= h >> 17; h ^= h << 5; h >>>= 0; return h / 4294967296; };
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  },
+
+  /* Options whose meaning depends on their position must not move. */
+  POSITIONAL: /^\s*(all|none|both|neither|any)\s+(of\s+)?(the\s+)?(above|these|below|others)|^\s*(a\s*(and|&|,)\s*b|b\s*(and|&|,)\s*c|i\s+and\s+ii)/i,
+
+  /* A stable key identifying which passage/stimulus a question hangs off.
+     Explicit ids win; otherwise the passage text itself is the identity, so
+     a CSV that simply repeats the passage in every row (which is what the
+     comprehension prompt instructs) groups correctly with no extra column. */
+  passageKey(q) {
+    if (!q) return '';
+    if (q.passage_id) return 'pid:' + q.passage_id;
+    if (q.group_id) return 'gid:' + q.group_id;
+    const p = String(q.passage || '').trim();
+    if (!p) return '';
+    let h = 5381;
+    for (let i = 0; i < p.length; i++) h = ((h << 5) + h + p.charCodeAt(i)) | 0;
+    return 'ptxt:' + (h >>> 0).toString(36) + ':' + p.length;
+  },
+
+  /* Collapse a flat question list into ordered delivery groups. */
+  groupPassages(questions) {
+    const groups = [];
+    const index = {};
+    (questions || []).forEach((q) => {
+      const key = this.passageKey(q);
+      if (!key) { groups.push({ key: '', passage: '', items: [q], standalone: true }); return; }
+      if (index[key] == null) {
+        index[key] = groups.length;
+        groups.push({ key, passage: q.passage || '', section: q.section || '', items: [], standalone: false });
+      }
+      groups[index[key]].items.push(q);
+    });
+    return groups;
+  },
+
+  /* ---------------------------------------------------------------------
+     applyDelivery(questions, opts) -> new ordered array
+
+     opts.shuffleQuestions  shuffle group order            (default false)
+     opts.shuffleOptions    shuffle options within an item (default false)
+     opts.seed              candidate+exam identity string
+     opts.serve             serve only the first N groups' worth of items
+     --------------------------------------------------------------------- */
+  applyDelivery(questions, opts) {
+    const o = opts || {};
+    const seed = String(o.seed || 'default');
+    let groups = this.groupPassages(questions || []);
+
+    if (o.shuffleQuestions) {
+      groups = this.seededShuffle(groups, seed + '|groups');
+      /* Inside a standalone-only group there is nothing to reorder, but a
+         passage set keeps its authored order: question 3 of a comprehension
+         often refers to "the answer to question 2". */
+    }
+
+    let out = [];
+    groups.forEach((g) => { out = out.concat(g.items); });
+
+    if (o.serve && o.serve > 0 && o.serve < out.length) out = out.slice(0, o.serve);
+
+    if (o.shuffleOptions) {
+      out = out.map((q) => {
+        const opts2 = q.options;
+        if (!Array.isArray(opts2) || opts2.length < 2) return q;
+        /* True/False and Yes/No read wrong when reversed. */
+        const joined = opts2.map((x) => String(x).trim().toLowerCase()).join('|');
+        if (joined === 'true|false' || joined === 'false|true' ||
+            joined === 'yes|no' || joined === 'no|yes') return q;
+
+        const movable = [], pinned = [];
+        opts2.forEach((x) => { (this.POSITIONAL.test(String(x)) ? pinned : movable).push(x); });
+        if (movable.length < 2) return q;
+
+        const q2 = Object.assign({}, q);
+        q2._orig_options = opts2.slice();
+        q2.options = this.seededShuffle(movable, seed + '|o|' + q.id).concat(pinned);
+        return q2;
+      });
+    }
+
+    /* Re-stamp the display index so the palette and progress read 1..N in
+       the order the candidate actually sees, while _orig_index still points
+       back at the CSV row for the marking sheet. */
+    out.forEach((q, i) => { q._display_index = i; });
+    return out;
+  },
+
+  /* Build the per-candidate seed. Same candidate + same paper = same order. */
+  deliverySeed(exam, candidate) {
+    return [
+      (exam && (exam.code || exam.id)) || 'exam',
+      (candidate && (candidate.student_no || candidate.full_name)) || 'guest'
+    ].join('::').toLowerCase();
+  },
+
   renderQuestion(q, i, locked) {
     const name = 'q_' + q.id;
     const wrap = (inner) => `<article class="card cbt-q" data-qid="${q.id}" style="margin-bottom:12px">
       <div class="muted" style="font-size:.75rem;text-transform:uppercase">${i+1} · ${this.TYPE_LABEL[q.type]||q.type}${q.subject?' · '+q.subject:''} · ${q.mark} mark(s)</div>
-      ${q.passage ? `<blockquote style="border-left:3px solid var(--accent);padding-left:10px;margin:8px 0">${TC.esc(q.passage)}</blockquote>` : ''}
-      <p style="font-weight:700;margin:8px 0">${TC.esc(q.question)}</p>
+      ${(q.passage && !q._passage_pinned) ? `<blockquote style="border-left:3px solid var(--accent);padding-left:10px;margin:8px 0">${this.rich(q.passage)}</blockquote>` : ''}
+      <p style="font-weight:700;margin:8px 0">${this.rich(q.question)}</p>
       ${q.media_url ? this._media(q) : ''}
       ${inner}
     </article>`;
@@ -403,10 +616,10 @@ const CBT = {
     }
 
     if (['mcq','true_false','image_based'].includes(q.type)) {
-      return wrap((q.options||[]).map((o,oi) => `<label style="display:block;padding:6px 0"><input type="radio" name="${name}" value="${TC.esc(o)}" ${dis}> ${TC.esc(o)}</label>`).join(''));
+      return wrap((q.options||[]).map((o,oi) => `<label style="display:block;padding:6px 0"><input type="radio" name="${name}" value="${TC.esc(o)}" ${dis}> ${this.rich(o)}</label>`).join(''));
     }
     if (q.type === 'multi_select') {
-      return wrap((q.options||[]).map(o => `<label style="display:block;padding:6px 0"><input type="checkbox" name="${name}" value="${TC.esc(o)}" ${dis}> ${TC.esc(o)}</label>`).join(''));
+      return wrap((q.options||[]).map(o => `<label style="display:block;padding:6px 0"><input type="checkbox" name="${name}" value="${TC.esc(o)}" ${dis}> ${this.rich(o)}</label>`).join(''));
     }
     if (['essay','case_study','comprehension','oral_prompt','peer_review','citation','true_false_justify','cloze','error_spotting','data_interpretation','graph_read'].includes(q.type)) {
       return wrap(`${q.media_url && window.Media ? Media.card(q.media_url, 'Stimulus') : ''}
@@ -416,7 +629,7 @@ const CBT = {
       return wrap([1,2,3,4,5].map(n => `<label style="margin-right:10px"><input type="radio" name="${name}" value="${n}" ${dis}> ${n}</label>`).join(''));
     }
     if (q.type === 'assertion_reason' || q.type === 'scenario_mcq' || q.type === 'classification') {
-      return wrap((q.options||['A','B','C','D']).map(o => `<label style="display:block;padding:6px 0"><input type="radio" name="${name}" value="${TC.esc(o)}" ${dis}> ${TC.esc(o)}</label>`).join(''));
+      return wrap((q.options||['A','B','C','D']).map(o => `<label style="display:block;padding:6px 0"><input type="radio" name="${name}" value="${TC.esc(o)}" ${dis}> ${this.rich(o)}</label>`).join(''));
     }
     if (q.type === 'audio_based') {
       return wrap(`${q.media_url?`<audio controls src="${TC.esc(q.media_url)}"></audio>`:''}<input class="form-input" name="${name}" ${dis} placeholder="Your answer">`);
@@ -426,7 +639,7 @@ const CBT = {
     }
     if (q.type === 'ordering' || q.type === 'drag_drop') {
       return wrap(`<p class="muted">Type the items in the correct order, separated by commas.</p>
-        <div class="muted">${(q.options||[]).map(o=>TC.esc(o)).join(' · ')}</div>
+        <div class="muted">${(q.options||[]).map(o=>this.rich(o)).join(' · ')}</div>
         <input class="form-input" name="${name}" ${dis} placeholder="first, second, third">`);
     }
     if (q.type === 'matching') {
@@ -503,12 +716,12 @@ const CBT = {
       const state = d.pending ? 'pending' : d.ok ? 'right' : (blank ? 'blank' : 'wrong');
       return `<section class="rv-q" data-state="${state}" style="border:1px solid #e4ddd2;border-radius:12px;padding:12px;margin:10px 0;background:${tone}">
         <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:.04em">${i+1} · ${label} · ${d.mark}/${d.max}${d.subject?' · '+TC.esc(d.subject):''}${d.type?' · '+TC.esc(d.type):''}</div>
-        ${d.passage ? `<blockquote style="border-left:3px solid #964eec;padding-left:10px;margin:8px 0;white-space:pre-wrap">${TC.esc(d.passage)}</blockquote>` : ''}
+        ${d.passage ? `<blockquote style="border-left:3px solid #964eec;padding-left:10px;margin:8px 0;">${CBT.rich(d.passage)}</blockquote>` : ''}
         ${mediaBlock(d)}
-        <p style="font-weight:700;white-space:pre-wrap">${TC.esc(d.question)}</p>
-        <p><b>Your answer:</b> <span style="white-space:pre-wrap">${TC.esc(givenRaw)}</span></p>
-        <p><b>Correct answer:</b> <span style="white-space:pre-wrap">${TC.esc(Array.isArray(d.correct)?d.correct.join(', '):d.correct)}</span></p>
-        ${d.explanation ? `<p><b>Why:</b> <span style="white-space:pre-wrap">${TC.esc(d.explanation)}</span></p>` : ''}
+        <p style="font-weight:700">${CBT.rich(d.question)}</p>
+        <p><b>Your answer:</b> <span>${CBT.rich(givenRaw)}</span></p>
+        <p><b>Correct answer:</b> <span>${CBT.rich(Array.isArray(d.correct)?d.correct.join(', '):d.correct)}</span></p>
+        ${d.explanation ? `<p><b>Why:</b> <span>${CBT.rich(d.explanation)}</span></p>` : ''}
       </section>`;
     }).join('');
     const subj = Object.keys(result.subject_scores||{}).length > 1
@@ -708,6 +921,92 @@ const CBT = {
     return types.map(function (t) { return R[t]; }).filter(Boolean).join('\n\n');
   },
 
+
+  /* =====================================================================
+     V39 item 6 — THE UNIVERSAL EXPLANATION STANDARD
+
+     Reported: "For ALL question types the explanation / correct answer /
+     why must be detailed, comprehensive, unambiguous, clear and
+     understandable, so students reviewing their CBT can understand their
+     errors."
+
+     Before this, each pack carried its own one-line wish about
+     explanations ("Explanations show the working") and most packs said
+     nothing at all, so a generator would happily emit Col7 = "B is
+     correct." A learner reading that on cbt-review.html learns nothing:
+     they already know they got it wrong.
+
+     This block is injected into EVERY generated prompt, ahead of the
+     pack-specific sections, so it cannot be forgotten by a pack author and
+     cannot be diluted by a pack that only cares about its own format. It
+     is deliberately written as a fixed four-move structure with a minimum
+     word count, because "be detailed" is advice a model ignores, while
+     "name the misconception behind each wrong option" is an instruction it
+     can be graded against — and the FINAL CHECK list below grades it.
+     ===================================================================== */
+  EXPLANATION_STANDARD: [
+    'Col7 (Explanation) is the single most valuable column in the file. It is',
+    'the only teaching the learner receives after the paper closes. Treat it as',
+    'a marking-scheme entry written for a learner sitting alone, not as a note',
+    'to a colleague.',
+    '',
+    'EVERY row — every type, including numeric, matching, ordering, essay and',
+    'code — must carry an explanation with these FOUR MOVES, in this order:',
+    '',
+    '  MOVE 1 — VERDICT. State the correct answer in full words, not just a',
+    '           letter. Write "The correct answer is 3/4, option C" and never',
+    '           "C" or "Option C is correct". The letter may have moved: this',
+    '           platform can randomise option order per candidate, so a review',
+    '           sheet that only says "B" is meaningless to the learner reading it.',
+    '',
+    '  MOVE 2 — REASONING. Show HOW the answer is reached, step by numbered',
+    '           step. For calculations, every line of working, with the rule or',
+    '           formula named at the step where it is used ("multiply both sides',
+    '           by the LCM, 6"). For language items, quote the exact words from',
+    '           the passage or option that decide it. For factual items, give the',
+    '           principle, then apply it to this specific stem. Never write',
+    '           "by simple calculation" or "as we know" — that is the exact',
+    '           sentence the struggling learner cannot fill in.',
+    '',
+    '  MOVE 3 — THE DISTRACTOR AUTOPSY. Take each wrong option in turn and name',
+    '           the SPECIFIC misconception or slip that produces it: "Option A,',
+    '           7/12, comes from adding the numerators and the denominators',
+    '           separately." A learner who chose A must be able to find their own',
+    '           mistake described in words. This move is what turns a score into',
+    '           a diagnosis, and it is mandatory on every option-based item.',
+    '',
+    '  MOVE 4 — THE TAKEAWAY. One sentence naming the transferable rule or the',
+    '           checkpoint that prevents the error next time ("Always convert to',
+    '           a common denominator before adding fractions").',
+    '',
+    'LENGTH AND FORM',
+    '  - Minimum 45 words for a one-mark objective item; 80 or more for numeric,',
+    '    multi-part, case-study, essay and code items. There is no upper limit',
+    '    that matters: a long, clear explanation costs the platform nothing.',
+    '  - Number the reasoning steps 1) 2) 3) and put each on its own line using',
+    '    the literal two-character sequence \\n. The review screen renders those',
+    '    as real line breaks, so a wall of text is never necessary.',
+    '  - Encode any maths in the explanation exactly as it is encoded in the',
+    '    stem, so the learner sees the same notation twice.',
+    '  - Plain language at the learner\'s reading age. Define any technical term',
+    '    the moment it is used.',
+    '  - Self-contained: never write "see above", "as explained in question 4",',
+    '    "refer to your notes" or "the diagram makes this obvious". The learner',
+    '    may be reviewing this one row on a phone, out of order, weeks later.',
+    '',
+    'FOR TYPES WITH NO WRONG OPTIONS TO DISSECT',
+    '  - numeric / multi_numeric: show the substitution and the arithmetic, state',
+    '    the unit, and name the two most common wrong answers and what causes',
+    '    them (usually a unit slip or a rounding slip).',
+    '  - matching / ordering / categorization: justify EVERY pair or position,',
+    '    not only the difficult ones, and name the pair most often swapped.',
+    '  - essay / code: give the full mark-scheme — the points that earn credit,',
+    '    the weight of each, a model answer or reference solution, and the two',
+    '    most common ways candidates lose marks.',
+    '  - fill_blank / short: list every accepted variant spelling or phrasing and',
+    '    say plainly why a near-miss is or is not accepted.'
+  ].join('\n'),
+
   /* Scale a pack's reference mix to the requested count. The remainder is
      pushed onto the pack's own dominant type, so the total is always exact. */
   _mix(ref, n, dominant, minOne) {
@@ -760,64 +1059,496 @@ const CBT = {
       ref: { multi_numeric: 5, matrix: 4, numeric: 4, mcq: 4, short: 2, case_study: 1 },
       dominant: 'multi_numeric',
       sections: [
-        ['ENCODING RULES (MANDATORY)',
-         'Tutoring Connect stores each CSV cell as plain text. For multi-line maths you MUST follow these conventions so the student screen is unambiguous:\\n' +
-         '1. LINE BREAKS inside a cell: use the literal two-character sequence \\\\n (backslash-n) OR a real newline wrapped in quotes in the CSV.\\n' +
-         '2. STACKED FRACTIONS: write  (numerator) / (denominator)  on one line when short; for tall fractions write:\\n' +
-         '     \\\\frac{NUM}{DEN}   or   NUM\\n-----\\n DEN\\n' +
-         '   Prefer \\\\frac{…}{…} — the exam renderer keeps it monospaced with pre-wrap.\\n' +
-         '3. MATRICES: write rows separated by \\\\n and columns by spaces or & :\\n' +
-         '     [ a  b ]\\\\n[ c  d ]   or   \\\\begin{matrix} a & b \\\\\\\\ c & d \\\\end{matrix}\\n' +
-         '4. SIMULTANEOUS EQUATIONS: one equation per line with \\\\n.\\n' +
-         '5. INDICES / LOGS / EXP: use ^ for powers (x^2, e^{2x}, log_10) and keep the whole expression on one visual block.\\n' +
-         '6. NEVER paste a screenshot of maths into Col1. Text only. Diagrams go in Col media_url as an https/Drive LINK.\\n' +
-         '7. Put worked steps in Explanation with the same encoding, numbered 1) 2) 3).'],
+        ['ENCODING RULES (MANDATORY) — WHAT THE RENDERER ACTUALLY SUPPORTS',
+         'These rules are not stylistic advice. assets/js/cbt-richtext.js parses exactly\\n' +
+         'this subset and draws it as real typeset maths on the candidate screen — real\\n' +
+         'stacked fractions with a horizontal bar, real surds, real raised indices, real\\n' +
+         'bracketed matrices. Anything outside the subset is shown as plain text, so\\n' +
+         'staying inside it is what separates a professional paper from an unreadable one.\\n' +
+         '\\n' +
+         '1. LINE BREAKS. A CSV cell cannot hold a real newline safely, so write the\\n' +
+         '   literal two-character sequence \\\\n. The renderer converts it to a real line\\n' +
+         '   break. Use it freely — one equation per line is always clearer than a\\n' +
+         '   semicolon-separated run-on.\\n' +
+         '   Example: "Solve the simultaneous equations:\\\\n2x + 3y = 12\\\\nx - y = 1"\\n' +
+         '   NOTE: \\\\n is safe next to maths commands. \\\\neq still renders as the not-equal\\n' +
+         '   sign, because the renderer matches known commands before escapes.\\n' +
+         '\\n' +
+         '2. FRACTIONS. Always \\\\frac{NUMERATOR}{DENOMINATOR}. Never "3x+6/9", which is\\n' +
+         '   ambiguous, and never an ASCII-art bar made of hyphens.\\n' +
+         '   Nested and algebraic fractions are supported: \\\\frac{\\\\frac{1}{x}+2}{x-1}\\n' +
+         '\\n' +
+         '3. INDICES AND SUBSCRIPTS. x^2, e^{2x}, a_1, \\\\log_{10}. Brace anything longer\\n' +
+         '   than one character: x^{n+1}, not x^n+1.\\n' +
+         '\\n' +
+         '4. ROOTS. \\\\sqrt{18} and \\\\sqrt[3]{27}. The index is drawn in the correct place.\\n' +
+         '\\n' +
+         '5. MATRICES AND DETERMINANTS. Use a real environment — columns separated by &,\\n' +
+         '   rows by \\\\\\\\ :\\n' +
+         '     \\\\begin{pmatrix} 2 & -1 \\\\\\\\ 3 & 4 \\\\end{pmatrix}   round brackets\\n' +
+         '     \\\\begin{bmatrix} ... \\\\end{bmatrix}                square brackets\\n' +
+         '     \\\\begin{vmatrix} ... \\\\end{vmatrix}                determinant bars\\n' +
+         '   These are drawn as a properly aligned grid with full-height brackets.\\n' +
+         '\\n' +
+         '6. PIECEWISE AND SYSTEMS. \\\\begin{cases} x^2 & x>0 \\\\\\\\ -x & x\\\\le 0 \\\\end{cases}\\n' +
+         '\\n' +
+         '7. OPERATORS AND SYMBOLS, by name, not by lookalike character:\\n' +
+         '   \\\\times \\\\div \\\\pm \\\\cdot \\\\le \\\\ge \\\\ne \\\\approx \\\\equiv \\\\propto \\\\infty\\n' +
+         '   \\\\therefore \\\\because \\\\angle \\\\perp \\\\parallel \\\\to \\\\Rightarrow \\\\degree\\n' +
+         '   \\\\sum \\\\prod \\\\int \\\\partial \\\\nabla \\\\lim \\\\log \\\\ln \\\\sin \\\\cos \\\\tan \\\\det\\n' +
+         '   Greek by name: \\\\alpha \\\\beta \\\\theta \\\\pi \\\\lambda \\\\mu \\\\sigma \\\\Delta \\\\Omega\\n' +
+         '   Write \\\\theta, never the bare character, and never the letter O for zero.\\n' +
+         '\\n' +
+         '8. WORDS INSIDE MATHS go in \\\\text{...} so they are not italicised letter by\\n' +
+         '   letter: \\\\frac{\\\\text{distance}}{\\\\text{time}}\\n' +
+         '\\n' +
+         '9. DELIMITERS ARE OPTIONAL. $...$ and $$...$$ are honoured if you use them, and\\n' +
+         '   $$...$$ centres the expression on its own line — good for a display equation\\n' +
+         '   the candidate must read carefully. Bare commands in running prose also work,\\n' +
+         '   so you never have to choose between readable prose and correct notation.\\n' +
+         '\\n' +
+         '10. NEVER paste an image of maths into Col1. Text only. Genuine diagrams\\n' +
+         '    (graphs, geometric figures) go in Col14 as {"image":"https://..."}.\\n' +
+         '\\n' +
+         '11. THE SAME ENCODING APPLIES TO OPTIONS (Cols 2-5), to CorrectAnswer (Col6)\\n' +
+         '    and to Explanation (Col7). An option reading \\\\frac{3}{4} is drawn as a\\n' +
+         '    real fraction inside its radio button. Do not flatten options to "3/4"\\n' +
+         '    while the stem uses \\\\frac — the candidate must see one consistent notation.'],
+        ['READ-ALOUD SAFETY',
+         'Candidates may ask the platform to read an item aloud, and it speaks the maths\\n' +
+         'in words: \\\\frac{3x+6}{9} is read as "the fraction 3x plus 6, over 9". This only\\n' +
+         'works if you use the commands above. A fraction typed as "3x+6/9" is read as\\n' +
+         '"3x plus 6 divided by 9", which is a DIFFERENT question and would mark a\\n' +
+         'listening candidate wrong through no fault of their own.\\n' +
+         'Corollary: never rely on layout alone to carry meaning. If a bracket matters,\\n' +
+         'write the bracket.'],
         ['TYPE CHOICE',
-         '• Single numeric answer → type numeric (Col8), answer in Col7, tolerance in Col12 if needed.\\n' +
-         '• Several related blanks (e.g. x=…, y=…) → multi_numeric with JSON parts in Col14.\\n' +
-         '• Same options across several statements → matrix.\\n' +
-         '• Show a worked diagram (graph, shape) → image_mcq / image_based with media_url link + text fallback in Col1.'],
+         'Choose the type that matches the mathematics, not the type that is easiest to\\n' +
+         'write. Forcing a multi-step problem into a four-option MCQ tests guessing.\\n' +
+         '- Single value → numeric (Col6 the value, Col9 a tolerance, Col10 the unit).\\n' +
+         '- Several related blanks (x = ..., y = ...) → multi_numeric, parts in Col14.\\n' +
+         '- The same option set applied to several statements → matrix.\\n' +
+         '- A method or ordering that must be sequenced → ordering.\\n' +
+         '- A graph or geometric figure is genuinely required → image_mcq with a link\\n' +
+         '  in Col14 AND a full text description in Col1.'],
         ['TOPIC COVERAGE',
-         'Spread items across: fractions/algebraic fractions, indices & surds, logarithms, exponential equations, simultaneous equations (2×2 and simple 3×3), matrices (2×2 ops), polynomials (factor/remainder), differentiation, integration, and basic statistics (mean/median/SD). Tag Col16 with the sub-skill.']
+         'Spread items across: algebraic fractions, indices and surds, logarithms,\\n' +
+         'exponential equations, simultaneous equations (2x2 and simple 3x3), matrices\\n' +
+         'and determinants, polynomials (factor and remainder theorems), differentiation,\\n' +
+         'integration, and statistics (mean, median, standard deviation). Tag the\\n' +
+         'sub-skill in Col16 so the studio can see which skill a learner is failing.']
       ],
       quality: [
-        'Every multi-line expression uses \\\\frac, matrix block, or explicit \\\\n — never a flattened unreadable line.',
-        'Every numeric item has a defensible key and a realistic tolerance where appropriate.',
-        'Explanations show the working with the SAME encoding the learner saw.',
-        'No item requires the learner to guess formatting; the stem states the expected form (e.g. \"leave as a simplified improper fraction\").'
+        'Every fraction uses \\\\frac{}{}. A search of the file for a bare "/" between two',
+        '  multi-character expressions returns nothing.',
+        'Every matrix uses a pmatrix/bmatrix/vmatrix environment, never ASCII brackets.',
+        'Every line break inside a cell is the literal \\\\n. No cell is one long run-on.',
+        'Stems, options, keys and explanations all use the SAME notation as each other.',
+        'Every numeric item states the required form ("give your answer as a simplified',
+        '  improper fraction", "correct to 2 decimal places") and has a defensible',
+        '  tolerance in Col9 where rounding is possible.',
+        'The paper reads correctly when spoken aloud, not only when seen.'
       ]
     },
 
+    /* ------------------------------------------------------------------
+       V39 item 3 — IMAGE / DIAGRAM STIMULUS, hardened.
+
+       The old pack rendered correctly but produced weak papers, because it
+       told the model WHERE to put a link and almost nothing about what
+       makes a figure-based item valid. It never said the link must survive
+       an exam hall, never defined the text fallback well enough to be
+       gradeable, never mentioned labelling conventions, accessibility, or
+       the single most common failure mode in AI-generated diagram papers:
+       inventing a figure that does not exist and asking about it anyway.
+
+       This version is written to international item-writing practice
+       (Ofqual / Cambridge / WAEC figure conventions, WCAG 1.1.1 and 1.4.1).
+       ------------------------------------------------------------------ */
     image_stimulus: {
-      label: 'Image / diagram stimulus questions',
-      role: 'an examiner who builds papers around diagrams, maps, apparatus, charts and photographs using LINK-ONLY media (no file uploads into free Supabase)',
-      mission: 'Every item that needs a figure must load that figure on the student device via a public https or Google Drive link in media_url, with a full text fallback description so the question is still fair if the image fails to load.',
-      ref: { image_mcq: 8, case_study: 4, mcq: 4, short: 2, hot_text: 2 },
+      label: 'Image / diagram stimulus questions (link-only media)',
+      role: 'a chief examiner and diagram editor who builds figure-based papers to international standards — apparatus, circuits, ray diagrams, maps, graphs, data charts, micrographs and cartoons — using LINK-ONLY media, and who knows that a figure-based item is only as good as its text fallback',
+      mission: 'Produce a paper in which every figure genuinely carries assessment weight, loads from a public link on a slow mobile connection, and remains completely answerable if the image never loads at all. A figure that is decoration, or a question that collapses when the image fails, is a defective item.',
+      ref: { image_mcq: 8, case_study: 3, mcq: 3, numeric: 2, short: 2, hot_text: 2 },
       dominant: 'image_mcq',
       sections: [
+        ['THE HONESTY RULE — READ THIS FIRST',
+         'You must NEVER invent a URL. A fabricated or guessed link is the single most\\n' +
+         'damaging thing you can put in this file: it imports cleanly, passes every\\n' +
+         'automated check, and then fails silently in front of a candidate under timed\\n' +
+         'conditions.\\n' +
+         '\\n' +
+         'You therefore have exactly two lawful options for each figure, and you must\\n' +
+         'pick one:\\n' +
+         '\\n' +
+         '  OPTION A — YOU HAVE A REAL, VERIFIABLE LINK.\\n' +
+         '  Use it. It must be a stable, public, hotlinkable https image URL from a\\n' +
+         '  source that permits direct embedding (Wikimedia Commons, PhET, NASA, NOAA,\\n' +
+         '  Our World in Data, openly licensed textbook figures). Put it in Col14 as\\n' +
+         '  {"image":"https://..."}.\\n' +
+         '\\n' +
+         '  OPTION B — YOU DO NOT HAVE ONE. This is the normal case, and it is fine.\\n' +
+         '  Put the placeholder token [[FIGURE: short description]] in Col14 as\\n' +
+         '  {"image":"[[FIGURE: series circuit, cell, two resistors labelled R1 and R2,\\n' +
+         '  ammeter A]]"} and write the figure out IN FULL in Col1 (see the FIGURE\\n' +
+         '  DESCRIPTION CONTRACT below). The tutor then pastes their own Drive link over\\n' +
+         '  the placeholder in one pass. The item is fully answerable in the meantime.\\n' +
+         '\\n' +
+         'What you must never do: emit a plausible-looking URL you have not seen, a\\n' +
+         'search-results page, a Google Images thumbnail URL, an expiring CDN link, or a\\n' +
+         'page URL where an image URL is required.'],
         ['MEDIA RULES (MANDATORY)',
-         'Tutoring Connect does NOT upload images into the free database. Use LINKS only.\\n' +
-         '1. Col media_url (or Col14 JSON {"image":"https://..."}) MUST be a direct https URL or a Google Drive link shared as \"anyone with the link\".\\n' +
-         '2. Prefer wide, clear diagrams (min ~800px). White background. No tiny handwriting.\\n' +
-         '3. ALWAYS write a text FALLBACK in the question stem: \"The diagram shows …\" so a learner on a slow network is not blocked.\\n' +
-         '4. One primary image per item. Extra figures go as additional links inside the passage/explanation, not as uploads.\\n' +
-         '5. For Drive links, if possible use the direct-view form: https://drive.google.com/uc?export=view&id=FILE_ID\\n' +
-         '6. Alt/fairness: colour is never the only way to distinguish parts — use labels A/B/C or numbers on the figure.'],
+         'This platform never uploads bytes into the free database. Media is always a link.\\n' +
+         '\\n' +
+         '1. Col14 carries the figure: {"image":"https://..."}. One primary figure per item.\\n' +
+         '2. Google Drive links MUST be in direct-view form and shared "anyone with the\\n' +
+         '   link":  https://drive.google.com/uc?export=view&id=FILE_ID\\n' +
+         '   A /file/d/.../view link renders a Drive PAGE, not an image, and will show the\\n' +
+         '   candidate a broken frame.\\n' +
+         '3. No link may require a sign-in, a cookie, a referrer, or a redirect. A\\n' +
+         '   candidate mid-exam cannot authenticate to anything.\\n' +
+         '4. Prefer figures around 800-1400px wide, light background, high contrast,\\n' +
+         '   under about 300 KB. Nigerian candidates are frequently on metered mobile data\\n' +
+         '   in a hall with weak signal; a 4 MB PNG is an accessibility failure.\\n' +
+         '5. Vector-style line art (SVG or clean PNG) beats a photograph of a whiteboard.\\n' +
+         '   Never a photograph of handwriting.\\n' +
+         '6. If several items share one figure, repeat the SAME link on each of those\\n' +
+         '   rows and give them a shared Section value. Do not chain items to "the figure\\n' +
+         '   in question 4" — option order and question order can both be randomised.'],
+        ['FIGURE DESCRIPTION CONTRACT — THE FALLBACK IS PART OF THE ITEM',
+         'Col1 must always begin with a complete prose description of the figure, written\\n' +
+         'so that a candidate who never sees the image can still answer correctly and a\\n' +
+         'screen reader can read the whole item. This is not a caption; it is the item.\\n' +
+         '\\n' +
+         'The description must state, in this order:\\n' +
+         '  a) What kind of figure it is: "The diagram shows a series circuit...",\\n' +
+         '     "The bar chart shows...", "The map shows...".\\n' +
+         '  b) Every LABEL that appears on the figure, verbatim, and what each labels.\\n' +
+         '  c) Every quantity that can be read off it: axis names WITH units, the scale,\\n' +
+         '     the plotted values or the key data points, component values, angles,\\n' +
+          '     dimensions. If the candidate must read a value off the figure to answer,\\n' +
+         '     that value must appear in the text.\\n' +
+         '  d) The orientation or direction that matters: current flow, north arrow,\\n' +
+         '     ray direction, time axis left to right.\\n' +
+         'Then the actual question, on a new line using \\\\n.\\n' +
+         '\\n' +
+         'TEST YOUR OWN ITEM: cover the image and read only Col1. If the item is now\\n' +
+         'unanswerable, or has become ambiguous, the description has failed and the item\\n' +
+         'must be rewritten before it goes in the file.'],
+        ['MAKING THE FIGURE CARRY REAL ASSESSMENT WEIGHT',
+         'International boards reject "decorative figure" items — items where the picture\\n' +
+         'is pleasant but the question could be asked without it. Each figure item here\\n' +
+         'must require at least one of these operations on the figure itself:\\n' +
+         '  - READ a value at a stated point (a graph ordinate, a meter reading).\\n' +
+         '  - COMPARE two labelled parts (which resistor dissipates more power).\\n' +
+         '  - TRACE a path or sequence (the ray after refraction, flow through the organ).\\n' +
+         '  - IDENTIFY a named structure from its position, not from its colour.\\n' +
+         '  - INTERPOLATE or EXTRAPOLATE from plotted data.\\n' +
+         '  - SPOT the error or the anomaly deliberately placed in the setup.\\n' +
+         'Tag the operation in Col16 (read, compare, trace, identify, interpolate, spot).\\n' +
+         '\\n' +
+         'Stems must never say "the diagram below" or "the figure above". On a phone,\\n' +
+         'one card at a time, there is no above and no below. Say "the diagram shown".'],
+        ['ACCESSIBILITY AND FAIRNESS (WCAG 1.1.1 AND 1.4.1)',
+         '1. COLOUR IS NEVER THE ONLY CUE. Roughly 1 in 12 male candidates has a colour\\n' +
+         '   vision deficiency. Never "the red curve"; always "curve P (the red one)".\\n' +
+         '   Options must refer to letter or number labels: P, Q, R, S or 1, 2, 3, 4.\\n' +
+         '2. Never require a candidate to measure the printed figure with a ruler or to\\n' +
+         '   judge an angle by eye — screen sizes differ, so the same item would be a\\n' +
+         '   different difficulty on a phone and on a laptop. State the dimensions.\\n' +
+         '3. Never require the candidate to zoom to read a value. If it must be read, it\\n' +
+         '   is also in the text.\\n' +
+         '4. Culturally neutral and locally recognisable stimuli where possible: Nigerian\\n' +
+         '   rainfall data, a NEPA-style meter, local road signs. Avoid stimuli that\\n' +
+         '   assume travel, snow, or unfamiliar branded equipment.\\n' +
+         '5. Text baked into the image is invisible to read-aloud. Anything the candidate\\n' +
+         '   must read is repeated in Col1.'],
         ['SUBJECT FIT',
-         'Works for: Biology (apparatus, specimens), Chemistry (setup, molecules), Physics (circuits, rays), Geography (maps, charts), Maths (graphs, geometric figures), Literature (cartoons), ICT (UI screenshots).'],
-        ['CSV SHAPE',
-         'Col1 = question text including the fallback description.\\n' +
-         'Col8 = image_mcq (or image_based).\\n' +
-         'Col media_url / Col14 = https link to the figure.\\n' +
-         'Cols A–D = options that refer to labelled parts of the figure.\\n' +
-         'Col answer = the key.\\n' +
-         'Col explanation = why, referencing labels on the figure.']
+         'Physics: circuits, ray and wave diagrams, force and free-body diagrams, graphs\\n' +
+         'of motion. Chemistry: apparatus and distillation setups, molecular structures,\\n' +
+         'titration curves, the periodic-table block. Biology: labelled specimens,\\n' +
+         'micrographs, food webs, dichotomous keys, cycles. Mathematics: coordinate\\n' +
+         'graphs, geometric figures with marked angles, transformations, Venn diagrams,\\n' +
+         'statistical charts. Geography: contour and relief maps, climate graphs,\\n' +
+         'population pyramids, cross-sections. Economics and Business: supply-and-demand\\n' +
+         'curves, cost curves, annotated financial charts. Literature and Government:\\n' +
+         'political cartoons, campaign posters, photographs of events. ICT: interface\\n' +
+         'screenshots, flowcharts, network topologies, ER diagrams.'],
+        ['CSV SHAPE FOR THIS PACK',
+         'Col1  = full figure description, then \\\\n, then the question.\\n' +
+         'Col2-5 = options referring to figure LABELS, in a sensible order.\\n' +
+         'Col6  = the key, written in full words, never a bare letter.\\n' +
+         'Col7  = the explanation, following the universal EXPLANATION STANDARD above,\\n' +
+         '        and naming the exact label on the figure that decides each option.\\n' +
+         'Col8  = image_mcq (or image_based / case_study where a figure feeds several\\n' +
+         '        questions).\\n' +
+         'Col14 = {"image":"https://..."} or the [[FIGURE: ...]] placeholder.\\n' +
+         'Col16 = the figure operation tag plus the topic.\\n' +
+         'Col17 = the subject.']
       ],
       quality: [
-        'Every image item has a working https/Drive link AND a text fallback.',
-        'Options refer to labels on the figure, not to colours alone.',
-        'No item requires downloading a file or signing into Drive mid-exam.',
-        'Explanations name the labelled part the learner should have used.'
+        'Every figure item has EITHER a real verifiable https/Drive-direct link OR an',
+        '  explicit [[FIGURE: ...]] placeholder. No invented URLs anywhere in the file.',
+        'Every figure item is fully answerable with the image hidden. Verified by reading',
+        '  Col1 alone.',
+        'Every label mentioned in an option appears in the Col1 description.',
+        'No option distinguishes anything by colour alone.',
+        'No stem says "below", "above", "opposite" or "on the previous page".',
+        'Every figure requires a named operation (read, compare, trace, identify,',
+        '  interpolate, spot) — no decorative figures.',
+        'Every axis, scale and unit a candidate must use appears in the text.',
+        'No link needs a login, and no Drive link is in /file/d/.../view form.',
+        'Explanations name the specific labelled part that makes each wrong option wrong.'
+      ],
+      checks: [
+        'Grep the file for "drive.google.com/file/d" — there must be zero matches.',
+        'Grep for "google.com/search", "bing.com", "encrypted-tbn" — zero matches.',
+        'Every Col14 image value starts with "https://" or with "[[FIGURE:".',
+        'Every image row\'s Col1 is at least 40 words before the question begins.'
+      ]
+    },
+
+    /* ==================================================================
+       V39 item 5 — PASSAGE-SET / STIMULUS-SET BLUEPRINT.
+
+       Reported: an UTME/JAMB-style English pack was needed in which the
+       comprehension passage STAYS ON SCREEN until every question under it
+       is answered — "but it must not be limited to English; make it
+       all-inclusive across subjects."
+
+       So this is the generic engine and utme_english below is one dialect
+       of it. The same shape serves a Physics experiment description, a
+       Government constitutional extract, an Economics data table, a
+       History source, a Literature scene or a Biology case.
+
+       HOW THE PINNING ACTUALLY WORKS (why the CSV shape below matters)
+       cbt-exam.html groups questions by CBT.passageKey(), which is the
+       passage_id if one is given and otherwise a hash of the passage TEXT.
+       Every row in a set therefore has to repeat the passage byte for
+       byte, or the set silently splits into several one-question sets and
+       the passage flickers. Repeating it is not redundancy; it is the join
+       key. The runtime then paints the passage ONCE into a sticky pane
+       above the card, keeps it there for the whole set, and shows a live
+       "3 of 5 answered" counter, so it cannot go away while questions
+       under it are outstanding.
+       ================================================================== */
+    passage_set: {
+      label: 'Passage / stimulus set — pinned stimulus, any subject',
+      role: 'a chief examiner who builds stimulus-based sets to international standards, where one shared passage, source, data table, experiment description or extract feeds a block of dependent questions',
+      mission: 'Produce a paper built from STIMULUS SETS. Each set is one shared stimulus plus a block of questions that all depend on it, encoded so the platform can pin the stimulus on screen for the whole set. This blueprint is subject-neutral: the stimulus may be a prose passage, a data table, an experimental method, a legal or constitutional extract, a historical source, a dialogue, a code listing or a case file.',
+      ref: { case_study: 10, mcq: 6, short: 2, hot_text: 2, ordering: 1, essay: 1 },
+      dominant: 'case_study',
+      minOne: true,
+      sections: [
+        ['THE SET CONTRACT — HOW A STIMULUS GETS PINNED',
+         'A "set" is one stimulus plus every question that depends on it.\\n' +
+         '\\n' +
+         '1. Give every set a short stable id and put it in Col16 (Tags) as\\n' +
+         '   set:SETID — for example  set:P1  or  set:SOURCE-A.\\n' +
+         '\\n' +
+         '2. Put the FULL stimulus in Col14 as {"passage":"..."} on EVERY row of that\\n' +
+         '   set, character for character identical. This is the join key the platform\\n' +
+         '   groups on. If row 3 differs from row 1 by even one space, the platform\\n' +
+         '   treats it as a second, separate stimulus and the pinned pane will change\\n' +
+         '   underneath the candidate. Copy and paste it; do not retype it.\\n' +
+         '\\n' +
+         '3. Put the same section name in Col17 for the whole set, e.g.\\n' +
+         '   "English - Comprehension Passage 1".\\n' +
+         '\\n' +
+         '4. Keep the rows of a set CONTIGUOUS and in their intended order. The platform\\n' +
+         '   shuffles sets as whole blocks and never reorders within a set, so question 3\\n' +
+         '   may safely build on question 2.\\n' +
+         '\\n' +
+         '5. Do NOT also copy the stimulus into Col1. Col1 is the question alone. The\\n' +
+         '   stimulus is displayed once, above the card, and repeating it inside every\\n' +
+         '   card would make the candidate scroll past the whole passage five times.\\n' +
+         '\\n' +
+         '6. A stimulus set should carry 4 to 8 questions. Fewer than 3 wastes the\\n' +
+         '   candidate\'s reading time; more than 8 turns one topic into the whole paper.'],
+        ['WRITING THE STIMULUS',
+         'The stimulus must be self-contained, original or safely paraphrased, and long\\n' +
+         'enough to sustain its questions but short enough to read on a phone.\\n' +
+         '\\n' +
+         '  Prose passage: 250-450 words. Three to five paragraphs. Use \\\\n\\\\n between\\n' +
+         '  paragraphs so the pinned pane shows real paragraph breaks.\\n' +
+         '  Data table or figures: state every unit and the source year.\\n' +
+         '  Experimental method: apparatus, procedure, results table, stated conditions.\\n' +
+         '  Extract or source: give provenance — who wrote it, when, and for whom, since\\n' +
+         '  provenance questions are the whole point of a source-based item.\\n' +
+         '  Dialogue or scene: label speakers consistently.\\n' +
+         '  Code listing: number the lines, so a question can name line 7.\\n' +
+         '\\n' +
+         'COPYRIGHT: never reproduce a copyrighted passage. Write an original one on the\\n' +
+         'same theme, or use a public-domain or openly licensed text and say so.\\n' +
+         '\\n' +
+         'CONTEXT: prefer settings a Nigerian and international learner both recognise.\\n' +
+         'Never make the answer depend on knowledge outside the stimulus unless the item\\n' +
+         'is explicitly testing recall.'],
+        ['DESIGNING THE QUESTION BLOCK — A COGNITIVE LADDER',
+         'A set must climb, not sit on one rung. Across each set of questions include:\\n' +
+         '  1. RETRIEVAL     — locate a stated fact. At most one per set.\\n' +
+         '  2. VOCABULARY    — meaning of a word or phrase AS USED in the stimulus.\\n' +
+         '                     Always quote the word with its line or paragraph.\\n' +
+         '  3. INFERENCE     — what follows but is not stated.\\n' +
+         '  4. PURPOSE/TONE  — why the writer did something, or the attitude conveyed.\\n' +
+         '  5. STRUCTURE     — the function of a paragraph, a contrast, a transition.\\n' +
+         '  6. EVALUATION    — reliability, bias, sufficiency of the evidence.\\n' +
+         '  7. SYNTHESIS     — summary, main idea, or a title for the stimulus.\\n' +
+         'In science and data sets, substitute: read a value, process the data,\\n' +
+         'identify the control variable, evaluate the method, predict, and conclude.\\n' +
+         '\\n' +
+         'Every question must be answerable from the stimulus alone, and every question\\n' +
+         'must genuinely need it. If a question could be answered without reading the\\n' +
+         'stimulus, it does not belong in the set — move it out as a standalone item.\\n' +
+         '\\n' +
+         'Questions must not chain by NUMBER. Never "as in question 2". Sets are\\n' +
+         'shuffled as blocks and a candidate may answer in any order; refer to the\\n' +
+         'stimulus itself instead ("in the third paragraph").'],
+        ['MIXING SETS WITH STANDALONE ITEMS',
+         'A realistic paper is part sets, part standalone. Leave Col14 empty and Col16\\n' +
+         'without a set: tag on a standalone item; the platform then shows no pinned\\n' +
+         'pane for it. Order the file so that each set is contiguous, and put standalone\\n' +
+         'items in their own run rather than interleaving them into a set.'],
+        ['WORKED SHAPE OF ONE SET (5 rows, abbreviated)',
+         'Row 1  Col1: "What is the main idea of the passage?"\\n' +
+         '       Col14: {"passage":"<the full 300-word passage>"}   Col16: set:P1\\n' +
+         '       Col17: English - Comprehension Passage 1\\n' +
+         'Row 2  Col1: "As used in the second paragraph, \\"resilient\\" most nearly means"\\n' +
+         '       Col14: {"passage":"<the SAME full passage, byte for byte>"}\\n' +
+         '       Col16: set:P1     Col17: English - Comprehension Passage 1\\n' +
+         'Rows 3-5 continue identically, climbing the ladder above.']
+      ],
+      quality: [
+        'Every set repeats its stimulus byte for byte in Col14 on every one of its rows.',
+        'Every set shares one set:ID tag in Col16 and one Section value in Col17.',
+        'Rows of a set are contiguous and in a deliberate order.',
+        'No question in a set is answerable without the stimulus.',
+        'No question refers to another question by number.',
+        'The stimulus never appears in Col1.',
+        'Each set spans at least four different cognitive levels, not four retrieval',
+        '  questions wearing different clothes.',
+        'Every vocabulary item quotes the exact word and its location in the stimulus.',
+        'No copyrighted text is reproduced.'
+      ],
+      checks: [
+        'Rows sharing a set: tag have IDENTICAL Col14 passage text — compare them.',
+        'Every set has between 4 and 8 rows.',
+        'No Col1 in a set is longer than the stimulus it belongs to.'
+      ]
+    },
+
+    /* ------------------------------------------------------------------
+       V39 item 5 — the UTME / JAMB English dialect of passage_set.
+       ------------------------------------------------------------------ */
+    utme_english: {
+      label: 'UTME / JAMB English — full paper (comprehension, summary, lexis, structure)',
+      role: 'a JAMB-experienced Chief Examiner in Use of English who has set and moderated UTME papers, and who knows the exact section structure, register and difficulty curve candidates meet on the day',
+      mission: 'Produce a complete UTME-style Use of English paper covering Comprehension, Summary, Lexis (synonyms, antonyms, word meaning in context), Structure (grammar and sentence interpretation), and Oral Forms (stress and vowel/consonant sounds). Comprehension and Summary must be built as PINNED PASSAGE SETS so the passage stays on the candidate screen for every question that depends on it.',
+      ref: { case_study: 12, mcq: 20, short: 2, hot_text: 2 },
+      dominant: 'mcq',
+      minOne: true,
+      sections: [
+        ['UTME PAPER STRUCTURE — BUILD THE SECTIONS IN THIS ORDER',
+         'Use Col17 (Section) exactly as named here. The platform renders these as the\\n' +
+         'candidate\'s section tabs and uses them to group the pinned passages.\\n' +
+         '\\n' +
+         '  1. "English - Comprehension Passage 1"   one passage, 5-6 questions\\n' +
+         '  2. "English - Comprehension Passage 2"   a second passage, 5-6 questions\\n' +
+         '  3. "English - Summary"                   one passage, 4-5 questions\\n' +
+         '  4. "English - Lexis"                     synonyms, antonyms, word in context\\n' +
+         '  5. "English - Structure"                 grammar, sentence interpretation\\n' +
+         '  6. "English - Oral Forms"                stress and sounds\\n' +
+         '\\n' +
+         'Scale each section proportionally to the number of items requested, but never\\n' +
+         'drop Comprehension or Summary: those are the sections the pinned-passage\\n' +
+         'behaviour exists for.'],
+        ['COMPREHENSION AND SUMMARY — THE PINNED PASSAGE (MANDATORY)',
+         'Apply the passage-set contract in full:\\n' +
+         '  - The FULL passage goes in Col14 as {"passage":"..."} on EVERY row of that\\n' +
+         '    section, identical byte for byte. This is the key the platform groups on,\\n' +
+         '    and it is what keeps the passage on screen for the whole block instead of\\n' +
+         '    vanishing when the candidate moves to the next question.\\n' +
+         '  - Col16 carries set:C1, set:C2, set:S1 for the three sets.\\n' +
+         '  - Col1 is the question ALONE. Never paste the passage into Col1.\\n' +
+         '  - Keep each set contiguous and in order.\\n' +
+         '\\n' +
+         'Passage length: comprehension 350-450 words; summary 300-400 words. Write\\n' +
+         'ORIGINAL passages in authentic UTME register — expository or argumentative\\n' +
+         'prose on education, health, technology, environment, governance, agriculture\\n' +
+         'or culture, in a Nigerian or pan-African setting. Paragraphs separated by \\\\n\\\\n.\\n' +
+         'Never reproduce a copyrighted passage.\\n' +
+         '\\n' +
+         'Comprehension questions follow the UTME pattern: main idea, a stated detail,\\n' +
+         'an inference, the writer\'s attitude or tone, the function of a paragraph, and\\n' +
+         'one "as used in the passage" vocabulary item that quotes the word and names\\n' +
+         'its paragraph.\\n' +
+         '\\n' +
+         'Summary questions follow the JAMB phrasing exactly: "In three sentences, one\\n' +
+         'for each, state..." rendered as MCQ options where the candidate selects the\\n' +
+         'best summary sentence, plus items asking for the main point of a named\\n' +
+         'paragraph. Distractors must be true-but-not-the-point, or too broad, or too\\n' +
+         'narrow — the three classic summary traps — and Col7 must name which trap each\\n' +
+         'distractor is.'],
+        ['LEXIS AND STRUCTURE',
+         'LEXIS. Three sub-styles, all four options, one key:\\n' +
+         '  - "Choose the option NEAREST IN MEANING to the word or phrase in italics."\\n' +
+         '    Put the target word in CAPITALS inside the stem, since CSV cannot italicise.\\n' +
+         '  - "Choose the option OPPOSITE IN MEANING..."\\n' +
+         '  - Word used in context, where the same word has a different sense elsewhere.\\n' +
+         'Distractors must be real words at the same register and roughly the same\\n' +
+         'frequency. A distractor no candidate would ever pick is a wasted option and\\n' +
+         'turns a 4-option item into a 3-option one.\\n' +
+         '\\n' +
+         'STRUCTURE. Cover: concord, tense and sequence of tenses, prepositions and\\n' +
+         'phrasal verbs, question tags, conditionals, active/passive, reported speech,\\n' +
+         'clause and phrase function, and sentence interpretation ("Which of the\\n' +
+         'following is nearest in meaning to...?"). Include a small number of Nigerian\\n' +
+         'English interference points that UTME reliably tests, and say in Col7 why the\\n' +
+         'common local form is not the standard one — that explanation is the most\\n' +
+         'useful teaching in the whole section.'],
+        ['ORAL FORMS',
+         'Oral English is a written test of sound knowledge, so encode it in text:\\n' +
+         '  - STRESS: "In the following word, the syllable that bears the primary stress\\n' +
+         '    is..." with options as the syllables written out, e.g. PHO-to-graph.\\n' +
+         '  - EMPHATIC STRESS: give a sentence with one word in CAPITALS and ask which\\n' +
+         '    question it answers.\\n' +
+         '  - VOWELS AND CONSONANTS: "Choose the option that has the same vowel sound as\\n' +
+         '    the CAPITALISED word." Never rely on a phonetic symbol the candidate\\n' +
+         '    device may not render — always give a keyword too, e.g. /i:/ as in SEE.\\n' +
+         '  - RHYME: choose the word that rhymes with the capitalised one.\\n' +
+         'Col7 must explain the sound, spell out the phonetic value with a keyword, and\\n' +
+         'say why each distractor has a different sound. Do not assume the candidate can\\n' +
+         'hear anything: this section is read on screen, and may be read aloud by the\\n' +
+         'platform, so the item must survive being spoken.'],
+        ['DIFFICULTY, KEYS AND FAIRNESS',
+         'Difficulty curve across the paper: roughly 30% easy, 50% moderate, 20% hard,\\n' +
+         'declared honestly in Col15. Distribute the key across A, B, C and D as evenly\\n' +
+         'as the content allows; never let one letter carry more than about a third of\\n' +
+         'the keys. Every item has exactly ONE defensible answer — if two options can be\\n' +
+         'argued, rewrite the item. Options within an item should be similar in length;\\n' +
+         'a conspicuously longest option is a giveaway that rewards test-wiseness rather\\n' +
+         'than English.']
+      ],
+      quality: [
+        'Comprehension and Summary sections repeat their full passage in Col14 on every',
+        '  one of their rows, byte for byte, so the passage stays pinned for the set.',
+        'No passage text appears in Col1.',
+        'Each passage set is contiguous, carries one set: tag, and has 4-6 questions.',
+        'Every "as used in the passage" item quotes the exact word and names its paragraph.',
+        'Summary distractors are the three classic traps and Col7 names which is which.',
+        'Lexis distractors are real words of comparable register and frequency.',
+        'Oral Forms items always pair a phonetic value with a keyword.',
+        'Passages are original, in authentic UTME register, Nigerian or pan-African in',
+        '  setting, and free of copyrighted material.',
+        'Keys are spread across A-D; no letter dominates.',
+        'Every explanation follows the four-move standard and is written to teach, since',
+        '  many candidates will use this paper as their only revision feedback.'
+      ],
+      checks: [
+        'Col17 uses only the six section names listed above.',
+        'Every Comprehension/Summary row has a non-empty Col14 passage.',
+        'Rows within one set have byte-identical Col14 values.',
+        'No option letter holds more than 35% of the keys.'
       ]
     },
 
@@ -1195,7 +1926,15 @@ const CBT = {
       'Type counts match the distribution and sum to ' + n + '.',
       'Every JSON cell has inner quotes doubled ("") and the whole cell quoted.',
       'Every objective row has a non-empty, unambiguous key in Col6.',
-      'Col17 is the subject on every row.'
+      'Col17 is the subject on every row.',
+      /* V39 item 6 — the explanation standard is only real if it is checked. */
+      'EVERY row\'s Col7 contains all four moves: verdict in words, numbered',
+      '   reasoning, a named misconception for EACH wrong option, and a takeaway.',
+      'No Col7 is under 45 words. No Col7 says only "Option X is correct".',
+      'No Col7 refers to another question, to "the above", or to notes the',
+      '   learner does not have in front of them.',
+      'Col7 names the correct answer in WORDS, never by letter alone, because',
+      '   option order can be randomised per candidate.'
     ].concat(P.checks || []).map(function (c) { return '[ ] ' + fill(c); }).join('\n');
 
     return 'PACK: ' + P.label.toUpperCase() + '\n\n' +
@@ -1234,6 +1973,8 @@ rule + '\nCOLUMN RULES FOR THE TYPES THIS PACK USES\n' +
 '7 Explanation | 8 Type | 9 Tolerance | 10 Unit | 11 Accept |\n' +
 '12 MRQ_AON | 13 Pairs | 14 Items | 15 Difficulty | 16 Tags | 17 Section\n' + rule + '\n\n' +
 this._typeRules(usedTypes) + '\n\n' +
+rule + '\nEXPLANATION STANDARD — APPLIES TO EVERY ROW, EVERY TYPE\n' + rule + '\n' +
+this.EXPLANATION_STANDARD + '\n\n' +
 sections + '\n\n' +
 rule + '\nQUALITY BAR FOR THIS PACK — an item failing any of these is rejected\n' + rule + '\n' +
 quality + '\n\n' +

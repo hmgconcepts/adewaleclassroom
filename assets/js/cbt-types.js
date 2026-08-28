@@ -45,6 +45,30 @@
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   };
 
+
+  /* -------------------------------------------------------------------------
+     V39 — RICH TEXT / MATHS  (reported item 1)
+
+     CBTTypes.render() WINS the render race in cbt.js for all seventeen
+     advanced families, so fixing maths only in cbt.js would have left every
+     matching table, matrix grid, cloze and multi-part numeric question still
+     showing raw \frac{}{} and literal backslash-n to the candidate.
+
+     rich() is the display-side counterpart of esc(): same input, but literal
+     escapes become real line breaks and the LaTeX subset becomes real
+     fractions, surds, indices and matrices, via assets/js/cbt-richtext.js.
+
+     RULE OF USE — esc() for anything inside an HTML attribute
+     (value=, name=, src=, data-val=), rich() only for visible content.
+     rich() returns markup by design, so putting it in an attribute would
+     break the tag. Option <select> children also stay on esc(), because an
+     <option> can only hold text.
+     ------------------------------------------------------------------------- */
+  var rich = function (s) {
+    if (w.CBTRich) return w.CBTRich.html(s);
+    return esc(String(s == null ? '' : s).replace(/\\n/g, '\n')).replace(/\n/g, '<br>');
+  };
+
   /* Parse a field that may arrive as JSON text, an array, or a pipe list. */
   /* -------------------------------------------------------------------------
      LENIENT STRUCTURED-CELL PARSER  (reported item 2)
@@ -157,7 +181,7 @@
           '<input type="' + (multi ? 'checkbox' : 'radio') + '" name="' + esc(name) + '" ' +
             'value="' + esc(o) + '">' +
           '<span class="tcq-letter">' + letter + '</span>' +
-          '<span class="tcq-optext">' + esc(o) + '</span>' +
+          '<span class="tcq-optext">' + rich(o) + '</span>' +
         '</label>';
       }).join('') + '</div>';
     },
@@ -188,8 +212,8 @@
       ];
       var opts = (q.options && q.options.length >= 3) ? q.options : std;
       return (a || r ? '<div class="tcq-ar">' +
-          (a ? '<div class="tcq-ar-row"><span class="tcq-ar-tag">Assertion</span><span>' + esc(a) + '</span></div>' : '') +
-          (r ? '<div class="tcq-ar-row"><span class="tcq-ar-tag tcq-ar-reason">Reason</span><span>' + esc(r) + '</span></div>' : '') +
+          (a ? '<div class="tcq-ar-row"><span class="tcq-ar-tag">Assertion</span><span>' + rich(a) + '</span></div>' : '') +
+          (r ? '<div class="tcq-ar-row"><span class="tcq-ar-tag tcq-ar-reason">Reason</span><span>' + rich(r) + '</span></div>' : '') +
         '</div>' : '') +
         TYPES._optionCards({ options: opts }, name, false);
     },
@@ -199,7 +223,7 @@
       var it = parseObj(q.items);
       var passage = q.passage || it.passage || it.text || '';
       return (passage ? '<div class="tcq-passage"><div class="tcq-passage-tag">Read this first</div>' +
-        esc(passage).replace(/\n/g, '<br>') + '</div>' : '') +
+        rich(passage) + '</div>' : '') +
         TYPES._optionCards(q, name, false);
     },
 
@@ -228,7 +252,7 @@
       return '<div class="tcq-numwrap">' +
         '<input class="tcq-input tcq-num" type="text" inputmode="decimal" name="' + esc(name) + '" ' +
           'placeholder="Enter a number">' +
-        (unit ? '<span class="tcq-unit">' + esc(unit) + '</span>' : '') +
+        (unit ? '<span class="tcq-unit">' + rich(unit) + '</span>' : '') +
       '</div>' +
       (tol ? '<div class="tcq-hint">Answers within ±' + esc(tol) + ' are accepted.</div>'
            : '<div class="tcq-hint">Give the number only — no words.</div>');
@@ -242,10 +266,10 @@
           var label = (typeof p === 'object' ? (p.label || p.name) : p) || ('Part ' + (i + 1));
           var unit = (typeof p === 'object' && p.unit) ? p.unit : '';
           return '<div class="tcq-part">' +
-            '<label class="tcq-part-label">' + esc(label) + '</label>' +
+            '<label class="tcq-part-label">' + rich(label) + '</label>' +
             '<input class="tcq-input tcq-num" type="text" inputmode="decimal" ' +
               'name="' + esc(name) + '__' + i + '" placeholder="Answer">' +
-            (unit ? '<span class="tcq-unit">' + esc(unit) + '</span>' : '') +
+            (unit ? '<span class="tcq-unit">' + rich(unit) + '</span>' : '') +
           '</div>';
         }).join('') + '</div>';
     },
@@ -304,7 +328,7 @@
       return '<div class="tcq-hint">Choose the item on the right that belongs with each item on the left.</div>' +
         '<table class="tcq-match">' + pairs.map(function (p, i) {
           return '<tr>' +
-            '<td class="tcq-match-left">' + esc(p.left) + '</td>' +
+            '<td class="tcq-match-left">' + rich(p.left) + '</td>' +
             '<td class="tcq-match-arrow">→</td>' +
             '<td><select class="tcq-select" name="' + esc(name) + '__' + i + '">' +
               '<option value="">— choose —</option>' +
@@ -323,7 +347,7 @@
           return '<li class="tcq-order-item" draggable="true" data-val="' + esc(it) + '">' +
             '<span class="tcq-order-handle" aria-hidden="true">⠿</span>' +
             '<span class="tcq-order-num"></span>' +
-            '<span class="tcq-order-text">' + esc(it) + '</span>' +
+            '<span class="tcq-order-text">' + rich(it) + '</span>' +
             '<span class="tcq-order-btns">' +
               '<button type="button" class="tcq-mini" data-up aria-label="Move up">↑</button>' +
               '<button type="button" class="tcq-mini" data-down aria-label="Move down">↓</button>' +
@@ -345,7 +369,7 @@
       return '<div class="tcq-hint">Put each item into the category it belongs to.</div>' +
         '<table class="tcq-match">' + rows.map(function (r, i) {
           var item = (typeof r === 'object') ? (r.item || r.label) : r;
-          return '<tr><td class="tcq-match-left">' + esc(item) + '</td>' +
+          return '<tr><td class="tcq-match-left">' + rich(item) + '</td>' +
             '<td class="tcq-match-arrow">→</td>' +
             '<td><select class="tcq-select" name="' + esc(name) + '__' + i + '">' +
               '<option value="">— choose a category —</option>' +
@@ -361,14 +385,14 @@
       if (!opts.length) opts = ['True', 'False'];
       return '<div class="tcq-hint">Answer every row.</div>' +
         '<table class="tcq-match tcq-matrix"><thead><tr><th>Statement</th>' +
-        opts.map(function (o) { return '<th>' + esc(o) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        opts.map(function (o) { return '<th>' + rich(o) + '</th>'; }).join('') + '</tr></thead><tbody>' +
         rows.map(function (r, i) {
           var st = (typeof r === 'object') ? (r.statement || r.item || r.label) : r;
-          return '<tr><td class="tcq-match-left">' + esc(st) + '</td>' +
+          return '<tr><td class="tcq-match-left">' + rich(st) + '</td>' +
             opts.map(function (o) {
               return '<td class="tcq-matrix-cell"><label><input type="radio" ' +
                 'name="' + esc(name) + '__' + i + '" value="' + esc(o) + '">' +
-                '<span class="tcq-sr">' + esc(o) + '</span></label></td>';
+                '<span class="tcq-sr">' + rich(o) + '</span></label></td>';
             }).join('') + '</tr>';
         }).join('') + '</tbody></table>';
     },
@@ -379,7 +403,7 @@
       return '<div class="tcq-hint">Tap every part that is correct. Tap again to unselect.</div>' +
         '<div class="tcq-hot" data-hot="' + esc(name) + '">' + chunks.map(function (c, i) {
           var t = (typeof c === 'object') ? (c.text || c.item) : c;
-          return '<button type="button" class="tcq-chip" data-val="' + esc(t) + '">' + esc(t) + '</button>';
+          return '<button type="button" class="tcq-chip" data-val="' + esc(t) + '">' + rich(t) + '</button>';
         }).join('') + '</div><input type="hidden" name="' + esc(name) + '">';
     }
   };
@@ -517,7 +541,7 @@
         var tip = HOWTO[t];
         var obvious = (t === 'mcq' || t === 'true_false');
         return (tip && !obvious ? '<div class="tcq-howto"><span aria-hidden="true">💡</span> ' +
-                 esc(tip) + '</div>' : '') + body;
+                 rich(tip) + '</div>' : '') + body;
       }
       catch (e) { return '<p class="tcq-warn">⚠️ This question could not be displayed (' + esc(e.message) + ').</p>'; }
     },
