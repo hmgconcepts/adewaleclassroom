@@ -8,7 +8,7 @@
    requests, making the site feel native on repeat visits.
    Bump CACHE_VERSION whenever you deploy changes.
    ============================================================ */
-const CACHE_VERSION = "hmg-classdeck-v11.2.0-v38-toolbar-fix";   /* bumped: V38 teach.js abort fix — purges cached broken JS */
+const CACHE_VERSION = "hmg-classdeck-v11.2.1-v39-bridge-css";   /* bumped: v39 portal-bridge CSS newline fix — purges cached broken JS */
 
 const SHELL = [
   "./",

@@ -113,7 +113,7 @@
           '.topbar{position:relative;z-index:20;}',
           '.topbar .btn{pointer-events:auto !important; position:relative; z-index:21;}',
           '#authGate,.auth-gate{display:none !important; pointer-events:none !important;}'
-        ].join('\\n');
+        ].join('\n');
         d.head.appendChild(st);
       }
     } catch (e) {}
