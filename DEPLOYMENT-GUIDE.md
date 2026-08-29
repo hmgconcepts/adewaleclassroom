@@ -134,7 +134,7 @@ Admin Data → Drive card. Client ID from Google Cloud (GIS, scopes `drive.file`
 5. Hand that ZIP to the studio and follow section A.
 
 ### Modern (Next.js) output
-Choosing **Modern** adds a `modern/` folder to the ZIP: a Next.js 14 wrapper that serves the static portal from `public/` and includes a serverless `/api/keepalive` route. To use it: copy the root portal files into `modern/public/`, run `npm install`, then `npm run dev` / `npm run build`. Deploy `modern/` to Vercel. The database and config stay identical to the traditional build.
+Choosing **Modern** adds a `modern/` folder to the ZIP: a Next.js 14 wrapper that serves the static portal and includes a serverless `/api/keepalive` route. The generator **mirrors the root portal files into `modern/public/` automatically** — there is nothing to copy by hand. To use it: `cd modern && npm install`, then `npm run dev` / `npm run build`; deploy `modern/` to Vercel. The database and `config.js` stay identical to the traditional build.
 
 ---
 
@@ -253,3 +253,38 @@ You only need the one file.
 **Also fixed in complete-schema:** `jsonb_agg(x …)` functions now alias the
 subquery column as `x` (class registration link RPCs), which previously raised
 `ERROR 42703: column "x" does not exist`.
+
+---
+
+## V40 — branding every generated page (generator)
+
+The generator now runs the studio name through **every** ported page, not just the
+Classroom Deck. Before this, `site-index.html` (used as the client homepage) was
+copied verbatim, so `<title>`, meta description, keywords, `og:title`,
+`og:site_name` and `twitter:title` all said **ADEWALE CLASSROOM** no matter what
+studio you generated — wrong search title and wrong social-share card on any
+non-ADEWALE studio. Now `Generator.brandHtml()` substitutes the studio name into
+the static SEO tags and all `data-practice-name` text of every page. No re-work
+on your side: just generate a fresh ZIP.
+
+The generator also now **bundles every Class Deck asset** the deck pages reference
+(`assets/hmg-academy-logo.png`, `assets/founder-photo.jpg`,
+`assets/icon-master.png`) and **`classdeck/js/generator.js`**, so a generated deck
+no longer shows a broken logo, a broken founder photograph, or a `generate.html`
+that cannot load its engine.
+
+## V42 — deterministic function grants (security hardening)
+
+`complete-schema.sql` now ends with **V42** (`database/v42-enterprise-hardening.sql`).
+It re-asserts, after every other pack, that `authenticated` can `EXECUTE` the
+public functions and that `anon` can `EXECUTE` only the curated public surface
+(forms, CBT code gate, blog, free classes, exam registration, self-booking,
+licence and the RLS predicates anonymous reads evaluate). It is **additive only**
+(no revokes), so it can never lock out a path that already worked; it only
+removes the historical non-determinism of five stacked grant/revoke sweeps.
+Run the one `complete-schema.sql` on a fresh project and the version notice reads
+**V42**.
+
+If you already ran the schema before V42, you can run
+`database/v42-enterprise-hardening.sql` once on the existing project to apply the
+consolidated grants.

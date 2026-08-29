@@ -51,8 +51,6 @@
 <script src="assets/js/legibility.js" defer></script>
 <script src="assets/js/ux-enhance.js" defer></script>
 <script src="assets/js/ops-desk.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
 </head>
 <body data-cbt-exam="1">
 <main class="container" style="max-width:880px;padding:28px 16px 80px">
@@ -351,6 +349,7 @@ document.getElementById('start').onclick = async () => {
   const paint = () => {
     const vis = state.visible();
     if (vis.indexOf(state.current) === -1) state.current = vis.length ? vis[0] : 0;
+    if (!vis.length) { showOnly(-1); }
     showOnly(state.current);
 
     ExamKit.renderPalette(document.getElementById('qpalette'), {
@@ -445,7 +444,9 @@ document.getElementById('start').onclick = async () => {
 
   const step = (delta) => {
     const vis = state.visible();
-    const pos = vis.indexOf(state.current);
+    if (!vis.length) return;                 // no questions in the current section
+    let pos = vis.indexOf(state.current);
+    if (pos === -1) pos = 0;                 // current is stale — restart the section
     const next = pos + delta;
     if (next < 0 || next >= vis.length) return;
     state.current = vis[next];
@@ -640,6 +641,40 @@ async function finish() {
   const rev = document.getElementById('review');
   rev.hidden = false;
   const show = state.exam.show_review !== false;
+
+  /* ------------------------------------------------------------------
+     ITEM 16 (V41) — optional Quizizz-style gamification reveal.
+     When the author ticked "Gamify this quiz", a signed-in learner is
+     awarded XP / a day streak / a level by the SECURITY-DEFINER RPC
+     tc_game_award (they can never write their own XP), and a small podium
+     of the top five is shown on the same screen. Guests simply skip it.
+     A failed RPC never fails the submission — the score is already saved.
+     ------------------------------------------------------------------ */
+  let gameHTML = '';
+  if (state.exam.gamify === true && state.learner && state.learner.id && window.sb) {
+    try {
+      const total = (state.questions || []).length;
+      const correct = result.correct || 0;
+      const a = await window.sb.rpc('tc_game_award', { p_learner: state.learner.id, p_correct: correct, p_total: total });
+      let lb = [];
+      try { const l = await window.sb.rpc('tc_game_leaderboard', { p_limit: 5 }); lb = (l && l.data) || []; }
+      catch (_) {}
+      const award = (a && a.data) || {};
+      const podium = lb.map((r, i) => '<tr><td>' + (i + 1) + '</td><td>' + TC.esc(r.full_name || 'Learner') +
+        '</td><td>' + TC.esc(r.streak_days) + '🔥</td><td>' + TC.esc(r.xp) + ' XP</td></tr>').join('');
+      gameHTML = '<div class="card" style="border-left:4px solid var(--accent,#d97706);background:linear-gradient(135deg,#fff7ed,#fef3c7);margin-bottom:12px">' +
+        '<h3 style="margin:0 0 8px">🎉 ' + (award.xp_earned > 0 ? ('+' + award.xp_earned + ' XP earned') : 'Well done — keep going!') + '</h3>' +
+        '<div style="display:flex;gap:16px;flex-wrap:wrap">' +
+          '<div><div class="stat-value">' + (award.pct != null ? award.pct : result.pct) + '%</div><div class="stat-label">Score</div></div>' +
+          '<div><div class="stat-value">' + (award.level != null ? award.level : '—') + '</div><div class="stat-label">Level</div></div>' +
+          '<div><div class="stat-value">' + (award.streak != null ? award.streak : '—') + ' 🔥</div><div class="stat-label">Day streak</div></div>' +
+        '</div>' +
+        (lb.length ? '<details style="margin-top:10px"><summary>🏆 Class podium (top 5)</summary>' +
+          '<table class="table-wrap" style="width:100%;margin-top:6px"><thead><tr><th>#</th><th align="left">Learner</th><th>Streak</th><th>XP</th></tr></thead><tbody>' +
+          podium + '</tbody></table></details>' : '') +
+        '</div>';
+    } catch (_) { /* gamification is cosmetic — never block the result */ }
+  }
   const banner = state.saved === false
     ? `<div class="card" style="border-left:4px solid #b42318;background:#fef2f2;margin-bottom:12px">
          <h3 style="color:#b42318;margin:0 0 6px">⚠️ Your score has NOT reached the tutor yet</h3>
@@ -649,7 +684,7 @@ async function finish() {
          <p class="muted" style="margin:6px 0 0;font-size:.8rem">Reason: ${TC.esc(state.saveError || 'unknown')}</p>
        </div>`
     : '';
-  rev.innerHTML = banner + (show ? CBT.reviewHTML(result, meta) : `<div class="card"><h2>Submitted</h2><p>Your tutor will release the review.</p></div>`) +
+  rev.innerHTML = gameHTML + banner + (show ? CBT.reviewHTML(result, meta) : `<div class="card"><h2>Submitted</h2><p>Your tutor will release the review.</p></div>`) +
     `<p style="margin-top:12px"><button class="btn btn-accent" type="button" onclick="CBT.printReview()">Save / print PDF</button>
      <a class="btn btn-ghost" href="scoresheet.html">Open scoresheet</a></p>`;
   if (state.saved === false) {
