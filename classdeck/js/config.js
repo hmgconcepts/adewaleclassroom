@@ -14,7 +14,7 @@ window.CLASSDECK.BRAND = {
   portalSessions: '../sessions.html',
   portalCalendar: '../calendar.html',
   portalLogin: '../login.html',
-  logoUrl: '../assets/img/logo.svg',
+  logoUrl: '../assets/img/logo.png',
   primary: '#0506ae',
   accent: '#964eec',
   requirePortalSession: false,

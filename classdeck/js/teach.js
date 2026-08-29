@@ -2046,7 +2046,8 @@ function drawRecordingFrame() {
   ctx.textAlign = "left"; ctx.textBaseline = "middle";
   ctx.fillText(recMeta.footer || ("Recorded with ADEWALE CLASSROOM DECK"), 12, H - footH / 2, W * 0.6);
   ctx.textAlign = "right";
-  ctx.fillText(new Date().toLocaleDateString() + "  ·  " + new Date().toLocaleTimeString(), W - 12, H - footH / 2);
+  const recDateStr = new Date().toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'}) + "  ·  " + new Date().toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', hour12:true});
+  ctx.fillText(recDateStr, W - 12, H - footH / 2);
   ctx.textAlign = "left";
   /* REC dot */
   ctx.fillStyle = "#ff5d5d";
