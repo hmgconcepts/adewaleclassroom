@@ -23,11 +23,12 @@ const CBT = {
   _structured(v) {
     if (v == null || v === '') return null;
     if (typeof v === 'object') return v;
+    let str = String(v).trim().replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
     if (window.CBTTypes && CBTTypes.lenientJSON) {
-      var p = CBTTypes.lenientJSON(String(v));
+      var p = CBTTypes.lenientJSON(str);
       if (p != null) return p;
     } else {
-      try { return JSON.parse(String(v)); } catch (e) {}
+      try { return JSON.parse(str); } catch (e) {}
     }
     var parts = String(v).split(/\s*[|;]\s*/).filter(Boolean);
     return parts.length ? parts : null;
@@ -152,14 +153,27 @@ const CBT = {
     /* Robustness fix: AI generators sometimes miscount commas and shift the Items/Pairs JSON
        into Difficulty, Tags, Section or other later columns. Check them to recover the data. */
     if (!_itemsStr && !_pairsStr) {
-      const trailCols = [pick('difficulty'), pick('tags'), pick('section'), pick('explanation')];
+      let trailCols = [pick('difficulty'), pick('tags'), pick('section'), pick('explanation')];
+      if (q._extra) trailCols = trailCols.concat(q._extra);
+      
       for (const tc of trailCols) {
         if (tc && (String(tc).trim().startsWith('{') || String(tc).trim().startsWith('['))) {
+          let fixedJson = String(tc).trim().replace(/\n/g, '\\n').replace(/\r/g, '\\r').replace(/\t/g, '\\t');
           try { 
-            JSON.parse(String(tc).trim()); 
-            if (['matching','assertion_reason'].includes(type) && !tc.includes('"text"')) _pairsStr = tc;
-            else _itemsStr = tc; 
-            break; 
+            let parsed = null;
+            if (window.CBTTypes && CBTTypes.lenientJSON) parsed = CBTTypes.lenientJSON(fixedJson);
+            else parsed = JSON.parse(fixedJson);
+            
+            if (parsed) {
+               if (['matching','assertion_reason'].includes(type) && !tc.includes('"text"')) _pairsStr = fixedJson;
+               else _itemsStr = fixedJson;
+               
+               if (q._extra && q._extra.length > 0) {
+                 if (!pick('section') || String(pick('section')).includes('set:')) q.section = q._extra[q._extra.length - 1];
+                 if (!pick('tags') || String(pick('tags')).length < 2) q.tags = q._extra[0];
+               }
+               break; 
+            }
           } catch(e) {}
         }
       }
@@ -310,6 +324,7 @@ const CBT = {
       const cols = this._splitCsv(line);
       const row = {};
       headers.forEach((h, idx) => row[h] = (cols[idx] || '').trim());
+      if (cols.length > headers.length) row._extra = cols.slice(headers.length).map(c => (c || '').trim());
       row.options = [row.a, row.b, row.c, row.d, row.e].filter(Boolean);
       return this.normalizeQuestion(row, i);
     });
