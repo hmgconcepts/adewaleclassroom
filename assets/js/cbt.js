@@ -146,8 +146,27 @@ const CBT = {
 
     /* Parse the structured columns BEFORE building the record, so the key
        can be derived from them. */
-    const _items = this._structured(pick('items', 'rows', 'parts', 'chunks', 'blanks', 'sequence'));
-    const _pairs = this._structured(pick('pairs', 'matches'));
+    let _itemsStr = pick('items', 'rows', 'parts', 'chunks', 'blanks', 'sequence');
+    let _pairsStr = pick('pairs', 'matches');
+    
+    /* Robustness fix: AI generators sometimes miscount commas and shift the Items/Pairs JSON
+       into Difficulty, Tags, Section or other later columns. Check them to recover the data. */
+    if (!_itemsStr && !_pairsStr) {
+      const trailCols = [pick('difficulty'), pick('tags'), pick('section'), pick('explanation')];
+      for (const tc of trailCols) {
+        if (tc && (String(tc).trim().startsWith('{') || String(tc).trim().startsWith('['))) {
+          try { 
+            JSON.parse(String(tc).trim()); 
+            if (['matching','assertion_reason'].includes(type) && !tc.includes('"text"')) _pairsStr = tc;
+            else _itemsStr = tc; 
+            break; 
+          } catch(e) {}
+        }
+      }
+    }
+
+    const _items = this._structured(_itemsStr);
+    const _pairs = this._structured(_pairsStr);
     answer = this._keyFromStructure(type, _items, _pairs, answer);
 
     /* Item 7 — a question a machine cannot fairly mark is flagged here, once,
@@ -1793,7 +1812,7 @@ const CBT = {
       label: 'Reading — full comprehension set',
       role: 'an examiner building a complete comprehension section around one shared passage',
       mission: 'Produce a coherent comprehension SET, not scattered questions: one shared stimulus, then a graded ladder of questions on it.',
-      ref: { case_study: 10, short: 5, cloze: 3, hot_text: 2 }, dominant: 'case_study',
+      ref: { case_study: 10, evidence_mcq: 3, short: 5, cloze: 3, hot_text: 2 }, dominant: 'case_study',
       sections: [
         ['SOURCE', 'Shared stimulus: {{SOURCE}}\nRepeat the SAME passage in Col14 of every case_study row so each question\nstands alone if shuffled.'],
         ['LADDER', 'Order from literal retrieval, through inference, to evaluation. The last\nthree items should be the most demanding in the set.']
@@ -1802,6 +1821,20 @@ const CBT = {
         'Every case_study row carries the full passage in Col14.',
         'The difficulty ladder is visible in Col15.',
         'Vocabulary items quote the sentence the word appears in.'
+      ]
+    },
+
+    sat_evidence_based: {
+      label: 'Evidence-Based Reading (SAT / International)',
+      role: 'a high-stakes test developer writing evidence-based reading passages and paired questions to international standards (e.g. SAT EBRW).',
+      mission: 'Produce a paper with Two-Part Evidence-Based MCQs. Part A asks a comprehension or inference question. Part B asks the candidate to select the quotation from the passage that provides the best evidence for their answer in Part A.',
+      ref: { evidence_mcq: 10, case_study: 5, mcq: 5 }, dominant: 'evidence_mcq',
+      sections: [
+        ['TWO-PART EVIDENCE QUESTIONS', 'Use Type=evidence_mcq.\nCol14 (Items) MUST be JSON structured as:\n{"part1": {"question":"<Part A question>","options":["<opt A>","<opt B>","<opt C>","<opt D>"],"answer":"<correct opt>"}, "part2": {"question":"Which choice provides the best evidence for the answer to the previous question?","options":["<quote A>","<quote B>","<quote C>","<quote D>"],"answer":"<correct quote>"}}\nCol6 (CorrectAnswer) should be: <part1 answer>|<part2 answer>']
+      ],
+      quality: [
+        'Every evidence_mcq row has valid JSON in Col14 with part1 and part2.',
+        'The Part B options are exact quotations from the passage.'
       ]
     },
 

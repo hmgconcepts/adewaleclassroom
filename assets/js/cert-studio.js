@@ -116,7 +116,7 @@
        ====================================================================== */
     html: function (o) {
       var s = studio();
-      var logo = o.logo_url ? directImage(o.logo_url) : (s.logo || 'assets/img/logo.svg');
+      var logo = o.logo_url ? directImage(o.logo_url) : (s.logo || 'assets/img/logo.png');
       var sig = o.sig ? directImage(o.sig) : '';
       var pc = o.pc || '#0506ae';
       var ac = o.ac || '#964eec';

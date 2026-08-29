@@ -44,7 +44,7 @@ const Generator = {
     const accent = (cfg && cfg.theme && cfg.theme.accent) || '#964eec';
     const email = (cfg && cfg.email) || '';
     const siteUrl = (cfg && cfg.siteUrl) || '';
-    const logoUrl = (cfg && (cfg.logoUrl || cfg.logo)) || 'assets/img/logo.svg';
+    const logoUrl = (cfg && (cfg.logoUrl || cfg.logo)) || 'assets/img/logo.png';
     const phone = (cfg && cfg.phone) || '';
     const wa = phone
       ? ('https://wa.me/' + String(phone).replace(/\D/g, '').replace(/^0/, '234'))
@@ -165,7 +165,7 @@ window.PRACTICE = ${JSON.stringify({
       address: cfg.address || '', phone: cfg.phone || '', email: cfg.email || '',
       siteUrl: cfg.siteUrl || '', timezone: cfg.timezone || 'Africa/Lagos',
       currency: cfg.currency || '₦', logoExt: cfg.logoExt || 'svg',
-      logoUrl: cfg.logoUrl || 'assets/img/logo.svg',
+      logoUrl: cfg.logoUrl || 'assets/img/logo.png',
       socials: cfg.socials || {},
       hmg: {
         concepts: 'https://hmgconcepts.pages.dev/',
@@ -352,8 +352,8 @@ console.log('[Tutoring Connect] config —', window.PRACTICE.name);
       n++;
       if (onProgress) onProgress(n, files.length, f);
     }
-    const logo = await fetch('assets/img/logo.svg').then(r => r.ok ? r.text() : '');
-    if (logo) zip.file('assets/img/logo.svg', logo);
+    const logo = await fetch('assets/img/logo.png').then(r => r.ok ? r.text() : '');
+    if (logo) zip.file('assets/img/logo.png', logo);
     try {
       const pngRes = await fetch('assets/img/logo.png');
       if (pngRes.ok) zip.file('assets/img/logo.png', await pngRes.arrayBuffer());
@@ -464,7 +464,7 @@ console.log('[Tutoring Connect] config —', window.PRACTICE.name);
       background_color: '#f7f4ef',
       theme_color: (cfg.theme && cfg.theme.primary) || '#134e4a',
       icons: [
-        { src: 'assets/img/logo.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+        { src: 'assets/img/logo.png', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
         { src: 'assets/img/logo.png', sizes: '512x512', type: 'image/png', purpose: 'any' }
       ]
     }, null, 2));
@@ -539,7 +539,7 @@ console.log('[Tutoring Connect] config —', window.PRACTICE.name);
     const fontLink = '<link href="https://fonts.googleapis.com/css2?family=' + fontCss + '" rel="stylesheet">';
     return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${name} — official tutoring portal</title>
-<link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+<link rel="icon" type="image/svg+xml" href="assets/img/logo.png">
 ${fontLink}
 <style>
 :root{--primary:${primary};--accent:${accent};--tc-primary:${primary};--tc-accent:${accent}}
@@ -687,7 +687,7 @@ document.querySelectorAll('.preview-nav a').forEach(a=>a.onclick=e=>{e.preventDe
     cfg.motto = cfg.motto || cfg.schoolMotto || '';
     cfg.timezone = cfg.timezone || 'Africa/Lagos';
     cfg.currency = cfg.currency || '₦';
-    cfg.logoUrl = cfg.logoUrl || 'assets/img/logo.svg';
+    cfg.logoUrl = cfg.logoUrl || 'assets/img/logo.png';
     const theme = (window.TC && TC.THEMES || []).find(t => t.id === cfg.themeId) || (window.TC && TC.THEMES && TC.THEMES[0]) || { id: 'hmg', primary: '#0506ae', accent: '#964eec' };
     // Preserve every shade the theme defines so the branded config and the
     // CSS premium layer can use light/dark/bg variants.

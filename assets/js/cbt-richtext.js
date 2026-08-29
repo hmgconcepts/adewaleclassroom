@@ -417,8 +417,8 @@
       /* Plain-ish text. If it carries backslash commands, hand the whole
          fragment to the maths engine (it handles \n and prose safely).
          Otherwise just decode escapes and convert newlines. */
-      if (looksMathy(p.v)) return '<span class="tcm tcm-inline">' + math(p.v) + '</span>';
-      return esc(decodeEscapes(p.v)).replace(/\n/g, '<br>').replace(/\t/g, '&#9;&#9;');
+      if (looksMathy(p.v)) return '<span class="tcm tcm-inline">' + math(p.v).replace(/\]\s*\[/g, ']<br>[') + '</span>';
+      return esc(decodeEscapes(p.v)).replace(/\n/g, '<br>').replace(/\t/g, '&#9;&#9;').replace(/\]\s*\[/g, ']<br>[');
     }).join('');
   }
 

@@ -118,10 +118,25 @@ const Proctor = {
       let sum = 0;
       for (let i = 0; i < px.length; i += 4) sum += (px[i] * 0.2126 + px[i + 1] * 0.7152 + px[i + 2] * 0.0722);
       const mean = sum / (px.length / 4);
+      
+      let msg = mean < 12 ? 'Camera appears covered or dark' : 'Frame captured (not stored)';
+      let faces = -1;
+      
+      if (window.FaceDetector) {
+         try {
+           const fd = new FaceDetector({ fastMode: true });
+           const detected = await fd.detect(c);
+           faces = detected.length;
+           if (faces === 0 && mean >= 12) msg = 'No face detected in frame';
+           else if (faces > 1) msg = 'Multiple faces detected in frame';
+         } catch(e) {}
+      }
+
       this.violations.push({
         type: 'camera_frame',
-        detail: mean < 12 ? 'Camera appears covered or dark' : 'Frame captured (not stored)',
+        detail: msg,
         luminance: Math.round(mean),
+        faces: faces,
         at: new Date().toISOString()
       });
       // canvas is discarded here — no blob, no upload, no storage cost.

@@ -338,7 +338,7 @@
           var { data: u, error } = await w.sb.from('tc_blog_posts').update(payload).eq('id', post.id).select('id');
           if (error) throw error; saved = u && u[0];
         } else {
-          var { data: ins, error: err2 } = await w.sb.from('tc_blog_posts').insert(payload).select('id,slug,name,status');
+          var { data: ins, error: err2 } = await w.sb.from('tc_blog_posts').insert(payload).select('id,slug,title,status');
           if (err2) throw err2; saved = ins && ins[0];
         }
         var liveSlug = (saved && saved.slug) || slug;

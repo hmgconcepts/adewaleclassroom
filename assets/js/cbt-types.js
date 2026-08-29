@@ -257,6 +257,21 @@
     },
 
     /* A passage or scenario, then a normal choice question. */
+    /* Two-part Evidence-Based Reading (SAT/International) */
+    evidence_mcq: function (q, name) {
+      var it = parseObj(q.items);
+      var pt1 = it.part1 || { question: "Part A", options: [] };
+      var pt2 = it.part2 || { question: "Part B: Which choice provides the best evidence for the answer to the previous question?", options: [] };
+      return "<div class=\"tcq-evidence-part\">" +
+               "<div style=\"font-weight:600;margin-bottom:8px\">" + rich(pt1.question) + "</div>" +
+               TYPES._optionCards({options: pt1.options || q.options}, name + "__1", false) +
+             "</div>" +
+             "<div class=\"tcq-evidence-part\" style=\"margin-top:20px;border-top:1px solid #e2e8f0;padding-top:16px\">" +
+               "<div style=\"font-weight:600;margin-bottom:8px\">" + rich(pt2.question) + "</div>" +
+               TYPES._optionCards({options: pt2.options || []}, name + "__2", false) +
+             "</div>";
+    },
+
     case_study: function (q, name) {
       var it = parseObj(q.items);
       var passage = q.passage || it.passage || it.text || '';
@@ -779,6 +794,13 @@
       var t = ALIAS[q.type] || q.type;
       var one = function (sel) { var e = root.querySelector(sel); return e ? e.value : ''; };
 
+      if (t === 'evidence_mcq') {
+        return [
+          one('input[name="' + name + '__1"]:checked'),
+          one('input[name="' + name + '__2"]:checked')
+        ];
+      }
+
       if (t === 'multi_select' || t === 'hot_text') {
         if (t === 'hot_text') { try { return JSON.parse(one('input[type=hidden][name="' + name + '"]') || '[]'); } catch (e) { return []; } }
         return [].map.call(root.querySelectorAll('input[name="' + name + '"]:checked'), function (i) { return i.value; });
@@ -865,6 +887,7 @@
     hasKey: function (q) {
       var t = ALIAS[q.type] || q.type;
       if (t === 'essay' || t === 'code') return true;            // marked by rubric
+      if (t === 'evidence_mcq') return true;
       if (t === 'matching' || t === 'categorization' || t === 'matrix' ||
           t === 'multi_numeric' || t === 'cloze' || t === 'ordering' || t === 'hot_text') {
         var rows = parseList(q.items || q.pairs);
@@ -951,6 +974,19 @@
         var ok = 0;
         order.forEach(function (v, i) { if (norm(mine[i]) === norm(v)) ok++; });
         return res(max * ok / order.length, ok + ' of ' + order.length + ' in place');
+      }
+
+      if (t === 'evidence_mcq') {
+        var it = parseObj(q.items);
+        var pt1_ans = String((it.part1 || {}).answer || (Array.isArray(q.correct) ? q.correct[0] : (q.correct ? q.correct.split('|')[0] : '')) || '').trim();
+        var pt2_ans = String((it.part2 || {}).answer || (Array.isArray(q.correct) ? q.correct[1] : (q.correct ? q.correct.split('|')[1] : '')) || '').trim();
+        var givenA = String(Array.isArray(given) ? given[0] || '' : '').trim();
+        var givenB = String(Array.isArray(given) ? given[1] || '' : '').trim();
+        
+        var points = 0;
+        if (norm(givenA) === norm(pt1_ans) && norm(givenA) !== '') points++;
+        if (norm(givenB) === norm(pt2_ans) && norm(givenB) !== '') points++;
+        return res(max * (points / 2), points + ' of 2 correct');
       }
 
       // MATCHING / CATEGORIZATION / MATRIX / MULTI-NUMERIC / CLOZE — per row.
