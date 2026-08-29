@@ -87,8 +87,6 @@
 <script src="assets/js/legibility.js" defer></script>
 <script src="assets/js/ux-enhance.js" defer></script>
 <script src="assets/js/ops-desk.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
 </head>
 <body>
 <div class="app-layout" data-require-role="any" id="app-layout">
@@ -170,6 +168,22 @@
             <label><input type="checkbox" id="aud"> 🎙️ Audio noise monitoring</label>
             <label><input type="checkbox" id="calc" checked> 🧮 Allow scientific calculator</label>
             <label><input type="checkbox" id="mkb" checked> ⌨️ Allow maths keyboard</label>
+            <!-- ITEM 16 (V41) — optional Quizizz-style gamification. When on,
+                 the learner earns XP / a day streak / levels and sees the podium
+                 on the result screen. Default off so a quiet, timed exam is not
+                 turned into a game by mistake. -->
+            <label><input type="checkbox" id="gam"> 🎮 Gamify this quiz (XP, streaks, leaderboard)</label>
+            <!-- ITEM 2 (V40) — randomization is now a first-class, off-by-default
+                 switch in the exam security options. It was always stored on
+                 cbt_exams but nothing in the authoring UI ever let the tutor
+                 turn it on, so the runtime served the CSV order to everyone. -->
+            <label><input type="checkbox" id="sq"> 🔀 Shuffle question order</label>
+            <label><input type="checkbox" id="so"> 🔀 Shuffle answer options</label>
+            <div class="form-help" style="grid-column:1/-1">
+              Question order shuffles whole passage sets together (a comprehension
+              passage never splits from its questions). Option order keeps
+              “All / None of the above” pinned to the bottom. Marking compares
+              answer text, never the A–D letter, so shuffling cannot change a score.</div>
             <label>Auto-submit after
               <input type="number" id="maxv" value="8" min="0" style="width:64px"> violations
               <span class="form-help" style="display:inline">(0 = never)</span></label>
@@ -240,6 +254,8 @@ async function boot(){
     chk('rclick',ac.block_right_click!==false); chk('devt',ac.block_devtools!==false);
     chk('fs',!!ac.fullscreen); chk('wm',ac.watermark!==false); chk('cam',!!ac.camera); chk('aud',!!ac.audio_monitor);
     chk('calc',x.calculator!==false); chk('mkb',x.math_keyboard!==false);
+    chk('gam',x.gamify===true);
+    chk('sq',x.shuffle_questions===true); chk('so',x.shuffle_options===true);
     set('maxv',ac.max_violations==null?8:ac.max_violations);
     document.getElementById('csvinfo').textContent=(x.questions||[]).length+' existing question(s) loaded for editing';
     window.scrollTo({top:0,behavior:'smooth'});
@@ -335,6 +351,8 @@ document.getElementById('save').onclick=async()=>{
       max_violations:Number($v('maxv')||0)
     },
     calculator:$c('calc'), math_keyboard:$c('mkb'),
+    shuffle_questions:$c('sq'), shuffle_options:$c('so'),
+    gamify:$c('gam'),
     push_to_scoresheet:$v('kind')==='graded',
     exam_mode:$v('exam_mode'), identity_mode:$v('exam_mode'),
     is_open:true, status:'open', show_review:true
