@@ -21,7 +21,7 @@ const CORE = [
   './hmg-ecosystem.html',
   './manifest.json',
   './assets/css/style.css',
-  './assets/img/logo.svg',
+  './assets/img/logo.png',
   './assets/img/logo.png'
 ];
 
@@ -97,8 +97,8 @@ self.addEventListener('push', e => {
   try { if (e.data) data = Object.assign(data, e.data.json()); } catch (_) { if (e.data) data.body = e.data.text(); }
   e.waitUntil(self.registration.showNotification(data.title, {
     body: data.body,
-    icon: 'assets/img/logo.svg',
-    badge: 'assets/img/logo.svg',
+    icon: 'assets/img/logo.png',
+    badge: 'assets/img/logo.png',
     data: { url: data.url },
     tag: data.tag || ('tc-' + Date.now()),
     requireInteraction: false,
