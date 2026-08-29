@@ -10812,7 +10812,7 @@ begin;
 create or replace function public.tc_schema_expected()
 returns text language sql immutable
 set search_path = public
-as $$ select 'V37'::text $$;
+as $$ select 'V38'::text $$;
 
 -- ---------------------------------------------------------------------
 -- 2. Stamp the registry with that same value.
@@ -10830,7 +10830,8 @@ values (1,
               'v28-admin-and-ops-enrichment','v29-social-registration-links',
               'v30-group-insights-rls-hotfix','v32-rls-recursion-hard-break',
               'v34-cbt-review-lookup','v35-cbt-review-lookup',
-              'v36-anon-rls-predicate-grants','v37-schema-version-truth'],
+              'v36-anon-rls-predicate-grants','v37-schema-version-truth',
+              'v38-cbt-delivery-and-readaloud'],
         'Installed by database/complete-schema.sql — single-file install, no other pack required.')
 on conflict (id) do update
    set version    = excluded.version,
@@ -10933,4 +10934,4 @@ begin
 end $$;
 
 notify pgrst, 'reload schema';
-notify pgrst, 'reload schema';
+select public.tc_schema_ok() as schema_check;
