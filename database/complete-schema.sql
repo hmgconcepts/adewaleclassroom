@@ -11538,7 +11538,7 @@ on conflict (id) do update
        note       = excluded.note;
 
 select public.tc_schema_info();
-perform set_config('search_path', 'public', true);
+select set_config('search_path', 'public', true);
 notify pgrst, 'reload schema';
 select 'Tutoring Connect V41 — quiz gamification installed ✅' as status;
 
