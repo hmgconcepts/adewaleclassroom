@@ -136,7 +136,14 @@
         var m = /^\\[a-zA-Z]+/.exec(s.slice(i));
         if (m) return [m[0], i + m[0].length];
       }
-      return [s.charAt(i) || '', i + 1];
+      var t0 = s.charAt(i) || '', j0 = i + 1;
+      if ((t0 === '+' || t0 === '-') && j0 < s.length) {
+        var m3 = /^\\[a-zA-Z]+/.exec(s.slice(j0));
+        if (m3) return [t0 + m3[0], j0 + m3[0].length];
+        if (s.charAt(j0) !== '{') { t0 += s.charAt(j0); j0 += 1; }
+        else { var g3r = group(s, j0); return [t0 + g3r[0], g3r[1]]; }
+      }
+      return [t0, j0];
     }
     var depth = 0, out = '', j = i;
     for (; j < s.length; j++) {
@@ -311,7 +318,14 @@
       var br = MATRIX_ENV[env];
       var rws = body.split(/\\\\/).map(function (r) { return r.trim(); })
                     .filter(function (r) { return r !== ''; });
-      var tbl = '<span class="tcm-mtable">' + rws.map(function (r) {
+      /* Render each row as a column list. To make every element sit directly
+         under the same column (item 3 — [2 3] over [5 7], or [12 3] over
+         [500 7]) the wrapper is a CSS grid with one column per element and the
+         cells auto-placed row-major. Equal column widths keep the vertical
+         line dead straight even when the digits differ in size. */
+      var ncols = 1;
+      rws.forEach(function (r) { ncols = Math.max(ncols, r.split('&').length); });
+      var tbl = '<span class="tcm-mtable" style="--ncols:' + ncols + '">' + rws.map(function (r) {
         return '<span class="tcm-mrow">' + r.split('&').map(function (cc) {
           return '<span class="tcm-mcell">' + math(cc.trim()) + '</span>';
         }).join('') + '</span>';
@@ -322,7 +336,9 @@
     }
     if (env === 'aligned' || env === 'align' || env === 'align*' || env === 'gather' || env === 'array') {
       var ar = body.split(/\\\\/).filter(function (r) { return r.trim() !== ''; });
-      return '<span class="tcm-mtable tcm-align">' + ar.map(function (r) {
+      var ncols2 = 1;
+      ar.forEach(function (r) { ncols2 = Math.max(ncols2, r.split('&').length); });
+      return '<span class="tcm-mtable tcm-align" style="--ncols:' + ncols2 + '">' + ar.map(function (r) {
         return '<span class="tcm-mrow">' + r.split('&').map(function (cc) {
           return '<span class="tcm-mcell">' + math(cc.trim()) + '</span>';
         }).join('') + '</span>';
@@ -352,7 +368,21 @@
 
   /* Does this fragment need the maths engine at all? */
   function looksMathy(s) {
-    return /\\[a-zA-Z]|[\^_]\{|\$|\\\(|\\\[|\\begin\{/.test(s);
+    return /\\[a-zA-Z]|[\^_](?=[a-zA-Z0-9{(\\-])|\$|\\\(|\\\[|\\begin\{/.test(s);
+  }
+
+  /* Unicode superscripts / subscripts (1², 3², m⁴, (x+y)⁵, a₁, H₂O, x₀)
+     are re-written to caret/underscore form so the maths engine draws them
+     as real <sup>/<sub> that are identical on every platform — a font's own
+     superscript glyphs are inconsistent and can even be missing. Doing the
+     conversion here means both toHtml() and toPlain() (TTS/aria) agree:
+     "1²" renders as 1<sup>2</sup> and is read "1 squared". */
+  function toCaret(s) {
+    var SUP = { '⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9','⁺':'+','⁻':'-','⁼':'=','⁽':'(','⁾':')','ⁿ':'n' };
+    var SUB = { '₀':'0','₁':'1','₂':'2','₃':'3','₄':'4','₅':'5','₆':'6','₇':'7','₈':'8','₉':'9','₊':'+','₋':'-','₌':'=','₍':'(','₎':')' };
+    return String(s == null ? '' : s)
+      .replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁼⁽⁾ⁿ]/g, function (m) { return '^{' + SUP[m] + '}'; })
+      .replace(/[₀₁₂₃₄₅₆₇₈₉₊₋₌₍₎]/g, function (m) { return '_{' + SUB[m] + '}'; });
   }
 
   /* ------------------------------------------------------------------ *
@@ -363,7 +393,7 @@
      is rendered by the maths engine too, because the STEM prompt emits bare
      \frac outside delimiters and candidates must still see a fraction. */
   function toHtml(raw) {
-    var s = String(raw == null ? '' : raw);
+    var s = toCaret(String(raw == null ? '' : raw));
     if (!s) return '';
 
     /* Split on explicit maths delimiters, keeping the delimiters' content. */
@@ -541,7 +571,7 @@
 
   /* Flatten to speech/plain text — used by the read-aloud engine and aria. */
   function toPlain(raw) {
-    var s = String(raw == null ? '' : raw);
+    var s = toCaret(String(raw == null ? '' : raw));
     if (!s) return '';
     var re = /(\$\$[\s\S]*?\$\$|\$[^$\n]*?\$|\\\([\s\S]*?\\\)|\\\[[\s\S]*?\\\])/g;
     var out = '', last = 0, mm;
@@ -603,10 +633,11 @@
     '.tcm-paren{padding:0 .04em}',
     '.tcm-matrix{display:inline-flex;align-items:stretch;vertical-align:middle;margin:0 .2em}',
     '.tcm-mbrk{display:flex;align-items:center;font-size:1.9em;line-height:1;font-weight:300}',
-    '.tcm-mtable{display:inline-flex;flex-direction:column;padding:.1em .35em;gap:.16em}',
-    '.tcm-mrow{display:flex;gap:.85em;justify-content:center}',
+    '.tcm-mtable{display:grid;grid-template-columns:repeat(var(--ncols,1),minmax(1.1em,auto));',
+      'gap:.18em .6em;padding:.1em .35em;justify-items:center;justify-content:center}',
+    '.tcm-mrow{display:contents}',
     '.tcm-mcell{min-width:1.1em;text-align:center}',
-    '.tcm-align .tcm-mrow{justify-content:flex-start}',
+    '.tcm-align .tcm-mtable{justify-content:flex-start}',
     '.tcm-cases{display:inline-flex;align-items:center;vertical-align:middle}',
     '.tcm-brace{font-size:2.1em;line-height:1;font-weight:300}',
     '.tcm-casesrows{display:inline-flex;flex-direction:column;gap:.18em;padding-left:.2em}',
@@ -631,7 +662,7 @@
     html: function (t) { injectCSS(); return toHtml(t); },
     plain: toPlain,
     decode: decodeEscapes,
-    hasMath: looksMathy,
+    hasMath: function (t) { return looksMathy(toCaret(t)); },
     injectCSS: injectCSS,
     _math: math
   };

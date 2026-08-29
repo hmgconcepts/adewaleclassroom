@@ -94,6 +94,39 @@
      if anything at all goes wrong it falls back to the old behaviour rather
      than inventing data.
      ------------------------------------------------------------------------- */
+  /* A chat model asked for a JSON object frequently emits the string value of
+     a case-study passage with UNESCAPED inner quotes — `"People think..."`
+     becomes `""People think...""` — which JSON.parse throws on (the report's
+     "passage is missing" symptom; the whole Items cell was being dropped).
+     This escapes a quote only when the next non-space character is NOT a
+     delimiter (, } ] : or end), so real delimiters are preserved and the
+     result re-parses. Operates on the smart-quote-normalised text, so it can
+     be composed with the Python-literal normaliser that follows. */
+  function repairQuotes(str) {
+    var out = '', i = 0, inStr = false, esc = false, n = str.length;
+    while (i < n) {
+      var c = str.charAt(i);
+      if (!inStr) {
+        out += c;
+        if (c === '"') inStr = true;
+        i++; continue;
+      }
+      if (esc) { out += c; esc = false; i++; continue; }
+      if (c === '\\') { out += c; esc = true; i++; continue; }
+      if (c === '"') {
+        var j = i + 1;
+        while (j < n && /\s/.test(str.charAt(j))) j++;
+        var nx = j < n ? str.charAt(j) : '';
+        if (nx === ',' || nx === '}' || nx === ']' || nx === ':' || nx === '') {
+          out += c; inStr = false; i++;
+        } else { out += '\\"'; i++; }
+        continue;
+      }
+      out += c; i++;
+    }
+    return out;
+  }
+
   function lenientJSON(str) {
     var s = String(str).trim();
     if (!s) return null;
@@ -105,7 +138,12 @@
     var t = s.replace(/[\u201c\u201d]/g, '"').replace(/[\u2018\u2019]/g, "'");
     try { return JSON.parse(t); } catch (e) {}
 
-    // 3. Python literals: True/False/None, and single-quoted strings.
+    // 3. Unescaped content quotes — see repairQuotes() above. This is the
+    //    fix for the missing case-study passage in the report: the Items cell
+    //    contained ""People think..."" and JSON.parse dropped the whole cell.
+    try { return JSON.parse(repairQuotes(t)); } catch (e) {}
+
+    // 4. Python literals: True/False/None, and single-quoted strings.
     try {
       var out = '', i = 0, ch, q = null, body;
       while (i < t.length) {
@@ -222,7 +260,12 @@
     case_study: function (q, name) {
       var it = parseObj(q.items);
       var passage = q.passage || it.passage || it.text || '';
-      return (passage ? '<div class="tcq-passage"><div class="tcq-passage-tag">Read this first</div>' +
+      /* When the exam shell pins this set's stimulus in the sticky pane above
+         the card it must NOT be repeated here, or the candidate sees the whole
+         passage twice (the reported "passage duplicated" defect). q._passage_pinned
+         is the flag cbt.js sets for every question in a pinned set. */
+      var showInline = passage && !q._passage_pinned;
+      return (showInline ? '<div class="tcq-passage"><div class="tcq-passage-tag">Read this first</div>' +
         rich(passage) + '</div>' : '') +
         TYPES._optionCards(q, name, false);
     },
@@ -274,18 +317,28 @@
         }).join('') + '</div>';
     },
 
-    /* The sentence with real inputs sitting where each ___ appeared. */
+    /* The sentence with real inputs (or dropdowns) where each ___ appeared.
+       If Items is a list of {options:[...], answer:...} — the "select missing
+       words" form — each blank becomes a <select> (V40, item 6). Otherwise it
+       stays a typed input that accepts alternatives with |. */
     cloze: function (q, name) {
       var text = String(q.question || '');
+      var rows = parseList(q.items || q.accepted_answers);
       var blanks = (text.match(/_{2,}/g) || []).length;
-      var answers = parseList(q.items || q.accepted_answers);
-      if (!blanks) blanks = Math.max(answers.length, 1);
+      if (!blanks) blanks = Math.max(rows.length, 1);
       var i = 0;
       var withInputs = text.replace(/_{2,}/g, function () {
-        var box = '<input class="tcq-input tcq-blank" type="text" autocomplete="off" ' +
-          'name="' + esc(name) + '__' + i + '" placeholder="' + (i + 1) + '">';
-        i++;
-        return box;
+        var idx = i; i++;
+        var r = rows[idx];
+        var opts = (r && typeof r === 'object' && Array.isArray(r.options)) ? r.options : null;
+        if (opts && opts.length) {
+          return '<select class="tcq-select tcq-blank" name="' + esc(name) + '__' + idx + '">' +
+            '<option value="">— choose —</option>' +
+            opts.map(function (o) { return '<option value="' + esc(o) + '">' + esc(o) + '</option>'; }).join('') +
+          '</select>';
+        }
+        return '<input class="tcq-input tcq-blank" type="text" autocomplete="off" ' +
+          'name="' + esc(name) + '__' + idx + '" placeholder="' + (idx + 1) + '">';
       });
       if (i === 0) {
         withInputs += '<div class="tcq-parts">' + Array.apply(null, Array(blanks)).map(function (_, k) {
@@ -295,6 +348,36 @@
       }
       return '<div class="tcq-cloze">' + withInputs + '</div>' +
         '<div class="tcq-hint">Fill every blank. Capitalisation does not matter.</div>';
+    },
+
+    /* V40 (item 6) — HOTSPOT: tap the correct region of an image.
+       Items: {"image":"https://...","regions":[{"x":0.52,"y":0.3,"label":"Liver"},...],
+               "correct":"Liver"}
+       Regions are percentage coordinates (0..1) so they scale to any screen.
+       A tap selects the nearest region; the chosen label is the answer. */
+    hotspot: function (q, name) {
+      var it = parseObj(q.items);
+      var img = q.media_url || it.image || q.image || '';
+      var regions = Array.isArray(it.regions) ? it.regions : [];
+      if (!img) return '<p class="tcq-warn">⚠️ This hotspot question has no image link.</p>';
+      if (!regions.length) return '<p class="tcq-warn">⚠️ This hotspot question has no tap regions defined.</p>';
+      var r50 = regions.map(function (r, i) {
+        var x = (Number(r.x) || 0) * 100, y = (Number(r.y) || 0) * 100;
+        return '<button type="button" class="tcq-hotspot" data-val="' + esc(r.label != null ? r.label : i) + '" ' +
+          'style="left:' + x + '%;top:' + y + '%;position:absolute;transform:translate(-50%,-50%);' +
+          'width:26px;height:26px;border-radius:50%;background:rgba(217,119,6,.35);border:2px solid #d97706;' +
+          'cursor:pointer;transition:transform .12s" aria-label="' + esc(r.label != null ? r.label : ('option ' + (i + 1))) + '"></button>';
+      }).join('');
+      /* onerror simply hides the image and reveals a pre-inserted fallback <p>,
+         so a broken link degrades to a readable item instead of a broken box. */
+      return '<div class="tcq-figure tcq-hotspot-wrap" data-hotspot="' + esc(name) + '" style="position:relative;width:100%">' +
+          '<img src="' + esc(img) + '" alt="Hotspot diagram" loading="lazy" ' +
+            'onerror="this.style.display=\'none\';if(this.nextElementSibling)this.nextElementSibling.style.display=\'block\';">' +
+          '<p class="tcq-warn" style="display:none">⚠️ The diagram could not load. Answer from the text below.</p>' +
+          '<div class="tcq-hotspot-overlay" style="position:relative;margin-top:-6px">' + r50 + '</div>' +
+        '</div>' +
+        '<input type="hidden" name="' + esc(name) + '">' +
+        '<div class="tcq-hint">Tap the exact part the question asks about. Tap a different spot to change your answer.</div>';
     },
 
     essay: function (q, name) {
@@ -399,7 +482,18 @@
 
     hot_text: function (q, name) {
       var chunks = parseList(q.items);
-      if (!chunks.length) return '<p class="tcq-warn">⚠️ No selectable text defined for this question.</p>';
+      if (!chunks.length) chunks = parseList(q.options);
+      if (!chunks.length) chunks = parseList(q.accept);
+      /* Nothing selectable exists at all (a generator left the cell empty, the
+         reported "No selectable text defined" card). Degrade to a typed answer
+         so the item is still answerable, and say why. hasKey() reports it
+         unmarkable, so it routes to the tutor instead of scoring nothing. */
+      if (!chunks.length) {
+        return '<div class="tcq-hint">This item has no answer options to select. ' +
+          'Type your answer in the box below — your tutor will mark it.</div>' +
+          '<input class="tcq-input" type="text" name="' + esc(name) + '" autocomplete="off" ' +
+          'placeholder="Type your answer">';
+      }
       return '<div class="tcq-hint">Tap every part that is correct. Tap again to unselect.</div>' +
         '<div class="tcq-hot" data-hot="' + esc(name) + '">' + chunks.map(function (c, i) {
           var t = (typeof c === 'object') ? (c.text || c.item) : c;
@@ -420,7 +514,7 @@
     error_spotting: 'hot_text', map_label: 'image_based',
     graph_read: 'case_study', citation: 'short_answer',
     audio_based: 'image_based', video_based: 'image_based',
-    code_output: 'code', hotspot: 'image_based'
+    code_output: 'code', hotspot: 'hotspot'
   };
 
   /* -------------------------------------------------------------------------
@@ -452,7 +546,8 @@
     code: 'Write your code in the box. Indentation is kept exactly as you type it.',
     assertion_reason: 'Read the Assertion and the Reason. Decide whether each is true, and whether the Reason actually EXPLAINS the Assertion. Then pick the option that describes both.',
     case_study: 'Read the passage at the top first, then answer the question underneath it.',
-    image_based: 'Study the figure, then answer the question underneath it.'
+    image_based: 'Study the figure, then answer the question underneath it.',
+    hotspot: 'Look at the diagram and tap the exact part the question names. Tap a different spot to change your answer.'
   };
 
   /* ITEM 2 FIX — the legend listed only the 17 base families, so a learner
@@ -484,21 +579,21 @@
     audio_based: 'Listen to the clip, then answer.',
     video_based: 'Watch the clip, then answer.',
     code_output: 'Say what the code prints, or write the code asked for.',
-    hotspot: 'Study the figure and answer the question about the marked area.'
+    hotspot: 'Look at the diagram and tap the exact part named in the question.'
   };
 
   /* The full legend, for the "How do I answer these?" button. */
   function legendHTML() {
     var order = ['mcq','multi_select','true_false','short_answer','numeric','multi_numeric',
                  'cloze','matching','ordering','categorization','matrix','hot_text',
-                 'assertion_reason','case_study','image_based','essay','code'];
+                 'assertion_reason','case_study','image_based','hotspot','essay','code'];
     var LABEL = {
       mcq: 'Multiple choice', multi_select: 'Multiple response', true_false: 'True / False',
       short_answer: 'Short answer', numeric: 'Numeric', multi_numeric: 'Multi-part numeric',
       cloze: 'Fill the gaps', matching: 'Matching', ordering: 'Put in order',
       categorization: 'Sort into groups', matrix: 'Grid', hot_text: 'Tap the right parts',
       assertion_reason: 'Assertion & Reason', case_study: 'Passage question',
-      image_based: 'Figure question', essay: 'Written answer', code: 'Code'
+      image_based: 'Figure question', hotspot: 'Tap a spot on a diagram', essay: 'Written answer', code: 'Code'
     };
     return '<div class="tcq-legend">' +
       '<p class="tcq-legend-intro">This paper may use several question styles. Here is how each one ' +
@@ -633,6 +728,21 @@
         });
       });
 
+      // Hotspot — a tap selects that region, deselecting the others.
+      root.querySelectorAll('[data-hotspot]').forEach(function (box) {
+        if (box._wired) return; box._wired = true;
+        var nm = box.getAttribute('data-hotspot');
+        var hidden = root.querySelector('input[type="hidden"][name="' + nm + '"]');
+        var pic = null;
+        box.addEventListener('click', function (e) {
+          var b = e.target.closest('.tcq-hotspot'); if (!b) return;
+          if (pic) pic.classList.remove('is-picked');
+          pic = b;
+          b.classList.add('is-picked');
+          if (hidden) { hidden.value = b.getAttribute('data-val'); hidden.dispatchEvent(new Event('change', { bubbles: true })); }
+        });
+      });
+
       // Essay word counter.
       root.querySelectorAll('textarea[name]').forEach(function (ta) {
         var out = root.querySelector('[data-wordcount="' + ta.name + '"]');
@@ -761,6 +871,11 @@
         if (!rows.length && (t === 'cloze' || t === 'ordering')) rows = parseList(q.answer);
         return rows.length > 0;
       }
+      if (t === 'hotspot') {
+        var h0 = parseObj(q.items);
+        var regs = Array.isArray(h0.regions) ? h0.regions : [];
+        return (h0.correct != null) || regs.length > 0;
+      }
       var a = q.answer;
       if (Array.isArray(a)) return a.filter(function (x) { return String(x).trim() !== ''; }).length > 0;
       return a != null && String(a).trim() !== '';
@@ -876,6 +991,14 @@
         var h = picked.filter(function (p) { return right.indexOf(p) > -1; }).length;
         var bad = picked.length - h;
         return res(max * Math.max(0, h - bad) / right.length, h + ' of ' + right.length + ' found');
+      }
+
+      // HOTSPOT — data-interpretation / identification by region label.
+      if (t === 'hotspot') {
+        var hs = parseObj(q.items);
+        var regs = Array.isArray(hs.regions) ? hs.regions : [];
+        var want = (hs.correct != null ? hs.correct : (regs[0] && regs[0].label)) || '';
+        return res(norm(given) === norm(want) ? max : 0);
       }
 
       // NUMERIC — tolerance-aware.

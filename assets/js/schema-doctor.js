@@ -43,7 +43,7 @@
     /* Everything below is installed by database/complete-schema.sql, which is
        a verified superset of every individual pack. `pack` is retained only
        so the operator can search the file for the object. */
-    EXPECTED: 'V37',
+    EXPECTED: 'V42',
 
     /* BUGFIX: each probe MUST carry the real argument list. Probing
        tc_cbt_get_exam with {} made PostgREST reply PGRST202 ("...without

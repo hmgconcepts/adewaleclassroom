@@ -252,7 +252,7 @@
         '</div>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">' +
           '<button class="btn btn-primary" type="button" id="blog-f-save">💾 Save</button>' +
-          (post ? '<button class="btn btn-outline" type="button" id="blog-f-status">' + (post.status === 'published' ? '📥 Unpublish' : '🚀 Publish now') + '</button>' : '') +
+          (post ? '<button class="btn btn-outline" type="button" id="blog-f-publish">' + (post.status === 'published' ? '📥 Unpublish' : '🚀 Publish now') + '</button>' : '') +
           (post ? '<button class="btn btn-danger" type="button" id="blog-f-del">🗑 Delete</button>' : '') +
           '<button class="btn btn-ghost" type="button" id="blog-f-cancel">Cancel</button>' +
         '</div>';
@@ -262,7 +262,7 @@
       });
       d.getElementById('blog-f-save').onclick = function () { self._save(post, box); };
       if (post) {
-        d.getElementById('blog-f-status').onclick = function () {
+        d.getElementById('blog-f-publish').onclick = function () {
           var next = post.status === 'published' ? 'draft' : 'published';
           if (w.sb) w.sb.rpc('tc_blog_set_status', { p_id: post.id, p_status: next }).then(function ({ error }) {
             if (error) { if (w.toast) toast(error.message, 'danger'); return; }
@@ -283,34 +283,74 @@
       box.scrollIntoView({ behavior: 'smooth', block: 'start' });
     },
 
+    /* V40 (item 9) — a save that cannot fail silently.
+       Three defects made "Save"/"Publish" appear to do nothing and were fatal
+       to correctness once a post was actually reached by a reader:
+         1. slug is `text not null unique`, but a blank slug arrived as NULL and
+            the insert threw a 23502 that the toast never surfaced clearly.
+         2. published_at was never set, so a published post could never be found
+            by the public reader (it filters on status AND published_at order).
+         3. excerpt / seo_description were left blank, so the blog cards and the
+            shared social card (LinkedIn / Facebook / X) had no summary.
+       All three are handled here, in the client, so no DB RPC is required. */
+    _slugify: function (t) {
+      return String(t || '').toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 60) || 'post';
+    },
     async _save(post, box) {
       if (!w.sb) { if (w.toast) toast('Connect Supabase to save posts', 'warning'); return; }
       var title = d.getElementById('blog-f-title').value.trim();
       var body = d.getElementById('blog-f-body').value;
       if (!title || !body.trim()) { if (w.toast) toast('Title and body are required', 'warning'); return; }
+      var manualSlug = d.getElementById('blog-f-slug').value.trim();
+      var slug = manualSlug || this._slugify(title);
+      var status = d.getElementById('blog-f-status').value;
+      var excerpt = d.getElementById('blog-f-excerpt').value.trim() ||
+                    body.replace(/[#*`>\-\n]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160);
+      var profile = (w.TC_PROFILE && (w.TC_PROFILE.id || w.TC_PROFILE.user_id)) ? w.TC_PROFILE : null;
+
+      /* Uniqueness: if we auto-derived a slug that already exists, append a
+         short suffix so the second post of the same title does not collide. */
+      if (!manualSlug && post && post.slug !== slug && slug && !/^[0-9a-f-]{36}$/.test(slug)) {
+        var dup = await w.sb.from('tc_blog_posts').select('id').eq('slug', slug).limit(1).maybeSingle();
+        if (dup && dup.data) slug = slug + '-' + Date.now().toString(36);
+      }
       var payload = {
         title: title,
-        slug: (d.getElementById('blog-f-slug').value.trim() || null),
+        slug: slug,
         category_id: d.getElementById('blog-f-cat').value || null,
-        status: d.getElementById('blog-f-status').value,
+        status: status,
         cover_url: d.getElementById('blog-f-cover').value.trim() || null,
         tags: d.getElementById('blog-f-tags').value.trim() || null,
-        excerpt: d.getElementById('blog-f-excerpt').value.trim() || null,
+        excerpt: excerpt,
+        seo_description: excerpt,
         body: body
       };
+      if (profile) { payload.author_id = profile.id || profile.user_id; payload.author_name = profile.full_name || profile.name || ''; }
+      /* A post leaving draft gets its publication timestamp now. Existing
+         published posts keep theirs. Re-dating to "now" every edit would move
+         the post around the blog, which readers experience as it reappearing. */
+      if (status === 'published' && !(post && post.published_at)) payload.published_at = new Date().toISOString();
+      if (post) payload.updated_at = new Date().toISOString();
       try {
+        var saved;
         if (post) {
-          var { error } = await w.sb.from('tc_blog_posts').update(payload).eq('id', post.id);
-          if (error) throw error;
+          var { data: u, error } = await w.sb.from('tc_blog_posts').update(payload).eq('id', post.id).select('id');
+          if (error) throw error; saved = u && u[0];
         } else {
-          var { error: err2 } = await w.sb.from('tc_blog_posts').insert(payload);
-          if (err2) throw err2;
+          var { data: ins, error: err2 } = await w.sb.from('tc_blog_posts').insert(payload).select('id,slug,name,status');
+          if (err2) throw err2; saved = ins && ins[0];
         }
-        if (w.toast) toast('Post saved', 'success');
+        var liveSlug = (saved && saved.slug) || slug;
+        if (w.toast) toast(status === 'published'
+          ? 'Published — live at blog.html?slug=' + liveSlug
+          : 'Saved as ' + (d.getElementById('blog-f-status').selectedOptions && d.getElementById('blog-f-status').selectedOptions[0] ? d.getElementById('blog-f-status').selectedOptions[0].text.toLowerCase() : 'draft'));
         box.style.display = 'none';
         this._adminList(document.getElementById('blog-admin-root'));
       } catch (e) {
-        if (w.toast) toast(e.message || String(e), 'danger');
+        var msg = e && (e.message || e.error_description) || String(e);
+        if (w.toast) toast(msg.indexOf('duplicate') > -1 || msg.indexOf('23505') > -1
+          ? 'That slug is already used — change the slug or title.' : msg, 'danger');
       }
     },
 

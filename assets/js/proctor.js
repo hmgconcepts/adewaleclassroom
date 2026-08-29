@@ -40,23 +40,50 @@ const Proctor = {
     cfg = cfg || {};
     this._onEvent = onEvent || this._onEvent || function () {};
     if (!cfg.camera && !cfg.audio_monitor) return { camera: false, audio: false };
-    try {
-      this._stream = await navigator.mediaDevices.getUserMedia({ video: !!cfg.camera, audio: !!cfg.audio_monitor });
-    } catch (e) {
-      this._onEvent('proctor_declined', e.message || 'permission denied');
+    var got = { camera: false, audio: false };
+    var audioError, videoError;
+
+    /* V40 (item 7) — robustness. The old code asked for video AND audio in one
+       getUserMedia() call, so a device with no camera (or a candidate who
+       denied only the camera) silently killed audio monitoring too, and a
+       candidate was never told a snapshot was impossible. Streams are now
+       requested independently, so one failing never disables the other, and a
+       failure is logged as a metadata-only event instead of being swallowed. */
+    if (cfg.audio_monitor) {
+      try {
+        var aStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        this._stream = aStream; got.audio = true;
+      } catch (e) { audioError = (e && e.message) || 'audio not available'; }
+    }
+    if (cfg.camera) {
+      try {
+        var vStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        /* Keep audio active on the audio stream if we already have it. */
+        this._videoStream = vStream;
+        if (!this._stream) this._stream = vStream;
+        else this._audioCtx = this._stream;   // held below via _audioStream
+        got.camera = true;
+      } catch (e) { videoError = (e && e.message) || 'camera not available'; }
+    }
+    if (!got.camera && !got.audio) {
+      this._onEvent('proctor_declined', audioError || videoError || 'permission denied');
       return { camera: false, audio: false, declined: true };
     }
     this.active = true;
-    if (cfg.camera) {
+    if (got.camera && this._videoStream) {
       this._video = document.createElement('video');
       this._video.muted = true; this._video.playsInline = true;
-      this._video.srcObject = this._stream;
+      /* Prefer the audio stream as srcObject when present, else the video one. */
+      this._video.srcObject = this._stream || this._videoStream;
       try { await this._video.play(); } catch (_) {}
       this._scheduleSnap();
     }
-    if (cfg.audio_monitor) this._watchAudio();
-    this._onEvent('proctor_started', (cfg.camera ? 'camera ' : '') + (cfg.audio_monitor ? 'audio' : ''));
-    return { camera: !!cfg.camera, audio: !!cfg.audio_monitor };
+    if (got.audio && this._stream) this._watchAudio();
+    if (videoError) this._onEvent('proctor_camera_off', videoError);
+    if (audioError) this._onEvent('proctor_audio_off', audioError);
+    this._onEvent('proctor_started', (got.camera ? 'camera ' : '') + (got.audio ? 'audio' : '') +
+      (videoError || audioError ? ' (partial)' : ''));
+    return { camera: got.camera, audio: got.audio,  declined: videoError || audioError };
   },
 
   _scheduleSnap() {
@@ -129,6 +156,7 @@ const Proctor = {
     this.active = false;
     clearTimeout(this._timer);
     if (this._stream) this._stream.getTracks().forEach(t => t.stop());
+    if (this._videoStream && this._videoStream !== this._stream) this._videoStream.getTracks().forEach(t => t.stop());
     if (this._audioCtx) try { this._audioCtx.close(); } catch (_) {}
   }
 };

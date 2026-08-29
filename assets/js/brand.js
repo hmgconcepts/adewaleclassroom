@@ -105,7 +105,7 @@ const Brand = {
     set('og:description', p.motto || 'A product of HMG Technologies, subsidiary of HMG Concepts.', 'property');
     set('og:type', 'website', 'property');
     if (p.siteUrl) set('og:url', p.siteUrl, 'property');
-    const logo = p.logoUrl || 'assets/img/logo.svg';
+    const logo = p.logoUrl || 'assets/img/logo.png';
     set('og:image', logo, 'property');
     let robots = document.querySelector('meta[name="robots"]');
     if (!robots) { robots = document.createElement('meta'); robots.name = 'robots'; document.head.appendChild(robots); }

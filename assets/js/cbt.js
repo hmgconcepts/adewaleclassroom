@@ -37,7 +37,7 @@ const CBT = {
      CorrectAnswer column. */
   STRUCTURED_KEY_TYPES: ['cloze', 'ordering', 'drag_drop', 'timeline', 'matching',
                          'categorization', 'matrix', 'multi_numeric', 'hot_text',
-                         'sequence'],
+                         'hotspot', 'sequence'],
 
   /* Families a machine must NOT pretend to mark. See item 7: these go to the
      tutor for marking, and are counted as "awaiting marking", never as
@@ -45,7 +45,7 @@ const CBT = {
   TUTOR_MARKED_TYPES: ['essay', 'case_study', 'oral_prompt', 'peer_review',
                        'citation', 'true_false_justify', 'code', 'comprehension',
                        'data_interpretation', 'graph_read', 'error_spotting',
-                       'hotspot', 'audio_based', 'video_based'],
+                       'audio_based', 'video_based'],
 
   /* Lift the answer key out of items/pairs for the structured families. */
   _keyFromStructure(type, items, pairs, answer) {
@@ -585,9 +585,9 @@ const CBT = {
     const name = 'q_' + q.id;
     const wrap = (inner) => `<article class="card cbt-q" data-qid="${q.id}" style="margin-bottom:12px">
       <div class="muted" style="font-size:.75rem;text-transform:uppercase">${i+1} · ${this.TYPE_LABEL[q.type]||q.type}${q.subject?' · '+q.subject:''} · ${q.mark} mark(s)</div>
-      ${(q.passage && !q._passage_pinned) ? `<blockquote style="border-left:3px solid var(--accent);padding-left:10px;margin:8px 0">${this.rich(q.passage)}</blockquote>` : ''}
+      ${(q.passage && !q._passage_pinned && !['case_study','comprehension','graph_read','data_interpretation'].includes(q.type)) ? `<blockquote style="border-left:3px solid var(--accent);padding-left:10px;margin:8px 0">${this.rich(q.passage)}</blockquote>` : ''}
       <p style="font-weight:700;margin:8px 0">${this.rich(q.question)}</p>
-      ${q.media_url ? this._media(q) : ''}
+      ${(q.media_url && !['image_based','hotspot','audio_based','video_based'].includes(q.type)) ? this._media(q) : ''}
       ${inner}
     </article>`;
     const dis = locked ? 'disabled' : '';
@@ -906,6 +906,10 @@ const CBT = {
         '  Col6: A/B/C/D/E where A = both true and Reason explains Assertion,\n' +
         '        B = both true but Reason does not explain it, C = Assertion true only,\n' +
         '        D = Reason true only, E = both false.  Col8: assertion_reason',
+      hotspot: 'hotspot — tap the correct region of a diagram\n' +
+        '  Col14: {"image":"https://...","regions":[{"x":0.52,"y":0.30,"label":"Liver"}],"correct":"Liver"}\n' +
+        '  Regions are (x,y) fractions 0..1 so they scale to any screen; the correct label\n' +
+        '  must equal the label of the correct region.  Col8: hotspot',
       case_study: 'case_study — passage or scenario, then a question\n' +
         '  Col14: {"passage":"Write the full passage or data here."}\n' +
         '  Col1: the question. Col2-5: options. Col6: the answer.  Col8: case_study',
@@ -1566,6 +1570,68 @@ const CBT = {
         'Both media_url items and \\\\frac/matrix items appear.',
         'Mobile-friendly: stems under 40 words excluding the expression block.',
         'CSV validates against the platform headers (question,type,a,b,c,d,answer,mark,explanation,passage,media_url,…).'
+      ]
+    },
+
+    /* ------------------------------------------------------------------
+       V40 (item 6) — INTERNATIONAL / STRUCTURED question-type pack.
+       The auto-gradable, interactive families used by international
+       platforms (AssessPrep, Schoology, Totara, Wayground): dropdown gap-fill,
+       hotspot tap-the-region, matrix grid, matching, sort/order and
+       categorise — a paper with very few plain MCQs.
+       ------------------------------------------------------------------ */
+    structured_visual: {
+      label: 'International question types (dropdown, hotspot, matrix, match…)',
+      role: 'an assessment architect who builds auto-gradable interactive items in the style of Schoology, AssessPrep and Cambridge — dropdown gap-fills, tap-the-region hotspots, grid matrices, matching, ordering and categorising, with not a single plain MCQ where a richer control is better',
+      mission: 'Produce a paper that exercises the INTERACTIVE, auto-gradable question families the platform supports, set in a realistic subject, so a tutor can see exactly what each control looks like and how it marks. Every item must be fully answerable and auto-gradable — no tutors-marked essays, no open audio.',
+      ref: { cloze: 4, hotspot: 4, matrix: 3, matching: 3, categorization: 2, ordering: 2, image_mcq: 2, numeric: 2, multi_numeric: 2 },
+      dominant: 'cloze',
+      minOne: true,
+      sections: [
+        ['WHICH TYPE, AND WHY',
+         'Choose the control that matches the cognitive demand, and say why in Col7:\\n' +
+         '  - A gap in a sentence where the word is forced by grammar → cloze with\\n' +
+         '    options (dropdown), and ONLY those plausible options. Default: cloze.\\n' +
+         '  - A labelled diagram / map / apparatus and a part to identify → hotspot:\\n' +
+         '    Col14 {\"image\":\"https://...\",\"regions\":[{\"x\":0.5,\"y\":0.3,\"label\":\"…\"}],\"correct\":\"…\"}.\\n' +
+         '    Coordinates are fractions 0..1 (0.5 = halfway). The correct label MUST\\n' +
+         '    equal the label of the correct region. Regions must be clearly\\n' +
+         '    separated so a tap can never hit two.\\n' +
+         '  - The same option set applied to several statements → matrix (Col11 the\\n' +
+         '    shared options, Col14 the rows).\\n' +
+         '  - Terms to definitions / countries to capitals → matching (Col13).\\n' +
+         '  - Group items into named buckets → categorization (Col14).\\n' +
+         '  - Sequence events / steps → ordering (Col14, correct order).\\n' +
+         '  - A value, with a defensible tolerance → numeric (Col9 tolerance, Col10 unit).\\n' +
+         '  - A multi-part calculate → multi_numeric (Col14 parts).'],
+        ['VERIFY EVERY ITEM AUTO-GRADES',
+         'Every item carries its key in the column the control actually reads:\\n' +
+         '  - cloze: answers per blank, alternatives with | (or per-blank options).\\n' +
+         '  - hotspot: the correct region label.\\n' +
+         '  - matrix / matching / categorization / ordering: the answer inside Col14/Col13.\\n' +
+         'No item may call for subjective judgment. If a question would need an\\n' +
+         'essay, it does not belong in this pack.'],
+        ['DIAGRAMS AND ACCESSIBILITY',
+         'Hotspot and image_mcq figures follow the figure contract: real public,\\n' +
+         'hotlinkable https/Drive-direct link OR the [[FIGURE: …]] placeholder, a\\n' +
+         'poster figure, a full text description, colour-blind-safe labels, and\\n' +
+         'never an invented URL.']
+      ],
+      quality: [
+        'At least one of each: cloze-with-options, hotspot, matrix, matching,',
+        '  categorization, ordering, multi_numeric.',
+        'Every hotspot item has 2-6 well-separated regions and a correct label that',
+        '  equals one of them.',
+        'No hotspot region overlaps another by more than ~10% of the image.',
+        'Every cloze blank has exactly the plausible options, not a random word bank.',
+        'Col7 explains why that type suited that item (self-documenting for tutors).',
+        'No item requires subjective marking.'
+      ],
+      checks: [
+        'Every hotspot Col14 has an \"image\", a non-empty \"regions\" array and a',
+        '  \"correct\" label that matches a region label.',
+        'No Col14 missing for a structured type.',
+        'Grep for \"essay\", \"oral\", \"peer_review\" — zero matches.'
       ]
     },
 

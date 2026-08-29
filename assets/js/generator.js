@@ -10,6 +10,32 @@ const Generator = {
     return res.text();
   },
 
+  /* V40-FINAL — brand ANY HTML page, not just the Classroom Deck.
+     CONFIRMED BUG: the generator substituted the client name only inside
+     packClassDeck(). The portal pages — including site-index.html, which the
+     build copies verbatim as the client homepage — were left untouched, so
+     <title>, meta description, keywords, og:title, og:site_name and
+     twitter:title all hardcoded 'ADEWALE CLASSROOM' no matter what studio
+     name the wizard was given. Every non-ADEWALE studio therefore shipped
+     the WRONG search title and the WRONG social-share card — a branding + SEO
+     defect that item 8 (logo/brand everywhere) and item 12 (indexability) both
+     depend on. This substitutes the configured client brand into a page's
+     static text. A function replaces on purpose so a '$' or '&' in a name can
+     never be read as a replacement pattern. */
+  brandHtml(txt, cfg) {
+    if (typeof txt !== 'string') return txt;
+    const name = String((cfg && (cfg.name || cfg.studioName)) || 'ADEWALE CLASSROOM').trim() || 'ADEWALE CLASSROOM';
+    const nb = name.replace(/\s+/g, '&nbsp;');
+    let s = txt;
+    s = s.replace(/ADEWALE CLASSROOM DECK/g, () => name + ' DECK');
+    s = s.replace(/ADEWALE CLASSROOM/g, () => name);
+    s = s.replace(/ADEWALE&nbsp;CLASSROOM&nbsp;DECK/g, () => nb + '&nbsp;DECK');
+    s = s.replace(/ADEWALE&nbsp;CLASSROOM/g, () => nb);
+    s = s.replace(/HMG ACADEMY CLASS DECK/g, () => name + ' DECK');
+    s = s.replace(/HMG ACADEMY/g, () => name);
+    return s;
+  },
+
   /* V36 — pack Classroom Deck runtime stamped with THIS client's brand */
   async packClassDeck(zip, cfg) {
     const brandName = String((cfg && (cfg.name || cfg.studioName)) || 'Classroom Studio');
@@ -61,33 +87,25 @@ const Generator = {
       '};',
       'console.log("[Classroom Deck] branded for", window.CLASSDECK.BRAND.studioName);',
       ''
-    ].join('\\n');
+    ].join('\n');
 
     const deckFiles = [
       'index.html','teach.html','join.html','stream.html','classroom.html','admin.html',
       'cbt.html','parent.html','community.html','generate.html','404.html',
       'css/style.css','manifest.json','manifest.webmanifest','sw.js','version.json','TC-INTEGRATION.md',
-      'js/common.js','js/config.js','js/portal-bridge.js','js/teach-toolbar-fix.js',
+      'js/common.js','js/config.js','js/portal-bridge.js','js/teach-toolbar-fix.js','js/generator.js',
       'js/license.js','js/whiteboard.js','js/webcast.js','js/toolkit.js',
       'js/toolkit-data.js','js/toolkit-data2.js','js/toolkit-data3.js','js/toolkit-ext.js',
       'js/security-config.js','js/auth.js','js/rtc.js','js/teach.js','js/enhancements.js',
       'js/ecosystem-branding.js','js/enterprise-enhanced.js','js/join.js',
       'vendor/peerjs.min.js','vendor/pdf.min.js','vendor/pdf.worker.min.js','vendor/qrcode.min.js',
-      'assets/icon-96.png','assets/icon-192.png','assets/icon-512.png','assets/apple-touch-icon.png'
+      /* Every static asset the deck references, not just the icon set. CONFIRMED
+         BUG: the deck's index/admin/stream pages load assets/hmg-academy-logo.png
+         and assets/founder-photo.jpg; omitting them made every generated Class
+         Deck show a broken logo and a broken founder photograph. */
+      'assets/icon-96.png','assets/icon-192.png','assets/icon-512.png','assets/apple-touch-icon.png',
+      'assets/hmg-academy-logo.png','assets/founder-photo.jpg','assets/icon-master.png'
     ];
-
-    const brandText = (txt) => {
-      if (typeof txt !== 'string') return txt;
-      let s = txt;
-      const bn = brandName;
-      s = s.replace(/ADEWALE CLASSROOM DECK/g, bn + ' DECK');
-      s = s.replace(/ADEWALE CLASSROOM/g, bn);
-      s = s.replace(/ADEWALE&nbsp;CLASSROOM&nbsp;DECK/g, bn.replace(/ /g, '&nbsp;') + '&nbsp;DECK');
-      s = s.replace(/ADEWALE&nbsp;CLASSROOM/g, bn.replace(/ /g, '&nbsp;'));
-      s = s.replace(/HMG ACADEMY CLASS DECK/g, bn + ' DECK');
-      s = s.replace(/HMG ACADEMY/g, bn);
-      return s;
-    };
 
     for (const rel of deckFiles) {
       try {
@@ -99,15 +117,15 @@ const Generator = {
         }
         let txt = await res.text();
         if (rel === 'js/config.js') txt = deckConfig;
-        else txt = brandText(txt);
+        else txt = this.brandHtml(txt, cfg);
         if (rel === 'teach.html') {
           if (txt.indexOf('teach-toolbar-fix.js') === -1) {
             txt = txt.replace('js/teach.js"></script>',
-              'js/teach.js"></script>\\n<script src="js/teach-toolbar-fix.js"></script>');
+              'js/teach.js"></script>\n<script src="js/teach-toolbar-fix.js"></script>');
           }
           if (txt.indexOf('portal-bridge.js') === -1) {
             txt = txt.replace('js/config.js"></script>',
-              'js/config.js"></script>\\n<script src="js/portal-bridge.js"></script>');
+              'js/config.js"></script>\n<script src="js/portal-bridge.js"></script>');
           }
         }
         zip.file('classdeck/' + rel, txt);
@@ -228,6 +246,7 @@ console.log('[Tutoring Connect] config —', window.PRACTICE.name);
     'database/v18-security-hardening.sql','database/v19-revenue-and-security.sql',
     'database/v20-cbt-2fa-polls.sql','database/v22-cbt-results-audit.sql',
     'database/v24-tutor-scoping.sql','database/v25-desks-lifecycle-free-classes.sql',
+    'database/v40-anon-write-visibility-hardening.sql','database/v41-cbt-game.sql','database/v42-enterprise-hardening.sql',
     'database/v26-tutor-marking-and-selftest.sql',
     'database/v27-rls-recursion-blog-documents.sql',
     'database/v28-admin-and-ops-enrichment.sql',
@@ -235,7 +254,7 @@ console.log('[Tutoring Connect] config —', window.PRACTICE.name);
     /* V27 — blog engine + account linking + review lookup. */
     'assets/js/blog.js',
     'DEPLOYMENT-GUIDE.md','README.md','FEATURE-CATALOG.md','SUPABASE_FREE_TIER_PROTECTION.md',
-    'docs/GOOGLE-DRIVE-SYNC-GUIDE.md','docs/ONBOARDING-GUIDE.md','docs/INSIGHTS-METHODOLOGY.md',
+    'docs/GOOGLE-DRIVE-SYNC-GUIDE.md','docs/ONBOARDING-GUIDE.md','docs/INSIGHTS-METHODOLOGY.md','docs/FEATURE-SYSTEM-GUIDE.md','docs/V40-IMPLEMENTATION-NOTES.md',
     'manifest.json','sw.js','robots.txt','sitemap.xml','_headers','.nojekyll',
     'api/keepalive.js','vercel.json',
     '.github/workflows/keep-supabase-alive.yml',
@@ -328,7 +347,7 @@ console.log('[Tutoring Connect] config —', window.PRACTICE.name);
         } catch (_) {}
       } else {
         const txt = await this.load(f);
-        if (txt) zip.file(f, txt);
+        if (txt) zip.file(f, f.endsWith('.html') ? this.brandHtml(txt, cfg) : txt);
       }
       n++;
       if (onProgress) onProgress(n, files.length, f);
@@ -340,7 +359,7 @@ console.log('[Tutoring Connect] config —', window.PRACTICE.name);
       if (pngRes.ok) zip.file('assets/img/logo.png', await pngRes.arrayBuffer());
     } catch (_) {}
     const clientIndex = await this.load('site-index.html');
-    if (clientIndex) zip.file('index.html', clientIndex);
+    if (clientIndex) zip.file('index.html', this.brandHtml(clientIndex, cfg));
     zip.file('assets/js/config.js', this.configJS(cfg));
     try { await this.packClassDeck(zip, cfg); } catch (e) { console.warn('[generator] classdeck', e); }
     zip.file('PRACTICE.json', JSON.stringify(cfg, null, 2));
