@@ -283,7 +283,8 @@
           if (error) { panel.innerHTML = '<p class="muted">' + esc(error.message) + '</p>'; return; }
           var regs = (data && Array.isArray(data)) ? data : [];
           if (!regs.length) { panel.innerHTML = '<p class="muted">No registrations for this link yet.</p>'; return; }
-          panel.innerHTML = regs.map(function (r) {
+          var csvBtn = '<div style="margin-bottom:10px"><button type="button" class="btn btn-sm btn-outline" id="cl-csv-' + id + '">⬇️ Export CSV</button></div>';
+          panel.innerHTML = csvBtn + regs.map(function (r) {
             return '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:8px 0;border-bottom:1px solid var(--gray-100,#f1f5f9)">' +
               '<div style="flex:1;min-width:200px"><b>' + esc(r.parent_name) + '</b> <code style="font-size:.72rem">' + esc(r.reg_no) + '</code>' +
                 '<div class="muted" style="font-size:.78rem">' + esc(r.learner_name || '—') + (r.learner_year ? ' · ' + esc(r.learner_year) : '') + (r.email ? ' · ' + esc(r.email) : '') + (r.phone ? ' · ' + esc(r.phone) : '') + '</div>' +

@@ -618,6 +618,7 @@
               '<div class="form-group"><label for="fr-phone">Phone / WhatsApp *</label><input class="form-input" id="fr-phone"></div>' +
               '<div class="form-group"><label for="fr-email">Email</label><input class="form-input" type="email" id="fr-email"></div>' +
               '<div class="form-group"><label for="fr-country">Country</label><input class="form-input" id="fr-country"></div>' +
+     '<div class="form-group"><label for="fr-state">State / Region</label><input class="form-input" id="fr-state"></div>' +
               '<div class="form-group"><label for="fr-city">City</label><input class="form-input" id="fr-city"></div>' +
               '<div class="form-group"><label for="fr-school">School</label><input class="form-input" id="fr-school"></div>' +
               '<div class="form-group"><label for="fr-level">Class / year</label><input class="form-input" id="fr-level" value="' + esc(info.level || '') + '"></div>' +
@@ -709,7 +710,7 @@
             p_name: v('fr-name'),
             p_email: v('fr-email') || null,
             p_phone: v('fr-phone'),
-            p_country: v('fr-country') || null,
+            p_country: v('fr-country') || null, p_state: v('fr-state') || null,
             p_city: v('fr-city') || null,
             p_school: v('fr-school') || null,
             p_level: v('fr-level') || null,

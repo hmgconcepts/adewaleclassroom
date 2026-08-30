@@ -145,6 +145,12 @@
             '<div style="margin-top:28px;padding-top:18px;border-top:1px solid var(--gray-200,#e2e8f0);display:flex;gap:10px;flex-wrap:wrap">' +
               '<a class="btn btn-outline" href="blog.html">← All posts</a>' +
               '<a class="btn btn-outline" href="apply.html">Interested in tutoring? Apply</a>' +
+              '<div style="width:100%;height:1px;background:var(--gray-200,#e2e8f0);margin:8px 0"></div>' +
+              '<span class="muted" style="display:flex;align-items:center;font-size:0.9rem">Share this post:</span>' +
+              '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(post.title + ' - ' + w.location.href) + '">WhatsApp</a>' +
+              '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(w.location.href) + '">Facebook</a>' +
+              '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?url=' + encodeURIComponent(w.location.href) + '&text=' + encodeURIComponent(post.title) + '">X (Twitter)</a>' +
+              '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="https://www.linkedin.com/shareArticle?mini=true&url=' + encodeURIComponent(w.location.href) + '&title=' + encodeURIComponent(post.title) + '">LinkedIn</a>' +
             '</div>' +
           '</article>';
       };
@@ -311,7 +317,7 @@
 
       /* Uniqueness: if we auto-derived a slug that already exists, append a
          short suffix so the second post of the same title does not collide. */
-      if (!manualSlug && post && post.slug !== slug && slug && !/^[0-9a-f-]{36}$/.test(slug)) {
+      if (!manualSlug && slug && (!post || post.slug !== slug) && !/^[0-9a-f-]{36}$/.test(slug)) {
         var dup = await w.sb.from('tc_blog_posts').select('id').eq('slug', slug).limit(1).maybeSingle();
         if (dup && dup.data) slug = slug + '-' + Date.now().toString(36);
       }
