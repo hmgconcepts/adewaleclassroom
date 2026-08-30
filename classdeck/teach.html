@@ -747,6 +747,9 @@ Not sure</textarea>
       <option value="screen">Share screen (laptops / where supported) — streams everything incl. browser/system audio where supported</option>
     </select>
     <p style="font-size:12px;color:var(--text-dim);margin:6px 0 0">Need to screen-share your full device inside Classroom Deck? Select <b>Share screen</b>, save, then tap <b>▶ Go Live</b>. Students join from the normal invite link — no Google Meet/Zoom required.</p>
+    <label style="margin-top:10px">Mass Broadcast URL (for 1000+ students)</label>
+    <input class="input" id="setMassBroadcastUrl" placeholder="e.g. https://www.youtube.com/embed/XXXXX (optional)" />
+    <p style="font-size:11.5px;color:var(--text-dim);margin:4px 0 0">To host 1000+ students smoothly, paste your YouTube/Twitch Live Embed URL here. The WebRTC video will be disabled, and students will watch the live stream while still using the interactive chat and polls.</p>
     <label style="margin-top:10px">Broadcast quality</label>
     <select class="input" id="setQuality">
       <option value="1280x720x8">720p @ 8 fps — best for slow networks (default)</option>
@@ -871,12 +874,7 @@ Not sure</textarea>
 <script src="js/security-config.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/rtc.js"></script>
-<script src="js/teach.js"></script>
 <script src="js/teach-toolbar-fix.js"></script>
-<script src="js/enhancements.js"></script>
-<script src="js/ecosystem-branding.js"></script>
-<script src="js/enterprise-enhanced.js"></script>
-<div id="hmgEcosystemFooterCompact" style="max-width:100%;padding:0 14px"></div>
 <div id="mTimer" class="modal-back">
   <div class="modal" style="max-width:360px">
     <h3 style="margin:0 0 10px">⏱ Class countdown</h3>
@@ -916,6 +914,114 @@ Not sure</textarea>
      Tablet Live, and (via #recBegin etc.) contributed to the fatal abort.
      Every id/class below matches exactly what teach.js queries.
      ========================================================================== -->
+
+<!-- HMG ENHANCED RECORDING SETUP (Staff, Lower Thirds, Ads, Intro) -->
+<div class="modal-back" id="mHmgRecSetup">
+  <div class="modal" style="max-width:620px">
+    <h3>🎬 ADEWALE CLASSROOM — Professional Recording Studio</h3>
+    <p style="color:var(--text-dim);font-size:13px;margin-bottom:12px">Record YouTube-ready tutoring videos with your brand, staff credentials, scrolling lower thirds, and intermittent text ads. Each video opens with an intro and closes with an outro.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="field">
+        <label>Subject</label>
+        <input class="input hmgRecField" data-key="subject" placeholder="e.g. Mathematics" />
+      </div>
+      <div class="field">
+        <label>Topic</label>
+        <input class="input hmgRecField" data-key="topic" placeholder="e.g. Simultaneous Equations" />
+      </div>
+      <div class="field">
+        <label>Class / Level</label>
+        <input class="input hmgRecField" data-key="klass" placeholder="e.g. SS2" />
+      </div>
+      <div class="field">
+        <label>Brand Name</label>
+        <input class="input hmgRecField" data-key="brand" value="ADEWALE CLASSROOM DECK" />
+      </div>
+    </div>
+
+    <hr class="sep" />
+    <b style="font-size:13px">👨‍🏫 Staff Credentials (appears in intro + intermittent popups)</b>
+    <div class="field-row" style="margin-top:6px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="field">
+        <label>Your Name</label>
+        <input class="input hmgRecField" data-key="staffName" value="Adewale Adeagbo" />
+      </div>
+      <div class="field">
+        <label>Your Title</label>
+        <input class="input hmgRecField" data-key="staffTitle" value="Virtual Tutor | Data Scientist" />
+      </div>
+    </div>
+
+    <hr class="sep" />
+    <b style="font-size:13px">📜 Lower Thirds — Scrolling Text Banner</b>
+    <div class="field" style="margin-top:6px">
+      <label>Text that scrolls at the bottom of the video</label>
+      <input class="input hmgRecField" data-key="lowerThird" value="If you want to book virtual classes with us, contact Adewale on WhatsApp" />
+    </div>
+
+    <hr class="sep" />
+    <b style="font-size:13px">📢 Text Ad / Announcement Overlay</b>
+    <div class="field" style="margin-top:6px">
+      <label>Ad text (appears intermittently during the recording)</label>
+      <input class="input hmgRecField" data-key="adText" placeholder="e.g. Subscribe to our YouTube channel for more lessons!" />
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="field">
+        <label>Show ad every (seconds)</label>
+        <input class="input hmgRecField" data-key="adInterval" type="number" value="60" min="15" max="300" />
+      </div>
+      <div class="field">
+        <label>Show staff popup every (seconds)</label>
+        <input class="input hmgRecField" data-key="pulseInterval" type="number" value="30" min="10" max="120" />
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:8px;margin:8px 0">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-dim)">
+        <input type="checkbox" id="hmgShowStaffPulse" checked /> Show staff credentials popup during recording
+      </label>
+    </div>
+
+    <div class="field">
+      <label>Footer credit line</label>
+      <input class="input hmgRecField" data-key="footer" value="Learning Deliberately. Teaching Authentically." />
+    </div>
+
+    <div class="row" style="margin-top:10px">
+      <button class="btn small" id="hmgRecLogoBtn">🖼 Upload custom logo</button>
+      <input type="file" id="hmgRecLogoFile" class="hide" accept="image/*" />
+      <span id="hmgRecLogoStatus" style="font-size:12px;color:var(--text-dim)">Logo: ADEWALE CLASSROOM default</span>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-dim)">
+        <input type="checkbox" id="hmgRecIncludeCams" /> Include student cameras
+      </label>
+    </div>
+
+    <hr class="sep" />
+    <b style="font-size:13px">🔗 CBT / Quiz Link (shown in recorded video)</b>
+    <div class="field" style="margin-top:6px">
+      <label>Paste the link to your CBT or quiz page (appears as a bottom banner in recorded video)</label>
+      <input class="input hmgRecField" data-key="cbtLink" placeholder="e.g. https://your-cbt-platform.vercel.app/exam/abc123" />
+    </div>
+
+    <hr class="sep" />
+    <b style="font-size:13px">📄 Advertising Flyer (shown in recorded video end screen)</b>
+    <div class="field" style="margin-top:6px">
+      <label>Upload a flyer image (PNG/JPG) that will appear in the video for promotion</label>
+      <button class="btn small" id="hmgRecFlyerBtn">🖼 Upload flyer image</button>
+      <input type="file" id="hmgRecFlyerFile" class="hide" accept="image/*" />
+      <span id="hmgRecFlyerStatus" style="font-size:12px;color:var(--text-dim);margin-left:8px"></span>
+      <button class="btn small ghost" id="hmgRecFlyerClear" style="font-size:11px">✕ Clear</button>
+    </div>
+
+    <div class="row" style="margin-top:14px">
+      <button class="btn primary" id="hmgRecBegin">🎬 Start Recording with Branding</button>
+      <button class="btn" onclick="closeModal('#mHmgRecSetup')">Cancel</button>
+    </div>
+  </div>
+</div>
 
 <!-- Recording setup — drives $("#btnRec") / startRecording() -->
 <div id="mRecSetup" class="modal-back">
@@ -1007,5 +1113,10 @@ Not sure</textarea>
     </div>
   </div>
 </div>
+<script src="js/teach.js"></script>
+<script src="js/enhancements.js"></script>
+<script src="js/ecosystem-branding.js"></script>
+<script src="js/enterprise-enhanced.js"></script>
+<div id="hmgEcosystemFooterCompact" style="max-width:100%;padding:0 14px"></div>
 </body>
 </html>

@@ -1459,7 +1459,10 @@ async function goLive() {
   toast("Starting class…");
   try {
     lastEndedRoom = null;
-    room = new TeacherRoom(currentRoomCode(), { onEvent: onRoomEvent });
+    room = new TeacherRoom(currentRoomCode(), { 
+      onEvent: onRoomEvent,
+      massUrl: Store.get("mass_url") || null
+    });
     room.roomName = Store.get("roomname", "") || ("Class " + currentRoomCode());
     room.pin = Store.get("pin", "");
     room.inviteToken = Store.get("secure_invite", false) ? rotateInviteToken() : "";
@@ -2185,6 +2188,7 @@ on("#btnSettings", "click", () => {
   $("#setRoomName").value = Store.get("roomname", "");
   $("#setBroadcast").value = Store.get("broadcast", "composite");
   $("#setQuality").value = Store.get("quality", "1280x720x8");
+  if ($("#setMassBroadcastUrl")) $("#setMassBroadcastUrl").value = Store.get("mass_url", "");
   $("#setWake").checked = Store.get("wake", true);
   if ($("#setPromo")) $("#setPromo").checked = Store.get("promo_broadcast", false);
   if ($("#setSecureInvite")) $("#setSecureInvite").checked = Store.get("secure_invite", false);
@@ -2201,6 +2205,7 @@ on("#setSave", "click", () => {
   Store.set("roomname", $("#setRoomName").value.trim());
   Store.set("broadcast", $("#setBroadcast").value);
   Store.set("quality", $("#setQuality").value);
+  if ($("#setMassBroadcastUrl")) Store.set("mass_url", $("#setMassBroadcastUrl").value.trim());
   Store.set("wake", $("#setWake").checked);
   if ($("#setPromo")) Store.set("promo_broadcast", $("#setPromo").checked);
   if ($("#setSecureInvite")) Store.set("secure_invite", $("#setSecureInvite").checked);

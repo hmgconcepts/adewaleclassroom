@@ -219,6 +219,24 @@ function onEvent(type, p) {
     case "roster":
       $("#countChip").textContent = "👥 " + (p.count || 0);
       break;
+    case "mass_broadcast":
+      enterStage();
+      // Replace stage video with the embed iframe
+      $("#stageVideo").style.display = "none";
+      let iframe = $("#massBroadcastIframe");
+      if (!iframe) {
+        iframe = document.createElement("iframe");
+        iframe.id = "massBroadcastIframe";
+        iframe.style.width = "100%";
+        iframe.style.height = "100%";
+        iframe.style.border = "none";
+        iframe.allowFullscreen = true;
+        iframe.allow = "autoplay; encrypted-media";
+        $("#stageVideo").parentNode.insertBefore(iframe, $("#stageVideo").nextSibling);
+      }
+      iframe.src = p.url;
+      toast("Joined mass broadcast livestream.", "ok");
+      break;
     case "media":
       if (p.kind === "stage") { enterStage(); attachStage(p.stream); }
       else if (p.kind === "teachercam") attachTeacherCam(p.stream);
