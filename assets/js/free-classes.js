@@ -171,6 +171,14 @@
               '<input class="form-input" type="url" id="fc-yt" placeholder="https://youtube.com/…"></div>' +
             '<div class="form-group"><label for="fc-replay">Replay / recordings link</label>' +
               '<input class="form-input" type="url" id="fc-replay"></div>' +
+            
+            '<div class="form-group" style="grid-column:1/-1;margin-top:16px"><h4 style="margin:0 0 4px">Social Media Subscriptions</h4><p class="muted" style="margin:0 0 12px;font-size:0.85rem">Registrants must click these to unlock the form. Leave blank to skip.</p></div>' +
+            '<div class="form-group"><label for="fc-soc-yt">YouTube Channel</label><input class="form-input" type="url" id="fc-soc-yt" placeholder="https://youtube.com/..."></div>' +
+            '<div class="form-group"><label for="fc-soc-fb">Facebook Page</label><input class="form-input" type="url" id="fc-soc-fb" placeholder="https://facebook.com/..."></div>' +
+            '<div class="form-group"><label for="fc-soc-x">X (Twitter) Profile</label><input class="form-input" type="url" id="fc-soc-x" placeholder="https://x.com/..."></div>' +
+            '<div class="form-group"><label for="fc-soc-tt">TikTok Profile</label><input class="form-input" type="url" id="fc-soc-tt" placeholder="https://tiktok.com/..."></div>' +
+            '<div class="form-group" style="grid-column:1/-1"><hr style="border:0;border-top:1px solid #e2e8f0;margin:0"></div>' +
+
             '<div class="form-group"><label for="fc-wa">WhatsApp group link</label>' +
               '<input class="form-input" type="url" id="fc-wa" placeholder="https://chat.whatsapp.com/…"></div>' +
             '<div class="form-group"><label for="fc-tg">Telegram group link</label>' +
@@ -251,6 +259,7 @@
         starts_on: v('fc-start') || null, ends_on: v('fc-end') || null,
         capacity: parseInt(v('fc-cap') || '0', 10) || 0,
         status: v('fc-status') || 'open',
+        social_links: { yt: v('fc-soc-yt'), fb: v('fc-soc-fb'), x: v('fc-soc-x'), tt: v('fc-soc-tt') },
         requires_parent_consent: ck('fc-consent'),
         auto_approve: ck('fc-auto'),
         track_attendance: ck('fc-track'),
@@ -413,6 +422,7 @@
         set('fc-sched', c.schedule_text); set('fc-tz', c.tz);
         set('fc-start', c.starts_on); set('fc-end', c.ends_on);
         set('fc-cap', c.capacity); set('fc-status', c.status);
+        var sl = c.social_links || {}; set('fc-soc-yt', sl.yt); set('fc-soc-fb', sl.fb); set('fc-soc-x', sl.x); set('fc-soc-tt', sl.tt);
         ck('fc-consent', c.requires_parent_consent); ck('fc-auto', c.auto_approve);
         ck('fc-track', c.track_attendance);
         d.getElementById('fc-form-title').textContent = 'Editing “' + c.name + '”';
@@ -489,11 +499,10 @@
       });
 
       d.getElementById('fc-roll-csv').addEventListener('click', function () {
-        var head = 'Reg no,Name,Email,Phone,Country,City,School,Level,Board,Status,Attended,Total,Attendance %,Avg score';
+        var head = 'Reg no,Name,Email,Phone,Country,City,School,Level,Board,Status,Attended,Total,Attendance %,Avg score,How Heard,Goal,Registered On';
         var body = rows.map(function (r) {
           return [r.reg_no, r.full_name, r.email, r.phone, r.country, r.city, r.school,
-                  r.level, r.exam_board, r.status, r.sessions_attended, r.sessions_total,
-                  r.attendance_pct, r.avg_score]
+                  r.level, r.exam_board, r.status, r.sessions_attended, r.sessions_total, r.attendance_pct, r.avg_score, r.how_heard, r.goal, r.created_at]
             .map(function (v) {
               v = v == null ? '' : String(v);
               return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
@@ -617,9 +626,13 @@
               '<div class="form-group"><label for="fr-name">Your full name *</label><input class="form-input" id="fr-name"></div>' +
               '<div class="form-group"><label for="fr-phone">Phone / WhatsApp *</label><input class="form-input" id="fr-phone"></div>' +
               '<div class="form-group"><label for="fr-email">Email</label><input class="form-input" type="email" id="fr-email"></div>' +
+              
               '<div class="form-group"><label for="fr-country">Country</label><input class="form-input" id="fr-country"></div>' +
-     '<div class="form-group"><label for="fr-state">State / Region</label><input class="form-input" id="fr-state"></div>' +
+              '<div class="form-group"><label for="fr-state">State / Region</label><input class="form-input" id="fr-state"></div>' +
               '<div class="form-group"><label for="fr-city">City</label><input class="form-input" id="fr-city"></div>' +
+              '<div class="form-group"><label for="fr-gender">Gender</label><select class="form-select" id="fr-gender"><option value=""></option><option value="Male">Male</option><option value="Female">Female</option></select></div>' +
+              '<div class="form-group"><label for="fr-age">Age</label><input class="form-input" type="number" id="fr-age"></div>'
+   +
               '<div class="form-group"><label for="fr-school">School</label><input class="form-input" id="fr-school"></div>' +
               '<div class="form-group"><label for="fr-level">Class / year</label><input class="form-input" id="fr-level" value="' + esc(info.level || '') + '"></div>' +
               '<div class="form-group"><label for="fr-subjects">Subjects you want</label><input class="form-input" id="fr-subjects" value="' + esc(subs.join(', ')) + '"></div>' +
@@ -711,7 +724,7 @@
             p_email: v('fr-email') || null,
             p_phone: v('fr-phone'),
             p_country: v('fr-country') || null, p_state: v('fr-state') || null,
-            p_city: v('fr-city') || null,
+            p_city: v('fr-city') || null, p_gender: v('fr-gender') || null, p_age: parseInt(v('fr-age'), 10) || null,
             p_school: v('fr-school') || null,
             p_level: v('fr-level') || null,
             p_board: info.exam_board || null,

@@ -297,6 +297,25 @@
               '</select>' +
             '</div>';
           }).join('');
+          
+          var btnCsv = document.getElementById('cl-csv-' + id);
+          if (btnCsv) {
+            btnCsv.addEventListener('click', function() {
+              var head = 'Reg No,Parent Name,Learner Name,Year,Email,Phone,How Heard,Status,Created At\n';
+              var rows = regs.map(function(r) {
+                return [r.reg_no, r.parent_name, r.learner_name, r.learner_year, r.email, r.phone, r.how_heard, r.status, r.created_at]
+                  .map(function(v) { 
+                    var sv = String(v || ''); 
+                    return /[",\n]/.test(sv) ? '"' + sv.replace(/"/g, '""') + '"' : sv; 
+                  }).join(',');
+              }).join('\n');
+              var blob = new Blob([head + rows], { type: 'text/csv;charset=utf-8' });
+              var a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = 'Paid-Class-Registrations-' + id + '.csv';
+              a.click();
+            });
+          }
           panel.querySelectorAll('[data-reg-status]').forEach(function (sel) {
             sel.onchange = async function () {
               var { error: e2 } = await w.sb.rpc('tc_class_reg_status', { p_reg: sel.getAttribute('data-reg-status'), p_status: sel.value });

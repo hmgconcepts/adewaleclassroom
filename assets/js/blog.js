@@ -332,7 +332,10 @@
         seo_description: excerpt,
         body: body
       };
-      if (profile) { payload.author_name = profile.full_name || profile.name || 'The Studio'; }
+      if (profile) {
+        payload.author_name = profile.full_name || profile.name || 'The Studio';
+        if (profile.id) payload.author_id = profile.id;
+      }
       /* A post leaving draft gets its publication timestamp now. Existing
          published posts keep theirs. Re-dating to "now" every edit would move
          the post around the blog, which readers experience as it reappearing. */
@@ -360,6 +363,7 @@
         } else {
           alert('Error: ' + msg);
         }
+        console.error('Blog save error:', e);
       }
     },
 
