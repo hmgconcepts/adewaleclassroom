@@ -90,8 +90,14 @@ CBT.init(window.sb);
   const cached = (window.TC_PROFILE && (window.TC_PROFILE.student_no || '')) || localStorage.getItem('tc-student-no') || '';
   if (cached) document.getElementById('sid').value = cached;
   if (window.TC_PROFILE && window.TC_PROFILE.full_name) document.getElementById('dname').value = window.TC_PROFILE.full_name;
+  , 100);
+  }
+
   if (q.get('code')) {
-    setTimeout(() => { document.getElementById('lookup').click(); }, 100);
+    setTimeout(() => { 
+      const btn = document.getElementById('lookup');
+      if (btn && !btn.disabled) btn.click(); 
+    }, 150);
   }
 })();
 
