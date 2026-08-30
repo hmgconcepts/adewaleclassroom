@@ -11293,6 +11293,10 @@ select 'Tutoring Connect V40 — anonymous write + visibility hardening installe
 -- Tutoring Connect · V41 — QUIZ GAMIFICATION  (appended 29 Aug 2026)
 -- ----------------------------------------------------------------------------
 -- ITEM 16 — Gamify quizzes (Quizizz-style) when the tutor enables it.
+
+alter table if exists public.cbt_exams add column if not exists gamify boolean default false;
+alter table if exists public.tc_free_cohorts add column if not exists social_links jsonb default '{}'::jsonb;
+
 --
 -- This is pure schema: the tables, the XP/streak engine and the leaderboard.
 -- The client (practice.html / cbt-exam.html / gamification.html) reads
@@ -11543,6 +11547,107 @@ notify pgrst, 'reload schema';
 select 'Tutoring Connect V41 — quiz gamification installed ✅' as status;
 
 -- ============================================================================
+-- ADMISSION LINKS & EXAM REGISTRATION LINKS FIX
+
+alter table public.exam_reg_links enable row level security;
+drop policy if exists exam_reg_links_staff on public.exam_reg_links;
+create policy exam_reg_links_staff on public.exam_reg_links for all to authenticated using (public.tc_is_manager() or public.tc_my_tutor_id() is not null) with check (public.tc_is_manager() or public.tc_my_tutor_id() is not null);
+
+alter table public.exam_registrations enable row level security;
+drop policy if exists exam_registrations_staff on public.exam_registrations;
+create policy exam_registrations_staff on public.exam_registrations for all to authenticated using (public.tc_is_manager() or public.tc_my_tutor_id() is not null) with check (public.tc_is_manager() or public.tc_my_tutor_id() is not null);
+
+
+-- ADMISSIONS
+create table if not exists public.admission_links (
+  id uuid primary key default gen_random_uuid(),
+  code text unique not null,
+  title text not null,
+  institution_type text, 
+  description text,
+  status text default 'open',
+  uses int default 0,
+  max_uses int default 0,
+  expires_on date,
+  created_at timestamptz default now()
+);
+
+create table if not exists public.admission_registrations (
+  id uuid primary key default gen_random_uuid(),
+  link_id uuid references public.admission_links(id) on delete cascade,
+  reg_no text not null unique,
+  applicant_name text not null,
+  parent_name text,
+  email text,
+  phone text,
+  desired_institution text,
+  desired_course text,
+  academic_background text,
+  status text default 'new',
+  notes text,
+  created_at timestamptz default now()
+);
+
+alter table public.admission_links enable row level security;
+alter table public.admission_registrations enable row level security;
+
+drop policy if exists admission_links_staff on public.admission_links;
+create policy admission_links_staff on public.admission_links for all to authenticated using (public.tc_is_manager() or public.tc_my_tutor_id() is not null) with check (public.tc_is_manager() or public.tc_my_tutor_id() is not null);
+drop policy if exists admission_links_pub on public.admission_links;
+create policy admission_links_pub on public.admission_links for select to anon, authenticated using (status = 'open');
+
+drop policy if exists admission_regs_staff on public.admission_registrations;
+create policy admission_regs_staff on public.admission_registrations for all to authenticated using (public.tc_is_manager() or public.tc_my_tutor_id() is not null) with check (public.tc_is_manager() or public.tc_my_tutor_id() is not null);
+
+create sequence if not exists public.admission_reg_seq;
+create or replace function public.tc_admission_reg_no() returns trigger language plpgsql as $$
+begin
+  if new.reg_no is null then
+    new.reg_no := 'ADM-' || to_char(now(), 'YY') || '-' || lpad(nextval('public.admission_reg_seq')::text, 5, '0');
+  end if;
+  return new;
+end $$;
+drop trigger if exists tc_admission_reg_no_trg on public.admission_registrations;
+create trigger tc_admission_reg_no_trg before insert or update on public.admission_registrations for each row execute function public.tc_admission_reg_no();
+
+create or replace function public.tc_admission_register(
+  p_code text, p_applicant text, p_parent text, p_email text, p_phone text, p_inst text, p_course text, p_bg text, p_notes text
+) returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  l public.admission_links%rowtype;
+  v_id uuid;
+  v_reg text;
+begin
+  select * into l from public.admission_links where code = p_code;
+  if not found or l.status != 'open' then return jsonb_build_object('ok', false, 'error', 'Invalid or closed admission link.'); end if;
+  
+  insert into public.admission_registrations (link_id, applicant_name, parent_name, email, phone, desired_institution, desired_course, academic_background, notes)
+  values (l.id, trim(p_applicant), trim(coalesce(p_parent,'')), trim(coalesce(p_email,'')), trim(coalesce(p_phone,'')), trim(coalesce(p_inst,'')), trim(coalesce(p_course,'')), trim(coalesce(p_bg,'')), trim(coalesce(p_notes,'')))
+  returning id, reg_no into v_id, v_reg;
+
+  update public.admission_links set uses = uses + 1 where id = l.id;
+  return jsonb_build_object('ok', true, 'reg_no', v_reg, 'title', l.title);
+end $$;
+
+grant select on public.admission_links to anon;
+grant execute on function public.tc_admission_register to anon, authenticated;
+
+-- INQUIRIES REG NO FIX (For Bookings)
+alter table if exists public.inquiries add column if not exists reg_no text unique;
+
+create sequence if not exists public.inquiry_seq;
+create or replace function public.tc_inquiry_reg_no() returns trigger language plpgsql as $$
+begin
+  if new.reg_no is null then
+    new.reg_no := 'BOOK-' || to_char(now(), 'YY') || '-' || lpad(nextval('public.inquiry_seq')::text, 5, '0');
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists tc_inquiry_reg_number_trg on public.inquiries;
+create trigger tc_inquiry_reg_number_trg
+  before insert or update on public.inquiries
+  for each row execute function public.tc_inquiry_reg_no();
 -- Tutoring Connect · V42 — ENTERPRISE / DETERMINISTIC GRANT HARDENING
 -- ----------------------------------------------------------------------------
 -- WHY THIS EXISTS

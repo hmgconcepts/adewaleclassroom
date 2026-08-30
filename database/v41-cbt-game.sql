@@ -27,6 +27,8 @@
 -- safe to drop into an already-live studio.
 -- ============================================================================
 
+alter table if exists public.cbt_exams add column if not exists gamify boolean default false;
+
 -- ----------------------------------------------------------------------------
 -- 1. Learner XP + streak profile. One row per learner.
 -- ----------------------------------------------------------------------------
