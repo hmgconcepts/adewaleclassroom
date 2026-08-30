@@ -6648,8 +6648,6 @@ create table if not exists public.tc_timezone_desk (
   parent_id     uuid references public.parents(id) on delete cascade,
   label         text,                            -- free text for studio/exam_board rows
   city          text,
-  gender        text,
-  age           int,
   country       text,
   tz            text not null,                   -- IANA, e.g. 'Africa/Lagos'
   utc_offset    text,                            -- cached display value, e.g. '+01:00'
@@ -6757,6 +6755,8 @@ create table if not exists public.tc_free_registrations (
   country       text,
   state_region  text,
   city          text,
+  gender        text,
+  age           int,
   tz            text,
   school        text,
   level         text,
@@ -6848,92 +6848,7 @@ create trigger tc_free_reg_pct_trg
 --
 -- SECURITY DEFINER with a pinned search_path, per the V18 posture.
 -- ---------------------------------------------------------------------------
-create or replace function public.tc_free_register(
-  p_token   text,
-  p_name    text,
-  p_email   text default null,
-  p_phone   text default null,
-  p_country text default null,
-  p_city    text default null,
-  p_gender  text default null,
-  p_age     int default null,
-  p_school  text default null,
-  p_level   text default null,
-  p_board   text default null,
-  p_subjects text[] default '{}',
-  p_parent_name text default null,
-  p_parent_phone text default null,
-  p_parent_email text default null,
-  p_consent boolean default false,
-  p_how_heard text default null,
-  p_goal    text default null
-) returns jsonb
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  lnk public.tc_free_links%rowtype;
-  coh public.tc_free_cohorts%rowtype;
-  reg public.tc_free_registrations%rowtype;
-  taken int;
-begin
-  if coalesce(trim(p_name), '') = '' then
-    return jsonb_build_object('ok', false, 'error', 'Please enter your full name.');
-  end if;
 
-  select * into lnk from public.tc_free_links where token = p_token;
-  if not found or not lnk.active then
-    return jsonb_build_object('ok', false, 'error', 'This registration link is no longer active.');
-  end if;
-  if lnk.expires_on is not null and lnk.expires_on < current_date then
-    return jsonb_build_object('ok', false, 'error', 'This registration link expired on ' || lnk.expires_on || '.');
-  end if;
-  if coalesce(lnk.max_uses, 0) > 0 and coalesce(lnk.uses, 0) >= lnk.max_uses then
-    return jsonb_build_object('ok', false, 'error', 'This registration link has reached its limit.');
-  end if;
-
-  select * into coh from public.tc_free_cohorts where id = lnk.cohort_id;
-  if not found or coh.status not in ('open', 'running') then
-    return jsonb_build_object('ok', false, 'error', 'Registration for this class is closed.');
-  end if;
-  if coalesce(coh.capacity, 0) > 0 then
-    select count(*) into taken from public.tc_free_registrations
-     where cohort_id = coh.id and status <> 'declined';
-    if taken >= coh.capacity then
-      return jsonb_build_object('ok', false, 'error', 'This class is full.');
-    end if;
-  end if;
-  if coh.requires_parent_consent and not coalesce(p_consent, false) then
-    return jsonb_build_object('ok', false, 'error', 'A parent or guardian must give consent for this class.');
-  end if;
-
-  insert into public.tc_free_registrations (
-    cohort_id, link_id, full_name, email, phone, country, city, school, level,
-    exam_board, exam_series, subjects, parent_name, parent_phone, parent_email,
-    parent_consent, how_heard, goal, status
-  ) values (
-    coh.id, lnk.id, trim(p_name), nullif(trim(coalesce(p_email,'')),''),
-    nullif(trim(coalesce(p_phone,'')),''), p_country, p_city, p_school, p_level,
-    coalesce(p_board, coh.exam_board), coh.exam_series, coalesce(p_subjects, '{}'),
-    p_parent_name, p_parent_phone, p_parent_email, coalesce(p_consent, false), p_how_heard, p_goal,
-    case when coh.auto_approve then 'approved' else 'pending' end
-  ) returning * into reg;
-
-  update public.tc_free_links set uses = coalesce(uses, 0) + 1 where id = lnk.id;
-
-  return jsonb_build_object(
-    'ok', true,
-    'reg_no', reg.reg_no,
-    'status', reg.status,
-    'cohort', coh.name,
-    'meeting_url', coh.meeting_url,
-    'youtube_url', coh.youtube_url,
-    'whatsapp_url', coh.whatsapp_url,
-    'telegram_url', coh.telegram_url,
-    'schedule', coh.schedule_text
-  );
-end $$;
 
 
 
@@ -8578,13 +8493,13 @@ create index if not exists tc_blog_posts_published_idx
   on public.tc_blog_posts (published_at desc) where status = 'published';
 
 create or replace function public.tc_blog_author_trg()
-returns trigger language plpgsql as $
+returns trigger language plpgsql as $$
 begin
   if new.author_id is null then
     new.author_id := public.tc_my_tutor_id();
   end if;
   return new;
-end $;
+end $$;
 drop trigger if exists tc_blog_author_before_insert on public.tc_blog_posts;
 create trigger tc_blog_author_before_insert
   before insert on public.tc_blog_posts
@@ -11807,20 +11722,31 @@ as $$
   join public.tc_free_cohorts c on c.id = l.cohort_id
   where l.token = p_token;
 $$;
+
+
+
+
+
+
+
 create or replace function public.tc_free_register(
   p_token   text,
   p_name    text,
   p_email   text default null,
   p_phone   text default null,
+  p_whatsapp text default null,
   p_country text default null,
   p_state   text default null,
   p_city    text default null,
+  p_gender  text default null,
+  p_age     int default null,
   p_school  text default null,
   p_level   text default null,
   p_board   text default null,
   p_subjects text[] default '{}',
   p_parent_name  text default null,
   p_parent_phone text default null,
+  p_parent_email text default null,
   p_consent boolean default false,
   p_how_heard text default null,
   p_goal    text default null
@@ -11866,12 +11792,12 @@ begin
   end if;
 
   insert into public.tc_free_registrations (
-    cohort_id, link_id, full_name, email, phone, country, state_region, city, gender, age, school, level,
-    exam_board, exam_series, subjects, parent_name, parent_phone,
+    cohort_id, link_id, full_name, email, phone, whatsapp, country, state_region, city, gender, age, school, level,
+    exam_board, exam_series, subjects, parent_name, parent_phone, parent_email,
     parent_consent, how_heard, goal, status
   ) values (
     coh.id, lnk.id, trim(p_name), nullif(trim(coalesce(p_email,'')),''),
-    nullif(trim(coalesce(p_phone,'')),''), p_country, p_state, p_city, p_gender, p_age, p_school, p_level,
+    nullif(trim(coalesce(p_phone,'')),''), nullif(trim(coalesce(p_whatsapp,'')),''), p_country, p_state, p_city, p_gender, p_age, p_school, p_level,
     coalesce(p_board, coh.exam_board), coh.exam_series, coalesce(p_subjects, '{}'),
     p_parent_name, p_parent_phone, p_parent_email, coalesce(p_consent, false), p_how_heard, p_goal,
     case when coh.auto_approve then 'approved' else 'pending' end
@@ -11891,7 +11817,3 @@ begin
     'schedule', coh.schedule_text
   );
 end $$;
-
-
-
-
