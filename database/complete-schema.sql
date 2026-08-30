@@ -6861,8 +6861,9 @@ create or replace function public.tc_free_register(
   p_level   text default null,
   p_board   text default null,
   p_subjects text[] default '{}',
-  p_parent_name  text default null,
+  p_parent_name text default null,
   p_parent_phone text default null,
+  p_parent_email text default null,
   p_consent boolean default false,
   p_how_heard text default null,
   p_goal    text default null
@@ -6909,13 +6910,13 @@ begin
 
   insert into public.tc_free_registrations (
     cohort_id, link_id, full_name, email, phone, country, city, school, level,
-    exam_board, exam_series, subjects, parent_name, parent_phone,
+    exam_board, exam_series, subjects, parent_name, parent_phone, parent_email,
     parent_consent, how_heard, goal, status
   ) values (
     coh.id, lnk.id, trim(p_name), nullif(trim(coalesce(p_email,'')),''),
     nullif(trim(coalesce(p_phone,'')),''), p_country, p_city, p_school, p_level,
     coalesce(p_board, coh.exam_board), coh.exam_series, coalesce(p_subjects, '{}'),
-    p_parent_name, p_parent_phone, coalesce(p_consent, false), p_how_heard, p_goal,
+    p_parent_name, p_parent_phone, p_parent_email, coalesce(p_consent, false), p_how_heard, p_goal,
     case when coh.auto_approve then 'approved' else 'pending' end
   ) returning * into reg;
 
@@ -6934,8 +6935,8 @@ begin
   );
 end $$;
 
-revoke all on function public.tc_free_register(text,text,text,text,text,text,text,text,text,text[],text,text,boolean,text,text) from public;
-grant execute on function public.tc_free_register(text,text,text,text,text,text,text,text,text,text[],text,text,boolean,text,text) to anon, authenticated;
+
+
 
 -- The public page needs to show WHAT it is registering for before the form is
 -- filled. This returns only the presentational fields — never the roll.
@@ -8575,6 +8576,20 @@ create table if not exists public.tc_blog_posts (
 
 create index if not exists tc_blog_posts_published_idx
   on public.tc_blog_posts (published_at desc) where status = 'published';
+
+create or replace function public.tc_blog_author_trg()
+returns trigger language plpgsql as $
+begin
+  if new.author_id is null then
+    new.author_id := public.tc_my_tutor_id();
+  end if;
+  return new;
+end $;
+drop trigger if exists tc_blog_author_before_insert on public.tc_blog_posts;
+create trigger tc_blog_author_before_insert
+  before insert on public.tc_blog_posts
+  for each row execute function public.tc_blog_author_trg();
+
 create index if not exists tc_blog_posts_slug_idx
   on public.tc_blog_posts (slug);
 
@@ -10016,7 +10031,7 @@ begin
       'Please tick the guardian consent box — this class is for a minor.');
   end if;
 
-  v_reg_no := 'REG-' || upper(substr(md5(l.id::text || clock_timestamp()::text), 1, 8));
+  v_reg_no := 'PAID-' || to_char(now(), 'YY') || '-' || lpad(nextval('public.tc_free_reg_seq')::text, 5, '0');
 
   insert into public.tc_class_registrations
     (link_id, reg_no, parent_name, email, phone, learner_name, learner_year,
@@ -11707,13 +11722,12 @@ $$;
 do $$
 declare f text;
 begin
-  for f in select p.proname from pg_proc p
+  for f in select p.oid::regprocedure::text from pg_proc p
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.prokind = 'f'
+      and p.proname in (select * from public.tc_anon_executable())
   loop
-    if f in (select * from public.tc_anon_executable()) then
-      execute format('grant execute on function public.%I to anon', f);
-    end if;
+    execute 'grant execute on function ' || f || ' to anon, authenticated';
   end loop;
 end $$;
 
@@ -11859,7 +11873,7 @@ begin
     coh.id, lnk.id, trim(p_name), nullif(trim(coalesce(p_email,'')),''),
     nullif(trim(coalesce(p_phone,'')),''), p_country, p_state, p_city, p_gender, p_age, p_school, p_level,
     coalesce(p_board, coh.exam_board), coh.exam_series, coalesce(p_subjects, '{}'),
-    p_parent_name, p_parent_phone, coalesce(p_consent, false), p_how_heard, p_goal,
+    p_parent_name, p_parent_phone, p_parent_email, coalesce(p_consent, false), p_how_heard, p_goal,
     case when coh.auto_approve then 'approved' else 'pending' end
   ) returning * into reg;
 
@@ -11877,7 +11891,7 @@ begin
     'schedule', coh.schedule_text
   );
 end $$;
-revoke all on function public.tc_free_register(text,text,text,text,text,text,text,text,text,text[],text,text,boolean,text,text) from public;
-grant execute on function public.tc_free_register(text,text,text,text,text,text,text,text,text,text[],text,text,boolean,text,text) to anon, authenticated;
-revoke all on function public.tc_free_register(text,text,text,text,text,text,text,text,text,text,text[],text,text,boolean,text,text) from public;
-grant execute on function public.tc_free_register(text,text,text,text,text,text,text,text,text,text,text[],text,text,boolean,text,text) to anon, authenticated;
+
+
+
+
