@@ -4,7 +4,7 @@ const CRUD = {
   init(client) { this.sb = client || window.sb || null; },
   WRITE: {
     engagements: ['tutor'], learners: ['tutor'], groups: ['tutor'], parents: [], tutors: ['tutor'], parent_links: [], directory: [],
-    subjects: ['tutor'], inquiries: ['tutor'], waitlist: ['tutor'], trials: ['tutor'],
+    subjects: ['tutor'], admission_registrations: ['admin'], inquiries: ['tutor'], waitlist: ['tutor'], trials: ['tutor'],
     sessions: ['tutor'], attendance: ['tutor'], session_notes: ['tutor'], assignments: ['tutor'],
     goals: ['tutor'], mastery: ['tutor'], curriculum: ['tutor'], diagnostics: ['tutor'],
     packages: [], invoices: [], payments: [], inbox: ['tutor','parent','student'],
@@ -89,7 +89,19 @@ const CRUD = {
       { key: 'icon', label: 'Icon', type: 'text' },
       { key: 'colour', label: 'Colour', type: 'text' }
     ]},
-    inquiries: { table: 'inquiries', title: 'Inquiry', cols: [
+        admission_registrations: { table: 'admission_registrations', title: 'Admission Registration', cols: [
+      { key: 'reg_no', label: 'Registration ID', type: 'text', ro: true },
+      { key: 'applicant_name', label: 'Applicant Name', type: 'text', required: true },
+      { key: 'parent_name', label: 'Parent Name', type: 'text' },
+      { key: 'email', label: 'Email', type: 'email' },
+      { key: 'phone', label: 'Phone', type: 'tel' },
+      { key: 'desired_institution', label: 'Institution', type: 'text' },
+      { key: 'desired_course', label: 'Course', type: 'text' },
+      { key: 'academic_background', label: 'Background', type: 'text' },
+      { key: 'notes', label: 'Notes', type: 'text' },
+      { key: 'status', label: 'Status', type: 'select', options: ['new','contacted','processing','converted','closed'], default: 'new' }
+    ] },
+    inquiries: { table: 'inquiries', title: 'Inquiry', cols: [{ key: 'reg_no', label: 'Booking ID', type: 'text', ro: true },
       { key: 'parent_name', label: 'Parent name', type: 'lookup', lookupTable: 'parents', lookupValue: 'full_name', required: true, help: 'Pick from your parents list.' },
       { key: 'email', label: 'Email', type: 'email' },
       { key: 'phone', label: 'Phone', type: 'tel' },

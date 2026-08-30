@@ -590,9 +590,9 @@
       var subs = Array.isArray(info.subjects) ? info.subjects : [];
       host.innerHTML =
         '<section class="card" style="background:linear-gradient(135deg,#0506ae,#964eec);color:#fff">' +
-          '<div style="font-size:.78rem;letter-spacing:2px;opacity:.85">FREE CLASS</div>' +
-          '<h1 style="margin:4px 0 6px;font-size:1.6rem">' + esc(info.name) + '</h1>' +
-          '<p style="margin:0;opacity:.95">' + esc(info.description || '') + '</p>' +
+          '<div style="font-size:.78rem;letter-spacing:2px;opacity:.85;color:#fff">FREE CLASS</div>' +
+          '<h1 style="margin:4px 0 6px;font-size:1.6rem;color:#fff">' + esc(info.name) + '</h1>' +
+          '<p style="margin:0;opacity:.95;color:#fff">' + esc(info.description || '') + '</p>' +
           '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:.85rem">' +
             (info.exam_board ? '<span style="background:rgba(255,255,255,.18);padding:3px 10px;border-radius:999px">🎯 ' + esc(info.exam_board) + '</span>' : '') +
             (info.level ? '<span style="background:rgba(255,255,255,.18);padding:3px 10px;border-radius:999px">🎓 ' + esc(info.level) + '</span>' : '') +
@@ -641,8 +641,46 @@
                   '<input type="checkbox" id="fr-consent"> <span>My parent or guardian knows about this class and ' +
                   'agrees that I may attend, and that the studio may record my attendance and results.</span></label></div>'
               : '') +
-            '<button class="btn btn-primary" type="button" id="fr-go" style="margin-top:10px">Register for this free class</button>' +
+            '<div id="fr-soc-placeholder"></div><button class="btn btn-primary" type="button" id="fr-go" style="margin-top:10px">Register for this free class</button>' +
           '</section>');
+
+            var sl = info.social_links || {};
+            var reqClicks = 0;
+            if ((sl.yt || sl.fb || sl.x || sl.tt) && info.open !== false) {
+              if(sl.yt) reqClicks++; if(sl.fb) reqClicks++; if(sl.x) reqClicks++; if(sl.tt) reqClicks++;
+              var socialHtml = '<div class="card" style="background:#fffbeb;border:1px solid #fcd34d;margin:10px 0" id="fr-soc-box">' +
+                '<b style="color:#92400e">Follow us to register</b>' +
+                '<p class="muted" style="margin:6px 0 10px;font-size:.85rem">Please follow/subscribe to our official channels below. The registration button will unlock automatically once you click them.</p>' +
+                '<div style="display:flex;gap:8px;flex-wrap:wrap">';
+              if (sl.yt) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.yt)+'">📺 Subscribe on YouTube</a>';
+              if (sl.fb) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.fb)+'">📘 Follow on Facebook</a>';
+              if (sl.x)  socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.x)+'">🐦 Follow on X/Twitter</a>';
+              if (sl.tt) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.tt)+'">🎵 Follow on TikTok</a>';
+              socialHtml += '</div></div>';
+              var ph = document.getElementById('fr-soc-placeholder');
+              if(ph) ph.outerHTML = socialHtml;
+            }
+
+            if (reqClicks > 0 && info.open !== false) {
+              document.getElementById('fr-go').disabled = true;
+              document.getElementById('fr-go').title = 'Click social links above to unlock';
+              var clicks = 0;
+              var links = document.querySelectorAll('.fr-soc-link');
+              links.forEach(function(l) {
+                l.addEventListener('click', function() {
+                  if (this.dataset.clicked) return;
+                  this.dataset.clicked = "1";
+                  this.innerHTML += ' ✅';
+                  clicks++;
+                  if (clicks >= reqClicks) {
+                     document.getElementById('fr-go').disabled = false;
+                     document.getElementById('fr-go').title = '';
+                     var box = document.getElementById('fr-soc-box');
+                     if(box) box.style.borderColor = '#10b981';
+                  }
+                });
+              });
+            }
 
       if (info.open === false) return;
 

@@ -844,6 +844,12 @@
         "aud": "admin"
       },
       {
+        "href": "admission-links.html",
+        "label": "Admission links",
+        "icon": "🎓",
+        "aud": "admin"
+      },
+      {
         "id": "inquiries",
         "href": "inquiries.html",
         "label": "Inquiries",
