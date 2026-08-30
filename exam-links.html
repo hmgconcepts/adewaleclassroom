@@ -142,16 +142,78 @@
 async function load(){
   if(!window.sb) return;
   const {data}=await sb.from('exam_reg_links').select('*').order('created_at',{ascending:false});
-  document.getElementById('list').innerHTML=(data||[]).map(l=>`<div class="card" style="margin-bottom:8px"><b>${TC.esc(l.title||l.code)}</b> · ${TC.esc(l.board||'')} · uses ${l.uses||0}/${l.max_uses||'∞'} · <a href="exam-register.html?code=${encodeURIComponent(l.code)}">open form</a></div>`).join('')||'<p class="muted">No links yet.</p>';
-  const r=await sb.from('exam_registrations').select('*').order('created_at',{ascending:false}).limit(40);
-  document.getElementById('regs').innerHTML=(r.data||[]).map(x=>`<div class="card" style="margin-bottom:8px"><b>${TC.esc(x.full_name)}</b> · ${TC.esc(x.board)} ${TC.esc(x.series||'')} · ${TC.esc(x.subjects||'')} · ${x.photo_url?`<a href="${TC.esc(x.photo_url)}" target="_blank">passport</a>`:''}</div>`).join('')||'<p class="muted">None yet.</p>';
+  document.getElementById('list').innerHTML = (data || []).map(l => {
+    return '<div class="card" style="margin-bottom:10px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start">' +
+        '<div><h3 style="margin:0 0 4px">' + TC.esc(l.title || l.code) + ' <span class="badge">' + TC.esc(l.board || '') + '</span></h3>' +
+        '<p class="muted" style="margin:0 0 8px">Code: <b>' + TC.esc(l.code) + '</b> · Uses: ' + (l.uses || 0) + (l.max_uses ? ' / ' + l.max_uses : '') +
+        (l.expires_on ? ' · Expires: ' + TC.esc(l.expires_on) : '') + ' · Status: ' + (l.status === 'open' ? '🟢 Open' : '🔴 ' + l.status) + '</p></div>' +
+        '<div style="display:flex;gap:6px">' +
+          '<a class="btn btn-sm btn-ghost" target="_blank" href="exam-register.html?code=' + TC.esc(l.code) + '">Preview</a> ' +
+          '<button class="btn btn-sm btn-outline al-copy" data-url="' + window.location.origin + window.location.pathname.replace(/[^/]+$/, '') + 'exam-register.html?code=' + TC.esc(l.code) + '">Copy URL</button> ' +
+          '<button class="btn btn-sm btn-outline al-toggle" data-id="' + TC.esc(l.id) + '" data-status="' + TC.esc(l.status) + '">' + (l.status === 'open' ? 'Close' : 'Re-open') + '</button>' +
+          '<button class="btn btn-sm btn-outline al-del" data-id="' + TC.esc(l.id) + '" style="color:#b91c1c;border-color:#fca5a5">Delete</button>' +
+        '</div>' +
+      '</div></div>';
+  }).join('') || '<p class="muted">No links yet.</p>';
+  
+  // Attach event listeners
+  document.querySelectorAll('.al-copy').forEach(b => b.onclick = () => {
+    navigator.clipboard.writeText(b.dataset.url); toast('Copied to clipboard', 'success');
+  });
+  document.querySelectorAll('.al-toggle').forEach(b => b.onclick = async () => {
+    const to = b.dataset.status === 'open' ? 'closed' : 'open';
+    const { error } = await sb.from('exam_reg_links').update({ status: to }).eq('id', b.dataset.id);
+    if(error) toast(error.message, 'danger'); else { toast('Link ' + to, 'success'); load(); }
+  });
+  document.querySelectorAll('.al-del').forEach(b => b.onclick = async () => {
+    if(!confirm('Delete this exam registration link? All associated registrations will also be deleted.')) return;
+    const { error } = await sb.from('exam_reg_links').delete().eq('id', b.dataset.id);
+    if(error) toast(error.message, 'danger'); else { toast('Deleted', 'success'); load(); }
+  });
+
+  const r = await sb.from('exam_registrations').select('*, exam_reg_links(code)').order('created_at',{ascending:false}).limit(40);
+  document.getElementById('regs').innerHTML = (r.data || []).map(x => 
+    '<div class="card" style="margin-bottom:8px"><b>' + TC.esc(x.full_name) + '</b> ' + 
+    '<span class="muted" style="font-size:0.8rem">[' + TC.esc(x.exam_reg_links?.code || '') + ']</span><br>' + 
+    TC.esc(x.board) + ' ' + TC.esc(x.series || '') + ' · ' + TC.esc(x.subjects || '') + ' ' + 
+    (x.photo_url ? '<a href="' + TC.esc(x.photo_url) + '" target="_blank">passport</a>' : '') + '</div>'
+  ).join('') || '<p class="muted">None yet.</p>';
 }
+
 document.getElementById('mk').onclick=async()=>{
   if(!window.sb){toast('Connect Supabase','warning');return;}
-  const row={code:document.getElementById('code').value.trim(),title:document.getElementById('title').value,board:document.getElementById('board').value,series:document.getElementById('series').value,intro:document.getElementById('intro').value,expires_on:document.getElementById('exp').value||null,max_uses:Number(document.getElementById('max').value||0)||null,status:'open'};
+  const row={
+    code:document.getElementById('code').value.trim(),
+    title:document.getElementById('title').value,
+    board:document.getElementById('board').value,
+    series:document.getElementById('series').value,
+    intro:document.getElementById('intro').value,
+    expires_on:document.getElementById('exp').value||null,
+    max_uses:Number(document.getElementById('max').value||0)||null,
+    status:'open'
+  };
   if(!row.code){toast('Need a code','warning');return;}
-  const {error}=await sb.from('exam_reg_links').insert(row);
-  if(error) toast(error.message,'danger'); else { toast('Link created','success'); document.getElementById('share').innerHTML='Share <code>exam-register.html?code='+TC.esc(row.code)+'</code>'; load(); }
+  
+  const btn = document.getElementById('mk');
+  const isEdit = btn.dataset.editId;
+  let error;
+  if (isEdit) {
+    const res = await sb.from('exam_reg_links').update(row).eq('id', isEdit);
+    error = res.error;
+    btn.dataset.editId = "";
+    btn.textContent = "Create link";
+  } else {
+    const res = await sb.from('exam_reg_links').insert(row);
+    error = res.error;
+  }
+  
+  if(error) toast(error.message,'danger'); 
+  else { 
+    toast('Saved', 'success'); 
+    document.getElementById('share').innerHTML='Share <code>exam-register.html?code='+TC.esc(row.code)+'</code>'; 
+    load(); 
+  }
 };
 document.addEventListener('DOMContentLoaded', load);
 
