@@ -1,158 +1,213 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Public self-booking • ADEWALE CLASSROOM</title>
-<meta name="description" content="Parents pick an open slot from tutor availability. No Calendly fee. Lands as an inquiry.">
+<title>Book a Class • ADEWALE CLASSROOM</title>
+<meta name="description" content="Direct booking link for parents and students.">
 <meta name="theme-color" content="#0506ae">
-<meta name="author" content="HMG Technologies · HMG Concepts">
 <link rel="icon" type="image/svg+xml" href="assets/img/logo.png">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="assets/img/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;800&display=swap" rel="stylesheet">
-<meta property="og:title" content="Public self-booking • ADEWALE CLASSROOM">
-<meta property="og:description" content="Parents pick an open slot from tutor availability. No Calendly fee. Lands as an inquiry.">
-<meta property="og:type" content="website">
-<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="assets/css/style.css">
-<link rel="stylesheet" href="assets/css/layouts.css">
-<style>
-.help-card{background:linear-gradient(135deg,#ecfdf5,#fff7ed);border:1px solid #d1fae5;border-radius:16px;padding:16px 18px;margin-bottom:16px}
-.help-card p{margin:.4rem 0 0;color:#334155;line-height:1.55}
-.workflow{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
-.workflow span{background:#fff;border:1px solid #e2e8f0;border-radius:999px;padding:4px 10px;font-size:.78rem;font-weight:700}
-.related{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.pwa-install-banner{display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:9990;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 16px 40px rgba(15,23,42,.18);padding:12px 14px;gap:12px;align-items:center}
-.pwa-install-banner.show{display:flex}
-.toast-container{position:fixed;right:16px;top:16px;z-index:10001;display:flex;flex-direction:column;gap:8px}
-.toast{background:#0f172a;color:#fff;border-radius:12px;padding:10px 14px;max-width:360px}
-.toast-success{background:#166534}.toast-danger{background:#991b1b}.toast-warning{background:#92400e}
-.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:10000;align-items:center;justify-content:center;padding:20px}
-.modal-backdrop.show{display:flex}
-.modal{background:#fff;border-radius:16px;max-width:720px;width:100%;max-height:90vh;overflow:auto}
-.modal-header,.modal-footer{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:8px}
-.modal-body{padding:18px}
-.notif-dropdown.show{display:block!important}
-
-</style>
+<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--font:'DM Sans',system-ui,sans-serif;}</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="assets/js/config.js"></script>
-<script src="assets/js/theme-engine.js"></script>
-<script src="assets/js/catalog.js"></script>
-<script src="assets/js/license.js"></script>
-<script src="assets/js/media.js"></script>
 <script src="assets/js/brand.js"></script>
-<script src="assets/js/notifications.js"></script>
-<script src="assets/js/pwa-install.js"></script>
-<script src="assets/js/site-help.js"></script>
-<script src="assets/js/assistant-kb.js"></script>
-<script src="assets/js/ics.js"></script>
-<script src="assets/js/page-guide.js" defer></script>
-<script src="assets/js/seo.js" defer></script>
-<script src="assets/js/keepalive-monitor.js" defer></script>
-<script src="assets/js/schema-doctor.js" defer></script>
-<script src="assets/js/quota-guard.js" defer></script>
-<script src="assets/js/chatbot.js"></script>
-<script src="assets/js/ai-assistant.js"></script>
-<script src="assets/js/security-guard.js"></script>
-<script src="assets/js/voting.js"></script>
-<script src="assets/js/enterprise.js"></script>
-<script src="assets/js/crud.js"></script>
-<script src="assets/js/insights.js"></script>
-<script src="assets/js/cbt-richtext.js"></script>
-<script src="assets/js/cbt-speech.js"></script>
-<script src="assets/js/cbt.js"></script>
-<script src="assets/js/cbt-types.js"></script>
-<script src="assets/js/proctor.js"></script>
-<script src="assets/js/bookings-engine.js"></script>
-<script src="assets/js/analytics.js"></script>
-<script src="assets/js/super.js"></script>
-<script src="assets/js/record-actions.js"></script>
-<script src="assets/js/receipts.js"></script>
-<script src="assets/js/nav-model.js"></script>
-<script src="assets/js/app.js"></script>
-<script src="assets/js/rbac.js"></script>
-<script src="assets/js/cbt-marking.js"></script>
-<script src="assets/js/scope-check.js"></script>
-<script src="assets/js/free-classes.js"></script>
-<script src="assets/js/cbt-manage.js"></script>
-<script src="assets/js/cert-studio.js"></script>
-<script src="assets/js/desk-kit.js"></script>
-<script src="assets/js/nav.js"></script>
-<script src="assets/js/legibility.js" defer></script>
-<script src="assets/js/ux-enhance.js" defer></script>
-<script src="assets/js/ops-desk.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
+<style>
+  body { background: #f8fafc; font-family: var(--font); margin: 0; padding: 0; }
+  .checkout-container { max-width: 680px; margin: 40px auto; padding: 0 16px; }
+  .checkout-header { text-align: center; margin-bottom: 30px; }
+  .checkout-header img { height: 60px; object-fit: contain; margin-bottom: 16px; border-radius: 8px; }
+  .checkout-header h1 { margin: 0 0 8px; font-size: 2rem; color: #0f172a; }
+  .checkout-header p { margin: 0; color: #64748b; font-size: 1.1rem; }
+  .checkout-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); padding: 30px; border: 1px solid #e2e8f0; margin-bottom: 24px; }
+  .form-section { margin-bottom: 24px; padding-bottom: 24px; border-bottom: 1px solid #e2e8f0; }
+  .form-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+  .form-section h3 { margin: 0 0 16px; font-size: 1.25rem; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #334155; font-size: 0.9rem; }
+  .form-input, .form-select, .form-textarea { width: 100%; box-sizing: border-box; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 10px; font-family: inherit; font-size: 1rem; transition: all 0.2s; background: #f8fafc; }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { outline: none; border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(5,6,174,0.1); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .btn-submit { width: 100%; padding: 14px; background: var(--primary); color: #fff; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(5,6,174,0.2); }
+  .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(5,6,174,0.3); }
+  .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+  
+  .slot-picker { display: flex; flex-direction: column; gap: 8px; }
+  .slot-label { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 10px; cursor: pointer; transition: all 0.2s; background: #fff; }
+  .slot-label:hover { background: #f1f5f9; border-color: #cbd5e1; }
+  .slot-label input[type="radio"] { margin: 0; accent-color: var(--primary); transform: scale(1.2); }
+  
+  .success-pane { display: none; text-align: center; padding: 40px 20px; }
+  .success-pane h2 { color: #166534; margin: 0 0 12px; font-size: 2rem; }
+  .success-pane p { font-size: 1.1rem; color: #475569; margin: 0 0 24px; line-height: 1.6; }
+  .reg-badge { display: inline-block; background: #f0fdf4; border: 2px dashed #16a34a; color: #15803d; font-size: 1.5rem; font-weight: 800; padding: 12px 24px; border-radius: 12px; margin-bottom: 24px; letter-spacing: 1px; }
+
+  @media(max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+</style>
 </head>
 <body>
-<div class="app-layout" data-require-role="public" id="app-layout">
-  <aside class="app-sidebar" id="app-sidebar">
-    <div class="app-brand"><img data-logo src="assets/img/logo.png" alt=""><div><strong data-practice-name>ADEWALE CLASSROOM</strong><span class="muted">Tutoring Connect</span></div></div>
-    <nav class="app-nav" id="app-nav" aria-label="Studio menu" data-nav="model">
-      <noscript><a href="site-index.html">All pages A–Z</a></noscript>
-    </nav>
-  </aside>
-  <div class="app-main">
-    <header class="app-topbar">
-      <button class="mobile-toggle" type="button" aria-label="Menu">☰</button>
-      <h1 class="app-page-title">Public self-booking</h1>
-      <div class="user-chip"><strong id="user-display-name" data-user-name></strong>
-        <span id="user-display-role" data-user-role></span>
-        <button class="btn btn-sm btn-ghost" id="btn-dark" type="button">Theme</button>
-        <button class="btn btn-sm btn-ghost" type="button" data-signout onclick="App.signOut()">Sign out</button></div>
-    </header>
-    <main class="app-content">
-      <section class="help-card page-intro">
-        <div class="page-intro-head"><strong>Public self-booking</strong><span class="page-intro-badge" style="background:#0f766e">🌍 Public page</span></div>
-        <p class="page-intro-what">Parents pick an open slot from tutor availability. No Calendly fee. Lands as an inquiry you confirm into a 4-cycle booking. What you can do here: <b>Request this slot</b>. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.</p>
-        <p class="page-intro-who"><b>Who it is for.</b> Owner and admin — this is business development. Families never see the pipeline.</p>
-        <p class="page-intro-why"><b>Why it matters.</b> Tutoring income is won or lost at the top of the funnel. Recording every enquiry means you can see which channel actually produces paying families.</p>
-        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>New enquiries land here automatically from the public Apply form and the contact form.</li><li>Triage each one: assign an owner, set a status, add a note about what was discussed.</li><li>Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.</li><li>Watch the funnel counts at the top — they show you exactly where prospects go cold.</li></ol></details>
-        <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access, and can edit the content behind it in Settings.</li><li><b>Tutor:</b> Full access — it is a public page.</li><li><b>Parent:</b> Full access — it is a public page.</li><li><b>Learner:</b> Full access — it is a public page.</li></ul></details>
-        <p class="page-intro-rel"><b>Related:</b> <a href="calendar.html">calendar</a> · <a href="sessions.html">sessions</a> · <a href="bookings.html">bookings</a> · <a href="availability.html">availability</a> · <a href="attendance.html">attendance</a> · <a href="session-complete.html">session complete</a></p>
-      </section>
 
-      <div class="card" style="max-width:640px">
-        <div class="grid grid-2">
-          <div class="form-group"><label>Parent name</label><input class="form-input" id="pn" required></div>
-          <div class="form-group"><label>WhatsApp</label><input class="form-input" id="ph"></div>
-          <div class="form-group"><label>Email</label><input class="form-input" id="em" type="email"></div>
-          <div class="form-group"><label>Learner name</label><input class="form-input" id="ln"></div>
-          <div class="form-group"><label>Preferred weekday (0=Sun)</label><input class="form-input" id="wd" type="number" value="6"></div>
-          <div class="form-group"><label>Preferred time</label><input class="form-input" id="tm" type="time" value="16:00"></div>
-          <div class="form-group"><label>Times per cycle</label><select class="form-select" id="tpc"><option value="1">1 → 4 classes</option><option value="2" selected>2 → 8 classes</option><option value="3">3 → 12 classes</option><option value="4">4 → 16 classes</option><option value="5">5 → 20 classes</option><option value="6">6 → 24 classes</option><option value="7">7 → 28 classes</option></select></div>
-          <div class="form-group"><label>Subject</label><input class="form-input" id="sub"></div>
-        </div>
-        <h3>Open availability</h3>
-        <div id="avail" class="muted">Loading…</div>
-        <p><button class="btn btn-primary" type="button" id="go">Request this slot</button></p>
+<div class="checkout-container">
+  <div class="checkout-header">
+    <img src="assets/img/logo.png" alt="Logo">
+    <h1>Book a Class</h1>
+    <p>Reserve a dedicated learning slot with our expert tutors.</p>
+  </div>
+
+  <div id="booking-form-wrap" class="checkout-card">
+    <div id="fc-error" style="display:none;margin-bottom:20px;padding:12px;border-radius:10px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;"></div>
+    
+    <div class="form-section">
+      <h3>1. Parent / Guardian Details</h3>
+      <div class="grid-2">
+        <div class="form-group"><label>Full Name *</label><input type="text" class="form-input" id="bk-pname" placeholder="E.g. Jane Doe" required></div>
+        <div class="form-group"><label>WhatsApp / Phone *</label><input type="tel" class="form-input" id="bk-phone" placeholder="+234..." required></div>
       </div>
-    </main>
+      <div class="form-group"><label>Email Address</label><input type="email" class="form-input" id="bk-email" placeholder="jane@example.com"></div>
+    </div>
+
+    <div class="form-section">
+      <h3>2. Student Details</h3>
+      <div class="grid-2">
+        <div class="form-group"><label>Student Name *</label><input type="text" class="form-input" id="bk-sname" placeholder="E.g. John Doe" required></div>
+        <div class="form-group"><label>Current Class / Year</label><input type="text" class="form-input" id="bk-level" placeholder="E.g. Year 10 / SS1"></div>
+      </div>
+      <div class="form-group"><label>Subject(s) Needed *</label><input type="text" class="form-input" id="bk-subject" placeholder="E.g. Mathematics, Physics" required></div>
+      <div class="form-group"><label>Learning Goal / Areas of Focus</label><textarea class="form-textarea" id="bk-goal" rows="3" placeholder="What specific topics or exams should we focus on?"></textarea></div>
+    </div>
+
+    <div class="form-section">
+      <h3>3. Scheduling</h3>
+      <div class="form-group">
+        <label>How many classes per month? *</label>
+        <select class="form-select" id="bk-tpc">
+          <option value="4" selected>4 Classes per month (1x a week)</option>
+          <option value="8">8 Classes per month (2x a week)</option>
+          <option value="12">12 Classes per month (3x a week)</option>
+          <option value="16">16 Classes per month (4x a week)</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-top:20px;">
+        <label>Available Slots (Pick your preferred start time)</label>
+        <div id="avail-slots" class="slot-picker"><div style="padding:14px;color:#64748b;text-align:center">Loading schedule...</div></div>
+      </div>
+    </div>
+
+    <button type="button" class="btn-submit" id="btn-submit">Submit Booking Request</button>
+  </div>
+
+  <div id="success-pane" class="checkout-card success-pane">
+    <h2>✅ Booking Received!</h2>
+    <p>Your request has been successfully submitted to the studio.<br>Please save your unique Booking ID for reference:</p>
+    <div class="reg-badge" id="success-id">BOOK-26-XXXXX</div>
+    <p>Our academic coordinator will contact you via WhatsApp shortly to finalize your schedule and onboarding.</p>
   </div>
 </div>
-<div id="toast-container" class="toast-container"></div>
+
 <script>
+window.sb = (window.supabase && window.CONFIG && window.CONFIG.supabaseUrl) 
+  ? window.supabase.createClient(window.CONFIG.supabaseUrl, window.CONFIG.supabaseKey) 
+  : null;
 
-async function boot(){
-  const box=document.getElementById('avail');
-  if(!window.sb){ box.textContent='Connect Supabase to show live availability. Parents can still leave a request.'; return; }
-  const {data}=await sb.from('availability').select('*').limit(40);
-  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  box.innerHTML=(data||[]).length?(data||[]).map(a=>`<div>${days[a.weekday]||a.weekday} · ${a.start_time||''}–${a.end_time||''} · ${TC.esc(a.timezone||'Africa/Lagos')}</div>`).join(''):'<p>No published slots yet. Ask the studio to fill Availability.</p>';
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
-document.getElementById('go').onclick=async()=>{
-  const notes='SELF-BOOK slot weekday='+document.getElementById('wd').value+' time='+document.getElementById('tm').value+' tpc='+document.getElementById('tpc').value;
-  if(!window.sb){ toast('Preview only. Connect Supabase to store the request.','warning'); return; }
-  const {error}=await sb.from('inquiries').insert({parent_name:document.getElementById('pn').value,email:document.getElementById('em').value,phone:document.getElementById('ph').value,learner_name:document.getElementById('ln').value,subject:document.getElementById('sub').value,kind:'one_on_one',timezone:'Africa/Lagos',source:'public-book',notes,status:'new'});
-  if(error) toast(error.message,'danger'); else toast('Request received. The studio will confirm and expand a 4-cycle booking.','success');
-};
-document.addEventListener('DOMContentLoaded', boot);
 
+async function loadAvailability() {
+  const box = document.getElementById('avail-slots');
+  if (!window.sb) {
+    box.innerHTML = '<div class="slot-label" style="justify-content:flex-start;gap:12px"><input type="radio" name="slot" value="Any time" checked> <span>Any time (Studio will arrange)</span></div>';
+    return;
+  }
+  const { data } = await window.sb.from('availability').select('*').limit(20);
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  
+  if (data && data.length) {
+    box.innerHTML = data.map((a, i) => `
+      <label class="slot-label">
+        <div style="display:flex;flex-direction:column">
+          <strong style="color:#0f172a">${days[a.weekday] || a.weekday}s</strong>
+          <span style="font-size:0.85rem;color:#64748b">${a.start_time || ''} – ${a.end_time || ''} (${esc(a.timezone || 'Local')})</span>
+        </div>
+        <input type="radio" name="slot" value="${days[a.weekday]}: ${a.start_time}-${a.end_time}" ${i===0?'checked':''}>
+      </label>
+    `).join('') + `
+      <label class="slot-label">
+        <div style="display:flex;flex-direction:column">
+          <strong style="color:#0f172a">Other / Discuss later</strong>
+          <span style="font-size:0.85rem;color:#64748b">I will arrange a custom time</span>
+        </div>
+        <input type="radio" name="slot" value="Custom">
+      </label>
+    `;
+  } else {
+    box.innerHTML = '<label class="slot-label" style="justify-content:flex-start;gap:12px"><input type="radio" name="slot" value="Any time" checked> <span>Any time (Studio will arrange)</span></label>';
+  }
+}
+
+document.getElementById('btn-submit').addEventListener('click', async () => {
+  const errBox = document.getElementById('fc-error');
+  const btn = document.getElementById('btn-submit');
+  const showErr = (m) => { errBox.style.display = 'block'; errBox.innerHTML = m; window.scrollTo({top:0, behavior:'smooth'}); };
+  errBox.style.display = 'none';
+
+  const v = id => document.getElementById(id).value.trim();
+  
+  const pName = v('bk-pname');
+  const phone = v('bk-phone');
+  const sName = v('bk-sname');
+  const subject = v('bk-subject');
+  if (!pName || !phone || !sName || !subject) return showErr("Please fill all required fields marked with *.");
+
+  const slotNode = document.querySelector('input[name="slot"]:checked');
+  const slotText = slotNode ? slotNode.value : 'None specified';
+  
+  // Package into 'notes' exactly as standard inquiries expect
+  const notes = `Level: ${v('bk-level')}\nGoal: ${v('bk-goal')}\nFrequency: ${v('bk-tpc')} classes/mo\nPreferred Slot: ${slotText}`;
+
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+
+  if (!window.sb) {
+    setTimeout(() => {
+      document.getElementById('booking-form-wrap').style.display = 'none';
+      document.getElementById('success-pane').style.display = 'block';
+      document.getElementById('success-id').textContent = 'BOOK-PREVIEW-001';
+    }, 800);
+    return;
+  }
+
+  // The database trigger tc_inquiry_reg_no() ensures they get a unique BOOK-YY-XXXXX ID upon insert.
+  const { data, error } = await window.sb.from('inquiries').insert({
+    parent_name: pName,
+    email: v('bk-email') || null,
+    phone: phone,
+    learner_name: sName,
+    subject: subject,
+    kind: 'one_on_one',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Africa/Lagos',
+    source: 'public-book',
+    notes: notes,
+    status: 'new'
+  }).select('reg_no').single();
+
+  if (error) {
+    btn.disabled = false;
+    btn.textContent = 'Submit Booking Request';
+    return showErr("Database error: " + error.message);
+  }
+
+  document.getElementById('booking-form-wrap').style.display = 'none';
+  document.getElementById('success-pane').style.display = 'block';
+  document.getElementById('success-id').textContent = data.reg_no || 'BOOK-RECEIVED';
+  window.scrollTo({top:0, behavior:'smooth'});
+});
+
+document.addEventListener('DOMContentLoaded', loadAvailability);
 </script>
 </body>
 </html>
