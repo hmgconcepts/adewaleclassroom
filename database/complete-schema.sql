@@ -11758,3 +11758,122 @@ end $$;
 
 drop trigger if exists tc_blog_post_trg on public.tc_blog_posts;
 create trigger tc_blog_post_trg before insert on public.tc_blog_posts for each row execute function public.tc_blog_post_before();
+create or replace function public.tc_free_cohort_public(p_token text)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select jsonb_build_object(
+    'ok', true,
+    'name', c.name,
+    'description', c.description,
+    'exam_board', c.exam_board,
+    'exam_series', c.exam_series,
+    'subjects', to_jsonb(c.subjects),
+    'level', c.level,
+    'platform', c.platform,
+    'schedule', c.schedule_text,
+    'tz', c.tz,
+    'starts_on', c.starts_on,
+    'ends_on', c.ends_on,
+    'banner_url', c.banner_url,
+    'requires_parent_consent', c.requires_parent_consent,
+    'social_links', c.social_links,
+    'open', (c.status in ('open','running') and l.active
+             and (l.expires_on is null or l.expires_on >= current_date)
+             and (coalesce(l.max_uses,0) = 0 or coalesce(l.uses,0) < l.max_uses))
+  )
+  from public.tc_free_links l
+  join public.tc_free_cohorts c on c.id = l.cohort_id
+  where l.token = p_token;
+$$;
+create or replace function public.tc_free_register(
+  p_token   text,
+  p_name    text,
+  p_email   text default null,
+  p_phone   text default null,
+  p_country text default null,
+  p_state   text default null,
+  p_city    text default null,
+  p_school  text default null,
+  p_level   text default null,
+  p_board   text default null,
+  p_subjects text[] default '{}',
+  p_parent_name  text default null,
+  p_parent_phone text default null,
+  p_consent boolean default false,
+  p_how_heard text default null,
+  p_goal    text default null
+) returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  lnk public.tc_free_links%rowtype;
+  coh public.tc_free_cohorts%rowtype;
+  reg public.tc_free_registrations%rowtype;
+  taken int;
+begin
+  if coalesce(trim(p_name), '') = '' then
+    return jsonb_build_object('ok', false, 'error', 'Please enter your full name.');
+  end if;
+
+  select * into lnk from public.tc_free_links where token = p_token;
+  if not found or not lnk.active then
+    return jsonb_build_object('ok', false, 'error', 'This registration link is no longer active.');
+  end if;
+  if lnk.expires_on is not null and lnk.expires_on < current_date then
+    return jsonb_build_object('ok', false, 'error', 'This registration link expired on ' || lnk.expires_on || '.');
+  end if;
+  if coalesce(lnk.max_uses, 0) > 0 and coalesce(lnk.uses, 0) >= lnk.max_uses then
+    return jsonb_build_object('ok', false, 'error', 'This registration link has reached its limit.');
+  end if;
+
+  select * into coh from public.tc_free_cohorts where id = lnk.cohort_id;
+  if not found or coh.status not in ('open', 'running') then
+    return jsonb_build_object('ok', false, 'error', 'Registration for this class is closed.');
+  end if;
+  if coalesce(coh.capacity, 0) > 0 then
+    select count(*) into taken from public.tc_free_registrations
+     where cohort_id = coh.id and status <> 'declined';
+    if taken >= coh.capacity then
+      return jsonb_build_object('ok', false, 'error', 'This class is full.');
+    end if;
+  end if;
+  if coh.requires_parent_consent and not coalesce(p_consent, false) then
+    return jsonb_build_object('ok', false, 'error', 'A parent or guardian must give consent for this class.');
+  end if;
+
+  insert into public.tc_free_registrations (
+    cohort_id, link_id, full_name, email, phone, country, state_region, city, school, level,
+    exam_board, exam_series, subjects, parent_name, parent_phone,
+    parent_consent, how_heard, goal, status
+  ) values (
+    coh.id, lnk.id, trim(p_name), nullif(trim(coalesce(p_email,'')),''),
+    nullif(trim(coalesce(p_phone,'')),''), p_country, p_state, p_city, p_school, p_level,
+    coalesce(p_board, coh.exam_board), coh.exam_series, coalesce(p_subjects, '{}'),
+    p_parent_name, p_parent_phone, coalesce(p_consent, false), p_how_heard, p_goal,
+    case when coh.auto_approve then 'approved' else 'pending' end
+  ) returning * into reg;
+
+  update public.tc_free_links set uses = coalesce(uses, 0) + 1 where id = lnk.id;
+
+  return jsonb_build_object(
+    'ok', true,
+    'reg_no', reg.reg_no,
+    'status', reg.status,
+    'cohort', coh.name,
+    'meeting_url', coh.meeting_url,
+    'youtube_url', coh.youtube_url,
+    'whatsapp_url', coh.whatsapp_url,
+    'telegram_url', coh.telegram_url,
+    'schedule', coh.schedule_text
+  );
+end $$;
+revoke all on function public.tc_free_register(text,text,text,text,text,text,text,text,text,text[],text,text,boolean,text,text) from public;
+grant execute on function public.tc_free_register(text,text,text,text,text,text,text,text,text,text[],text,text,boolean,text,text) to anon, authenticated;
+revoke all on function public.tc_free_register(text,text,text,text,text,text,text,text,text,text,text[],text,text,boolean,text,text) from public;
+grant execute on function public.tc_free_register(text,text,text,text,text,text,text,text,text,text,text[],text,text,boolean,text,text) to anon, authenticated;
