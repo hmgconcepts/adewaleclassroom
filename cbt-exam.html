@@ -625,6 +625,7 @@ async function finish() {
     // rejected it the learner still saw "Graded result saved" and the attempt
     // was lost for good. Now we check the error, keep an offline copy so the
     // work is never destroyed, and tell the truth.
+    try {
     let savedSuccessfully = false;
     let lastError = null;
     // Robust saving: Retry with exponential backoff up to 6 times to seamlessly handle 
@@ -647,7 +648,7 @@ async function finish() {
     } else {
       throw lastError;
     }
-    } catch (err) {
+  } catch (err) {
       state.saved = false;
       state.saveError = (err && (err.message || err.error_description)) || String(err);
       try {
