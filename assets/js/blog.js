@@ -326,7 +326,7 @@
         seo_description: excerpt,
         body: body
       };
-      if (profile) { payload.author_id = profile.id || profile.user_id; payload.author_name = profile.full_name || profile.name || ''; }
+      if (profile) { payload.author_name = profile.full_name || profile.name || 'The Studio'; }
       /* A post leaving draft gets its publication timestamp now. Existing
          published posts keep theirs. Re-dating to "now" every edit would move
          the post around the blog, which readers experience as it reappearing. */
@@ -349,8 +349,11 @@
         this._adminList(document.getElementById('blog-admin-root'));
       } catch (e) {
         var msg = e && (e.message || e.error_description) || String(e);
-        if (w.toast) toast(msg.indexOf('duplicate') > -1 || msg.indexOf('23505') > -1
-          ? 'That slug is already used — change the slug or title.' : msg, 'danger');
+        if (w.toast) { 
+          toast(msg.indexOf('duplicate') > -1 || msg.indexOf('23505') > -1 ? 'That slug is already used — change the slug or title.' : msg, 'danger'); 
+        } else {
+          alert('Error: ' + msg);
+        }
       }
     },
 

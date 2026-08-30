@@ -589,7 +589,7 @@
 
       var subs = Array.isArray(info.subjects) ? info.subjects : [];
       host.innerHTML =
-        '<section class="card" style="background:linear-gradient(135deg,#0506ae,#964eec);color:#fff">' +
+        '<section class="card" style="background:linear-gradient(135deg,#0506ae,#964eec) !important; color:#fff !important;">' +
           '<div style="font-size:.78rem;letter-spacing:2px;opacity:.85;color:#fff">FREE CLASS</div>' +
           '<h1 style="margin:4px 0 6px;font-size:1.6rem;color:#fff">' + esc(info.name) + '</h1>' +
           '<p style="margin:0;opacity:.95;color:#fff">' + esc(info.description || '') + '</p>' +
