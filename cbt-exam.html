@@ -89,7 +89,10 @@ CBT.init(window.sb);
   if (q.get('code')) document.getElementById('code').value = q.get('code');
   const cached = (window.TC_PROFILE && (window.TC_PROFILE.student_no || '')) || localStorage.getItem('tc-student-no') || '';
   if (cached) document.getElementById('sid').value = cached;
-  if (window.TC_PROFILE && window.TC_PROFILE.full_name) document.getElementById('dname').value = TC_PROFILE.full_name;
+  if (window.TC_PROFILE && window.TC_PROFILE.full_name) document.getElementById('dname').value = window.TC_PROFILE.full_name;
+  if (q.get('code')) {
+    setTimeout(() => { document.getElementById('lookup').click(); }, 100);
+  }
 })();
 
 document.getElementById('lookup').onclick = async () => {

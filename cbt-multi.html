@@ -359,7 +359,7 @@ const MM = {
     say('Saving…');
     const { error } = await sb.from('cbt_exams').insert(row);
     if (error) return say('❌ ' + this.esc(error.message), true);
-    const url = location.origin + location.pathname.replace(/cbt-multi\.html$/, '') + 'cbt-exam.html?code=' + encodeURIComponent(code);
+    const url = location.href.split('?')[0].replace(/\/?[^/]*$/, '/') + 'cbt-exam.html?code=' + encodeURIComponent(code);
     say('✅ Saved <b>' + this.esc(title) + '</b> — ' + subjects.length + ' subjects, ' + questions.length +
         ' questions.<br>Share this link:<br><code>' + this.esc(url) + '</code>');
     this.list();
@@ -450,7 +450,7 @@ const MM = {
       ],
       onRowAction: async function (action, r, reload) {
         if (!r) return;
-        const url = location.origin + location.pathname.replace(/cbt-multi\.html$/, '') +
+        const url = location.href.split('?')[0].replace(/\/?[^/]*$/, '/') +
                     'cbt-exam.html?code=' + encodeURIComponent(r.code || '');
         const esc = (x) => (window.TC && TC.esc) ? TC.esc(x == null ? '' : x) : String(x == null ? '' : x);
         const say = (m, t) => { if (window.toast) toast(m, t || 'success'); else alert(m); };

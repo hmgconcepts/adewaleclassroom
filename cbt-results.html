@@ -260,7 +260,7 @@
     var x = (full && full.data) || e;
     var bank = Array.isArray(x.csv_data) && x.csv_data.length ? x.csv_data
              : (Array.isArray(x.questions) ? x.questions : []);
-    var url = location.origin + location.pathname.replace(/cbt-results\.html$/, '') +
+    var url = location.href.split('?')[0].replace(/\/?[^/]*$/, '/') +
               'cbt-exam.html?code=' + encodeURIComponent(x.code || '');
 
     var host = document.getElementById('cr-manage') || (function () {
