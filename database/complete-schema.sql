@@ -6648,6 +6648,8 @@ create table if not exists public.tc_timezone_desk (
   parent_id     uuid references public.parents(id) on delete cascade,
   label         text,                            -- free text for studio/exam_board rows
   city          text,
+  gender        text,
+  age           int,
   country       text,
   tz            text not null,                   -- IANA, e.g. 'Africa/Lagos'
   utc_offset    text,                            -- cached display value, e.g. '+01:00'
@@ -6853,6 +6855,8 @@ create or replace function public.tc_free_register(
   p_phone   text default null,
   p_country text default null,
   p_city    text default null,
+  p_gender  text default null,
+  p_age     int default null,
   p_school  text default null,
   p_level   text default null,
   p_board   text default null,
@@ -11848,12 +11852,12 @@ begin
   end if;
 
   insert into public.tc_free_registrations (
-    cohort_id, link_id, full_name, email, phone, country, state_region, city, school, level,
+    cohort_id, link_id, full_name, email, phone, country, state_region, city, gender, age, school, level,
     exam_board, exam_series, subjects, parent_name, parent_phone,
     parent_consent, how_heard, goal, status
   ) values (
     coh.id, lnk.id, trim(p_name), nullif(trim(coalesce(p_email,'')),''),
-    nullif(trim(coalesce(p_phone,'')),''), p_country, p_state, p_city, p_school, p_level,
+    nullif(trim(coalesce(p_phone,'')),''), p_country, p_state, p_city, p_gender, p_age, p_school, p_level,
     coalesce(p_board, coh.exam_board), coh.exam_series, coalesce(p_subjects, '{}'),
     p_parent_name, p_parent_phone, coalesce(p_consent, false), p_how_heard, p_goal,
     case when coh.auto_approve then 'approved' else 'pending' end
