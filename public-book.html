@@ -89,11 +89,34 @@
           <option value="8">8 Classes per month (2x a week)</option>
           <option value="12">12 Classes per month (3x a week)</option>
           <option value="16">16 Classes per month (4x a week)</option>
+          <option value="20">20 Classes per month (5x a week)</option>
+          <option value="24">24 Classes per month (6x a week)</option>
+          <option value="28">28 Classes per month (7x a week)</option>
         </select>
       </div>
+      
       <div class="form-group" style="margin-top:20px;">
-        <label>Available Slots (Pick your preferred start time)</label>
+        <label>Available Slots (Pick from tutor schedules)</label>
         <div id="avail-slots" class="slot-picker"><div style="padding:14px;color:#64748b;text-align:center">Loading schedule...</div></div>
+      </div>
+      <div class="form-group" style="margin-top:16px;">
+        <label>Or propose a Custom Day & Time</label>
+        <div class="grid-2">
+          <select class="form-select" id="bk-custom-day">
+            <option value="">-- Select Day --</option>
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+            <option value="Saturday">Saturday</option>
+            <option value="Sunday">Sunday</option>
+          </select>
+          <input type="time" class="form-input" id="bk-custom-time">
+        </div>
+      </div>
+  
+    </div>
       </div>
     </div>
 
@@ -164,7 +187,12 @@ document.getElementById('btn-submit').addEventListener('click', async () => {
   if (!pName || !phone || !sName || !subject) return showErr("Please fill all required fields marked with *.");
 
   const slotNode = document.querySelector('input[name="slot"]:checked');
-  const slotText = slotNode ? slotNode.value : 'None specified';
+  let slotText = slotNode ? slotNode.value : 'None specified';
+  const customDay = document.getElementById('bk-custom-day').value;
+  const customTime = document.getElementById('bk-custom-time').value;
+  if (customDay && customTime) {
+    slotText = `Custom: ${customDay} at ${customTime}`;
+  }
   
   // Package into 'notes' exactly as standard inquiries expect
   const notes = `Level: ${v('bk-level')}\nGoal: ${v('bk-goal')}\nFrequency: ${v('bk-tpc')} classes/mo\nPreferred Slot: ${slotText}`;
