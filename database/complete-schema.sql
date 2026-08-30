@@ -11748,3 +11748,13 @@ select public.tc_schema_info();
 select 'Tutoring Connect V42 — enterprise hardening installed ✅' as status;
 
 notify pgrst, 'reload schema';
+create or replace function public.tc_blog_post_before() returns trigger language plpgsql as $$
+begin
+  if new.author_id is null then
+    new.author_id := public.tc_my_tutor_id();
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists tc_blog_post_trg on public.tc_blog_posts;
+create trigger tc_blog_post_trg before insert on public.tc_blog_posts for each row execute function public.tc_blog_post_before();
