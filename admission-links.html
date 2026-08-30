@@ -273,6 +273,7 @@
     var mk = document.getElementById('mk');
     if (!mk) return;
     mk.onclick = async function () {
+      function v(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
       var code = (document.getElementById('code').value || '').trim();
       var title = (document.getElementById('title').value || '').trim();
       if (!code) { toast('Code is required', 'warning'); return; }
