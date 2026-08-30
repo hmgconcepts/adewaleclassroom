@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admission Processing • ADEWALE CLASSROOM</title>
+<meta name="description" content="Public inquiry and coded application form for ADEWALE CLASSROOM.">
+<meta name="theme-color" content="#0506ae">
+<meta name="author" content="HMG Technologies · HMG Concepts">
+<link rel="icon" type="image/svg+xml" href="assets/img/logo.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;800&display=swap" rel="stylesheet">
+<meta property="og:title" content="Admission Processing • ADEWALE CLASSROOM">
+<meta property="og:description" content="Public inquiry and coded application form for ADEWALE CLASSROOM.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/layouts.css">
+<style>
+.help-card{background:linear-gradient(135deg,#ecfdf5,#fff7ed);border:1px solid #d1fae5;border-radius:16px;padding:16px 18px;margin-bottom:16px}
+.help-card p{margin:.4rem 0 0;color:#334155;line-height:1.55}
+.workflow{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
+.workflow span{background:#fff;border:1px solid #e2e8f0;border-radius:999px;padding:4px 10px;font-size:.78rem;font-weight:700}
+.related{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.pwa-install-banner{display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:9990;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 16px 40px rgba(15,23,42,.18);padding:12px 14px;gap:12px;align-items:center}
+.pwa-install-banner.show{display:flex}
+.toast-container{position:fixed;right:16px;top:16px;z-index:10001;display:flex;flex-direction:column;gap:8px}
+.toast{background:#0f172a;color:#fff;border-radius:12px;padding:10px 14px;max-width:360px}
+.toast-success{background:#166534}.toast-danger{background:#991b1b}.toast-warning{background:#92400e}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:10000;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.show{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:720px;width:100%;max-height:90vh;overflow:auto}
+.modal-header,.modal-footer{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.modal-body{padding:18px}
+.notif-dropdown.show{display:block!important}
+
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/theme-engine.js"></script>
+<script src="assets/js/catalog.js"></script>
+<script src="assets/js/license.js"></script>
+<script src="assets/js/media.js"></script>
+<script src="assets/js/brand.js"></script>
+<script src="assets/js/notifications.js"></script>
+<script src="assets/js/pwa-install.js"></script>
+<script src="assets/js/site-help.js"></script>
+<script src="assets/js/assistant-kb.js"></script>
+<script src="assets/js/ics.js"></script>
+<script src="assets/js/page-guide.js" defer></script>
+<script src="assets/js/seo.js" defer></script>
+<script src="assets/js/keepalive-monitor.js" defer></script>
+<script src="assets/js/schema-doctor.js" defer></script>
+<script src="assets/js/quota-guard.js" defer></script>
+<script src="assets/js/chatbot.js"></script>
+<script src="assets/js/ai-assistant.js"></script>
+<script src="assets/js/security-guard.js"></script>
+<script src="assets/js/voting.js"></script>
+<script src="assets/js/enterprise.js"></script>
+<script src="assets/js/crud.js"></script>
+<script src="assets/js/insights.js"></script>
+<script src="assets/js/cbt-richtext.js"></script>
+<script src="assets/js/cbt-speech.js"></script>
+<script src="assets/js/cbt.js"></script>
+<script src="assets/js/cbt-types.js"></script>
+<script src="assets/js/proctor.js"></script>
+<script src="assets/js/bookings-engine.js"></script>
+<script src="assets/js/analytics.js"></script>
+<script src="assets/js/super.js"></script>
+<script src="assets/js/record-actions.js"></script>
+<script src="assets/js/receipts.js"></script>
+<script src="assets/js/nav-model.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/rbac.js"></script>
+<script src="assets/js/cbt-marking.js"></script>
+<script src="assets/js/scope-check.js"></script>
+<script src="assets/js/free-classes.js"></script>
+<script src="assets/js/cbt-manage.js"></script>
+<script src="assets/js/cert-studio.js"></script>
+<script src="assets/js/desk-kit.js"></script>
+<script src="assets/js/nav.js"></script>
+<script src="assets/js/legibility.js" defer></script>
+<script src="assets/js/ux-enhance.js" defer></script>
+<script src="assets/js/ops-desk.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
+</head>
+<body>
+<div class="app-layout" data-require-role="public" id="app-layout">
+  <aside class="app-sidebar" id="app-sidebar">
+    <div class="app-brand"><img data-logo src="assets/img/logo.png" alt=""><div><strong data-practice-name>ADEWALE CLASSROOM</strong><span class="muted">Tutoring Connect</span></div></div>
+    <nav class="app-nav" id="app-nav" aria-label="Studio menu" data-nav="model">
+      <noscript><a href="site-index.html">All pages A–Z</a></noscript>
+    </nav>
+  </aside>
+  <div class="app-main">
+    <header class="app-topbar">
+      <button class="mobile-toggle" type="button" aria-label="Menu">☰</button>
+      <h1 class="app-page-title">Admission Processing</h1>
+      <div class="user-chip"><strong id="user-display-name" data-user-name></strong>
+        <span id="user-display-role" data-user-role></span>
+        <button class="btn btn-sm btn-ghost" id="btn-dark" type="button">Theme</button>
+        <button class="btn btn-sm btn-ghost" type="button" data-signout onclick="App.signOut()">Sign out</button></div>
+    </header>
+    <main class="app-content">
+      <section class="help-card page-intro">
+        <div class="page-intro-head"><strong>Admission Processing</strong><span class="page-intro-badge" style="background:#0f766e">🌍 Public page</span></div>
+        <p class="page-intro-what">Public page parents use to request tutoring. Also opens shareable application links (?code=). What you can do here: <b>Submit application</b>. It is form-driven — you fill a form and save; the record appears in the list immediately. Open to anyone, no sign-in needed. It is deliberately indexed by search engines so families can find the studio.</p>
+        <p class="page-intro-who"><b>Who it is for.</b> Owner and admin — this is business development. Families never see the pipeline.</p>
+        <p class="page-intro-why"><b>Why it matters.</b> Tutoring income is won or lost at the top of the funnel. Recording every enquiry means you can see which channel actually produces paying families.</p>
+        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>New enquiries land here automatically from the public Apply form and the contact form.</li><li>Triage each one: assign an owner, set a status, add a note about what was discussed.</li><li>Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.</li><li>Watch the funnel counts at the top — they show you exactly where prospects go cold.</li></ol></details>
+        <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access, and can edit the content behind it in Settings.</li><li><b>Tutor:</b> Full access — it is a public page.</li><li><b>Parent:</b> Full access — it is a public page.</li><li><b>Learner:</b> Full access — it is a public page.</li></ul></details>
+        <p class="page-intro-rel"><b>Related:</b> <a href="application-links.html">application links</a> · <a href="inquiries.html">inquiries</a> · <a href="trials.html">trials</a> · <a href="waitlist.html">waitlist</a> · <a href="onboarding.html">onboarding</a> · <a href="referrals.html">referrals</a></p>
+      </section>
+
+      <div class="card" style="max-width:640px">
+        <p id="link-intro" class="muted">General inquiry. A studio code in the URL customises this form.</p>
+        <form id="app-form">
+          <div class="grid grid-2">
+            <div class="form-group"><label>Applicant Name (Student)</label><input class="form-input" name="applicant_name" required></div>
+            <div class="form-group"><label>Parent / Guardian Name</label><input class="form-input" name="parent_name"></div>
+            <div class="form-group"><label>Email</label><input class="form-input" type="email" name="email"></div>
+            <div class="form-group"><label>Phone / WhatsApp</label><input class="form-input" name="phone" required></div>
+            <div class="form-group"><label>Desired Institution</label><input class="form-input" name="desired_institution" placeholder="e.g. LASU, UNILAG"></div>
+            <div class="form-group"><label>Desired Course</label><input class="form-input" name="desired_course" placeholder="e.g. Medicine, Computer Science"></div>
+            <div class="form-group" style="grid-column:1/-1"><label>Academic Background (O-Level, JAMB Score, etc.)</label><textarea class="form-textarea" name="academic_background" rows="3"></textarea></div>
+            <div class="form-group" style="grid-column:1/-1"><label>Additional Notes</label><textarea class="form-textarea" name="notes" rows="2"></textarea></div>
+          </div>
+          <button class="btn btn-primary" type="submit">Submit application</button>
+        </form>
+        <p id="app-ok" hidden class="badge badge-ok">Received. The studio will contact you on WhatsApp or email.</p>
+      </div>
+    </main>
+  </div>
+</div>
+<div id="toast-container" class="toast-container"></div>
+<script>
+
+const code = new URLSearchParams(location.search).get('code') || '';
+(async () => {
+  if (!code || !window.sb) return;
+  const { data } = await sb.from('admission_links').select('*').eq('code', code).maybeSingle();
+  if (data) {
+    document.getElementById('link-intro').innerHTML = '<b>'+TC.esc(data.title)+'</b> — '+TC.esc(data.description||'')+' · '+TC.esc(data.institution_type||'');
+    
+    const k = document.querySelector('[name=kind]'); if (k && data.kind) k.value = data.kind;
+  }
+})();
+document.getElementById('app-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const row = Object.fromEntries(fd.entries());
+  if (!window.sb) { toast('Preview only — connect Supabase to accept live applications.','warning'); return; }
+  if (code) {
+    const { data, error } = await sb.rpc('tc_submit_application', { p_code: code, p_row: row });
+    if (error) { toast(error.message,'danger'); return; }
+  } else {
+    const res = await sb.rpc('tc_admission_register', { 
+      p_code: code,
+      p_applicant: Object.fromEntries(new FormData(f)).applicant_name,
+      p_parent: Object.fromEntries(new FormData(f)).parent_name,
+      p_email: Object.fromEntries(new FormData(f)).email,
+      p_phone: Object.fromEntries(new FormData(f)).phone,
+      p_inst: Object.fromEntries(new FormData(f)).desired_institution,
+      p_course: Object.fromEntries(new FormData(f)).desired_course,
+      p_bg: Object.fromEntries(new FormData(f)).academic_background,
+      p_notes: Object.fromEntries(new FormData(f)).notes
+    });
+    if(res.data && res.data.error) throw new Error(res.data.error);
+    const error = res.error;
+    if (error) { toast(error.message,'danger'); return; }
+  }
+  document.getElementById('app-ok').hidden = false;
+  toast('Application received','success');
+  e.target.reset();
+};
+
+</script>
+</body>
+</html>

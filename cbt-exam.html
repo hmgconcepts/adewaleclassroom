@@ -619,10 +619,28 @@ async function finish() {
     // rejected it the learner still saw "Graded result saved" and the attempt
     // was lost for good. Now we check the error, keep an offline copy so the
     // work is never destroyed, and tell the truth.
-    try {
-      const { error } = await window.sb.from('cbt_results').insert(payload);
-      if (error) throw error;
+    let savedSuccessfully = false;
+    let lastError = null;
+    // Robust saving: Retry with exponential backoff up to 6 times to seamlessly handle 
+    // 1000+ simultaneous students submitting exams (mitigating Postgres connection pooling limits).
+    for (let attempts = 0; attempts < 6; attempts++) {
+      try {
+        const { error } = await window.sb.from('cbt_results').insert(payload);
+        if (error) throw error;
+        savedSuccessfully = true;
+        break;
+      } catch (e) {
+        lastError = e;
+        // Wait exponentially plus jitter: 1s, 2.5s, 5s, 10s...
+        await new Promise(r => setTimeout(r, Math.pow(2, attempts) * 1000 + Math.random() * 1500));
+      }
+    }
+    
+    if (savedSuccessfully) {
       state.saved = true;
+    } else {
+      throw lastError;
+    }
     } catch (err) {
       state.saved = false;
       state.saveError = (err && (err.message || err.error_description)) || String(err);
@@ -662,15 +680,17 @@ async function finish() {
       const award = (a && a.data) || {};
       const podium = lb.map((r, i) => '<tr><td>' + (i + 1) + '</td><td>' + TC.esc(r.full_name || 'Learner') +
         '</td><td>' + TC.esc(r.streak_days) + '🔥</td><td>' + TC.esc(r.xp) + ' XP</td></tr>').join('');
-      gameHTML = '<div class="card" style="border-left:4px solid var(--accent,#d97706);background:linear-gradient(135deg,#fff7ed,#fef3c7);margin-bottom:12px">' +
-        '<h3 style="margin:0 0 8px">🎉 ' + (award.xp_earned > 0 ? ('+' + award.xp_earned + ' XP earned') : 'Well done — keep going!') + '</h3>' +
-        '<div style="display:flex;gap:16px;flex-wrap:wrap">' +
-          '<div><div class="stat-value">' + (award.pct != null ? award.pct : result.pct) + '%</div><div class="stat-label">Score</div></div>' +
-          '<div><div class="stat-value">' + (award.level != null ? award.level : '—') + '</div><div class="stat-label">Level</div></div>' +
-          '<div><div class="stat-value">' + (award.streak != null ? award.streak : '—') + ' 🔥</div><div class="stat-label">Day streak</div></div>' +
+      gameHTML = '<div class="card" style="border-left:4px solid var(--accent,#d97706);background:linear-gradient(135deg,#fff7ed,#fef3c7);margin-bottom:12px;position:relative;overflow:hidden">' +
+        '<div style="position:absolute;top:-20px;left:-20px;width:100%;height:100%;pointer-events:none;background:url(\'data:image/svg+xml;utf8,<svg xmlns=\\"http://www.w3.org/2000/svg\\" viewBox=\\"0 0 100 100\\"><circle cx=\\"10\\" cy=\\"10\\" r=\\"2\\" fill=\\"%23f59e0b\\"/><circle cx=\\"80\\" cy=\\"40\\" r=\\"1.5\\" fill=\\"%233b82f6\\"/><polygon points=\\"40,80 43,85 37,85\\" fill=\\"%2310b981\\"/><rect x=\\"70\\" y=\\"80\\" width=\\"3\\" height=\\"3\\" fill=\\"%23ef4444\\"/></svg>\');background-size:120px 120px;opacity:0.3;animation:tc-float 20s linear infinite"></div>' +
+        '<style>@keyframes tc-float { from { background-position: 0 0; } to { background-position: 120px 120px; } } @keyframes tc-pop { 0% {transform: scale(0.9);} 50% {transform: scale(1.05);} 100% {transform: scale(1);} }</style>' +
+        '<h3 style="margin:0 0 8px;animation: tc-pop 0.4s ease-out">🎉 ' + (award.xp_earned > 0 ? ('+' + award.xp_earned + ' XP earned') : 'Well done — keep going!') + '</h3>' +
+        '<div style="display:flex;gap:16px;flex-wrap:wrap;position:relative;z-index:1">' +
+          '<div><div class="stat-value" style="color:#b45309">' + (award.pct != null ? award.pct : result.pct) + '%</div><div class="stat-label">Score</div></div>' +
+          '<div><div class="stat-value" style="color:#4338ca">⭐ ' + (award.level != null ? award.level : '—') + '</div><div class="stat-label">Level</div></div>' +
+          '<div><div class="stat-value" style="color:#be123c">' + (award.streak != null ? award.streak : '—') + ' 🔥</div><div class="stat-label">Day streak</div></div>' +
         '</div>' +
-        (lb.length ? '<details style="margin-top:10px"><summary>🏆 Class podium (top 5)</summary>' +
-          '<table class="table-wrap" style="width:100%;margin-top:6px"><thead><tr><th>#</th><th align="left">Learner</th><th>Streak</th><th>XP</th></tr></thead><tbody>' +
+        (lb.length ? '<details style="margin-top:14px;position:relative;z-index:1;background:rgba(255,255,255,0.5);padding:8px;border-radius:8px"><summary style="cursor:pointer;font-weight:600;color:#92400e">🏆 Class podium (top 5)</summary>' +
+          '<table class="table-wrap" style="width:100%;margin-top:6px;font-size:0.9rem"><thead><tr><th>Rank</th><th align="left">Learner</th><th>Streak</th><th>XP</th></tr></thead><tbody>' +
           podium + '</tbody></table></details>' : '') +
         '</div>';
     } catch (_) { /* gamification is cosmetic — never block the result */ }

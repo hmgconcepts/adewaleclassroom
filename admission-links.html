@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="assets/js/auth-guard.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admission processing links • ADEWALE CLASSROOM</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="description" content="Expiring, limited-use codes for a subject, 1:1 or group.">
+<meta name="theme-color" content="#0506ae">
+<meta name="author" content="HMG Technologies · HMG Concepts">
+<link rel="icon" type="image/svg+xml" href="assets/img/logo.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;800&display=swap" rel="stylesheet">
+<meta property="og:title" content="Admission processing links • ADEWALE CLASSROOM">
+<meta property="og:description" content="Expiring, limited-use codes for a subject, 1:1 or group.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/layouts.css">
+<style>
+.help-card{background:linear-gradient(135deg,#ecfdf5,#fff7ed);border:1px solid #d1fae5;border-radius:16px;padding:16px 18px;margin-bottom:16px}
+.help-card p{margin:.4rem 0 0;color:#334155;line-height:1.55}
+.workflow{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
+.workflow span{background:#fff;border:1px solid #e2e8f0;border-radius:999px;padding:4px 10px;font-size:.78rem;font-weight:700}
+.related{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.pwa-install-banner{display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:9990;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 16px 40px rgba(15,23,42,.18);padding:12px 14px;gap:12px;align-items:center}
+.pwa-install-banner.show{display:flex}
+.toast-container{position:fixed;right:16px;top:16px;z-index:10001;display:flex;flex-direction:column;gap:8px}
+.toast{background:#0f172a;color:#fff;border-radius:12px;padding:10px 14px;max-width:360px}
+.toast-success{background:#166534}.toast-danger{background:#991b1b}.toast-warning{background:#92400e}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:10000;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.show{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:720px;width:100%;max-height:90vh;overflow:auto}
+.modal-header,.modal-footer{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.modal-body{padding:18px}
+.notif-dropdown.show{display:block!important}
+
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/theme-engine.js"></script>
+<script src="assets/js/catalog.js"></script>
+<script src="assets/js/license.js"></script>
+<script src="assets/js/media.js"></script>
+<script src="assets/js/brand.js"></script>
+<script src="assets/js/notifications.js"></script>
+<script src="assets/js/pwa-install.js"></script>
+<script src="assets/js/site-help.js"></script>
+<script src="assets/js/assistant-kb.js"></script>
+<script src="assets/js/ics.js"></script>
+<script src="assets/js/page-guide.js" defer></script>
+<script src="assets/js/seo.js" defer></script>
+<script src="assets/js/keepalive-monitor.js" defer></script>
+<script src="assets/js/schema-doctor.js" defer></script>
+<script src="assets/js/quota-guard.js" defer></script>
+<script src="assets/js/chatbot.js"></script>
+<script src="assets/js/ai-assistant.js"></script>
+<script src="assets/js/security-guard.js"></script>
+<script src="assets/js/voting.js"></script>
+<script src="assets/js/enterprise.js"></script>
+<script src="assets/js/crud.js"></script>
+<script src="assets/js/insights.js"></script>
+<script src="assets/js/cbt-richtext.js"></script>
+<script src="assets/js/cbt-speech.js"></script>
+<script src="assets/js/cbt.js"></script>
+<script src="assets/js/cbt-types.js"></script>
+<script src="assets/js/proctor.js"></script>
+<script src="assets/js/bookings-engine.js"></script>
+<script src="assets/js/analytics.js"></script>
+<script src="assets/js/super.js"></script>
+<script src="assets/js/record-actions.js"></script>
+<script src="assets/js/receipts.js"></script>
+<script src="assets/js/nav-model.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/rbac.js"></script>
+<script src="assets/js/cbt-marking.js"></script>
+<script src="assets/js/scope-check.js"></script>
+<script src="assets/js/free-classes.js"></script>
+<script src="assets/js/cbt-manage.js"></script>
+<script src="assets/js/cert-studio.js"></script>
+<script src="assets/js/desk-kit.js"></script>
+<script src="assets/js/nav.js"></script>
+<script src="assets/js/legibility.js" defer></script>
+<script src="assets/js/ux-enhance.js" defer></script>
+<script src="assets/js/ops-desk.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
+</head>
+<body>
+<div class="app-layout" data-require-role="any" id="app-layout">
+  <aside class="app-sidebar" id="app-sidebar">
+    <div class="app-brand"><img data-logo src="assets/img/logo.png" alt=""><div><strong data-practice-name>ADEWALE CLASSROOM</strong><span class="muted">Tutoring Connect</span></div></div>
+    <nav class="app-nav" id="app-nav" aria-label="Studio menu" data-nav="model">
+      <noscript><a href="site-index.html">All pages A–Z</a></noscript>
+    </nav>
+  </aside>
+  <div class="app-main">
+    <header class="app-topbar">
+      <button class="mobile-toggle" type="button" aria-label="Menu">☰</button>
+      <h1 class="app-page-title">Admission processing links</h1>
+      <div class="user-chip"><strong id="user-display-name" data-user-name></strong>
+        <span id="user-display-role" data-user-role></span>
+        <button class="btn btn-sm btn-ghost" id="btn-dark" type="button">Theme</button>
+        <button class="btn btn-sm btn-ghost" type="button" data-signout onclick="App.signOut()">Sign out</button></div>
+    </header>
+    <main class="app-content">
+      <section class="help-card page-intro">
+        <div class="page-intro-head"><strong>Admission processing links</strong><span class="page-intro-badge" style="background:#7f1d1d">🔐 Owner / admin only</span></div>
+        <p class="page-intro-what">Generate robust, expiring, limited-use application URLs for a subject, 1:1 or group. Each code has its own form copy and use counter. What you can do here: <b>Create link</b>. Owner/admin only. These pages control money, safeguarding, audit or platform configuration, so they sit behind the highest role check.</p>
+        <p class="page-intro-who"><b>Who it is for.</b> Owner and admin — this is business development. Families never see the pipeline.</p>
+        <p class="page-intro-why"><b>Why it matters.</b> Tutoring income is won or lost at the top of the funnel. Recording every enquiry means you can see which channel actually produces paying families.</p>
+        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>New enquiries land here automatically from the public Apply form and the contact form.</li><li>Triage each one: assign an owner, set a status, add a note about what was discussed.</li><li>Convert a warm enquiry into a trial lesson, then into a full engagement once they commit.</li><li>Watch the funnel counts at the top — they show you exactly where prospects go cold.</li></ol></details>
+        <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access.</li><li><b>Tutor:</b> No access — this page controls money, audit or configuration.</li><li><b>Parent:</b> No access.</li><li><b>Learner:</b> No access.</li></ul></details>
+        <p class="page-intro-rel"><b>Related:</b> <a href="admission-apply.html">apply</a> · <a href="inquiries.html">inquiries</a> · <a href="trials.html">trials</a> · <a href="waitlist.html">waitlist</a> · <a href="onboarding.html">onboarding</a> · <a href="referrals.html">referrals</a></p>
+      </section>
+
+      <div id="al-kpis" class="crud-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px"></div>
+      <div class="card">
+        <div class="grid grid-2">
+          <div class="form-group"><label>Code</label><div style="display:flex;gap:8px"><input class="form-input" id="code" placeholder="lasu-post-utme" style="flex:1"><button type="button" class="btn btn-outline" id="al-gen" title="Generate code">🎲</button></div></div>
+          <div class="form-group"><label>Title</label><input class="form-input" id="title" placeholder="LASU Post UTME"></div>
+          <div class="form-group"><label>Institution Type</label><input class="form-input" id="inst"></div>
+          <div class="form-group"><label>Expires</label><input class="form-input" id="exp" type="date"></div>
+          <div class="form-group"><label>Max uses</label><input class="form-input" id="max" type="number"></div>
+          <div class="form-group" style="grid-column:1/-1"><label>Intro</label><textarea class="form-textarea" id="intro"></textarea></div>
+        </div>
+        <button class="btn btn-primary" type="button" id="mk">Create link</button>
+        <p id="share"></p>
+      </div>
+      <div id="list" style="margin-top:12px"></div>
+    </main>
+  </div>
+</div>
+<div id="toast-container" class="toast-container"></div>
+
+<script>
+/* Admission processing links desk — self-contained. Create expiring, limited-use
+   codes; share on WhatsApp/social; copy; QR; open/close; use counters. */
+(function () {
+  'use strict';
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+  }
+  function toast(m, k) {
+    try {
+      if (window.App && App.toast) return App.toast(m, k || 'info');
+      if (window.toast) return window.toast(m, k || 'info');
+    } catch (_) {}
+    console.log('[admission-links]', m);
+  }
+  function origin() {
+    try {
+      var u = (window.PRACTICE && PRACTICE.siteUrl) || location.origin;
+      return String(u).replace(/\/+$/, '');
+    } catch (_) { return location.origin; }
+  }
+  function applyUrl(code) {
+    return origin() + '/admission-apply.html?code=' + encodeURIComponent(code);
+  }
+  function randCode() {
+    var a = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    var s = '';
+    for (var i = 0; i < 8; i++) s += a[Math.floor(Math.random() * a.length)];
+    return 'app-' + s;
+  }
+  function qrUrl(data) {
+    return 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(data);
+  }
+
+  async function load() {
+    var list = document.getElementById('list');
+    var kpis = document.getElementById('al-kpis');
+    if (!list) return;
+    if (!window.sb) {
+      list.innerHTML = '<div class="card"><p class="muted">Connect Supabase to manage application links. You can still draft a link below — it will save once the database is connected.</p></div>';
+      return;
+    }
+    list.innerHTML = '<p class="muted">Loading…</p>';
+    var { data, error } = await sb.from('admission_links').select('*').order('created_at', { ascending: false });
+    if (error) {
+      list.innerHTML = '<div class="card" style="border-left:4px solid #b91c1c"><b>Could not load links</b><p class="muted">' + esc(error.message) + '</p></div>';
+      return;
+    }
+    var rows = data || [];
+    if (kpis) {
+      var open = rows.filter(function (r) { return (r.status || 'open') === 'open'; }).length;
+      var uses = rows.reduce(function (n, r) { return n + (Number(r.uses) || 0); }, 0);
+      kpis.innerHTML =
+        '<div class="card" style="padding:12px 14px"><div class="muted" style="font-size:.75rem">Links</div><b style="font-size:1.3rem">' + rows.length + '</b></div>' +
+        '<div class="card" style="padding:12px 14px"><div class="muted" style="font-size:.75rem">Open</div><b style="font-size:1.3rem">' + open + '</b></div>' +
+        '<div class="card" style="padding:12px 14px"><div class="muted" style="font-size:.75rem">Total uses</div><b style="font-size:1.3rem">' + uses + '</b></div>';
+    }
+    if (!rows.length) {
+      list.innerHTML = '<div class="card"><p class="muted">No application links yet. Create one above — parents open it from WhatsApp or social without needing an account first.</p></div>';
+      return;
+    }
+    list.innerHTML = rows.map(function (l) {
+      var url = applyUrl(l.code);
+      var st = (l.status || 'open');
+      var badge = st === 'open'
+        ? '<span style="background:#ecfdf5;color:#065f46;padding:2px 8px;border-radius:99px;font-size:.72rem;font-weight:800">OPEN</span>'
+        : '<span style="background:#f1f5f9;color:#475569;padding:2px 8px;border-radius:99px;font-size:.72rem;font-weight:800">' + esc(st.toUpperCase()) + '</span>';
+      var uses = (l.uses || 0) + ' / ' + (l.max_uses == null || l.max_uses === '' ? '∞' : l.max_uses);
+      var exp = l.expires_on ? (' · expires ' + esc(String(l.expires_on).slice(0, 10))) : '';
+      return '<div class="card" style="margin-bottom:10px;padding:14px 16px">' +
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start">' +
+          '<div style="flex:1;min-width:220px">' +
+            '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+              '<b style="font-size:1.05rem">' + esc(l.title || l.code) + '</b> ' + badge +
+            '</div>' +
+            '<div class="muted" style="font-size:.85rem;margin-top:4px">' +
+              '<code>' + esc(l.code) + '</code> · ' + esc(l.kind || 'one_on_one') +
+              (l.subject ? ' · ' + esc(l.subject) : '') +
+              ' · uses ' + uses + exp +
+            '</div>' +
+            (l.intro ? '<p style="margin:8px 0 0;font-size:.9rem">' + esc(l.intro) + '</p>' : '') +
+            '<div style="margin-top:8px;font-size:.82rem;word-break:break-all"><a href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(url) + '</a></div>' +
+          '</div>' +
+          '<img alt="QR" width="88" height="88" style="border-radius:8px;border:1px solid #e2e8f0;background:#fff" src="' + qrUrl(url) + '">' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">' +
+          '<button type="button" class="btn btn-sm btn-primary" data-al-copy="' + esc(l.code) + '">📋 Copy link</button>' +
+          '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent('Apply here: ' + url) + '">WhatsApp</a>' +
+          '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url) + '">Facebook</a>' +
+          '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?url=' + encodeURIComponent(url) + '&text=' + encodeURIComponent(l.title || 'Apply') + '">X</a>' +
+          '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="mailto:?subject=' + encodeURIComponent(l.title || 'Application') + '&body=' + encodeURIComponent(url) + '">Email</a>' +
+          '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="' + esc(url) + '">Open</a>' +
+          (st === 'open'
+            ? '<button type="button" class="btn btn-sm btn-ghost" data-al-status="' + esc(l.id) + '" data-to="closed">Close</button>'
+            : '<button type="button" class="btn btn-sm btn-ghost" data-al-status="' + esc(l.id) + '" data-to="open">Reopen</button>') +
+          '<button type="button" class="btn btn-sm btn-ghost" data-al-del="' + esc(l.id) + '" style="color:#b91c1c">Delete</button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    list.querySelectorAll('[data-al-copy]').forEach(function (b) {
+      b.onclick = async function () {
+        var u = applyUrl(b.getAttribute('data-al-copy'));
+        try { await navigator.clipboard.writeText(u); toast('Link copied', 'success'); }
+        catch (_) { prompt('Copy this link:', u); }
+      };
+    });
+    list.querySelectorAll('[data-al-status]').forEach(function (b) {
+      b.onclick = async function () {
+        var id = b.getAttribute('data-al-status');
+        var to = b.getAttribute('data-to');
+        var { error } = await sb.from('admission_links').update({ status: to }).eq('id', id);
+        if (error) toast(error.message, 'danger'); else { toast('Marked ' + to, 'success'); load(); }
+      };
+    });
+    list.querySelectorAll('[data-al-del]').forEach(function (b) {
+      b.onclick = async function () {
+        if (!confirm('Delete this application link? Existing shares will stop working.')) return;
+        var { error } = await sb.from('admission_links').delete().eq('id', b.getAttribute('data-al-del'));
+        if (error) toast(error.message, 'danger'); else { toast('Deleted', 'success'); load(); }
+      };
+    });
+  }
+
+  function wireForm() {
+    var codeEl = document.getElementById('code');
+    var gen = document.getElementById('al-gen');
+    if (gen && codeEl) {
+      gen.onclick = function () { codeEl.value = randCode(); codeEl.focus(); };
+      if (!codeEl.value) codeEl.value = randCode();
+    }
+    var mk = document.getElementById('mk');
+    if (!mk) return;
+    mk.onclick = async function () {
+      var code = (document.getElementById('code').value || '').trim();
+      var title = (document.getElementById('title').value || '').trim();
+      if (!code) { toast('Code is required', 'warning'); return; }
+      if (!title) { toast('Title is required', 'warning'); return; }
+      if (!window.sb) { toast('Connect Supabase to save', 'warning'); return; }
+      var maxRaw = document.getElementById('max').value;
+      var row = {
+        code: code,
+        title: v('title') || 'Admission Link',
+        institution_type: v('inst'),
+        description: v('intro'),
+        expires_on: v('exp') || null,
+        max_uses: parseInt(v('max'), 10) || 0,
+        uses: 0
+      };
+      var { error } = await sb.from('admission_links').insert(row);
+      if (error) { toast(error.message, 'danger'); return; }
+      var url = applyUrl(code);
+      var share = document.getElementById('share');
+      if (share) {
+        share.innerHTML =
+          '<div class="card" style="margin-top:12px;background:#ecfdf5;border:1px solid #a7f3d0">' +
+            '<b>Link ready</b>' +
+            '<div style="margin-top:6px;word-break:break-all"><a href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(url) + '</a></div>' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">' +
+              '<button type="button" class="btn btn-sm btn-primary" id="al-copy-new">📋 Copy</button>' +
+              '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent('Apply here: ' + url) + '">WhatsApp</a>' +
+              '<img alt="QR" width="72" height="72" style="border-radius:8px;border:1px solid #e2e8f0" src="' + qrUrl(url) + '">' +
+            '</div></div>';
+        var c = document.getElementById('al-copy-new');
+        if (c) c.onclick = async function () {
+          try { await navigator.clipboard.writeText(url); toast('Copied', 'success'); }
+          catch (_) { prompt('Copy:', url); }
+        };
+      }
+      toast('Link created', 'success');
+      document.getElementById('code').value = randCode();
+      load();
+    };
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    wireForm();
+    load();
+  });
+})();
+</script>
+
+</body>
+</html>
