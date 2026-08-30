@@ -499,7 +499,7 @@
       });
 
       d.getElementById('fc-roll-csv').addEventListener('click', function () {
-        var head = 'Reg no,Name,Email,Phone,Country,City,School,Level,Board,Status,Attended,Total,Attendance %,Avg score,How Heard,Goal,Registered On';
+        var head = 'Reg no,Name,Gender,Age,Email,Phone,WhatsApp,Country,State,City,School,Level,Board,Status,Attended,Total,Attendance %,Avg score,Parent Name,Parent Phone,Parent Email,How Heard,Goal,Registered On';
         var body = rows.map(function (r) {
           return [r.reg_no, r.full_name, r.email, r.phone, r.country, r.city, r.school,
                   r.level, r.exam_board, r.status, r.sessions_attended, r.sessions_total, r.attendance_pct, r.avg_score, r.how_heard, r.goal, r.created_at]
@@ -624,7 +624,8 @@
               'background:#fef2f2;border:1px solid #fecaca;color:#991b1b;font-size:.88rem"></div>' +
             '<div class="grid grid-2">' +
               '<div class="form-group"><label for="fr-name">Your full name *</label><input class="form-input" id="fr-name"></div>' +
-              '<div class="form-group"><label for="fr-phone">Phone / WhatsApp *</label><input class="form-input" id="fr-phone"></div>' +
+              '<div class="form-group"><label for="fr-phone">Phone number *</label><input class="form-input" id="fr-phone"></div>' +
+     '<div class="form-group"><label for="fr-whatsapp">WhatsApp number</label><input class="form-input" id="fr-whatsapp"></div>' +
               '<div class="form-group"><label for="fr-email">Email</label><input class="form-input" type="email" id="fr-email"></div>' +
               
               '<div class="form-group"><label for="fr-country">Country</label><input class="form-input" id="fr-country"></div>' +
@@ -723,7 +724,7 @@
             p_token: tok,
             p_name: v('fr-name'),
             p_email: v('fr-email') || null,
-            p_phone: v('fr-phone'),
+            p_phone: v('fr-phone'), p_whatsapp: v('fr-whatsapp') || null,
             p_country: v('fr-country') || null, p_state: v('fr-state') || null,
             p_city: v('fr-city') || null, p_gender: v('fr-gender') || null, p_age: parseInt(v('fr-age'), 10) || null,
             p_school: v('fr-school') || null,

@@ -37,6 +37,9 @@
         var lvl = p.match(/^(#{1,3})\s/)[1].length;
         return '<h' + (lvl + 1) + '>' + p.replace(/^#{1,3}\s/, '') + '</h' + (lvl + 1) + '>';
       }
+      if (/^>\s/.test(p)) {
+        return '<blockquote style="border-left:4px solid var(--primary); padding-left:16px; margin:16px 0; color:#475569; font-style:italic;">' + p.replace(/^>\s/g, '').replace(/\n>\s/g, '<br>') + '</blockquote>';
+      }
       if (/^[-*]\s/.test(p)) {
         var items = p.split(/\n(?=[-*]\s)/).map(function (i) {
           return '<li>' + i.replace(/^[-*]\s/, '').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') + '</li>';
@@ -238,6 +241,7 @@
     },
 
     _form(post, root) {
+      var self = this;
       var box = d.getElementById('blog-form');
       box.style.display = 'block';
       box.innerHTML =
@@ -254,7 +258,7 @@
           '<div class="form-group"><label>Cover image (Drive / web link)</label><input class="form-input" id="blog-f-cover" value="' + (post ? esc(post.cover_url || '') : '') + '" placeholder="https://drive.google.com/…"></div>' +
           '<div class="form-group"><label>Tags (comma separated)</label><input class="form-input" id="blog-f-tags" value="' + (post ? esc(post.tags || '') : '') + '" placeholder="maths, igcse, exam-tips"></div>' +
           '<div class="form-group" style="grid-column:1/-1"><label>Excerpt (shown on the blog card)</label><input class="form-input" id="blog-f-excerpt" value="' + (post ? esc(post.excerpt || '') : '') + '"></div>' +
-          '<div class="form-group" style="grid-column:1/-1"><label>Body * — paragraphs, ## headings, - lists, **bold**, [text](https://…)</label><textarea class="form-textarea" id="blog-f-body" rows="12" required>' + (post ? esc(post.body || '') : '') + '</textarea></div>' +
+          '<div class="form-group" style="grid-column:1/-1"><label>Body * — paragraphs, ## headings, - lists, **bold**, [text](url), ![alt](image_url), > blockquotes</label><textarea class="form-textarea" id="blog-f-body" rows="12" required>' + (post ? esc(post.body || '') : '') + '</textarea></div>' +
         '</div>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">' +
           '<button class="btn btn-primary" type="button" id="blog-f-save">💾 Save</button>' +
@@ -304,10 +308,11 @@
         .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 60) || 'post';
     },
     async _save(post, box) {
-      if (!w.sb) { if (w.toast) toast('Connect Supabase to save posts', 'warning'); return; }
+      if (!w.sb) { if (btnSave) { btnSave.disabled = false; btnSave.textContent = '💾 Save'; } if (w.toast) toast('Connect Supabase to save posts', 'warning'); return; }
+      var btnSave = d.getElementById('blog-f-save'); if (btnSave) { btnSave.disabled = true; btnSave.textContent = 'Saving...'; }
       var title = d.getElementById('blog-f-title').value.trim();
       var body = d.getElementById('blog-f-body').value;
-      if (!title || !body.trim()) { if (w.toast) toast('Title and body are required', 'warning'); return; }
+      if (!title || !body.trim()) { if (btnSave) { btnSave.disabled = false; btnSave.textContent = '💾 Save'; } if (w.toast) toast('Title and body are required', 'warning'); return; }
       var manualSlug = d.getElementById('blog-f-slug').value.trim();
       var slug = manualSlug || this._slugify(title);
       var status = d.getElementById('blog-f-status').value;
@@ -353,16 +358,20 @@
         if (w.toast) toast(status === 'published'
           ? 'Published — live at blog.html?slug=' + liveSlug
           : 'Saved as ' + (d.getElementById('blog-f-status').selectedOptions && d.getElementById('blog-f-status').selectedOptions[0] ? d.getElementById('blog-f-status').selectedOptions[0].text.toLowerCase() : 'draft'));
+        if (btnSave) { btnSave.disabled = false; btnSave.textContent = '💾 Save'; }
         box.style.display = 'none';
         this._adminList(document.getElementById('blog-admin-root'));
       } catch (e) {
-        var msg = e && (e.message || e.error_description) || String(e);
-        if (w.toast) { 
-          toast(msg.indexOf('duplicate') > -1 || msg.indexOf('23505') > -1 ? 'That slug is already used — change the slug or title.' : msg, 'danger'); 
-        } else {
-          alert('Error: ' + msg);
-        }
         console.error('Blog save error:', e);
+        var msg = e && (e.message || e.error_description) || String(e);
+        if (msg.indexOf('duplicate') > -1 || msg.indexOf('23505') > -1) msg = 'That slug is already used — change the slug or title.';
+        if (typeof toast === 'function') toast(msg, 'danger');
+        else alert('Error: ' + msg);
+        var errBox = document.createElement('div');
+        errBox.style.cssText = 'color:#b91c1c; background:#fef2f2; border:1px solid #fecaca; padding:10px; border-radius:8px; margin-top:10px;';
+        errBox.textContent = 'Save failed: ' + msg;
+        box.prepend(errBox);
+        if (btnSave) { btnSave.disabled = false; btnSave.textContent = '💾 Save'; }
       }
     },
 
