@@ -218,7 +218,7 @@
           }
         }
       }
-      var base = w.location.href.replace(/[^/]*$/, '');
+      var base = w.location.href.split('?')[0].replace(/[^\/]*$/, '');
       var url = base + 'cbt-exam.html?code=' + encodeURIComponent(x.code || '') +
                 (token ? '&t=' + encodeURIComponent(token) : '');
       this._modal('🔗 Share “' + esc(x.title || '') + '”',

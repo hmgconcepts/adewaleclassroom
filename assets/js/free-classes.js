@@ -649,7 +649,8 @@
                 '<b>Parent or guardian</b>' +
                 '<div class="grid grid-2" style="margin-top:8px">' +
                   '<div class="form-group"><label for="fr-pname">Parent / guardian name *</label><input class="form-input" id="fr-pname"></div>' +
-                  '<div class="form-group"><label for="fr-pphone">Parent / guardian phone *</label><input class="form-input" id="fr-pphone"></div>' +
+     '<div class="form-group"><label for="fr-pphone">Parent / guardian phone *</label><input class="form-input" id="fr-pphone"></div>' +
+     '<div class="form-group"><label for="fr-pemail">Parent / guardian email</label><input class="form-input" type="email" id="fr-pemail"></div>' +
                 '</div>' +
                 '<label style="display:flex;gap:8px;align-items:flex-start;font-weight:400">' +
                   '<input type="checkbox" id="fr-consent"> <span>My parent or guardian knows about this class and ' +
@@ -731,6 +732,7 @@
             p_subjects: v('fr-subjects') ? v('fr-subjects').split(',').map(function (x) { return x.trim(); }).filter(Boolean) : [],
             p_parent_name: v('fr-pname') || null,
             p_parent_phone: v('fr-pphone') || null,
+            p_parent_email: v('fr-pemail') || null,
             p_consent: !!(d.getElementById('fr-consent') && d.getElementById('fr-consent').checked),
             p_how_heard: v('fr-heard') || null,
             p_goal: v('fr-goal') || null
