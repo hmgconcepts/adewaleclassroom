@@ -99,20 +99,16 @@
         <label>Available Slots (Pick from tutor schedules)</label>
         <div id="avail-slots" class="slot-picker"><div style="padding:14px;color:#64748b;text-align:center">Loading schedule...</div></div>
       </div>
-      <div class="form-group" style="margin-top:16px;">
-        <label>Or propose a Custom Day & Time</label>
-        <div class="grid-2">
-          <select class="form-select" id="bk-custom-day">
-            <option value="">-- Select Day --</option>
-            <option value="Monday">Monday</option>
-            <option value="Tuesday">Tuesday</option>
-            <option value="Wednesday">Wednesday</option>
-            <option value="Thursday">Thursday</option>
-            <option value="Friday">Friday</option>
-            <option value="Saturday">Saturday</option>
-            <option value="Sunday">Sunday</option>
-          </select>
-          <input type="time" class="form-input" id="bk-custom-time">
+      
+      <div class="form-group" style="margin-top:20px;">
+        <label>Available Slots (Pick from tutor schedules)</label>
+        <div id="avail-slots" class="slot-picker"><div style="padding:14px;color:#64748b;text-align:center">Loading schedule...</div></div>
+      </div>
+      <div class="form-group" style="margin-top:24px;">
+        <label style="font-size:1.05rem; color:#0f172a; margin-bottom:12px;">Or propose Custom Day(s) & Time(s)</label>
+        <p class="muted" style="margin-top:-6px; font-size:0.85rem;">Based on your frequency, please select your preferred schedule.</p>
+        <div id="custom-schedule-container">
+          <!-- Populated dynamically -->
         </div>
       </div>
   
@@ -139,6 +135,39 @@ window.sb = (window.supabase && window.CONFIG && window.CONFIG.supabaseUrl)
 function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
+
+
+function updateCustomSchedule() {
+  const tpcVal = parseInt(document.getElementById('bk-tpc').value, 10);
+  const timesPerWeek = tpcVal / 4;
+  const container = document.getElementById('custom-schedule-container');
+  let html = '';
+  for (let i = 1; i <= timesPerWeek; i++) {
+    html += `
+      <div class="grid-2" style="margin-bottom:10px; padding:10px; border:1px solid #e2e8f0; border-radius:8px; background:#fff;">
+        <div>
+          <label style="font-size:0.8rem; color:#64748b;">Day ${i}</label>
+          <select class="form-select custom-day" id="bk-custom-day-${i}">
+            <option value="">-- Select Day --</option>
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+            <option value="Saturday">Saturday</option>
+            <option value="Sunday">Sunday</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:0.8rem; color:#64748b;">Time ${i}</label>
+          <input type="time" class="form-input custom-time" id="bk-custom-time-${i}">
+        </div>
+      </div>
+    `;
+  }
+  container.innerHTML = html;
+}
+document.getElementById('bk-tpc').addEventListener('change', updateCustomSchedule);
 
 async function loadAvailability() {
   const box = document.getElementById('avail-slots');
@@ -188,10 +217,16 @@ document.getElementById('btn-submit').addEventListener('click', async () => {
 
   const slotNode = document.querySelector('input[name="slot"]:checked');
   let slotText = slotNode ? slotNode.value : 'None specified';
-  const customDay = document.getElementById('bk-custom-day').value;
-  const customTime = document.getElementById('bk-custom-time').value;
-  if (customDay && customTime) {
-    slotText = `Custom: ${customDay} at ${customTime}`;
+  let customSlots = [];
+  const tpcVal = parseInt(document.getElementById('bk-tpc').value, 10);
+  const timesPerWeek = tpcVal / 4;
+  for (let i = 1; i <= timesPerWeek; i++) {
+    let d = document.getElementById('bk-custom-day-' + i).value;
+    let t = document.getElementById('bk-custom-time-' + i).value;
+    if (d && t) customSlots.push(d + ' at ' + t);
+  }
+  if (customSlots.length > 0) {
+    slotText = 'Custom: ' + customSlots.join(', ');
   }
   
   // Package into 'notes' exactly as standard inquiries expect
@@ -235,7 +270,7 @@ document.getElementById('btn-submit').addEventListener('click', async () => {
   window.scrollTo({top:0, behavior:'smooth'});
 });
 
-document.addEventListener('DOMContentLoaded', loadAvailability);
+document.addEventListener('DOMContentLoaded', () => { updateCustomSchedule(); loadAvailability(); });
 </script>
 </body>
 </html>
