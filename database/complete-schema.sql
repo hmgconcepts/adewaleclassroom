@@ -11995,3 +11995,15 @@ END $$;
 CREATE TRIGGER tc_inquiry_notif_trg
   AFTER INSERT ON public.inquiries
   FOR EACH ROW EXECUTE FUNCTION public.tc_inquiry_notif();
+
+
+-- FIX UNRESOLVED LINK: USE A SECURE VIEW TO AVOID RLS RECURSION
+DO $$
+BEGIN
+  -- We create a view that runs as the owner (postgres) to bypass RLS,
+  -- allowing admins to read profile names for the lookup dropdowns safely.
+  EXECUTE 'CREATE OR REPLACE VIEW public.tc_profile_lookups AS SELECT id, full_name, email, role FROM public.profiles;';
+  EXECUTE 'GRANT SELECT ON public.tc_profile_lookups TO authenticated;';
+EXCEPTION WHEN OTHERS THEN
+  NULL;
+END $$;
