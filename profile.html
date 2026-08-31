@@ -121,7 +121,17 @@
       <div class="card" style="max-width:560px">
         <div class="form-group"><label>Full name</label><input class="form-input" id="fn"></div>
         <div class="form-group"><label>Phone / WhatsApp</label><input class="form-input" id="ph"></div>
-        <div class="form-group"><label>Timezone</label><input class="form-input" id="tz" placeholder="Africa/Lagos"></div>
+        <div class="form-group"><label>Timezone</label><select class="form-select" id="tz">
+<option value="Africa/Lagos">Africa/Lagos (WAT)</option>
+<option value="Europe/London">Europe/London (GMT/BST)</option>
+<option value="America/New_York">America/New_York (EST/EDT)</option>
+<option value="America/Chicago">America/Chicago (CST/CDT)</option>
+<option value="America/Toronto">America/Toronto (EST/EDT)</option>
+<option value="Asia/Dubai">Asia/Dubai (GST)</option>
+<option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+<option value="Australia/Sydney">Australia/Sydney (AEST/AEDT)</option>
+<option value="UTC">UTC</option>
+</select></div>
         <div class="form-group"><label>Photo URL (Drive)</label><input class="form-input" id="phu"></div>
         <div id="ph-prev"></div>
         <button class="btn btn-primary" type="button" id="sv">Save profile</button>

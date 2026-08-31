@@ -173,7 +173,11 @@ async function loadAvailability() {
     box.innerHTML = '<div class="slot-label" style="justify-content:flex-start;gap:12px"><input type="radio" name="slot" value="Any time" checked> <span>Any time (Studio will arrange)</span></div>';
     return;
   }
-  const { data } = await window.sb.from('availability').select('*').limit(20);
+  let data = null;
+  try {
+    const res = await window.sb.from('availability').select('*').limit(20);
+    data = res.data;
+  } catch (e) { console.error('Availability fetch failed:', e); }
   const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
   
   if (data && data.length) {
