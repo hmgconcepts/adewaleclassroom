@@ -693,12 +693,12 @@
                 '<b style="color:#92400e">Follow us to register</b>' +
                 '<p class="muted" style="margin:6px 0 10px;font-size:.85rem">Please follow/subscribe to our official channels below. The registration button will unlock automatically once you click them.</p>' +
                 '<div style="display:flex;gap:8px;flex-wrap:wrap">';
-              if (sl.yt) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.yt)+'">📺 Subscribe on YouTube</a>';
-              if (sl.fb) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.fb)+'">📘 Follow on Facebook</a>';
-              if (sl.x)  socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.x)+'">🐦 Follow on X/Twitter</a>';
-              if (sl.tt) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.tt)+'">🎵 Follow on TikTok</a>';
-              if (sl.wa) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.wa)+'">💬 Follow WhatsApp Channel</a>';
-              if (sl.tg) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.tg)+'">✈️ Follow Telegram Channel</a>';
+              if (sl.yt) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.yt.startsWith('http')?sl.yt:'https://'+sl.yt)+'">📺 Subscribe on YouTube</a>';
+              if (sl.fb) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.fb.startsWith('http')?sl.fb:'https://'+sl.fb)+'">📘 Follow on Facebook</a>';
+              if (sl.x)  socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.x.startsWith('http')?sl.x:'https://'+sl.x)+'">🐦 Follow on X/Twitter</a>';
+              if (sl.tt) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.tt.startsWith('http')?sl.tt:'https://'+sl.tt)+'">🎵 Follow on TikTok</a>';
+              if (sl.wa) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.wa.startsWith('http')?sl.wa:'https://'+sl.wa)+'">💬 Follow WhatsApp Channel</a>';
+              if (sl.tg) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.tg.startsWith('http')?sl.tg:'https://'+sl.tg)+'">✈️ Follow Telegram Channel</a>';
               socialHtml += '</div></div>';
               var ph = document.getElementById('fr-soc-placeholder');
               if(ph) ph.outerHTML = socialHtml;
@@ -776,8 +776,7 @@
                 esc(out.reg_no) + '</b> — write it down or screenshot this page.</p>' +
               '<p class="muted" style="margin:0 0 12px">Status: ' + esc(out.status) + '</p>' +
               '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-                (out.require_cbt ? '<a class="btn btn-accent" href="cbt-exam.html?code=' + encodeURIComponent(out.cbt_code) + '&reg=' + encodeURIComponent(out.reg_no) + '">📝 Take Eligibility Test</a>' : 
-   (out.whatsapp_url ? '<a class="btn btn-primary" target="_blank" rel="noopener" href="' + esc(out.whatsapp_url) + '">💬 Join the WhatsApp group</a>' : '')) +
+                (out.require_cbt ? '<a class="btn btn-accent" style="background:#9333ea;color:#fff" href="cbt-exam.html?code=' + encodeURIComponent(out.cbt_code) + '&reg=' + encodeURIComponent(out.reg_no) + '">📝 Take Eligibility Test</a><p class="muted" style="width:100%;margin:4px 0 10px;font-size:0.85rem;">You must pass the eligibility test to unlock the WhatsApp and Telegram group links.</p>' : (out.whatsapp_url ? '<a class="btn btn-primary" target="_blank" rel="noopener" href="' + esc(out.whatsapp_url) + '">💬 Join the WhatsApp group</a>' : '')) +
                 (out.telegram_url ? '<a class="btn btn-outline" target="_blank" rel="noopener" href="' + esc(out.telegram_url) + '">✈️ Join the Telegram group</a>' : '') +
                 (out.meeting_url ? '<a class="btn btn-outline" target="_blank" rel="noopener" href="' + esc(out.meeting_url) + '">🎥 Class meeting link</a>' : '') +
                 (out.youtube_url ? '<a class="btn btn-outline" target="_blank" rel="noopener" href="' + esc(out.youtube_url) + '">▶️ YouTube channel</a>' : '') +

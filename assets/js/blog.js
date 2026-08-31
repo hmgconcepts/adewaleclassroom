@@ -37,9 +37,6 @@
         var lvl = p.match(/^(#{1,3})\s/)[1].length;
         return '<h' + (lvl + 1) + '>' + p.replace(/^#{1,3}\s/, '') + '</h' + (lvl + 1) + '>';
       }
-      if (/^>\s/.test(p)) {
-        return '<blockquote style="border-left:4px solid var(--primary); padding-left:16px; margin:16px 0; color:#475569; font-style:italic;">' + p.replace(/^>\s/g, '').replace(/\n>\s/g, '<br>') + '</blockquote>';
-      }
       if (/^[-*]\s/.test(p)) {
         var items = p.split(/\n(?=[-*]\s)/).map(function (i) {
           return '<li>' + i.replace(/^[-*]\s/, '').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') + '</li>';
@@ -57,48 +54,107 @@
       var root = d.getElementById('blog-root');
       if (!root) return;
       var self = this;
-      
-          var cover = p.cover_url 
-            ? '<div style="width:100%; height:450px; background:#f1f5f9 center/cover no-repeat url(&quot;' + esc(p.cover_url) + '&quot;); border-radius:0 0 24px 24px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);"></div>'
-            : '';
-          root.innerHTML = '<article style="max-width:800px; margin:0 auto;">' +
-            '<div style="text-align:center; padding: 40px 20px;">' +
-              '<div style="font-size:.85rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--primary,#0506ae); margin-bottom:16px;">' + esc(p.category || 'News') + '</div>' +
-              '<h1 style="margin:0 0 24px; font-size: 2.8rem; font-weight:800; color:#0f172a; line-height:1.2; letter-spacing:-0.02em;">' + esc(p.title) + '</h1>' +
-              '<div style="display:flex; justify-content:center; align-items:center; gap:16px; color:#64748b; font-size:1rem; font-weight:500;">' +
-                '<div style="display:flex; align-items:center; gap:8px;">' +
-                  '<div style="width:40px; height:40px; border-radius:50%; background:var(--gradient,linear-gradient(135deg,#0506ae,#964eec)); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:1.2rem;">' + (esc(p.author_name || 'S')[0]).toUpperCase() + '</div>' +
-                  '<span>' + esc(p.author_name || 'The Studio') + '</span>' +
-                '</div>' +
-                '<span>•</span>' +
-                '<span>' + fmt(p.published_at) + '</span>' +
-                '<span>•</span>' +
-                '<span>👁 ' + (p.view_count || 1) + ' reads</span>' +
+      root.innerHTML =
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px">' +
+          '<input id="blog-q" type="search" placeholder="🔎 Search posts…" style="flex:1;min-width:200px;padding:10px 14px;border:1px solid var(--gray-300,#e2e8f0);border-radius:12px;font:inherit">' +
+          '<select id="blog-cat" style="padding:10px 12px;border:1px solid var(--gray-300,#e2e8f0);border-radius:12px;font:inherit"><option value="">All topics</option></select>' +
+        '</div>' +
+        '<div id="blog-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px"><p class="muted">Loading posts…</p></div>';
+      var q = d.getElementById('blog-q');
+      var cat = d.getElementById('blog-cat');
+      var run = function () { self._loadList(q.value, cat.value, root); };
+      q.addEventListener('input', run);
+      cat.addEventListener('change', run);
+      this._loadCats(cat, run);
+      run();
+    },
+
+    async _loadCats(sel, run) {
+      try {
+        if (w.sb) {
+          var { data } = await w.sb.from('tc_blog_categories').select('name,slug').order('name');
+          (data || []).forEach(function (c) {
+            var o = d.createElement('option');
+            o.value = c.slug; o.textContent = c.name;
+            sel.appendChild(o);
+          });
+        }
+      } catch (_) {}
+    },
+
+    async _loadList(query, category, root) {
+      var box = d.getElementById('blog-list');
+      if (!box) return;
+      try {
+        var posts = [];
+        if (w.sb) {
+          var { data, error } = await w.sb.rpc('tc_blog_list', { p_category: category || null, p_q: query || null });
+          if (error) throw error;
+          posts = (data && Array.isArray(data)) ? data : [];
+        } else {
+          posts = w.DEMO && Array.isArray(w.DEMO.tc_blog_posts)
+            ? w.DEMO.tc_blog_posts.filter(function (p) { return p.status === 'published'; })
+            : [];
+        }
+        if (!posts.length) {
+          box.innerHTML = '<div class="card" style="grid-column:1/-1;padding:40px;text-align:center"><div style="font-size:2.4rem">📝</div><h3>Nothing here yet</h3><p class="muted">The studio has not published any posts yet — check back soon.</p></div>';
+          return;
+        }
+        
+        box.style.gridTemplateColumns = 'repeat(auto-fill, minmax(320px, 1fr))';
+        box.style.gap = '24px';
+        box.innerHTML = posts.map(function (p, i) {
+          var isHero = (i === 0 && !query && !category);
+          var cover = p.cover_url
+            ? '<div style="height:'+(isHero?'280px':'200px')+'; background:#f1f5f9 center/cover no-repeat url(&quot;' + esc(p.cover_url) + '&quot;); transition: transform 0.4s ease;" class="blog-img"></div>'
+            : '<div style="height:'+(isHero?'280px':'200px')+'; background:var(--gradient,linear-gradient(135deg,#0506ae,#964eec)); display:flex; align-items:center; justify-content:center; color:#fff; font-size:3rem; transition: transform 0.4s ease;" class="blog-img">📄</div>';
+          
+          return '<a class="card blog-card" style="text-decoration:none; color:inherit; overflow:hidden; display:flex; flex-direction:column; padding:0; border:none; box-shadow:0 10px 25px rgba(0,0,0,0.05); transition: box-shadow 0.3s ease; border-radius: 16px; ' + (isHero ? 'grid-column: 1 / -1; flex-direction: row; align-items: center;' : '') + '" href="blog-post.html?slug=' + encodeURIComponent(p.slug) + '" onmouseover="this.style.boxShadow=\'0 20px 40px rgba(0,0,0,0.1)\'; this.querySelector(\'.blog-img\').style.transform=\'scale(1.05)\';" onmouseout="this.style.boxShadow=\'0 10px 25px rgba(0,0,0,0.05)\'; this.querySelector(\'.blog-img\').style.transform=\'scale(1)\';">' +
+            '<div style="overflow:hidden; '+(isHero?'width:50%; height:100%;':'')+'">' + cover + '</div>' +
+            '<div style="padding:24px; display:flex; flex-direction:column; flex:1; '+(isHero?'width:50%;':'')+'">' +
+              '<div style="font-size:.75rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--primary,#0506ae); margin-bottom: 8px;">' + esc(p.category || 'News') + ' · ' + fmt(p.published_at) + '</div>' +
+              '<h3 style="margin:0 0 12px; line-height:1.35; font-size:'+(isHero?'2rem':'1.4rem')+'; font-weight:800; color:#0f172a;">' + esc(p.title) + '</h3>' +
+              (p.excerpt ? '<p style="margin:0 0 16px; font-size:'+(isHero?'1.1rem':'0.95rem')+'; line-height:1.6; color:#475569; flex:1;">' + esc(p.excerpt) + '</p>' : '<div style="flex:1"></div>') +
+              '<div style="font-size:.85rem; color:#64748b; font-weight: 500; display:flex; align-items:center; gap: 12px;">' +
+                '<span style="background:#f1f5f9; padding:6px 12px; border-radius:999px;">✍️ ' + esc(p.author_name || 'The Studio') + '</span>' +
+                '<span>👁 ' + (p.view_count || 0) + ' reads</span>' +
               '</div>' +
-            '</div>' +
+            '</div></a>';
+        }).join('');
+      } catch (e) {
+        box.innerHTML = '<div class="card" style="grid-column:1/-1;padding:30px;text-align:center"><p class="muted">Could not load posts: ' + esc(e && e.message || e) + '</p></div>';
+      }
+    },
+
+    mountPost() {
+      var root = d.getElementById('blog-post-root');
+      if (!root) return;
+      var slug = new URLSearchParams(location.search).get('slug') || '';
+      if (!slug) { root.innerHTML = '<p class="muted">No post selected. <a href="blog.html">Browse the blog</a>.</p>'; return; }
+      root.innerHTML = '<p class="muted">Loading…</p>';
+      var self = this;
+      var done = function (post) {
+        if (!post) {
+          root.innerHTML = '<div class="card" style="max-width:560px;margin:30px auto;text-align:center;padding:40px"><h3>Post not found</h3><p class="muted">It may have been unpublished.</p><p><a class="btn btn-primary" href="blog.html">Back to blog</a></p></div>';
+          return;
+        }
+        d.title = (post.title || 'Post') + ' · ' + d.title.split('·').pop().trim();
+        var cover = post.cover_url
+          ? '<div style="border-radius:18px;overflow:hidden;margin:18px 0;border:1px solid var(--gray-200,#e2e8f0)"><img src="' + esc(post.cover_url) + '" alt="" style="width:100%;max-height:380px;object-fit:cover;display:block"></div>'
+          : '';
+        root.innerHTML =
+          '<article style="max-width:760px;margin:0 auto">' +
+            '<div style="font-size:.75rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--primary,#0506ae)">' + esc(post.category || 'News') + '</div>' +
+            '<h1 style="font-size:clamp(1.6rem,4vw,2.4rem);line-height:1.25;margin:10px 0 8px">' + esc(post.title) + '</h1>' +
+            '<p class="muted" style="font-size:.85rem;margin:0 0 6px">✍️ ' + esc(post.author_name || 'The Studio') + ' · ' + fmt(post.published_at) + ' · 👁 ' + (post.view_count || 0) + ' reads</p>' +
             cover +
-            '<div class="blog-body" style="font-size:1.15rem; line-height:1.8; color:#334155; padding: 0 20px 60px;">' + md(p.body) + '</div>' +
-            '</article>';
-            
-            // Add global CSS if missing
-            if (!document.getElementById('blog-dyn-css')) {
-               var st = document.createElement('style');
-               st.id = 'blog-dyn-css';
-               st.innerHTML = `
-                 .blog-body p { margin-bottom: 1.5em; }
-                 .blog-body h2 { font-size: 1.8rem; margin: 1.5em 0 0.5em; color:#0f172a; }
-                 .blog-body h3 { font-size: 1.5rem; margin: 1.2em 0 0.5em; color:#0f172a; }
-                 .blog-body img { max-width: 100%; border-radius: 12px; margin: 1rem 0; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-                 .blog-body a { color: var(--primary); text-decoration: none; font-weight: 600; }
-                 .blog-body a:hover { text-decoration: underline; }
-                 @media (max-width: 768px) {
-                   .blog-card[style*="flex-direction: row"] { flex-direction: column !important; }
-                   .blog-card[style*="flex-direction: row"] > div { width: 100% !important; }
-                 }
-               `;
-               document.head.appendChild(st);
-            }
-  
+            '<div style="font-size:1.02rem;line-height:1.8">' + md(post.body) + '</div>' +
+            (post.tags ? '<div style="margin-top:24px;display:flex;gap:8px;flex-wrap:wrap">' + String(post.tags).split(',').map(function (t) { return '<span style="background:var(--surface-soft,#f1f5f9);border:1px solid var(--gray-200,#e2e8f0);border-radius:99px;padding:4px 12px;font-size:.78rem">#' + esc(t.trim()) + '</span>'; }).join('') + '</div>' : '') +
+            '<div style="margin-top:28px;padding-top:18px;border-top:1px solid var(--gray-200,#e2e8f0);display:flex;gap:10px;flex-wrap:wrap">' +
+              '<a class="btn btn-outline" href="blog.html">← All posts</a>' +
+              '<a class="btn btn-outline" href="apply.html">Interested in tutoring? Apply</a>' +
+            '</div>' +
+          '</article>';
       };
       if (w.sb) {
         w.sb.rpc('tc_blog_get', { p_slug: slug }).then(function ({ data, error }) {
@@ -184,7 +240,6 @@
     },
 
     _form(post, root) {
-      var self = this;
       var box = d.getElementById('blog-form');
       box.style.display = 'block';
       box.innerHTML =
@@ -201,7 +256,7 @@
           '<div class="form-group"><label>Cover image (Drive / web link)</label><input class="form-input" id="blog-f-cover" value="' + (post ? esc(post.cover_url || '') : '') + '" placeholder="https://drive.google.com/…"></div>' +
           '<div class="form-group"><label>Tags (comma separated)</label><input class="form-input" id="blog-f-tags" value="' + (post ? esc(post.tags || '') : '') + '" placeholder="maths, igcse, exam-tips"></div>' +
           '<div class="form-group" style="grid-column:1/-1"><label>Excerpt (shown on the blog card)</label><input class="form-input" id="blog-f-excerpt" value="' + (post ? esc(post.excerpt || '') : '') + '"></div>' +
-          '<div class="form-group" style="grid-column:1/-1"><label>Body * — paragraphs, ## headings, - lists, **bold**, [text](url), ![alt](image_url), > blockquotes</label><textarea class="form-textarea" id="blog-f-body" rows="12" required>' + (post ? esc(post.body || '') : '') + '</textarea></div>' +
+          '<div class="form-group" style="grid-column:1/-1"><label>Body * — paragraphs, ## headings, - lists, **bold**, [text](https://…)</label><textarea class="form-textarea" id="blog-f-body" rows="12" required>' + (post ? esc(post.body || '') : '') + '</textarea></div>' +
         '</div>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">' +
           '<button class="btn btn-primary" type="button" id="blog-f-save">💾 Save</button>' +
@@ -213,7 +268,7 @@
         var sel = d.getElementById('blog-f-cat');
         if (post && post.category_id) sel.value = post.category_id;
       });
-      var btnSave = d.getElementById('blog-f-save'); if (btnSave) { btnSave.onclick = () => { this._save(post, box); }; }
+      d.getElementById('blog-f-save').onclick = function () { self._save(post, box); };
       if (post) {
         d.getElementById('blog-f-publish').onclick = function () {
           var next = post.status === 'published' ? 'draft' : 'published';
@@ -251,12 +306,10 @@
         .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 60) || 'post';
     },
     async _save(post, box) {
-      var btnSave = d.getElementById('blog-f-save');
-      if (!w.sb) { if (btnSave) { btnSave.disabled = false; btnSave.textContent = '💾 Save'; } if (w.toast) toast('Connect Supabase to save posts', 'warning'); return; }
-      if (btnSave) { btnSave.disabled = true; btnSave.textContent = 'Saving...'; }
+      if (!w.sb) { if (w.toast) toast('Connect Supabase to save posts', 'warning'); return; }
       var title = d.getElementById('blog-f-title').value.trim();
       var body = d.getElementById('blog-f-body').value;
-      if (!title || !body.trim()) { if (btnSave) { btnSave.disabled = false; btnSave.textContent = '💾 Save'; } if (w.toast) toast('Title and body are required', 'warning'); return; }
+      if (!title || !body.trim()) { if (w.toast) toast('Title and body are required', 'warning'); return; }
       var manualSlug = d.getElementById('blog-f-slug').value.trim();
       var slug = manualSlug || this._slugify(title);
       var status = d.getElementById('blog-f-status').value;
@@ -266,7 +319,7 @@
 
       /* Uniqueness: if we auto-derived a slug that already exists, append a
          short suffix so the second post of the same title does not collide. */
-      if (!manualSlug && slug && (!post || post.slug !== slug) && !/^[0-9a-f-]{36}$/.test(slug)) {
+      if (!manualSlug && post && post.slug !== slug && slug && !/^[0-9a-f-]{36}$/.test(slug)) {
         var dup = await w.sb.from('tc_blog_posts').select('id').eq('slug', slug).limit(1).maybeSingle();
         if (dup && dup.data) slug = slug + '-' + Date.now().toString(36);
       }
@@ -281,9 +334,7 @@
         seo_description: excerpt,
         body: body
       };
-      if (profile) {
-        payload.author_name = profile.full_name || profile.name || 'The Studio';
-        }
+      if (profile) { payload.author_id = profile.id || profile.user_id; payload.author_name = profile.full_name || profile.name || ''; }
       /* A post leaving draft gets its publication timestamp now. Existing
          published posts keep theirs. Re-dating to "now" every edit would move
          the post around the blog, which readers experience as it reappearing. */
@@ -295,27 +346,19 @@
           var { data: u, error } = await w.sb.from('tc_blog_posts').update(payload).eq('id', post.id).select('id');
           if (error) throw error; saved = u && u[0];
         } else {
-          var { data: ins, error: err2 } = await w.sb.from('tc_blog_posts').insert(payload).select('id,slug,title,status');
+          var { data: ins, error: err2 } = await w.sb.from('tc_blog_posts').insert(payload).select('id,slug,name,status');
           if (err2) throw err2; saved = ins && ins[0];
         }
         var liveSlug = (saved && saved.slug) || slug;
         if (w.toast) toast(status === 'published'
           ? 'Published — live at blog.html?slug=' + liveSlug
           : 'Saved as ' + (d.getElementById('blog-f-status').selectedOptions && d.getElementById('blog-f-status').selectedOptions[0] ? d.getElementById('blog-f-status').selectedOptions[0].text.toLowerCase() : 'draft'));
-        if (btnSave) { btnSave.disabled = false; btnSave.textContent = '💾 Save'; }
         box.style.display = 'none';
         this._adminList(document.getElementById('blog-admin-root'));
       } catch (e) {
-        console.error('Blog save error:', e);
         var msg = e && (e.message || e.error_description) || String(e);
-        if (msg.indexOf('duplicate') > -1 || msg.indexOf('23505') > -1) msg = 'That slug is already used — change the slug or title.';
-        if (typeof toast === 'function') toast(msg, 'danger');
-        else alert('Error: ' + msg);
-        var errBox = document.createElement('div');
-        errBox.style.cssText = 'color:#b91c1c; background:#fef2f2; border:1px solid #fecaca; padding:10px; border-radius:8px; margin-top:10px;';
-        errBox.textContent = 'Save failed: ' + msg;
-        box.prepend(errBox);
-        if (btnSave) { btnSave.disabled = false; btnSave.textContent = '💾 Save'; }
+        if (w.toast) toast(msg.indexOf('duplicate') > -1 || msg.indexOf('23505') > -1
+          ? 'That slug is already used — change the slug or title.' : msg, 'danger');
       }
     },
 
