@@ -653,29 +653,6 @@ async function finish() {
     }
     
     if (savedSuccessfully) {
-      if (meta.student_no) {
-        try {
-          const { data: elig } = await window.sb.rpc('tc_cbt_eligibility_links', { p_student_no: meta.student_no, p_score: result.pct });
-          if (elig && elig.ok) {
-             if (elig.passed) {
-                gameHTML += `<div class="card" style="background:#ecfdf5; border-color:#10b981; margin-top:16px;">
-                  <h3 style="color:#047857;margin:0 0 8px;">🎉 Congratulations, you passed the eligibility benchmark!</h3>
-                  <p style="margin:0 0 12px;">You may now join the official cohort groups:</p>
-                  <div style="display:flex;gap:8px;">
-                    ${elig.whatsapp_url ? `<a class="btn btn-primary" href="${elig.whatsapp_url}" target="_blank">💬 Join WhatsApp</a>` : ''}
-                    ${elig.telegram_url ? `<a class="btn btn-outline" href="${elig.telegram_url}" target="_blank">✈️ Join Telegram</a>` : ''}
-                  </div>
-                </div>`;
-             } else {
-                gameHTML += `<div class="card" style="background:#fef2f2; border-color:#fecaca; margin-top:16px;">
-                  <h3 style="color:#b91c1c;margin:0 0 8px;">Eligibility Benchmark Not Met</h3>
-                  <p style="margin:0;">You scored ${result.pct}%. The passing mark is ${elig.pass_mark}%. Keep studying and try again!</p>
-                </div>`;
-             }
-          }
-        } catch(e) {}
-      }
-
       state.saved = true;
     } else {
       throw lastError;
