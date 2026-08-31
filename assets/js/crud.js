@@ -33,7 +33,7 @@ const CRUD = {
     learners: { table: 'learners', title: 'Learner', cols: [
       { key: 'full_name', label: 'Full name', type: 'text', required: true },
       { key: 'student_no', label: 'Student ID', type: 'text', help: 'Auto TC-0001 style if left blank on insert.' },
-      { key: 'user_id', label: 'Portal login account (link)', type: 'ref', refTable: 'tc_profile_lookups', refValue: 'full_name', refExtra: ['email','role'], refStore: 'id', refFilter: { role: 'student' }, searchable: true, adminOnly: true, help: 'ADMIN ONLY — link this learner to their portal sign-in (profiles.role = student/learner). Same pattern as School Connect students.user_id. After linking, My Profile / family portal / CBT identity resolve correctly.' },
+      { key: 'user_id', label: 'Portal login account (link)', type: 'ref', refTable: 'profiles', refValue: 'full_name', refExtra: ['email','role'], refStore: 'id', refFilter: { role: 'student' }, searchable: true, adminOnly: true, help: 'ADMIN ONLY — link this learner to their portal sign-in (profiles.role = student/learner). Same pattern as School Connect students.user_id. After linking, My Profile / family portal / CBT identity resolve correctly.' },
       { key: 'preferred_name', label: 'Preferred name', type: 'text' },
       { key: 'email', label: 'Email', type: 'email' },
       { key: 'phone', label: 'Phone', type: 'tel' },
@@ -54,7 +54,7 @@ const CRUD = {
     ]},
     parents: { table: 'parents', title: 'Parent', cols: [
       { key: 'full_name', label: 'Full name', type: 'text', required: true },
-      { key: 'user_id', label: 'Portal login account (link)', type: 'ref', refTable: 'tc_profile_lookups', refValue: 'full_name', refExtra: ['email','role'], refStore: 'id', refFilter: { role: 'parent' }, searchable: true, adminOnly: true, help: 'ADMIN ONLY — link this parent/guardian to their portal sign-in. Same pattern as School Connect. Required before the parent can see their children.' },
+      { key: 'user_id', label: 'Portal login account (link)', type: 'ref', refTable: 'profiles', refValue: 'full_name', refExtra: ['email','role'], refStore: 'id', refFilter: { role: 'parent' }, searchable: true, adminOnly: true, help: 'ADMIN ONLY — link this parent/guardian to their portal sign-in. Same pattern as School Connect. Required before the parent can see their children.' },
       { key: 'email', label: 'Email', type: 'email' },
       { key: 'phone', label: 'Phone / WhatsApp', type: 'tel' },
       { key: 'timezone', label: 'Timezone', type: 'select', options: ['Africa/Lagos','Europe/London','America/New_York','America/Chicago','America/Toronto','Asia/Dubai','Asia/Kolkata','Australia/Sydney','UTC'] },
@@ -74,7 +74,7 @@ const CRUD = {
     ]},
     tutors: { table: 'tutors', title: 'Tutor', cols: [
       { key: 'full_name', label: 'Full name', type: 'text', required: true },
-      { key: 'user_id', label: 'Portal login account (link)', type: 'ref', refTable: 'tc_profile_lookups', refValue: 'full_name', refExtra: ['email','role'], refStore: 'id', refFilter: { role: 'tutor' }, searchable: true, adminOnly: true, help: 'ADMIN ONLY — link this tutor record to the tutor portal sign-in. Tutors cannot link other tutors. Same pattern as School Connect staff.user_id.' },
+      { key: 'user_id', label: 'Portal login account (link)', type: 'ref', refTable: 'profiles', refValue: 'full_name', refExtra: ['email','role'], refStore: 'id', refFilter: { role: 'tutor' }, searchable: true, adminOnly: true, help: 'ADMIN ONLY — link this tutor record to the tutor portal sign-in. Tutors cannot link other tutors. Same pattern as School Connect staff.user_id.' },
       { key: 'email', label: 'Email', type: 'email' },
       { key: 'phone', label: 'Phone', type: 'tel' },
       { key: 'timezone', label: 'Timezone', type: 'select', options: ['Africa/Lagos','Europe/London','America/New_York','America/Chicago','America/Toronto','Asia/Dubai','Asia/Kolkata','Australia/Sydney','UTC'] },
@@ -803,11 +803,9 @@ const CRUD = {
         const m = {};
         if (this.sb) {
           const { data } = await this.sb.from(c.refTable).select('*').limit(1000);
-          (data || []).forEach(d => { m[String(d[c.refStore || c.refValue])] = d[c.refValue]; });
+          (data || []).forEach(d => { m[String(d[c.refStore || c.refValue])] = d[c.refValue] || d.email || d.name || d.title || 'Unnamed'; });
         } else {
-          ((window.DEMO && window.DEMO[c.refTable]) || []).forEach(d => {
-            m[String(d[c.refStore || c.refValue])] = d[c.refValue];
-          });
+          ((window.DEMO && window.DEMO[c.refTable]) || []).forEach(d => { m[String(d[c.refStore || c.refValue])] = d[c.refValue] || d.email || d.name || d.title || 'Unnamed'; });
         }
         this._refCache[key] = m;
       }
@@ -826,7 +824,7 @@ const CRUD = {
       const label = maps[col.key][String(raw)];
       return label
         ? TC.esc(label)
-        : '<span class="muted" title="' + TC.esc(String(raw)) + '">unresolved link</span>';
+        : (maps[col.key].hasOwnProperty(String(raw)) ? '<span class="muted" title="' + TC.esc(String(raw)) + '">unnamed link</span>' : '<span class="muted" title="' + TC.esc(String(raw)) + '">unresolved link</span>');
     }
     if (col.type === 'checkbox' || typeof raw === 'boolean') {
       return raw
