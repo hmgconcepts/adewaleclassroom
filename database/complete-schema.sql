@@ -6842,7 +6842,7 @@ language sql
 stable
 security definer
 set search_path = public
-as $
+as $$
   select jsonb_build_object(
     'ok', true,
     'name', c.name,
@@ -6868,7 +6868,7 @@ as $
   from public.tc_free_links l
   join public.tc_free_cohorts c on c.id = l.cohort_id
   where l.token = p_token;
-$;
+$$;
 
 
 revoke all on function public.tc_free_cohort_public(text) from public;
@@ -10043,7 +10043,7 @@ begin
   end if;
 
   return jsonb_build_object('ok', true);
-end $;
+end $$;
 
 revoke all on function public.tc_class_reg_status(uuid, text) from public, anon;
 grant execute on function public.tc_class_reg_status(uuid, text) to authenticated;
