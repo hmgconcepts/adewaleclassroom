@@ -128,9 +128,7 @@
 </div>
 
 <script>
-window.sb = (window.supabase && window.CONFIG && window.CONFIG.supabaseUrl) 
-  ? window.supabase.createClient(window.CONFIG.supabaseUrl, window.CONFIG.supabaseKey) 
-  : null;
+window.sb = window.sb; // Already initialized in config.js
 
 function esc(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
