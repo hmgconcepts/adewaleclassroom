@@ -384,19 +384,27 @@
         return;
       }
       var badge = { published: '🟢 Published', draft: '🟡 Draft', archived: '⚪ Archived' };
-      box.innerHTML = posts.map(function (p) {
-        return '<div class="card" style="padding:14px 16px;margin-bottom:10px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">' +
-          '<div style="flex:1;min-width:220px">' +
-            '<b>' + esc(p.title) + '</b> ' +
-            '<span style="font-size:.72rem;font-weight:800;padding:2px 8px;border-radius:99px;background:var(--surface-soft,#f1f5f9);border:1px solid var(--gray-200,#e2e8f0)">' + (badge[p.status] || p.status) + '</span>' +
-            '<div class="muted" style="font-size:.8rem;margin-top:2px">' + esc(p.category || '—') + ' · ' + fmt(p.published_at || p.created_at) + ' · 👁 ' + (p.view_count || 0) + '</div>' +
-          '</div>' +
-          '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
-            '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="blog-post.html?slug=' + encodeURIComponent(p.slug) + '">View</a>' +
-            '<button class="btn btn-sm btn-outline" type="button" data-edit="' + p.id + '">✏️ Edit</button>' +
-          '</div>' +
-        '</div>';
-      }).join('');
+      
+        box.style.gridTemplateColumns = 'repeat(auto-fill, minmax(320px, 1fr))';
+        box.style.gap = '24px';
+        box.innerHTML = posts.map(function (p, i) {
+          var isHero = (i === 0 && !query && !category);
+          var cover = p.cover_url
+            ? '<div style="height:'+(isHero?'280px':'200px')+'; background:#f1f5f9 center/cover no-repeat url(&quot;' + esc(p.cover_url) + '&quot;); transition: transform 0.4s ease;" class="blog-img"></div>'
+            : '<div style="height:'+(isHero?'280px':'200px')+'; background:var(--gradient,linear-gradient(135deg,#0506ae,#964eec)); display:flex; align-items:center; justify-content:center; color:#fff; font-size:3rem; transition: transform 0.4s ease;" class="blog-img">📄</div>';
+          
+          return '<a class="card blog-card" style="text-decoration:none; color:inherit; overflow:hidden; display:flex; flex-direction:column; padding:0; border:none; box-shadow:0 10px 25px rgba(0,0,0,0.05); transition: box-shadow 0.3s ease; border-radius: 16px; ' + (isHero ? 'grid-column: 1 / -1; flex-direction: row; align-items: center;' : '') + '" href="blog-post.html?slug=' + encodeURIComponent(p.slug) + '" onmouseover="this.style.boxShadow=\'0 20px 40px rgba(0,0,0,0.1)\'; this.querySelector(\'.blog-img\').style.transform=\'scale(1.05)\';" onmouseout="this.style.boxShadow=\'0 10px 25px rgba(0,0,0,0.05)\'; this.querySelector(\'.blog-img\').style.transform=\'scale(1)\';">' +
+            '<div style="overflow:hidden; '+(isHero?'width:50%; height:100%;':'')+'">' + cover + '</div>' +
+            '<div style="padding:24px; display:flex; flex-direction:column; flex:1; '+(isHero?'width:50%;':'')+'">' +
+              '<div style="font-size:.75rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--primary,#0506ae); margin-bottom: 8px;">' + esc(p.category || 'News') + ' · ' + fmt(p.published_at) + '</div>' +
+              '<h3 style="margin:0 0 12px; line-height:1.35; font-size:'+(isHero?'2rem':'1.4rem')+'; font-weight:800; color:#0f172a;">' + esc(p.title) + '</h3>' +
+              (p.excerpt ? '<p style="margin:0 0 16px; font-size:'+(isHero?'1.1rem':'0.95rem')+'; line-height:1.6; color:#475569; flex:1;">' + esc(p.excerpt) + '</p>' : '<div style="flex:1"></div>') +
+              '<div style="font-size:.85rem; color:#64748b; font-weight: 500; display:flex; align-items:center; gap: 12px;">' +
+                '<span style="background:#f1f5f9; padding:6px 12px; border-radius:999px;">✍️ ' + esc(p.author_name || 'The Studio') + '</span>' +
+                '<span>👁 ' + (p.view_count || 0) + ' reads</span>' +
+              '</div>' +
+            '</div></a>';
+        }).join('');
       var self = this;
       box.querySelectorAll('[data-edit]').forEach(function (b) {
         b.onclick = async function () {

@@ -390,7 +390,7 @@
         catch (e) { return false; }
       };
 
-      var log = function (type, detail) {
+      var log = function (type, detail) { if (self.examEnded) return;
         self.violations.push({ type: type, detail: detail, at: new Date().toISOString() });
         var n = self.violations.length;
         var badge = d.getElementById('tc-viol');
@@ -490,7 +490,7 @@
       } catch (e) {}
     },
 
-    stopAntiCheat: function () {
+    stopAntiCheat: function () { this.examEnded = true;
       try { if (w.Proctor && w.Proctor.stop) w.Proctor.stop(); } catch (e) {}
       try { if (d.fullscreenElement && d.exitFullscreen) d.exitFullscreen(); } catch (e) {}
       var wm = d.getElementById('tc-watermark'); if (wm) wm.remove();
