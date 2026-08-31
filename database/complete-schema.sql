@@ -11998,15 +11998,12 @@ CREATE TRIGGER tc_inquiry_notif_trg
 
 
 -- FIX UNRESOLVED LINK: USE A SECURE VIEW TO AVOID RLS RECURSION
-DO $$
-BEGIN
-  -- We create a view that runs as the owner (postgres) to bypass RLS,
-  -- allowing admins to read profile names for the lookup dropdowns safely.
-  EXECUTE 'CREATE OR REPLACE VIEW public.tc_profile_lookups AS SELECT id, coalesce(full_name, email, 'Unnamed Account') as full_name, email, role FROM public.profiles;';
-  EXECUTE 'GRANT SELECT ON public.tc_profile_lookups TO authenticated;';
-EXCEPTION WHEN OTHERS THEN
-  NULL;
-END $$;
+-- We create a view to bypass RLS recursion, allowing admins to read profile names safely.
+CREATE OR REPLACE VIEW public.tc_profile_lookups AS 
+  SELECT id, coalesce(full_name, email, 'Unnamed Account') as full_name, email, role 
+  FROM public.profiles;
+
+GRANT SELECT ON public.tc_profile_lookups TO authenticated;
 
 
 -- FIX FREE CLASS ELIGIBILITY: ALLOW FREE CLASS REGISTRATIONS TO ACT AS CBT CANDIDATES
@@ -12017,7 +12014,7 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.tc_cbt_get_exam(p_code text, p_student_no text default '')
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER STABLE SET search_path = public AS $$$$
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER STABLE SET search_path = public AS $
 DECLARE
   exam public.cbt_exams%rowtype;
   learner public.learners%rowtype;
@@ -12088,5 +12085,5 @@ BEGIN
 
   RETURN jsonb_build_object('ok', true, 'identity_mode', 'open', 'candidate', candidate)
     || to_jsonb(exam);
-END $$$$;
+END $;
 GRANT EXECUTE ON FUNCTION public.tc_cbt_get_exam(text, text) TO anon, authenticated;
