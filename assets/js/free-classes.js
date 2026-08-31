@@ -146,8 +146,6 @@
             '<div class="form-group" style="grid-column:1/-1"><label for="fc-desc">What the class covers</label>' +
               '<textarea class="form-textarea" id="fc-desc" rows="2"></textarea></div>' +
             '<div class="form-group"><label for="fc-board">Exam being prepared for</label>' +
-              
-            '<div class="form-group"><label for="fc-board">Exam being prepared for</label>' +
               '<select multiple class="form-select" id="fc-board" style="height:120px">' +
                 BOARDS.map(function (b) { return '<option>' + esc(b) + '</option>'; }).join('') + '</select>' +
               '<p class="muted" style="font-size:0.75rem; margin-top:4px;">Hold Ctrl/Cmd to select multiple</p></div>' +
@@ -201,17 +199,7 @@
             '<div class="form-group"><label for="fc-sched">Schedule, in words</label>' +
               '<input class="form-input" id="fc-sched" placeholder="Saturdays &amp; Sundays, 5–7pm WAT"></div>' +
             '<div class="form-group"><label for="fc-tz">Time zone</label>' +
-              '<select class="form-select" id="fc-tz">
-<option value="Africa/Lagos">Africa/Lagos (WAT)</option>
-<option value="Europe/London">Europe/London (GMT/BST)</option>
-<option value="America/New_York">America/New_York (EST/EDT)</option>
-<option value="America/Chicago">America/Chicago (CST/CDT)</option>
-<option value="America/Toronto">America/Toronto (EST/EDT)</option>
-<option value="Asia/Dubai">Asia/Dubai (GST)</option>
-<option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
-<option value="Australia/Sydney">Australia/Sydney (AEST/AEDT)</option>
-<option value="UTC">UTC</option>
-</select></div>' +
+              '<select class="form-select" id="fc-tz"><option value="Africa/Lagos">Africa/Lagos (WAT)</option><option value="Europe/London">Europe/London (GMT/BST)</option><option value="America/New_York">America/New_York (EST/EDT)</option><option value="America/Chicago">America/Chicago (CST/CDT)</option><option value="America/Toronto">America/Toronto (EST/EDT)</option><option value="Asia/Dubai">Asia/Dubai (GST)</option><option value="Asia/Kolkata">Asia/Kolkata (IST)</option><option value="Australia/Sydney">Australia/Sydney (AEST/AEDT)</option><option value="UTC">UTC</option></select></div>' +
             '<div class="form-group"><label for="fc-start">Starts</label>' +
               '<input class="form-input" type="date" id="fc-start"></div>' +
             '<div class="form-group"><label for="fc-end">Ends</label>' +
@@ -629,7 +617,7 @@
 
       host.innerHTML =
         '<div style="text-align:center; margin-bottom:20px;"><a href="index.html"><img src="assets/img/logo.png" style="height:60px; border-radius:8px;" alt="Studio Logo"></a></div>' +
-        '<section class="card"' style="position:relative; border:none; box-shadow:0 10px 30px rgba(0,0,0,0.1); overflow:hidden;">' +
+        '<section class="card" style="position:relative; border:none; box-shadow:0 10px 30px rgba(0,0,0,0.1); overflow:hidden;">' +
           bannerHtml +
           '<div style="background:var(--gradient, linear-gradient(135deg,#0506ae,#964eec)); color:#fff !important; padding:24px; border-radius:' + (info.banner_url ? '0 0 16px 16px' : '16px') + ';">' +
             '<div style="font-size:.78rem;letter-spacing:2px;font-weight:700;text-transform:uppercase;margin-bottom:8px;color:#cbd5e1">FREE CLASS REGISTRATION</div>' +
@@ -666,6 +654,7 @@
               '<div class="form-group"><label for="fr-country">Country</label><input class="form-input" id="fr-country"></div>' +
               '<div class="form-group"><label for="fr-state">State / Region</label><input class="form-input" id="fr-state"></div>' +
               '<div class="form-group"><label for="fr-city">City</label><input class="form-input" id="fr-city"></div>' +
+       '<div class="form-group"><label for="fr-tz">Timezone</label><select class="form-select" id="fr-tz"><option value="Africa/Lagos">Africa/Lagos (WAT)</option><option value="Europe/London">Europe/London (GMT/BST)</option><option value="America/New_York">America/New_York (EST/EDT)</option><option value="America/Chicago">America/Chicago (CST/CDT)</option><option value="America/Toronto">America/Toronto (EST/EDT)</option><option value="Asia/Dubai">Asia/Dubai (GST)</option><option value="Asia/Kolkata">Asia/Kolkata (IST)</option><option value="Australia/Sydney">Australia/Sydney (AEST/AEDT)</option><option value="UTC">UTC</option></select></div>' +
               '<div class="form-group"><label for="fr-gender">Gender</label><select class="form-select" id="fr-gender"><option value=""></option><option value="Male">Male</option><option value="Female">Female</option></select></div>' +
               '<div class="form-group"><label for="fr-age">Age</label><input class="form-input" type="number" id="fr-age"></div>'
    +
@@ -764,7 +753,7 @@
             p_email: v('fr-email') || null,
             p_phone: v('fr-phone'), p_whatsapp: v('fr-whatsapp') || null,
             p_country: v('fr-country') || null, p_state: v('fr-state') || null,
-            p_city: v('fr-city') || null, p_gender: v('fr-gender') || null, p_age: parseInt(v('fr-age'), 10) || null,
+            p_city: v('fr-city') || null, p_tz: v('fr-tz') || null, p_gender: v('fr-gender') || null, p_age: parseInt(v('fr-age'), 10) || null,
             p_school: v('fr-school') || null,
             p_level: v('fr-level') || null,
             p_board: info.exam_board || null,

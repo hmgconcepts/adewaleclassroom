@@ -308,8 +308,9 @@
         .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 60) || 'post';
     },
     async _save(post, box) {
+      var btnSave = d.getElementById('blog-f-save');
       if (!w.sb) { if (btnSave) { btnSave.disabled = false; btnSave.textContent = '💾 Save'; } if (w.toast) toast('Connect Supabase to save posts', 'warning'); return; }
-      var btnSave = d.getElementById('blog-f-save'); if (btnSave) { btnSave.disabled = true; btnSave.textContent = 'Saving...'; }
+      if (btnSave) { btnSave.disabled = true; btnSave.textContent = 'Saving...'; }
       var title = d.getElementById('blog-f-title').value.trim();
       var body = d.getElementById('blog-f-body').value;
       if (!title || !body.trim()) { if (btnSave) { btnSave.disabled = false; btnSave.textContent = '💾 Save'; } if (w.toast) toast('Title and body are required', 'warning'); return; }
