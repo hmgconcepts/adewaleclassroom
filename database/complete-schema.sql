@@ -6699,6 +6699,10 @@ create table if not exists public.tc_free_cohorts (
   auto_approve   boolean default true,
   track_attendance boolean default true,
   track_results  boolean default true,
+  require_cbt    boolean default false,
+  cbt_code       text,
+  cbt_pass_mark  int,
+  social_links   jsonb,
   status         text not null default 'open',   -- draft|open|closed|running|completed|archived
   banner_url     text,
   note           text,
@@ -6836,6 +6840,13 @@ create trigger tc_free_reg_pct_trg
 
 -- The public page needs to show WHAT it is registering for before the form is
 -- filled. This returns only the presentational fields — never the roll.
+
+-- Ensure new enterprise fields exist even if table was already created
+alter table public.tc_free_cohorts add column if not exists require_cbt boolean default false;
+alter table public.tc_free_cohorts add column if not exists cbt_code text;
+alter table public.tc_free_cohorts add column if not exists cbt_pass_mark int;
+alter table public.tc_free_cohorts add column if not exists social_links jsonb;
+
 create or replace function public.tc_free_cohort_public(p_token text)
 returns jsonb
 language sql
@@ -11691,6 +11702,14 @@ create trigger tc_blog_post_trg before insert on public.tc_blog_posts for each r
 
 
 
+
+-- Ensure new enterprise fields exist even if table was already created
+alter table public.tc_free_registrations add column if not exists tz text;
+alter table public.tc_free_registrations add column if not exists gender text;
+alter table public.tc_free_registrations add column if not exists age int;
+alter table public.tc_free_registrations add column if not exists whatsapp text;
+alter table public.tc_free_registrations add column if not exists parent_email text;
+
 create or replace function public.tc_free_register(
   p_token   text,
   p_name    text,
@@ -11783,9 +11802,6 @@ end $$;
 
 
 -- FREE CLASSES ELIGIBILITY & AUTO DELETION
-alter table public.tc_free_cohorts add column if not exists require_cbt boolean default false;
-alter table public.tc_free_cohorts add column if not exists cbt_code text;
-alter table public.tc_free_cohorts add column if not exists cbt_pass_mark numeric default 50;
 
 alter table public.tc_class_links add column if not exists prefix text;
 alter table public.learners add column if not exists origin_cohort_id uuid references public.tc_free_cohorts(id) on delete cascade;
