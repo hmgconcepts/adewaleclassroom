@@ -179,6 +179,12 @@
             '<div class="form-group"><label for="fc-soc-tt">TikTok Profile</label><input class="form-input" type="url" id="fc-soc-tt" placeholder="https://tiktok.com/..."></div>' +
             '<div class="form-group" style="grid-column:1/-1"><hr style="border:0;border-top:1px solid #e2e8f0;margin:0"></div>' +
 
+            
+            '<div class="form-group" style="grid-column:1/-1;margin-top:16px"><h4 style="margin:0 0 4px">Eligibility CBT</h4><p class="muted" style="margin:0 0 12px;font-size:0.85rem">Require students to pass a test before joining.</p></div>' +
+            '<div class="form-group"><label><input type="checkbox" id="fc-req-cbt"> Require Eligibility CBT</label></div>' +
+            '<div class="form-group"><label>CBT Quiz Code</label><input class="form-input" id="fc-cbt-code" placeholder="MATH01"></div>' +
+            '<div class="form-group"><label>Pass Mark (%)</label><input type="number" class="form-input" id="fc-cbt-pass" value="50"></div>' +
+
             '<div class="form-group"><label for="fc-wa">WhatsApp group link</label>' +
               '<input class="form-input" type="url" id="fc-wa" placeholder="https://chat.whatsapp.com/…"></div>' +
             '<div class="form-group"><label for="fc-tg">Telegram group link</label>' +
@@ -259,6 +265,7 @@
         starts_on: v('fc-start') || null, ends_on: v('fc-end') || null,
         capacity: parseInt(v('fc-cap') || '0', 10) || 0,
         status: v('fc-status') || 'open',
+        require_cbt: ck('fc-req-cbt'), cbt_code: v('fc-cbt-code') || null, cbt_pass_mark: parseInt(v('fc-cbt-pass'), 10) || 50,
         social_links: { yt: v('fc-soc-yt'), fb: v('fc-soc-fb'), x: v('fc-soc-x'), tt: v('fc-soc-tt') },
         requires_parent_consent: ck('fc-consent'),
         auto_approve: ck('fc-auto'),
@@ -423,7 +430,7 @@
         set('fc-start', c.starts_on); set('fc-end', c.ends_on);
         set('fc-cap', c.capacity); set('fc-status', c.status);
         var sl = c.social_links || {}; set('fc-soc-yt', sl.yt); set('fc-soc-fb', sl.fb); set('fc-soc-x', sl.x); set('fc-soc-tt', sl.tt);
-        ck('fc-consent', c.requires_parent_consent); ck('fc-auto', c.auto_approve);
+        ck('fc-consent', c.requires_parent_consent); ck('fc-req-cbt', c.require_cbt); set('fc-cbt-code', c.cbt_code); set('fc-cbt-pass', c.cbt_pass_mark); ck('fc-auto', c.auto_approve);
         ck('fc-track', c.track_attendance);
         d.getElementById('fc-form-title').textContent = 'Editing “' + c.name + '”';
         w.scrollTo({ top: 0, behavior: 'smooth' });
@@ -511,7 +518,7 @@
         var blob = new Blob([head + '\n' + body], { type: 'text/csv;charset=utf-8' });
         var a = d.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = (c.code || 'free-class') + '-register.csv';
+        a.download = (c.code || 'free-class') + '-registrations.csv';
         a.click();
       });
 
@@ -596,18 +603,29 @@
         return;
       }
 
+      
       var subs = Array.isArray(info.subjects) ? info.subjects : [];
+      var dateRange = '';
+      if (info.starts_on) dateRange += 'Starts: ' + info.starts_on;
+      if (info.ends_on) dateRange += (dateRange ? ' — Ends: ' + info.ends_on : 'Ends: ' + info.ends_on);
+
+      var bannerHtml = info.banner_url ? '<div style="margin:-18px -18px 18px -18px; height:180px; border-radius:16px 16px 0 0; background:url(\''+esc(info.banner_url)+'\') center/cover no-repeat;"></div>' : '';
+
       host.innerHTML =
-        '<section class="card" style="background:linear-gradient(135deg,#0506ae,#964eec) !important; color:#fff !important;">' +
-          '<div style="font-size:.78rem;letter-spacing:2px;opacity:.85;color:#fff">FREE CLASS</div>' +
-          '<h1 style="margin:4px 0 6px;font-size:1.6rem;color:#fff">' + esc(info.name) + '</h1>' +
-          '<p style="margin:0;opacity:.95;color:#fff">' + esc(info.description || '') + '</p>' +
-          '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:.85rem">' +
-            (info.exam_board ? '<span style="background:rgba(255,255,255,.18);padding:3px 10px;border-radius:999px">🎯 ' + esc(info.exam_board) + '</span>' : '') +
-            (info.level ? '<span style="background:rgba(255,255,255,.18);padding:3px 10px;border-radius:999px">🎓 ' + esc(info.level) + '</span>' : '') +
-            (info.schedule ? '<span style="background:rgba(255,255,255,.18);padding:3px 10px;border-radius:999px">🗓️ ' + esc(info.schedule) + '</span>' : '') +
-            (info.platform ? '<span style="background:rgba(255,255,255,.18);padding:3px 10px;border-radius:999px">📺 ' + esc(info.platform) + '</span>' : '') +
-            (subs.length ? '<span style="background:rgba(255,255,255,.18);padding:3px 10px;border-radius:999px">📚 ' + esc(subs.join(', ')) + '</span>' : '') +
+        '<section class="card" style="position:relative; border:none; box-shadow:0 10px 30px rgba(0,0,0,0.1); overflow:hidden;">' +
+          bannerHtml +
+          '<div style="background:var(--gradient, linear-gradient(135deg,#0506ae,#964eec)); color:#fff !important; padding:24px; border-radius:' + (info.banner_url ? '0 0 16px 16px' : '16px') + ';">' +
+            '<div style="font-size:.78rem;letter-spacing:2px;font-weight:700;text-transform:uppercase;margin-bottom:8px;color:#cbd5e1">FREE CLASS REGISTRATION</div>' +
+            '<h1 style="margin:0 0 12px;font-size:2rem;color:#fff">' + esc(info.name) + '</h1>' +
+            '<p style="margin:0 0 16px;font-size:1.05rem;line-height:1.5;color:#e2e8f0">' + esc(info.description || 'Join our expert-led free class and accelerate your learning.') + '</p>' +
+            '<div style="display:flex;gap:8px;flex-wrap:wrap;font-size:.85rem">' +
+              (info.exam_board ? '<span style="background:rgba(255,255,255,.2);padding:4px 12px;border-radius:999px;backdrop-filter:blur(4px)">🎯 <b>Board:</b> ' + esc(info.exam_board) + '</span>' : '') +
+              (info.level ? '<span style="background:rgba(255,255,255,.2);padding:4px 12px;border-radius:999px;backdrop-filter:blur(4px)">🎓 <b>Level:</b> ' + esc(info.level) + '</span>' : '') +
+              (info.schedule ? '<span style="background:rgba(255,255,255,.2);padding:4px 12px;border-radius:999px;backdrop-filter:blur(4px)">🗓️ <b>Schedule:</b> ' + esc(info.schedule) + ' ('+esc(info.tz||'UTC')+')</span>' : '') +
+              (dateRange ? '<span style="background:rgba(255,255,255,.2);padding:4px 12px;border-radius:999px;backdrop-filter:blur(4px)">⏳ ' + esc(dateRange) + '</span>' : '') +
+              (info.platform ? '<span style="background:rgba(255,255,255,.2);padding:4px 12px;border-radius:999px;backdrop-filter:blur(4px)">📺 <b>Platform:</b> ' + esc(info.platform) + '</span>' : '') +
+              (subs.length ? '<span style="background:rgba(255,255,255,.2);padding:4px 12px;border-radius:999px;backdrop-filter:blur(4px)">📚 <b>Subjects:</b> ' + esc(subs.join(', ')) + '</span>' : '') +
+            '</div>' +
           '</div>' +
         '</section>' +
 
@@ -749,7 +767,8 @@
                 esc(out.reg_no) + '</b> — write it down or screenshot this page.</p>' +
               '<p class="muted" style="margin:0 0 12px">Status: ' + esc(out.status) + '</p>' +
               '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
-                (out.whatsapp_url ? '<a class="btn btn-primary" target="_blank" rel="noopener" href="' + esc(out.whatsapp_url) + '">💬 Join the WhatsApp group</a>' : '') +
+                (out.require_cbt ? '<a class="btn btn-accent" href="cbt-exam.html?code=' + encodeURIComponent(out.cbt_code) + '&reg=' + encodeURIComponent(out.reg_no) + '">📝 Take Eligibility Test</a>' : 
+   (out.whatsapp_url ? '<a class="btn btn-primary" target="_blank" rel="noopener" href="' + esc(out.whatsapp_url) + '">💬 Join the WhatsApp group</a>' : '')) +
                 (out.telegram_url ? '<a class="btn btn-outline" target="_blank" rel="noopener" href="' + esc(out.telegram_url) + '">✈️ Join the Telegram group</a>' : '') +
                 (out.meeting_url ? '<a class="btn btn-outline" target="_blank" rel="noopener" href="' + esc(out.meeting_url) + '">🎥 Class meeting link</a>' : '') +
                 (out.youtube_url ? '<a class="btn btn-outline" target="_blank" rel="noopener" href="' + esc(out.youtube_url) + '">▶️ YouTube channel</a>' : '') +

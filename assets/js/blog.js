@@ -270,7 +270,7 @@
         var sel = d.getElementById('blog-f-cat');
         if (post && post.category_id) sel.value = post.category_id;
       });
-      d.getElementById('blog-f-save').onclick = function () { self._save(post, box); };
+      var btnSave = d.getElementById('blog-f-save'); if (btnSave) { btnSave.onclick = () => { this._save(post, box); }; }
       if (post) {
         d.getElementById('blog-f-publish').onclick = function () {
           var next = post.status === 'published' ? 'draft' : 'published';

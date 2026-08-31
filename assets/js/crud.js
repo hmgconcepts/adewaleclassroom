@@ -1343,7 +1343,7 @@ const CRUD = {
     const blob = new Blob([header + '\n' + body], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = (schema.table || 'export') + '.csv';
+    a.download = (schema.table || 'export') + '-' + new Date().toISOString().slice(0,10) + '.csv';
     a.click();
   },
 
