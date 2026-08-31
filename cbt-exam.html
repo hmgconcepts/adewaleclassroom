@@ -707,6 +707,31 @@ async function finish() {
      of the top five is shown on the same screen. Guests simply skip it.
      A failed RPC never fails the submission — the score is already saved.
      ------------------------------------------------------------------ */
+  
+  let eligHTML = '';
+  if (state.saved && meta.student_no && window.sb) {
+    try {
+      const { data: elig } = await window.sb.rpc('tc_cbt_eligibility_links', { p_student_no: meta.student_no, p_score: result.pct });
+      if (elig && elig.ok) {
+         if (elig.passed) {
+            eligHTML = `<div class="card" style="background:#ecfdf5; border-color:#10b981; margin-top:16px;">
+              <h3 style="color:#047857;margin:0 0 8px;">🎉 Congratulations, you passed the eligibility benchmark!</h3>
+              <p style="margin:0 0 12px;">You may now join the official cohort groups:</p>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                ${elig.whatsapp_url ? `<a class="btn btn-primary" href="${elig.whatsapp_url}" target="_blank">💬 Join WhatsApp</a>` : ''}
+                ${elig.telegram_url ? `<a class="btn btn-outline" href="${elig.telegram_url}" target="_blank">✈️ Join Telegram</a>` : ''}
+              </div>
+            </div>`;
+         } else {
+            eligHTML = `<div class="card" style="background:#fef2f2; border-color:#fecaca; margin-top:16px;">
+              <h3 style="color:#b91c1c;margin:0 0 8px;">Eligibility Benchmark Not Met</h3>
+              <p style="margin:0;">You scored ${result.pct}%. The passing mark is ${elig.pass_mark}%. Keep studying and try again!</p>
+            </div>`;
+         }
+      }
+    } catch(e) { console.error('Eligibility fetch error:', e); }
+  }
+
   let gameHTML = '';
   if (state.exam.gamify === true && state.learner && state.learner.id && window.sb) {
     try {
