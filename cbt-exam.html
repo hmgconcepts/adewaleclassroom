@@ -594,7 +594,7 @@ async function finish() {
   const displayName = document.getElementById('dname').value.trim() || (state.learner && state.learner.full_name) || 'Guest';
   const meta = {
     title: state.exam.title,
-    student_no: state.learner && state.learner.student_no,
+    student_no: (state.learner && state.learner.student_no) || new URLSearchParams(location.search).get('reg') || new URLSearchParams(location.search).get('student'),
     full_name: displayName,
     quiz_kind: state.exam.quiz_kind,
     identity_mode: state.identity_mode
@@ -768,7 +768,7 @@ async function finish() {
          <p class="muted" style="margin:6px 0 0;font-size:.8rem">Reason: ${TC.esc(state.saveError || 'unknown')}</p>
        </div>`
     : '';
-  rev.innerHTML = gameHTML + banner + (show ? CBT.reviewHTML(result, meta) : `<div class="card"><h2>Submitted</h2><p>Your tutor will release the review.</p></div>`) +
+  rev.innerHTML = (typeof eligHTML !== 'undefined' ? eligHTML : '') + (typeof gameHTML !== 'undefined' ? gameHTML : '') + banner + (show ? CBT.reviewHTML(result, meta) : `<div class="card"><h2>Submitted</h2><p>Your tutor will release the review.</p></div>`) +
     `<p style="margin-top:12px"><button class="btn btn-accent" type="button" onclick="CBT.printReview()">Save / print PDF</button>
      <a class="btn btn-ghost" href="scoresheet.html">Open scoresheet</a></p>`;
   if (state.saved === false) {
