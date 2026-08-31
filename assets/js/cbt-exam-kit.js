@@ -432,23 +432,27 @@
         ['copy', 'cut'].forEach(function (ev) {
           d.addEventListener(ev, function (e) {
             if (inTool(e.target)) return;      // copying a calculator result is fine
+            if (self.examEnded) return;
             e.preventDefault();
             log(ev, 'Copying is disabled during the exam');
           });
         });
         d.addEventListener('paste', function (e) {
           if (inTool(e.target)) return;        // pasting INTO the calculator is fine
+          if (self.examEnded) return;
           e.preventDefault();
           log('paste', 'Pasting is disabled during the exam');
         });
         d.addEventListener('contextmenu', function (e) {
           if (inTool(e.target)) return;
+          if (self.examEnded) return;
           e.preventDefault();
           log('right_click', 'Right-click is disabled');
         });
         d.addEventListener('selectstart', function (e) {
           if (e.target && e.target.closest && e.target.closest('input,textarea')) return;
           if (inTool(e.target)) return;        // selecting inside a tool is fine
+          if (self.examEnded) return;
           e.preventDefault();
         });
       }
@@ -456,6 +460,7 @@
       if (cfg.block_devtools !== false) {
         d.addEventListener('keydown', function (e) {
           var k = (e.key || '').toLowerCase();
+          if (self.examEnded) return;
           if (k === 'f12' ||
               (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].indexOf(k) !== -1) ||
               (e.ctrlKey && k === 'u') ||

@@ -687,18 +687,19 @@
 
             var sl = info.social_links || {};
             var reqClicks = 0;
+            var fsl = function(u) { if(!u) return ''; var s=String(u).trim(); return /^https?:\/\//i.test(s) ? s : 'https://'+s; };
             if ((sl.yt || sl.fb || sl.x || sl.tt || sl.wa || sl.tg) && info.open !== false) {
               if(sl.yt) reqClicks++; if(sl.fb) reqClicks++; if(sl.x) reqClicks++; if(sl.tt) reqClicks++; if(sl.wa) reqClicks++; if(sl.tg) reqClicks++;
               var socialHtml = '<div class="card" style="background:#fffbeb;border:1px solid #fcd34d;margin:10px 0" id="fr-soc-box">' +
                 '<b style="color:#92400e">Follow us to register</b>' +
                 '<p class="muted" style="margin:6px 0 10px;font-size:.85rem">Please follow/subscribe to our official channels below. The registration button will unlock automatically once you click them.</p>' +
                 '<div style="display:flex;gap:8px;flex-wrap:wrap">';
-              if (sl.yt) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.yt.startsWith('http')?sl.yt:'https://'+sl.yt)+'">📺 Subscribe on YouTube</a>';
-              if (sl.fb) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.fb.startsWith('http')?sl.fb:'https://'+sl.fb)+'">📘 Follow on Facebook</a>';
-              if (sl.x)  socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.x.startsWith('http')?sl.x:'https://'+sl.x)+'">🐦 Follow on X/Twitter</a>';
-              if (sl.tt) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.tt.startsWith('http')?sl.tt:'https://'+sl.tt)+'">🎵 Follow on TikTok</a>';
-              if (sl.wa) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.wa.startsWith('http')?sl.wa:'https://'+sl.wa)+'">💬 Follow WhatsApp Channel</a>';
-              if (sl.tg) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(sl.tg.startsWith('http')?sl.tg:'https://'+sl.tg)+'">✈️ Follow Telegram Channel</a>';
+              if (sl.yt) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(fsl(sl.yt))+'">📺 Subscribe on YouTube</a>';
+              if (sl.fb) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(fsl(sl.fb))+'">📘 Follow on Facebook</a>';
+              if (sl.x)  socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(fsl(sl.x))+'">🐦 Follow on X/Twitter</a>';
+              if (sl.tt) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(fsl(sl.tt))+'">🎵 Follow on TikTok</a>';
+              if (sl.wa) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(fsl(sl.wa))+'">💬 Follow WhatsApp Channel</a>';
+              if (sl.tg) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(fsl(sl.tg))+'">✈️ Follow Telegram Channel</a>';
               socialHtml += '</div></div>';
               var ph = document.getElementById('fr-soc-placeholder');
               if(ph) ph.outerHTML = socialHtml;
