@@ -212,10 +212,19 @@ const AP = {
           <td>${r.created_at?new Date(r.created_at).toLocaleDateString():''}</td>
           <td align="right" style="white-space:nowrap">
             ${st!=='approved'&&st!=='active' ? `<button class="btn btn-sm btn-primary" data-ok="${r.id}">✓ Approve</button>`:''}
-            ${st!=='suspended' ? `<button class="btn btn-sm btn-outline" data-sus="${r.id}">Suspend</button>`:''}
+            ${st!=='suspended' ? `<button class="btn btn-sm btn-outline" data-sus="${r.id}">Suspend</button>`:''} <button class="btn btn-sm btn-danger" data-del="${r.id}">Delete</button>
             ${st==='suspended' ? `<button class="btn btn-sm btn-outline" data-ok="${r.id}">Reinstate</button>`:''}
           </td></tr>`;
       }).join('')+'</tbody></table></div>';
+
+    
+    host.querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{
+      if(!confirm('Permanently delete this account? This action cannot be undone.')) return;
+      const id = b.dataset.del;
+      const {error, data} = await sb.rpc('tc_delete_user', { p_user_id: id });
+      if(error || (data && !data.ok)) { toast((error&&error.message)||(data&&data.error)||'Failed to delete account', 'danger'); }
+      else { toast('Account deleted successfully.', 'success'); this.load(); }
+    });
 
     host.querySelectorAll('[data-ok]').forEach(b=>b.onclick=()=>this.setStatus(b.dataset.ok,'approved'));
     host.querySelectorAll('[data-sus]').forEach(b=>b.onclick=()=>{
