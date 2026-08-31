@@ -8561,9 +8561,11 @@ revoke all on function public.tc_blog_list(text, text) from public, anon;
 grant execute on function public.tc_blog_list(text, text) to anon, authenticated;
 
 -- One post by slug; bumps the view counter once per open.
+drop function if exists public.tc_blog_get(text);
 create or replace function public.tc_blog_get(p_slug text)
 returns jsonb
 language plpgsql
+volatile
 security definer
 set search_path = public
 as $$
