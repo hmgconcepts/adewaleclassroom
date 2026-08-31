@@ -27,15 +27,15 @@
           '<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">' +
             '<input id="dir-q" class="form-input" type="search" placeholder="🔎 Search name, email, phone, role, student ID…" style="flex:1;min-width:220px">' +
             '<div id="dir-tabs" style="display:flex;flex-wrap:wrap;gap:6px"></div>' +
-            '<button type="button" class="btn btn-outline btn-sm" id="dir-csv">⬇ CSV</button>' +
-            '<button type="button" class="btn btn-outline btn-sm" id="dir-print">🖨 Print</button>' +
+            '<button type="button" class="btn btn-outline btn-sm" id="dir-csv">⬇ Export CSV</button>' +
+            '<button type="button" class="btn btn-outline btn-sm" id="dir-print">🖨 Print / PDF</button>' +
             '<a class="btn btn-outline btn-sm" href="learners.html">Learners</a>' +
             '<a class="btn btn-outline btn-sm" href="parents.html">Parents</a>' +
             '<a class="btn btn-outline btn-sm" href="tutors.html">Tutors</a>' +
           '</div>' +
           '<div id="dir-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:12px"></div>' +
         '</section>' +
-        '<div id="dir-list" class="muted">Loading directory…</div>';
+        '<div id="dir-list" class="muted" style="padding: 40px; text-align: center;">Loading directory…</div>';
 
       d.getElementById('dir-q').addEventListener('input', function (e) {
         state.q = e.target.value || ''; Desk.render();
@@ -125,26 +125,37 @@
         list.innerHTML = '<div class="card"><p class="muted">No people match. Adjust search or add records under Learners / Parents / Tutors.</p></div>';
         return;
       }
-      list.innerHTML = '<div class="table-wrap"><table class="table" style="width:100%"><thead><tr>' +
-        '<th>Name</th><th>Role</th><th>Contact</th><th>Detail</th><th>Portal</th><th></th></tr></thead><tbody>' +
+      
+      list.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;">' +
         rows.map(function (r) {
           var wa = r.phone ? ('https://wa.me/' + String(r.phone).replace(/\D/g, '').replace(/^0/, '234')) : '';
           var mail = r.email ? ('mailto:' + r.email) : '';
-          return '<tr>' +
-            '<td><b>' + esc(r.name || '—') + '</b></td>' +
-            '<td>' + esc(r.kindLabel) + '</td>' +
-            '<td style="font-size:.85rem">' + esc(r.email || '') +
-              (r.phone ? '<br>' + esc(r.phone) : '') + '</td>' +
-            '<td class="muted" style="font-size:.82rem">' + esc(r.extra || '') + '</td>' +
-            '<td>' + (r.linked
-              ? '<span style="color:#059669;font-weight:700">Linked</span>'
-              : '<span style="color:#b45309;font-weight:700">Unlinked</span>') + '</td>' +
-            '<td style="white-space:nowrap">' +
-              (mail ? '<a class="btn btn-sm btn-ghost" href="' + esc(mail) + '">Email</a>' : '') +
-              (wa ? '<a class="btn btn-sm btn-ghost" target="_blank" rel="noopener" href="' + esc(wa) + '">WA</a>' : '') +
-              '<a class="btn btn-sm btn-outline" href="' + esc(r.href) + '">Open</a>' +
-            '</td></tr>';
-        }).join('') + '</tbody></table></div>';
+          var avatar = '<div style="width:56px;height:56px;border-radius:50%;background:var(--gradient,linear-gradient(135deg,#0506ae,#964eec));color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:bold;margin-right:16px;box-shadow:0 4px 10px rgba(0,0,0,0.1)">' + (r.name.charAt(0).toUpperCase()||'U') + '</div>';
+          
+          return '<div class="card" style="display:flex;flex-direction:column;padding:20px;border-radius:16px;box-shadow:0 4px 15px rgba(0,0,0,0.03);transition:transform 0.2s,box-shadow 0.2s;" onmouseover="this.style.transform=\'translateY(-3px)\';this.style.boxShadow=\'0 10px 25px rgba(0,0,0,0.08)\';" onmouseout="this.style.transform=\'translateY(0)\';this.style.boxShadow=\'0 4px 15px rgba(0,0,0,0.03)\';">' +
+            '<div style="display:flex;align-items:center;margin-bottom:16px;">' +
+              avatar + 
+              '<div style="flex:1;min-width:0;">' +
+                '<h3 style="margin:0 0 4px;font-size:1.15rem;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(r.name || '—') + '</h3>' +
+                '<span class="badge badge-' + (r.kind==='tutor'?'primary':r.kind==='parent'?'warning':r.kind==='learner'?'success':'outline') + '" style="font-size:0.75rem;">' + esc(r.kindLabel) + '</span>' +
+              '</div>' +
+            '</div>' +
+            
+            '<div style="font-size:0.9rem;color:#475569;margin-bottom:16px;flex:1;display:flex;flex-direction:column;gap:6px;">' +
+              (r.email ? '<div style="display:flex;align-items:center;gap:8px;">📧 <a href="' + esc(mail) + '" style="color:#475569;text-decoration:none;">' + esc(r.email) + '</a></div>' : '') +
+              (r.phone ? '<div style="display:flex;align-items:center;gap:8px;">📱 ' + esc(r.phone) + '</div>' : '') +
+              (r.extra ? '<div style="display:flex;align-items:center;gap:8px;">📌 ' + esc(r.extra) + '</div>' : '') +
+              '<div style="display:flex;align-items:center;gap:8px;">' + (r.linked ? '🔗 <span style="color:#059669;font-weight:600">Portal Linked</span>' : '⚠️ <span style="color:#b45309;font-weight:600">Unlinked</span>') + '</div>' +
+            '</div>' +
+            
+            '<div style="display:flex;gap:8px;border-top:1px solid #f1f5f9;padding-top:16px;margin-top:auto;">' +
+              (mail ? '<a class="btn btn-sm btn-ghost" style="flex:1;text-align:center" href="' + esc(mail) + '">Email</a>' : '') +
+              (wa ? '<a class="btn btn-sm btn-ghost" style="flex:1;text-align:center;color:#16a34a;" target="_blank" rel="noopener" href="' + esc(wa) + '">WhatsApp</a>' : '') +
+              '<a class="btn btn-sm btn-outline" style="flex:1;text-align:center;" href="' + esc(r.href) + '">Profile</a>' +
+            '</div>' +
+          '</div>';
+        }).join('') + '</div>';
+    
     },
 
     exportCsv() {

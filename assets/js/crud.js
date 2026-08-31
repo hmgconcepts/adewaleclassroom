@@ -975,8 +975,8 @@ const CRUD = {
             '<button class="btn btn-outline btn-sm" type="button" id="crud-cols" title="Choose which columns to show">🧱 Columns</button>' +
             '<button class="btn btn-outline btn-sm" type="button" id="crud-dense" title="Row height">' + (view.dense ? '↕ Comfortable' : '↔ Compact') + '</button>' +
             '<button class="btn btn-outline btn-sm" type="button" id="crud-clear" title="Clear all filters">✕ Filters' + (activeFilters ? ' (' + activeFilters + ')' : '') + '</button>' +
-            '<button class="btn btn-outline btn-sm" type="button" id="crud-print" title="Printable view">🖨 Print</button>' +
-            '<button class="btn btn-outline btn-sm" type="button" id="crud-csv">⬇ CSV</button>' +
+            '<button class="btn btn-outline btn-sm" type="button" id="crud-print" title="Printable view">🖨 Print / PDF</button>' +
+            '<button class="btn btn-outline btn-sm" type="button" id="crud-csv">⬇ Export CSV</button>' +
             (can ? '<button class="btn btn-primary" type="button" id="crud-add">+ Add ' + TC.esc(schema.title) + '</button>' : '') +
           '</div>' +
         '</div>' +

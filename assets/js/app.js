@@ -1041,7 +1041,9 @@ const App = {
         box.innerHTML = '<div style="color:var(--gray-500)">Admin inspection mode: sign in as a parent to see real linked children here.</div>';
         return;
       }
-      const { data: links, error: linkErr } = await supabase.from('parent_learner').select('learner_id,relationship').eq('parent_id', profile.id);
+      const { data: pRec } = await supabase.from('parents').select('id').eq('user_id', profile.id).single();
+      const parentRowId = pRec ? pRec.id : null;
+      const { data: links, error: linkErr } = await supabase.from('parent_learner').select('learner_id,relationship').eq('parent_id', parentRowId);
       if (linkErr) throw linkErr;
       const ids = (links || []).map(x => x.learner_id).filter(Boolean);
       if (!ids.length) {

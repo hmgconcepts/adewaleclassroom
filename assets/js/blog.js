@@ -57,105 +57,48 @@
       var root = d.getElementById('blog-root');
       if (!root) return;
       var self = this;
-      root.innerHTML =
-        '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px">' +
-          '<input id="blog-q" type="search" placeholder="🔎 Search posts…" style="flex:1;min-width:200px;padding:10px 14px;border:1px solid var(--gray-300,#e2e8f0);border-radius:12px;font:inherit">' +
-          '<select id="blog-cat" style="padding:10px 12px;border:1px solid var(--gray-300,#e2e8f0);border-radius:12px;font:inherit"><option value="">All topics</option></select>' +
-        '</div>' +
-        '<div id="blog-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px"><p class="muted">Loading posts…</p></div>';
-      var q = d.getElementById('blog-q');
-      var cat = d.getElementById('blog-cat');
-      var run = function () { self._loadList(q.value, cat.value, root); };
-      q.addEventListener('input', run);
-      cat.addEventListener('change', run);
-      this._loadCats(cat, run);
-      run();
-    },
-
-    async _loadCats(sel, run) {
-      try {
-        if (w.sb) {
-          var { data } = await w.sb.from('tc_blog_categories').select('name,slug').order('name');
-          (data || []).forEach(function (c) {
-            var o = d.createElement('option');
-            o.value = c.slug; o.textContent = c.name;
-            sel.appendChild(o);
-          });
-        }
-      } catch (_) {}
-    },
-
-    async _loadList(query, category, root) {
-      var box = d.getElementById('blog-list');
-      if (!box) return;
-      try {
-        var posts = [];
-        if (w.sb) {
-          var { data, error } = await w.sb.rpc('tc_blog_list', { p_category: category || null, p_q: query || null });
-          if (error) throw error;
-          posts = (data && Array.isArray(data)) ? data : [];
-        } else {
-          posts = w.DEMO && Array.isArray(w.DEMO.tc_blog_posts)
-            ? w.DEMO.tc_blog_posts.filter(function (p) { return p.status === 'published'; })
-            : [];
-        }
-        if (!posts.length) {
-          box.innerHTML = '<div class="card" style="grid-column:1/-1;padding:40px;text-align:center"><div style="font-size:2.4rem">📝</div><h3>Nothing here yet</h3><p class="muted">The studio has not published any posts yet — check back soon.</p></div>';
-          return;
-        }
-        box.innerHTML = posts.map(function (p) {
-          var cover = p.cover_url
-            ? '<div style="height:150px;border-radius:14px 14px 0 0;background:#f1f5f9 center/cover no-repeat url(&quot;' + esc(p.cover_url) + '&quot;)"></div>'
-            : '<div style="height:150px;border-radius:14px 14px 0 0;background:var(--gradient,linear-gradient(135deg,#0506ae,#964eec));display:flex;align-items:center;justify-content:center;color:#fff;font-size:2rem">📄</div>';
-          return '<a class="card" style="text-decoration:none;color:inherit;overflow:hidden;display:flex;flex-direction:column" href="blog-post.html?slug=' + encodeURIComponent(p.slug) + '">' +
-            cover +
-            '<div style="padding:14px 16px;display:flex;flex-direction:column;flex:1">' +
-              '<div style="font-size:.72rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--primary,#0506ae)">' + esc(p.category || 'News') + ' · ' + fmt(p.published_at) + '</div>' +
-              '<h3 style="margin:8px 0 6px;line-height:1.3">' + esc(p.title) + '</h3>' +
-              (p.excerpt ? '<p class="muted" style="margin:0 0 10px;font-size:.88rem;flex:1">' + esc(p.excerpt) + '</p>' : '<div style="flex:1"></div>') +
-              '<div style="font-size:.78rem;color:var(--gray-500,#64748b)">✍️ ' + esc(p.author_name || 'The Studio') + ' · 👁 ' + (p.view_count || 0) + '</div>' +
-            '</div></a>';
-        }).join('');
-      } catch (e) {
-        box.innerHTML = '<div class="card" style="grid-column:1/-1;padding:30px;text-align:center"><p class="muted">Could not load posts: ' + esc(e && e.message || e) + '</p></div>';
-      }
-    },
-
-    mountPost() {
-      var root = d.getElementById('blog-post-root');
-      if (!root) return;
-      var slug = new URLSearchParams(location.search).get('slug') || '';
-      if (!slug) { root.innerHTML = '<p class="muted">No post selected. <a href="blog.html">Browse the blog</a>.</p>'; return; }
-      root.innerHTML = '<p class="muted">Loading…</p>';
-      var self = this;
-      var done = function (post) {
-        if (!post) {
-          root.innerHTML = '<div class="card" style="max-width:560px;margin:30px auto;text-align:center;padding:40px"><h3>Post not found</h3><p class="muted">It may have been unpublished.</p><p><a class="btn btn-primary" href="blog.html">Back to blog</a></p></div>';
-          return;
-        }
-        d.title = (post.title || 'Post') + ' · ' + d.title.split('·').pop().trim();
-        var cover = post.cover_url
-          ? '<div style="border-radius:18px;overflow:hidden;margin:18px 0;border:1px solid var(--gray-200,#e2e8f0)"><img src="' + esc(post.cover_url) + '" alt="" style="width:100%;max-height:380px;object-fit:cover;display:block"></div>'
-          : '';
-        root.innerHTML =
-          '<article style="max-width:760px;margin:0 auto">' +
-            '<div style="font-size:.75rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--primary,#0506ae)">' + esc(post.category || 'News') + '</div>' +
-            '<h1 style="font-size:clamp(1.6rem,4vw,2.4rem);line-height:1.25;margin:10px 0 8px">' + esc(post.title) + '</h1>' +
-            '<p class="muted" style="font-size:.85rem;margin:0 0 6px">✍️ ' + esc(post.author_name || 'The Studio') + ' · ' + fmt(post.published_at) + ' · 👁 ' + (post.view_count || 0) + ' reads</p>' +
-            cover +
-            '<div style="font-size:1.02rem;line-height:1.8">' + md(post.body) + '</div>' +
-            (post.tags ? '<div style="margin-top:24px;display:flex;gap:8px;flex-wrap:wrap">' + String(post.tags).split(',').map(function (t) { return '<span style="background:var(--surface-soft,#f1f5f9);border:1px solid var(--gray-200,#e2e8f0);border-radius:99px;padding:4px 12px;font-size:.78rem">#' + esc(t.trim()) + '</span>'; }).join('') + '</div>' : '') +
-            '<div style="margin-top:28px;padding-top:18px;border-top:1px solid var(--gray-200,#e2e8f0);display:flex;gap:10px;flex-wrap:wrap">' +
-              '<a class="btn btn-outline" href="blog.html">← All posts</a>' +
-              '<a class="btn btn-outline" href="apply.html">Interested in tutoring? Apply</a>' +
-              '<div style="width:100%;height:1px;background:var(--gray-200,#e2e8f0);margin:8px 0"></div>' +
-              '<span class="muted" style="display:flex;align-items:center;font-size:0.9rem">Share this post:</span>' +
-              '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(post.title + ' - ' + w.location.href) + '">WhatsApp</a>' +
-              '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(w.location.href) + '">Facebook</a>' +
-              '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?url=' + encodeURIComponent(w.location.href) + '&text=' + encodeURIComponent(post.title) + '">X (Twitter)</a>' +
-              '<a class="btn btn-sm btn-outline" target="_blank" rel="noopener" href="https://www.linkedin.com/shareArticle?mini=true&url=' + encodeURIComponent(w.location.href) + '&title=' + encodeURIComponent(post.title) + '">LinkedIn</a>' +
+      
+          var cover = p.cover_url 
+            ? '<div style="width:100%; height:450px; background:#f1f5f9 center/cover no-repeat url(&quot;' + esc(p.cover_url) + '&quot;); border-radius:0 0 24px 24px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);"></div>'
+            : '';
+          root.innerHTML = '<article style="max-width:800px; margin:0 auto;">' +
+            '<div style="text-align:center; padding: 40px 20px;">' +
+              '<div style="font-size:.85rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--primary,#0506ae); margin-bottom:16px;">' + esc(p.category || 'News') + '</div>' +
+              '<h1 style="margin:0 0 24px; font-size: 2.8rem; font-weight:800; color:#0f172a; line-height:1.2; letter-spacing:-0.02em;">' + esc(p.title) + '</h1>' +
+              '<div style="display:flex; justify-content:center; align-items:center; gap:16px; color:#64748b; font-size:1rem; font-weight:500;">' +
+                '<div style="display:flex; align-items:center; gap:8px;">' +
+                  '<div style="width:40px; height:40px; border-radius:50%; background:var(--gradient,linear-gradient(135deg,#0506ae,#964eec)); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:1.2rem;">' + (esc(p.author_name || 'S')[0]).toUpperCase() + '</div>' +
+                  '<span>' + esc(p.author_name || 'The Studio') + '</span>' +
+                '</div>' +
+                '<span>•</span>' +
+                '<span>' + fmt(p.published_at) + '</span>' +
+                '<span>•</span>' +
+                '<span>👁 ' + (p.view_count || 1) + ' reads</span>' +
+              '</div>' +
             '</div>' +
-          '</article>';
+            cover +
+            '<div class="blog-body" style="font-size:1.15rem; line-height:1.8; color:#334155; padding: 0 20px 60px;">' + md(p.body) + '</div>' +
+            '</article>';
+            
+            // Add global CSS if missing
+            if (!document.getElementById('blog-dyn-css')) {
+               var st = document.createElement('style');
+               st.id = 'blog-dyn-css';
+               st.innerHTML = `
+                 .blog-body p { margin-bottom: 1.5em; }
+                 .blog-body h2 { font-size: 1.8rem; margin: 1.5em 0 0.5em; color:#0f172a; }
+                 .blog-body h3 { font-size: 1.5rem; margin: 1.2em 0 0.5em; color:#0f172a; }
+                 .blog-body img { max-width: 100%; border-radius: 12px; margin: 1rem 0; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+                 .blog-body a { color: var(--primary); text-decoration: none; font-weight: 600; }
+                 .blog-body a:hover { text-decoration: underline; }
+                 @media (max-width: 768px) {
+                   .blog-card[style*="flex-direction: row"] { flex-direction: column !important; }
+                   .blog-card[style*="flex-direction: row"] > div { width: 100% !important; }
+                 }
+               `;
+               document.head.appendChild(st);
+            }
+  
       };
       if (w.sb) {
         w.sb.rpc('tc_blog_get', { p_slug: slug }).then(function ({ data, error }) {
