@@ -37,7 +37,7 @@ const CRUD = {
       { key: 'preferred_name', label: 'Preferred name', type: 'text' },
       { key: 'email', label: 'Email', type: 'email' },
       { key: 'phone', label: 'Phone', type: 'tel' },
-      { key: 'timezone', label: 'Timezone', type: 'text' },
+      { key: 'timezone', label: 'Timezone', type: 'select', options: ['Africa/Lagos','Europe/London','America/New_York','America/Chicago','America/Toronto','Asia/Dubai','Asia/Kolkata','Australia/Sydney','UTC'] },
       { key: 'year_group', label: 'Year / grade', type: 'text' },
       { key: 'school_name', label: 'Day school (optional)', type: 'text' },
       { key: 'learning_style', label: 'Observed learning notes', type: 'textarea' },
@@ -57,7 +57,7 @@ const CRUD = {
       { key: 'user_id', label: 'Portal login account (link)', type: 'ref', refTable: 'profiles', refValue: 'full_name', refExtra: ['email','role'], refStore: 'id', refFilter: { role: 'parent' }, searchable: true, adminOnly: true, help: 'ADMIN ONLY — link this parent/guardian to their portal sign-in. Same pattern as School Connect. Required before the parent can see their children.' },
       { key: 'email', label: 'Email', type: 'email' },
       { key: 'phone', label: 'Phone / WhatsApp', type: 'tel' },
-      { key: 'timezone', label: 'Timezone', type: 'text' },
+      { key: 'timezone', label: 'Timezone', type: 'select', options: ['Africa/Lagos','Europe/London','America/New_York','America/Chicago','America/Toronto','Asia/Dubai','Asia/Kolkata','Australia/Sydney','UTC'] },
       { key: 'billing_name', label: 'Billing name', type: 'text' },
       { key: 'status', label: 'Status', type: 'select', options: ['active','inactive'] }
     ]},
@@ -77,7 +77,7 @@ const CRUD = {
       { key: 'user_id', label: 'Portal login account (link)', type: 'ref', refTable: 'profiles', refValue: 'full_name', refExtra: ['email','role'], refStore: 'id', refFilter: { role: 'tutor' }, searchable: true, adminOnly: true, help: 'ADMIN ONLY — link this tutor record to the tutor portal sign-in. Tutors cannot link other tutors. Same pattern as School Connect staff.user_id.' },
       { key: 'email', label: 'Email', type: 'email' },
       { key: 'phone', label: 'Phone', type: 'tel' },
-      { key: 'timezone', label: 'Timezone', type: 'text' },
+      { key: 'timezone', label: 'Timezone', type: 'select', options: ['Africa/Lagos','Europe/London','America/New_York','America/Chicago','America/Toronto','Asia/Dubai','Asia/Kolkata','Australia/Sydney','UTC'] },
       { key: 'specialisms', label: 'Specialisms', type: 'text' },
       { key: 'hourly_cost', label: 'Pay rate (if staff)', type: 'number' },
       { key: 'status', label: 'Status', type: 'select', options: ['active','inactive'] }
@@ -108,7 +108,7 @@ const CRUD = {
       { key: 'learner_name', label: 'Learner name', type: 'lookup', lookupTable: 'learners', lookupValue: 'full_name', help: 'Pick an existing learner, or add a new name if they are not enrolled yet.' },
       { key: 'subject', label: 'Subject wanted', type: 'lookup', lookupTable: 'subjects', lookupValue: 'name', help: 'Pick a subject you teach.' },
       { key: 'kind', label: '1:1 or group', type: 'select', options: ['one_on_one','group','unsure'] },
-      { key: 'timezone', label: 'Timezone', type: 'text' },
+      { key: 'timezone', label: 'Timezone', type: 'select', options: ['Africa/Lagos','Europe/London','America/New_York','America/Chicago','America/Toronto','Asia/Dubai','Asia/Kolkata','Australia/Sydney','UTC'] },
       { key: 'source', label: 'Source', type: 'text' },
       { key: 'notes', label: 'Notes', type: 'textarea' },
       { key: 'status', label: 'Status', type: 'select', options: ['new','contacted','trial_booked','converted','lost'] }
@@ -545,7 +545,7 @@ const CRUD = {
       { key: 'weekday', label: 'Weekday 0=Sun', type: 'number' },
       { key: 'start_time', label: 'Start', type: 'text' },
       { key: 'end_time', label: 'End', type: 'text' },
-      { key: 'timezone', label: 'Timezone', type: 'text' }
+      { key: 'timezone', label: 'Timezone', type: 'select', options: ['Africa/Lagos','Europe/London','America/New_York','America/Chicago','America/Toronto','Asia/Dubai','Asia/Kolkata','Australia/Sydney','UTC'] }
     ]},
     meetings: { table: 'sessions', title: 'Meeting link', cols: [
       { key: 'engagement_id', label: 'Engagement', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id' },
