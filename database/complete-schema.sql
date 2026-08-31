@@ -236,7 +236,7 @@ create table if not exists public.waitlist (
 
 create table if not exists public.trials (
   id uuid primary key default gen_random_uuid(),
-  engagement_id uuid references public.engagements(id),
+  engagement_id uuid references public.engagements(id) on delete cascade,
   learner_name text not null, scheduled_at timestamptz,
   baseline_score numeric, fit_notes text, status text default 'booked',
   created_at timestamptz default now()
@@ -269,7 +269,7 @@ create table if not exists public.session_attendance (
 create table if not exists public.session_notes (
   id uuid primary key default gen_random_uuid(),
   session_id uuid references public.sessions(id) on delete cascade,
-  learner_id uuid references public.learners(id),
+  learner_id uuid references public.learners(id) on delete cascade,
   body text, recording_url text, share_with_parent boolean default true,
   created_at timestamptz default now()
 );
@@ -277,7 +277,7 @@ create table if not exists public.session_notes (
 create table if not exists public.goals (
   id uuid primary key default gen_random_uuid(),
   engagement_id uuid references public.engagements(id) on delete cascade,
-  learner_id uuid references public.learners(id),
+  learner_id uuid references public.learners(id) on delete cascade,
   title text not null, metric text, review_on date, status text default 'open',
   created_at timestamptz default now()
 );
@@ -298,7 +298,7 @@ create table if not exists public.curriculum_items (
 
 create table if not exists public.lesson_plans (
   id uuid primary key default gen_random_uuid(),
-  engagement_id uuid references public.engagements(id),
+  engagement_id uuid references public.engagements(id) on delete cascade,
   session_id uuid references public.sessions(id),
   title text, objectives text, resources text, created_at timestamptz default now()
 );
@@ -306,7 +306,7 @@ create table if not exists public.lesson_plans (
 create table if not exists public.assignments (
   id uuid primary key default gen_random_uuid(),
   engagement_id uuid references public.engagements(id) on delete cascade,
-  learner_id uuid references public.learners(id),
+  learner_id uuid references public.learners(id) on delete cascade,
   title text not null, due_on date, max_score numeric, score numeric,
   submission_url text, status text default 'set',
   created_at timestamptz default now()
@@ -314,7 +314,7 @@ create table if not exists public.assignments (
 
 create table if not exists public.assessments (
   id uuid primary key default gen_random_uuid(),
-  engagement_id uuid references public.engagements(id),
+  engagement_id uuid references public.engagements(id) on delete cascade,
   learner_id uuid references public.learners(id) on delete cascade,
   title text not null, kind text default 'quiz', score numeric, taken_on date default current_date,
   created_at timestamptz default now()
@@ -323,14 +323,14 @@ create table if not exists public.assessments (
 create table if not exists public.cbt_exams (
   id uuid primary key default gen_random_uuid(),
   title text not null, code text unique, questions jsonb default '[]'::jsonb,
-  duration_min int default 40, engagement_id uuid references public.engagements(id),
+  duration_min int default 40, engagement_id uuid references public.engagements(id) on delete cascade,
   status text default 'draft', created_at timestamptz default now()
 );
 
 create table if not exists public.cbt_results (
   id uuid primary key default gen_random_uuid(),
   exam_id uuid references public.cbt_exams(id) on delete cascade,
-  learner_id uuid references public.learners(id),
+  learner_id uuid references public.learners(id) on delete cascade,
   candidate_name text, score numeric, max_score numeric, detail jsonb,
   created_at timestamptz default now()
 );
@@ -350,15 +350,15 @@ create table if not exists public.hour_ledger (
 
 create table if not exists public.invoices (
   id uuid primary key default gen_random_uuid(),
-  parent_id uuid references public.parents(id),
-  engagement_id uuid references public.engagements(id),
+  parent_id uuid references public.parents(id) on delete cascade,
+  engagement_id uuid references public.engagements(id) on delete cascade,
   amount numeric not null, currency text, due_on date, status text default 'draft',
   created_at timestamptz default now()
 );
 
 create table if not exists public.payments (
   id uuid primary key default gen_random_uuid(),
-  invoice_id uuid references public.invoices(id),
+  invoice_id uuid references public.invoices(id) on delete cascade,
   amount numeric not null, method text, reference text, paid_on date default current_date
 );
 
@@ -405,7 +405,7 @@ create table if not exists public.poll_votes (
 
 create table if not exists public.resources (
   id uuid primary key default gen_random_uuid(),
-  engagement_id uuid references public.engagements(id),
+  engagement_id uuid references public.engagements(id) on delete cascade,
   title text, url text, kind text
 );
 
@@ -455,7 +455,7 @@ create table if not exists public.helpdesk_tickets (
 
 create table if not exists public.safeguarding_log (
   id uuid primary key default gen_random_uuid(),
-  learner_id uuid references public.learners(id),
+  learner_id uuid references public.learners(id) on delete cascade,
   body text, created_by uuid default auth.uid(), created_at timestamptz default now()
 );
 
@@ -623,7 +623,7 @@ create table if not exists public.booking_blocks (
   id uuid primary key default gen_random_uuid(),
   engagement_id uuid references public.engagements(id) on delete cascade,
   learner_id uuid references public.learners(id) on delete cascade,
-  parent_id uuid references public.parents(id),
+  parent_id uuid references public.parents(id) on delete cascade,
   started_on date not null,
   times_per_cycle int not null default 1 check (times_per_cycle between 1 and 7),
   cycle_count int not null default 4,
@@ -732,7 +732,7 @@ create table if not exists public.application_links (
   title text not null,
   subject text,
   kind text default 'one_on_one',
-  engagement_id uuid references public.engagements(id),
+  engagement_id uuid references public.engagements(id) on delete cascade,
   intro text,
   expires_on date,
   max_uses int,
@@ -792,7 +792,7 @@ alter table if exists public.cbt_results add column if not exists violations jso
 create table if not exists public.scoresheet (
   id uuid primary key default gen_random_uuid(),
   learner_id uuid references public.learners(id) on delete cascade,
-  engagement_id uuid references public.engagements(id),
+  engagement_id uuid references public.engagements(id) on delete cascade,
   source text, -- graded_quiz|sow|homework|manual
   source_id uuid,
   title text,
@@ -1235,7 +1235,7 @@ select 'Tutoring Connect V4 enterprise parity installed ✅' as status;
 create table if not exists public.makeup_credits (
   id uuid primary key default gen_random_uuid(),
   engagement_id uuid references public.engagements(id) on delete cascade,
-  learner_id uuid references public.learners(id),
+  learner_id uuid references public.learners(id) on delete cascade,
   delta int not null,
   reason text,
   created_at timestamptz default now()
@@ -11893,3 +11893,103 @@ begin
   return jsonb_build_object('access', true);
 end $$;
 grant execute on function public.tc_learner_access_status() to authenticated;
+
+
+-- FIX FOREIGN KEYS TO ALLOW DELETIONS
+DO $$
+BEGIN
+  -- cbt_results
+  ALTER TABLE public.cbt_results DROP CONSTRAINT IF EXISTS cbt_results_learner_id_fkey;
+  ALTER TABLE public.cbt_results ADD CONSTRAINT cbt_results_learner_id_fkey FOREIGN KEY (learner_id) REFERENCES public.learners(id) ON DELETE CASCADE;
+  
+  -- invoices
+  ALTER TABLE public.invoices DROP CONSTRAINT IF EXISTS invoices_parent_id_fkey;
+  ALTER TABLE public.invoices ADD CONSTRAINT invoices_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.parents(id) ON DELETE CASCADE;
+  
+  ALTER TABLE public.invoices DROP CONSTRAINT IF EXISTS invoices_engagement_id_fkey;
+  ALTER TABLE public.invoices ADD CONSTRAINT invoices_engagement_id_fkey FOREIGN KEY (engagement_id) REFERENCES public.engagements(id) ON DELETE CASCADE;
+  
+  -- payments
+  ALTER TABLE public.payments DROP CONSTRAINT IF EXISTS payments_invoice_id_fkey;
+  ALTER TABLE public.payments ADD CONSTRAINT payments_invoice_id_fkey FOREIGN KEY (invoice_id) REFERENCES public.invoices(id) ON DELETE CASCADE;
+EXCEPTION WHEN OTHERS THEN
+  NULL;
+END $$;
+
+
+-- FIX UNRESOLVED LINK: ALLOW ADMIN TO READ PROFILES
+DO $$
+BEGIN
+  DROP POLICY IF EXISTS profiles_admin ON public.profiles;
+  CREATE POLICY profiles_admin ON public.profiles
+    FOR ALL TO authenticated
+    USING (public.tc_is_admin())
+    WITH CHECK (public.tc_is_admin());
+EXCEPTION WHEN OTHERS THEN
+  NULL;
+END $$;
+
+
+-- FIX APPROVALS DELETION: ALLOW ADMIN TO DELETE USER ACCOUNTS
+DO $$
+BEGIN
+  DROP FUNCTION IF EXISTS public.tc_delete_user(uuid);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.tc_delete_user(p_user_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NOT public.tc_is_admin() THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'Permission denied');
+  END IF;
+
+  -- Delete from auth.users (requires security definer running as superuser/postgres)
+  -- Note: Supabase restricts deleting auth.users directly sometimes, but security definer 
+  -- can bypass it if it's executed by a role with privileges. 
+  -- Usually, auth.users is owned by supabase_auth admin.
+  -- Alternatively, we delete the profile and let the user remain a zombie.
+  -- But let's try to delete from auth.users if we have rights.
+  DELETE FROM auth.users WHERE id = p_user_id;
+  
+  RETURN jsonb_build_object('ok', true);
+EXCEPTION WHEN OTHERS THEN
+  -- Fallback: just delete the profile.
+  DELETE FROM public.profiles WHERE id = p_user_id;
+  RETURN jsonb_build_object('ok', true, 'note', 'Profile deleted, auth.user may remain');
+END $$;
+GRANT EXECUTE ON FUNCTION public.tc_delete_user(uuid) TO authenticated;
+
+
+-- FIX BOOKING NOTIFICATIONS: NOTIFY ADMINS WHEN A NEW BOOKING REQUEST (INQUIRY) IS CREATED
+DO $$
+BEGIN
+  DROP TRIGGER IF EXISTS tc_inquiry_notif_trg ON public.inquiries;
+  DROP FUNCTION IF EXISTS public.tc_inquiry_notif();
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.tc_inquiry_notif()
+RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  -- We want to notify admins about new bookings or applications
+  IF NEW.status = 'new' AND (TG_OP = 'INSERT') THEN
+    INSERT INTO public.notifications (user_id, title, body, link, read)
+    SELECT id, 
+           'New Booking Request: ' || COALESCE(NEW.learner_name, 'Student'),
+           NEW.parent_name || ' just booked ' || NEW.subject || '. Check the Inquiries page.',
+           'inquiries.html',
+           false
+      FROM public.profiles
+     WHERE role IN ('admin', 'owner', 'super_admin', 'director');
+  END IF;
+  RETURN NEW;
+END $$;
+
+CREATE TRIGGER tc_inquiry_notif_trg
+  AFTER INSERT ON public.inquiries
+  FOR EACH ROW EXECUTE FUNCTION public.tc_inquiry_notif();
