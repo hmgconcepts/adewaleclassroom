@@ -128,7 +128,17 @@
             <div class="form-group"><label>Subject wanted</label><input class="form-input" name="subject" placeholder="IGCSE Maths, SAT, WAEC English…"></div>
             <div class="form-group"><label>1:1 or group</label>
               <select class="form-select" name="kind"><option value="one_on_one">One-to-one</option><option value="group">Group</option><option value="unsure">Not sure</option></select></div>
-            <div class="form-group"><label>Timezone</label><input class="form-input" name="timezone" value="Africa/Lagos"></div>
+            <div class="form-group"><label>Timezone</label><select class="form-select" name="timezone">
+<option value="Africa/Lagos">Africa/Lagos (WAT)</option>
+<option value="Europe/London">Europe/London (GMT/BST)</option>
+<option value="America/New_York">America/New_York (EST/EDT)</option>
+<option value="America/Chicago">America/Chicago (CST/CDT)</option>
+<option value="America/Toronto">America/Toronto (EST/EDT)</option>
+<option value="Asia/Dubai">Asia/Dubai (GST)</option>
+<option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
+<option value="Australia/Sydney">Australia/Sydney (AEST/AEDT)</option>
+<option value="UTC">UTC</option>
+</select></div>
             <div class="form-group" style="grid-column:1/-1"><label>Notes / goals</label><textarea class="form-textarea" name="notes"></textarea></div>
           </div>
           <button class="btn btn-primary" type="submit">Submit application</button>
