@@ -12002,8 +12002,91 @@ DO $$
 BEGIN
   -- We create a view that runs as the owner (postgres) to bypass RLS,
   -- allowing admins to read profile names for the lookup dropdowns safely.
-  EXECUTE 'CREATE OR REPLACE VIEW public.tc_profile_lookups AS SELECT id, full_name, email, role FROM public.profiles;';
+  EXECUTE 'CREATE OR REPLACE VIEW public.tc_profile_lookups AS SELECT id, coalesce(full_name, email, 'Unnamed Account') as full_name, email, role FROM public.profiles;';
   EXECUTE 'GRANT SELECT ON public.tc_profile_lookups TO authenticated;';
 EXCEPTION WHEN OTHERS THEN
   NULL;
 END $$;
+
+
+-- FIX FREE CLASS ELIGIBILITY: ALLOW FREE CLASS REGISTRATIONS TO ACT AS CBT CANDIDATES
+DO $$
+BEGIN
+  DROP FUNCTION IF EXISTS public.tc_cbt_get_exam(text, text);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+CREATE OR REPLACE FUNCTION public.tc_cbt_get_exam(p_code text, p_student_no text default '')
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER STABLE SET search_path = public AS $$$$
+DECLARE
+  exam public.cbt_exams%rowtype;
+  learner public.learners%rowtype;
+  free_reg record;
+  wanted text := regexp_replace(upper(coalesce(p_student_no,'')), '[^A-Z0-9]', '', 'g');
+  roster_count int := 0;
+  candidate jsonb := 'null'::jsonb;
+  mode text;
+BEGIN
+  SELECT * INTO exam FROM public.cbt_exams
+   WHERE regexp_replace(upper(coalesce(code,'')), '[^A-Z0-9]', '', 'g')
+       = regexp_replace(upper(coalesce(p_code,'')), '[^A-Z0-9]', '', 'g')
+   LIMIT 1;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('ok', false, 'error', 'unknown_code',
+      'message', 'Unknown quiz code. Check the code your tutor shared.');
+  END IF;
+  mode := lower(coalesce(exam.exam_mode, 'open'));
+  
+  IF wanted <> '' THEN
+    SELECT * INTO learner FROM public.learners
+     WHERE regexp_replace(upper(coalesce(student_no,'')), '[^A-Z0-9]', '', 'g') = wanted
+        OR lower(email) = lower(trim(p_student_no))
+     LIMIT 1;
+    IF FOUND THEN
+      candidate := jsonb_build_object(
+        'id', learner.id, 'student_no', learner.student_no,
+        'full_name', learner.full_name, 'year_group', learner.year_group, 'email', learner.email);
+    ELSE
+      -- Check free registrations
+      SELECT * INTO free_reg FROM public.tc_free_registrations
+       WHERE regexp_replace(upper(coalesce(reg_no,'')), '[^A-Z0-9]', '', 'g') = wanted
+       LIMIT 1;
+      IF FOUND THEN
+        candidate := jsonb_build_object(
+          'id', free_reg.id, 'student_no', free_reg.reg_no,
+          'full_name', free_reg.full_name, 'year_group', free_reg.level, 'email', free_reg.email);
+      END IF;
+    END IF;
+  END IF;
+
+  IF mode = 'registered' THEN
+    IF wanted = '' THEN
+      RETURN jsonb_build_object('ok', false, 'error', 'student_id_required',
+        'identity_mode', 'registered',
+        'title', exam.title, 'quiz_kind', exam.quiz_kind, 'exam_mode', 'registered',
+        'message', 'This examination is restricted to registered learners. Enter your student ID (for example TC-0001). Your official name will be loaded automatically — do not type a name to identify yourself.');
+    END IF;
+    IF candidate IS NULL OR candidate::text = 'null' THEN
+      RETURN jsonb_build_object('ok', false, 'error', 'invalid_student_id',
+        'identity_mode', 'registered',
+        'message', 'No registered learner matches that student ID. Contact the studio — do not invent a name.');
+    END IF;
+    SELECT count(*) INTO roster_count FROM public.cbt_roster WHERE exam_id = exam.id;
+    IF roster_count > 0 AND NOT EXISTS (
+      SELECT 1 FROM public.cbt_roster r
+       WHERE r.exam_id = exam.id
+         AND (r.learner_id = (candidate->>'id')::uuid
+           OR regexp_replace(upper(coalesce(r.student_no,'')), '[^A-Z0-9]', '', 'g') = wanted)
+    ) THEN
+      RETURN jsonb_build_object('ok', false, 'error', 'not_on_roster',
+        'identity_mode', 'registered',
+        'message', 'You are registered in the studio but not on the roster for this paper.');
+    END IF;
+    RETURN jsonb_build_object('ok', true, 'identity_mode', 'registered', 'candidate', candidate)
+      || to_jsonb(exam);
+  END IF;
+
+  RETURN jsonb_build_object('ok', true, 'identity_mode', 'open', 'candidate', candidate)
+    || to_jsonb(exam);
+END $$$$;
+GRANT EXECUTE ON FUNCTION public.tc_cbt_get_exam(text, text) TO anon, authenticated;
