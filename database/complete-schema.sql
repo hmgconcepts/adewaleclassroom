@@ -11796,7 +11796,9 @@ begin
     'youtube_url', coh.youtube_url,
     'whatsapp_url', case when coh.require_cbt then null else coh.whatsapp_url end,
     'telegram_url', case when coh.require_cbt then null else coh.telegram_url end,
-    'schedule', coh.schedule_text
+    'schedule', coh.schedule_text,
+    'require_cbt', coh.require_cbt,
+    'cbt_code', coh.cbt_code
   );
 end $$;
 
@@ -11923,8 +11925,8 @@ BEGIN
   DROP POLICY IF EXISTS profiles_admin ON public.profiles;
   CREATE POLICY profiles_admin ON public.profiles
     FOR ALL TO authenticated
-    USING (public.tc_is_admin())
-    WITH CHECK (public.tc_is_admin());
+    USING (public.is_admin())
+    WITH CHECK (public.is_admin());
 EXCEPTION WHEN OTHERS THEN
   NULL;
 END $$;
