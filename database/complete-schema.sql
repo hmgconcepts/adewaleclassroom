@@ -2574,7 +2574,8 @@ grant execute on function public.tc_my_children() to authenticated;
 -- One child's headline numbers, in a single round trip.
 create or replace function public.tc_child_summary(p_learner uuid)
 returns jsonb
-language plpgsql stable security definer set search_path = public
+language plpgsql
+security definer set search_path = public
 as $$
 declare
   v_avg numeric; v_count int; v_att numeric; v_next timestamptz; v_hours numeric;
@@ -2636,7 +2637,8 @@ create index if not exists poll_votes_poll_idx on public.poll_votes (poll_id);
 -- Tally a poll without exposing who voted for what on an anonymous poll.
 create or replace function public.tc_poll_results(p_poll uuid)
 returns jsonb
-language plpgsql stable security definer set search_path = public
+language plpgsql
+security definer set search_path = public
 as $$
 declare
   v_poll record; v_total int; v_rows jsonb; v_closed boolean; v_voted boolean;
@@ -2709,7 +2711,8 @@ create policy poll_votes_own on public.poll_votes
 -- ---------------------------------------------------------------------------
 create or replace function public.tc_family_statement(p_parent uuid default null)
 returns jsonb
-language plpgsql stable security definer set search_path = public
+language plpgsql
+security definer set search_path = public
 as $$
 declare
   v_parent uuid; v_rows jsonb; v_total numeric; v_paid numeric; v_name text;
@@ -3269,7 +3272,6 @@ create policy tc_license_history_read on public.tc_license_history
 create or replace function public.tc_license_status()
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -3589,7 +3591,6 @@ grant execute on function public.tc_sibling_discount_pct(int) to authenticated;
 create or replace function public.tc_family_statement(p_parent uuid default null)
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -3887,7 +3888,6 @@ end $$;
 create or replace function public.tc_license_status()
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -4025,7 +4025,6 @@ revoke all on function public.tc_schema_info() from public, anon;
 create or replace function public.tc_security_report()
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -4193,7 +4192,6 @@ alter table public.practice_settings add column if not exists auto_invoice_rate 
 create or replace function public.tc_wallet_balance(p_parent uuid default null)
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -4283,7 +4281,6 @@ revoke all on function public.tc_wallet_topup(uuid, numeric, text, text, text) f
 create or replace function public.tc_wallet_low_balances()
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -4437,7 +4434,6 @@ revoke all on function public.tc_create_payment_plan(jsonb) from public, anon;
 create or replace function public.tc_payment_plan_arrears()
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -4559,7 +4555,6 @@ revoke all on public.promo_codes from anon;
 create or replace function public.tc_check_promo(p_code text, p_amount numeric default 0)
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -4747,7 +4742,6 @@ revoke all on function public.tc_payroll_generate(date, date) from public, anon;
 create or replace function public.tc_tutor_performance(p_days int default 90)
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -4790,7 +4784,6 @@ create or replace function public.tc_session_conflicts(
   p_tutor uuid, p_starts timestamptz, p_minutes int default 60, p_ignore uuid default null)
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -4911,7 +4904,6 @@ create or replace function public.tc_audit_trail(p_table text default null,
                                                  p_limit int default 200)
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -4992,7 +4984,6 @@ revoke all on public.consent_records, public.data_requests from anon;
 create or replace function public.tc_export_learner(p_learner uuid)
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -5034,7 +5025,6 @@ revoke all on function public.tc_export_learner(uuid) from public, anon;
 create or replace function public.tc_anonymised_export()
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -5074,7 +5064,6 @@ create index if not exists login_audit_created_idx on public.login_audit (create
 create or replace function public.tc_security_events(p_days int default 7)
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -5209,7 +5198,6 @@ alter table if exists public.cbt_results add column if not exists auto_submitted
 create or replace function public.tc_cbt_schema_check()
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -5286,7 +5274,6 @@ alter table public.practice_settings add column if not exists mfa_grace_days    
 create or replace function public.tc_mfa_status()
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -5343,7 +5330,6 @@ revoke all on function public.tc_mfa_record(boolean, text) from public, anon;
 create or replace function public.tc_mfa_report()
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -5510,7 +5496,6 @@ create index if not exists cbt_results_learner_idx on public.cbt_results (learne
 create or replace function public.tc_cbt_exam_results(p_exam uuid)
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -5583,7 +5568,6 @@ revoke all on function public.tc_cbt_exam_results(uuid) from public, anon;
 create or replace function public.tc_cbt_result_audit(p_result uuid)
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -5653,7 +5637,6 @@ revoke all on function public.tc_cbt_result_audit(uuid) from public, anon;
 create or replace function public.tc_cbt_item_analysis(p_exam uuid)
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -5812,7 +5795,6 @@ revoke all on function public.tc_cbt_review_result(jsonb) from public, anon;
 create or replace function public.tc_cbt_exam_index()
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -6188,7 +6170,6 @@ create trigger tc_stamp_exam_author_trg
 create or replace function public.tc_my_scope()
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -6877,6 +6858,8 @@ as $$
     'ends_on', c.ends_on,
     'banner_url', c.banner_url,
     'requires_parent_consent', c.requires_parent_consent,
+    'require_cbt', c.require_cbt,
+    'cbt_code', c.cbt_code,
     'open', (c.status in ('open','running') and l.active
              and (l.expires_on is null or l.expires_on >= current_date)
              and (coalesce(l.max_uses,0) = 0 or coalesce(l.uses,0) < l.max_uses))
@@ -6905,8 +6888,8 @@ begin
   if not found then raise exception 'Registration not found.'; end if;
   if r.learner_id is not null then return r.learner_id; end if;
 
-  insert into public.learners (full_name)
-  values (r.full_name)
+  insert into public.learners (full_name, student_no, email, phone, city, timezone, year_group, origin_cohort_id)
+  values (r.full_name, r.reg_no, r.email, r.phone, r.city, r.tz, r.level, r.cohort_id)
   returning id into new_id;
 
   update public.tc_free_registrations
@@ -8581,7 +8564,6 @@ grant execute on function public.tc_blog_list(text, text) to anon, authenticated
 create or replace function public.tc_blog_get(p_slug text)
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -8715,7 +8697,6 @@ create policy documents_family on public.documents
 create or replace function public.tc_documents_render(p_id uuid)
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -8846,7 +8827,6 @@ select 'V27 contracts & consent installed' as status;
 create or replace function public.tc_unlinked_records()
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -9052,7 +9032,6 @@ grant execute on function public.tc_schema_ok() to authenticated;
 create or replace function public.tc_cbt_recent_result(p_code text, p_student_no text)
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 set row_security = off
@@ -9293,7 +9272,6 @@ select 'V27 staff-register columns installed' as status;
 create or replace function public.tc_admin_list_profiles()
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -9856,7 +9834,6 @@ select 'V29 class-link tables installed' as status;
 create or replace function public.tc_class_link_get(p_code text)
 returns jsonb
 language plpgsql
-stable
 security definer
 set search_path = public
 as $$
@@ -9946,7 +9923,7 @@ begin
       'Please tick the guardian consent box — this class is for a minor.');
   end if;
 
-  v_reg_no := 'PAID-' || to_char(now(), 'YY') || '-' || lpad(nextval('public.tc_free_reg_seq')::text, 5, '0');
+  v_reg_no := coalesce(nullif(l.prefix, ''), 'PAID') || '-' || to_char(now(), 'YY') || '-' || lpad(nextval('public.tc_paid_reg_seq_v2')::text, 4, '0');
 
   insert into public.tc_class_registrations
     (link_id, reg_no, parent_name, email, phone, learner_name, learner_year,
@@ -10044,14 +10021,25 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = public
-as $$
+as $
+declare
+  r public.tc_class_registrations%rowtype;
 begin
-  if p_status not in ('new','contacted','booked','converted','closed') then
-    return jsonb_build_object('ok', false, 'error', 'Unknown status.');
+  if not public.tc_is_manager() then
+    return jsonb_build_object('ok', false, 'error', 'Only a manager may update registration statuses.');
   end if;
-  update public.tc_class_registrations set status = p_status where id = p_reg;
-  return jsonb_build_object('ok', true, 'status', p_status);
-end $$;
+  update public.tc_class_registrations set status = p_status where id = p_reg returning * into r;
+  
+  if p_status = 'converted' and r.learner_name is not null then
+    -- Convert into learner automatically
+    if not exists (select 1 from public.learners where student_no = r.reg_no) then
+      insert into public.learners (full_name, student_no, email, phone, year_group)
+      values (r.learner_name, r.reg_no, r.email, r.phone, r.learner_year);
+    end if;
+  end if;
+
+  return jsonb_build_object('ok', true);
+end $;
 
 revoke all on function public.tc_class_reg_status(uuid, text) from public, anon;
 grant execute on function public.tc_class_reg_status(uuid, text) to authenticated;
@@ -11812,8 +11800,105 @@ begin
     'cohort', coh.name,
     'meeting_url', coh.meeting_url,
     'youtube_url', coh.youtube_url,
-    'whatsapp_url', coh.whatsapp_url,
-    'telegram_url', coh.telegram_url,
+    'whatsapp_url', case when coh.require_cbt then null else coh.whatsapp_url end,
+    'telegram_url', case when coh.require_cbt then null else coh.telegram_url end,
     'schedule', coh.schedule_text
   );
 end $$;
+
+
+-- FREE CLASSES ELIGIBILITY & AUTO DELETION
+alter table public.tc_free_cohorts add column if not exists require_cbt boolean default false;
+alter table public.tc_free_cohorts add column if not exists cbt_code text;
+alter table public.tc_free_cohorts add column if not exists cbt_pass_mark numeric default 50;
+
+alter table public.tc_class_links add column if not exists prefix text;
+alter table public.learners add column if not exists origin_cohort_id uuid references public.tc_free_cohorts(id) on delete cascade;
+
+create sequence if not exists public.tc_free_reg_seq_v2;
+create or replace function public.tc_free_reg_number()
+returns trigger language plpgsql as $$
+declare c text;
+begin
+  if new.reg_no is null or new.reg_no = '' then
+    select coalesce(nullif(code, ''), 'FREE') into c
+      from public.tc_free_cohorts where id = new.cohort_id;
+    new.reg_no := upper(c) || '-' || lpad(nextval('public.tc_free_reg_seq_v2')::text, 4, '0');
+  end if;
+  new.updated_at := now();
+  return new;
+end $$;
+
+create sequence if not exists public.tc_paid_reg_seq_v2;
+
+create or replace function public.tc_free_cohort_cleanup_trg()
+returns trigger language plpgsql as $$
+begin
+  if new.status in ('closed', 'completed', 'archived') and old.status not in ('closed', 'completed', 'archived') then
+    delete from public.profiles where id in (select user_id from public.learners where origin_cohort_id = new.id and user_id is not null);
+    delete from public.learners where origin_cohort_id = new.id;
+    delete from public.tc_free_registrations where cohort_id = new.id;
+  end if;
+  return new;
+end $$;
+
+drop trigger if exists tc_free_cohort_cleanup on public.tc_free_cohorts;
+create trigger tc_free_cohort_cleanup
+  after update on public.tc_free_cohorts
+  for each row execute function public.tc_free_cohort_cleanup_trg();
+
+create or replace function public.tc_cbt_eligibility_links(p_student_no text, p_score numeric)
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare
+  r record;
+begin
+  select c.* into r
+    from public.tc_free_registrations reg
+    join public.tc_free_cohorts c on c.id = reg.cohort_id
+   where reg.reg_no = p_student_no
+     and c.require_cbt = true
+   limit 1;
+   
+  if not found then
+    return jsonb_build_object('ok', false);
+  end if;
+  
+  if coalesce(p_score, 0) >= coalesce(r.cbt_pass_mark, 50) then
+    return jsonb_build_object(
+      'ok', true, 'passed', true,
+      'whatsapp_url', r.whatsapp_url,
+      'telegram_url', r.telegram_url
+    );
+  else
+    return jsonb_build_object('ok', true, 'passed', false, 'pass_mark', r.cbt_pass_mark);
+  end if;
+end $$;
+grant execute on function public.tc_cbt_eligibility_links(text, numeric) to anon, authenticated;
+
+create or replace function public.tc_learner_access_status()
+returns jsonb language plpgsql security definer set search_path=public as $$
+declare
+  v_uid uuid := auth.uid();
+  v_lid uuid;
+  v_active_engs int;
+  v_is_free boolean;
+begin
+  if v_uid is null then return jsonb_build_object('access', true); end if;
+  if not public.is_self_learner() then return jsonb_build_object('access', true); end if;
+  
+  select id, origin_cohort_id is not null into v_lid, v_is_free from public.learners where user_id = v_uid limit 1;
+  if v_is_free then return jsonb_build_object('access', true); end if;
+  
+  select count(*) into v_active_engs
+    from public.engagement_members em
+    join public.engagements e on e.id = em.engagement_id
+   where em.learner_id = v_lid
+     and e.status = 'active'
+     and (e.hours_prepaid is null or e.hours_prepaid = 0 or coalesce(e.hours_used,0) < e.hours_prepaid);
+     
+  if v_active_engs = 0 and exists (select 1 from public.engagement_members where learner_id = v_lid) then
+    return jsonb_build_object('access', false, 'reason', 'cycle_completed');
+  end if;
+  return jsonb_build_object('access', true);
+end $$;
+grant execute on function public.tc_learner_access_status() to authenticated;
