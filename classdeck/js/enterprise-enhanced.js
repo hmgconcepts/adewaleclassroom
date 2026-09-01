@@ -24,7 +24,7 @@ window.HMGFlyer = {
     });
   },
   clear: function() { localStorage.removeItem("hmg_flyer_img"); this._img = null; },
-  get: function() { if(!this._img) { try { var d = localStorage.getItem("hmg_flyer_img"); if(d) { this._img = new Image(); this._img.src = d; } } catch(e) {} } return (this._img && this._img.complete && this._img.naturalWidth) ? this._img : null; },
+  get: function() { if(!this._img) { try { var d = localStorage.getItem("hmg_flyer_img"); if(d) { this._img = new Image(); this._img.src = d; } } catch(e) {} } return this._img; },
   has: function() { return !!this.get(); },
   draw: function(ctx, W, H) {
     var i = this.get(); if(!i) return;

@@ -3955,6 +3955,7 @@ onRoomEvent = function (type, p) {
     const hasHmg = !!window.HMGREC && typeof HMGREC.drawOutroFrame === "function";
     if (hasHmg && S && S.startTs && !S.ending && !S.ending) {
       S.ending = true;
+      S.endTs = Date.now();
       const flyerMs = S.showFlyerMs || 3000;
       const outroMs = S.outroMs || 4000;
       const totalEndMs = flyerMs + outroMs;
@@ -3964,12 +3965,7 @@ onRoomEvent = function (type, p) {
         if (remaining > 0 && window.recCanvas && window.recCtx) {
           try {
             var W = window.recCanvas.width, H = window.recCanvas.height;
-            /* Show flyer for first flyerMs seconds, then outro */
-            if (remaining > outroMs && window.HMGFlyer && typeof HMGFlyer.draw === "function") {
-              HMGFlyer.draw(window.recCtx, W, H);
-            } else {
-              HMGREC.drawOutroFrame(window.recCanvas, window.recCtx, W, H);
-            }
+            HMGREC.drawOutroFrame(window.recCanvas, window.recCtx, W, H, Date.now() - S.endTs);
             /* CBT link if available */
             var cbtUrl = localStorage.getItem("hmg_cbt_link") || "";
             if (cbtUrl && typeof window.drawCBTOverlay === "function") {
