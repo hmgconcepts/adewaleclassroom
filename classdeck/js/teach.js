@@ -1919,9 +1919,13 @@ let recMeta = { subject: "", topic: "", klass: "", students: false, brand: "", f
    Brand/footer text: from the recording dialog (remembered). */
 let recLogo = new Image();
 function loadRecLogo() {
-  const data = Store.get("rec_logo", null);
+  const data = Store.get("hmg_rec_logo") || Store.get("rec_logo", null);
   recLogo = new Image();
-  if (data) recLogo.src = data;
+  if (data) {
+    recLogo.src = data;
+  } else {
+    recLogo.src = "../assets/img/logo.png";
+  }
 }
 loadRecLogo();
 
@@ -2131,6 +2135,26 @@ async function startRecording() {
     if (window.HMG_REC_SESSION) window.HMG_REC_SESSION.startTs = Date.now();
     $("#btnRec").classList.add("active");
     toast("⏺ Recording started — " + ((activeRecorder.mimeType || mime || "webm").includes("mp4") ? "MP4" : "WebM") + " on this device when you stop", "ok", 5000);
+      if (window.HMGREC && typeof window.HMGREC.paintFrame === "function") {
+        
+    const introTime = 12;
+    const block = document.createElement('div');
+    block.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);color:#fff;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui;text-align:center';
+    block.innerHTML = '<h1 style="font-size:3rem;color:#ffb347;margin:0">🎬 RECORDING STARTED</h1><p style="font-size:1.5rem;margin:10px 0">The branded intro is currently being recorded.</p><h2 style="font-size:5rem;margin:20px 0" id="hmgRecCount">' + introTime + '</h2><p style="font-size:1.5rem;color:#10b981">Please WAIT before teaching...</p>';
+    document.body.appendChild(block);
+    let sec = introTime;
+    const int = setInterval(() => {
+      sec--;
+      const cnt = document.getElementById('hmgRecCount');
+      if (cnt) cnt.textContent = sec;
+      if (sec <= 0) {
+        clearInterval(int);
+        block.innerHTML = '<h1 style="font-size:4rem;color:#10b981;margin:0">🎙️ START TEACHING NOW!</h1>';
+        setTimeout(() => block.remove(), 1500);
+      }
+    }, 1000);
+  
+      }
   } catch (e) {
     recorder = null;
     try { recStream.getVideoTracks().forEach((t) => t.stop()); } catch {}
