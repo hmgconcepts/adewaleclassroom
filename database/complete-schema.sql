@@ -12048,7 +12048,7 @@ BEGIN
        LIMIT 1;
       IF FOUND THEN
         candidate := jsonb_build_object(
-          'id', free_reg.id, 'student_no', free_reg.reg_no,
+          'student_no', free_reg.reg_no,
           'full_name', free_reg.full_name, 'year_group', free_reg.level, 'email', free_reg.email);
       END IF;
     END IF;
@@ -12099,3 +12099,6 @@ BEGIN
     EXECUTE 'GRANT EXECUTE ON FUNCTION ' || f || ' TO anon, authenticated';
   END LOOP;
 END $$;
+
+-- Force PostgREST schema cache reload so new views are immediately available via API
+NOTIFY pgrst, 'reload schema';
