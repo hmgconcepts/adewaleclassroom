@@ -3917,9 +3917,10 @@ onRoomEvent = function (type, p) {
   drawRecordingFrame = function () {
     const S = window.HMG_REC_SESSION;
     const hasHmg = !!window.HMGREC && typeof HMGREC.paintFrame === "function";
-    /* Intro & outro phases fully replace the frame */
+    /* Render the normal lesson frame ALWAYS, so we never "cut" the main video */
+    _origRecordFrame();
+    /* Now draw the intro/outro on top of it (they should have some transparency so the video shows through) */
     if (hasHmg && S && S.startTs && HMGREC.paintFrame(recCanvas, recCtx)) {
-      /* Also draw CBT link overlay during intro */
       try {
         var cbtUrl = localStorage.getItem("hmg_cbt_link") || "";
         if (cbtUrl && typeof window.drawCBTOverlay === "function" && recCtx && recCanvas) {
@@ -3957,8 +3958,8 @@ onRoomEvent = function (type, p) {
       S.ending = true;
       S.endTs = Date.now();
       const flyerMs = S.showFlyerMs || 3000;
-      const outroMs = S.outroMs || 4000;
-      const totalEndMs = 7000;
+      const outroMs = S.outroMs || 10000;
+      const totalEndMs = 10000;
       const endDeadline = Date.now() + totalEndMs;
       (function endLoop() {
         var remaining = endDeadline - Date.now();
