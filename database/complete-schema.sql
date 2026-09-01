@@ -11974,7 +11974,7 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.tc_inquiry_notif()
-RETURNS trigger LANGUAGE plpgsql AS 1526
+RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   -- We want to notify admins about new bookings or applications
   IF NEW.status = 'new' AND (TG_OP = 'INSERT') THEN
