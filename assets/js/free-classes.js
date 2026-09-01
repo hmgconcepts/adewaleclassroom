@@ -693,6 +693,7 @@
               var socialHtml = '<div class="card" style="background:#fffbeb;border:1px solid #fcd34d;margin:10px 0" id="fr-soc-box">' +
                 '<b style="color:#92400e">Follow us to register</b>' +
                 '<p class="muted" style="margin:6px 0 10px;font-size:.85rem">Please follow/subscribe to our official channels below. The registration button will unlock automatically once you click them.</p>' +
+                '<p style="margin:6px 0 12px;font-size:.85rem;color:#b45309;font-weight:700">Once you subscribe to any of our social media platforms, you must screenshot your subscription because you will provide the screenshot of your subscription before onboarding into our platform.</p>' +
                 '<div style="display:flex;gap:8px;flex-wrap:wrap">';
               if (sl.yt) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(fsl(sl.yt))+'">📺 Subscribe on YouTube</a>';
               if (sl.fb) socialHtml += '<a class="btn btn-outline fr-soc-link" target="_blank" rel="noopener" href="'+esc(fsl(sl.fb))+'">📘 Follow on Facebook</a>';
