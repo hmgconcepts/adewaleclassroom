@@ -162,13 +162,13 @@ const HMGREC = {
 
   /** Draw the intro frame on a canvas */
   drawIntroFrame(canvas, ctx, W, H, elapsed = 0) {
-    const duration = 9000;
+    const duration = 12000;
     const t = Math.min(1, Math.max(0, elapsed / duration));
     
     // Background - Deep Royal Blue gradient
     const bgGrad = ctx.createLinearGradient(0, 0, W, H);
-    bgGrad.addColorStop(0, 'rgba(10, 15, 37, 0.85)');
-    bgGrad.addColorStop(1, 'rgba(26, 35, 82, 0.92)');
+    bgGrad.addColorStop(0, '#0a0f25');
+    bgGrad.addColorStop(1, '#1a2352');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
 
@@ -278,13 +278,13 @@ const HMGREC = {
 
   /** Draw the outro frame */
   drawOutroFrame(canvas, ctx, W, H, elapsed = 0) {
-    const duration = 10000; 
+    const duration = 12000; 
     const t = Math.min(1, Math.max(0, elapsed / duration));
     
     // Background - Deep Royal Blue gradient
     const bgGrad = ctx.createLinearGradient(0, 0, W, H);
-    bgGrad.addColorStop(0, 'rgba(10, 15, 37, 0.85)');
-    bgGrad.addColorStop(1, 'rgba(26, 35, 82, 0.92)');
+    bgGrad.addColorStop(0, '#0a0f25');
+    bgGrad.addColorStop(1, '#1a2352');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
     
@@ -950,7 +950,7 @@ window.CDSecurity = CDSecurity;
     const W = canvas.width, H = canvas.height;
     if (s.ending) { this.drawOutroFrame(canvas, ctx, W, H, Date.now() - (s.endTs || Date.now())); return true; }
     const elapsed = Date.now() - s.startTs;
-    if (elapsed < (s.introMs || 9000)) {
+    if (elapsed < (s.introMs || 12000)) {
       this.drawIntroFrame(canvas, ctx, W, H, elapsed);
       this.drawLowerThird(ctx, W, H, this.meta.lowerThird, Date.now());
       if (this.meta.adText) this.drawAdOverlay(ctx, W, H, Date.now(), s.startTs);
@@ -1139,39 +1139,19 @@ window.addEventListener("beforeunload", () => {
 
 window.drawCBTOverlay = function(ctx, W, H, url) {
   if (!url) return;
-  const barH = Math.round(H * 0.07);
-  const padding = 25;
+  const originalHeadH = Math.round(H * 0.09);
+  const extraH = Math.round(H * 0.045);
   
   ctx.save();
-  ctx.font = 'bold ' + Math.round(barH * 0.45) + 'px system-ui';
-  const text = '🔗 TAKE QUIZ: ' + url;
-  const textW = ctx.measureText(text).width;
-  const badgeW = textW + (padding * 2);
+  // Fill the extra header space with a distinct brand color (emerald-700)
+  ctx.fillStyle = 'rgba(4, 120, 87, 1)';
+  ctx.fillRect(0, originalHeadH, W, extraH);
   
-  // Position: Top Right
-  const x = W - badgeW - 20;
-  const y = 20;
-  
-  // Glowing shadow
-  ctx.shadowColor = 'rgba(16, 185, 129, 0.6)';
-  ctx.shadowBlur = 15;
-  ctx.shadowOffsetY = 4;
-  
-  // Pill background
-  ctx.fillStyle = 'rgba(4, 120, 87, 0.95)'; // emerald-700
-  ctx.beginPath();
-  ctx.roundRect(x, y, badgeW, barH, barH / 2);
-  ctx.fill();
-  
-  // Reset shadow for text
-  ctx.shadowBlur = 0;
-  ctx.shadowOffsetY = 0;
-  
-  // Text
   ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold ' + Math.round(extraH * 0.55) + 'px system-ui';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, x + (badgeW / 2), y + (barH / 2));
+  ctx.fillText('🔗 TAKE QUIZ: ' + url, W / 2, originalHeadH + (extraH / 2));
   
   ctx.restore();
 };
