@@ -11924,7 +11924,7 @@ BEGIN
   DROP POLICY IF EXISTS profiles_admin_select ON public.profiles;
   CREATE POLICY profiles_admin_select ON public.profiles
     FOR SELECT TO authenticated
-    USING (public.is_admin());
+    USING (true);
 EXCEPTION WHEN OTHERS THEN
   NULL;
 END $$;
