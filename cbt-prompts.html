@@ -216,6 +216,16 @@
 </div>
 <div id="toast-container" class="toast-container"></div>
 <script>
+function toast(msg, type, ms) {
+  const c = document.getElementById('toast-container');
+  if (!c) return alert(msg);
+  const el = document.createElement('div');
+  el.className = 'toast ' + (type || 'info');
+  el.textContent = msg;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), ms || 3500);
+}
+
 
 /* Which extra input each pack actually uses — so the form only ever shows
    fields that matter to the selected pack. */
@@ -368,7 +378,7 @@ function syncSubjectTopics(force){
 function build(e){
   syncFields();
   renderPrompt();
-  if (e && e.type === 'click' && e.target && e.target.id === 'build') {
+  if (e && e.type === 'click') {
     const out = document.getElementById('out');
     if (out) {
       out.style.transition = 'outline 0.3s ease';
