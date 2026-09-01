@@ -12102,7 +12102,7 @@ BEGIN
     FOR SELECT TO authenticated
     USING (true);
 EXCEPTION WHEN OTHERS THEN NULL;
-END $;
+END $$;
 
 -- VERY END OF FILE: Ensure all necessary functions are executable by anon and authenticated
 DO $$
