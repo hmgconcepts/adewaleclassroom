@@ -2051,6 +2051,7 @@ const CBT = {
       '   option order can be randomised per candidate.'
     ].concat(P.checks || []).map(function (c) { return '[ ] ' + fill(c); }).join('\n');
 
+    const topicLine = (key === 'multi_subject' || key === 'multisubject') ? 'multiple subjects (' + fill('{{SUBJECTS}}') + ')' : '"' + topic + '"';
     return 'PACK: ' + P.label.toUpperCase() + '\n\n' +
 'ROLE\n' +
 'You are ' + fill(P.role) + '.\n' +
@@ -2059,7 +2060,7 @@ const CBT = {
 'MISSION FOR THIS PARTICULAR PAPER\n' +
 fill(P.mission) + '\n\n' +
 'TASK\n' +
-'Produce EXACTLY ' + n + ' assessment items on "' + topic + '" for a ' +
+'Produce EXACTLY ' + n + ' assessment items on ' + topicLine + ' for a ' +
 (klass || 'tutoring learner') + '\nsitting ' + examType + ' in ' + subject + '.\n\n' +
 rule + '\nOUTPUT CONTRACT — READ TWICE. THIS IS THE MOST IMPORTANT PART.\n' + rule + '\n\n' +
 '0. OUTPUT A DOWNLOADABLE .CSV FILE — NOT RAW CSV TEXT.\n' +
