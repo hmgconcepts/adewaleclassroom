@@ -11942,7 +11942,7 @@ RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
-AS $
+AS $$
 BEGIN
   IF NOT public.tc_is_admin() THEN
     RETURN jsonb_build_object('ok', false, 'error', 'Permission denied');
@@ -11974,7 +11974,7 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.tc_inquiry_notif()
-RETURNS trigger LANGUAGE plpgsql AS $
+RETURNS trigger LANGUAGE plpgsql AS 1526
 BEGIN
   -- We want to notify admins about new bookings or applications
   IF NEW.status = 'new' AND (TG_OP = 'INSERT') THEN
@@ -12087,7 +12087,7 @@ END $$;
 GRANT EXECUTE ON FUNCTION public.tc_cbt_get_exam(text, text) TO anon, authenticated;
 
 
--- Ensure all necessary functions are executable by anon and authenticated
+-- VERY END OF FILE: Ensure all necessary functions are executable by anon and authenticated
 DO $$
 DECLARE f text;
 BEGIN
@@ -12098,10 +12098,4 @@ BEGIN
   LOOP
     EXECUTE 'GRANT EXECUTE ON FUNCTION ' || f || ' TO anon, authenticated';
   END LOOP;
-  
-  -- Explicitly grant specific ones in case of issues
-  GRANT EXECUTE ON FUNCTION public.tc_free_register TO anon, authenticated;
-  GRANT EXECUTE ON FUNCTION public.tc_free_cohort_public TO anon, authenticated;
-  GRANT EXECUTE ON FUNCTION public.tc_cbt_get_exam TO anon, authenticated;
-EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
