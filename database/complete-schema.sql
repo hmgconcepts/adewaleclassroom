@@ -12088,7 +12088,7 @@ GRANT EXECUTE ON FUNCTION public.tc_cbt_get_exam(text, text) TO anon, authentica
 
 
 
-DO $
+DO $$
 BEGIN
   -- Drop any conflicting policies
   DROP POLICY IF EXISTS profiles_self_read ON public.profiles;
