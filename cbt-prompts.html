@@ -365,9 +365,21 @@ function syncSubjectTopics(force){
   }
 }
 
-function build(){
+function build(e){
   syncFields();
   renderPrompt();
+  if (e && e.type === 'click' && e.target && e.target.id === 'build') {
+    const out = document.getElementById('out');
+    if (out) {
+      out.style.transition = 'outline 0.3s ease';
+      out.style.outline = '2px solid #10b981';
+      setTimeout(() => out.style.outline = 'none', 600);
+      out.scrollIntoView({behavior: 'smooth', block: 'center'});
+    }
+    if (typeof window.toast === 'function') {
+      window.toast('Prompt successfully built and updated below! 👇', 'success', 3000);
+    }
+  }
 }
 
 /* Rewrites ONLY the generated-prompt textarea. Safe to call on every
