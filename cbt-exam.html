@@ -583,6 +583,8 @@ document.getElementById('start').onclick = async () => {
 };
 
 async function finish() {
+  const btn = document.getElementById('submit');
+  if (btn) { btn.disabled = true; btn.textContent = 'Submitting...'; }
   /* V39 item 4 — silence any read-aloud the moment the paper is submitted, so
      a queued utterance cannot keep speaking a question over the results screen. */
   if (window.CBTSpeech) CBTSpeech.stop();
@@ -667,6 +669,7 @@ async function finish() {
       } catch (_) {}
       console.error('[CBT] result was NOT saved to the server:', state.saveError);
     }
+    if (btn) { btn.disabled = false; btn.textContent = 'Submit Paper'; }
   } else {
     state.saved = false;
     state.saveError = 'No database configured for this studio.';
