@@ -11944,7 +11944,7 @@ RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
-AS $$
+AS $$$
 BEGIN
   IF NOT public.tc_is_admin() THEN
     RETURN jsonb_build_object('ok', false, 'error', 'Permission denied');
@@ -11976,7 +11976,7 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.tc_inquiry_notif()
-RETURNS trigger LANGUAGE plpgsql AS $$
+RETURNS trigger LANGUAGE plpgsql AS $$$
 BEGIN
   -- We want to notify admins about new bookings or applications
   IF NEW.status = 'new' AND (TG_OP = 'INSERT') THEN
@@ -12014,7 +12014,7 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.tc_cbt_get_exam(p_code text, p_student_no text default '')
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER STABLE SET search_path = public AS $
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER STABLE SET search_path = public AS $$
 DECLARE
   exam public.cbt_exams%rowtype;
   learner public.learners%rowtype;
@@ -12085,5 +12085,5 @@ BEGIN
 
   RETURN jsonb_build_object('ok', true, 'identity_mode', 'open', 'candidate', candidate)
     || to_jsonb(exam);
-END $;
+END $$;
 GRANT EXECUTE ON FUNCTION public.tc_cbt_get_exam(text, text) TO anon, authenticated;
