@@ -70,7 +70,7 @@ const CDCrashSafe = {
       const tx = db.transaction(this.storeName, 'readwrite');
       const store = tx.objectStore(this.storeName);
       const all = await new Promise(r => { const q = store.getAll(); q.onsuccess = () => r(q.result); });
-      all.filter(r => r.sessionId === sessionId).forEach(r => store.delete(r.id));
+      all.filter(r => sessionId === 'all' || r.sessionId === sessionId).forEach(r => store.delete(r.id));
       await new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onerror = reject; });
     } catch {}
   },
@@ -172,26 +172,32 @@ const HMGREC = {
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
 
+    // Dynamic grid overlay for tech/modern feel
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.lineWidth = 1;
+    for(let i=0; i<W; i+=60) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, H); ctx.stroke(); }
+    for(let i=0; i<H; i+=60) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(W, i); ctx.stroke(); }
+
     ctx.save();
     
-    // Scene 1: Logo & Brand (0 to 40%)
-    // Scene 2: Topic & Details (40% to 100%)
+    // Scene 1: Logo & Brand (0 to 45%)
+    // Scene 2: Topic & Details (45% to 100%)
     
-    let alpha1 = 0, yOffset1 = 50;
+    let alpha1 = 0, yOffset1 = 50, scale1 = 0.8;
     let alpha2 = 0, xOffset2 = -50;
 
-    if (t < 0.4) {
-      // Fade in and slide up
+    if (t < 0.45) {
       const localT = Math.min(1, t / 0.15);
       alpha1 = localT;
       yOffset1 = 50 * (1 - localT);
-      // Fade out at end of Scene 1
-      if (t > 0.3) {
-         alpha1 = 1 - (t - 0.3) / 0.1;
+      scale1 = 0.8 + 0.2 * localT;
+      
+      // Fade out
+      if (t > 0.35) {
+         alpha1 = 1 - (t - 0.35) / 0.1;
       }
     } else {
-      // Scene 2
-      const localT = Math.min(1, (t - 0.4) / 0.15);
+      const localT = Math.min(1, (t - 0.45) / 0.15);
       alpha2 = localT;
       xOffset2 = -50 * (1 - localT);
       if (t > 0.9) {
@@ -202,28 +208,36 @@ const HMGREC = {
     // --- SCENE 1 ---
     if (alpha1 > 0) {
       ctx.globalAlpha = alpha1;
-      // Logo
+      ctx.translate(W/2, H/2);
+      ctx.scale(scale1, scale1);
+      ctx.translate(-W/2, -H/2);
+      
       let logoBottom = H * 0.4;
       if (this.meta.brandLogo && this.meta.brandLogo.complete && this.meta.brandLogo.naturalWidth) {
         const lw = Math.min(W * 0.25, 200);
         const lh = lw * (this.meta.brandLogo.naturalHeight / this.meta.brandLogo.naturalWidth);
         ctx.drawImage(this.meta.brandLogo, (W - lw) / 2, H * 0.3 - lh/2 + yOffset1, lw, lh);
         logoBottom = H * 0.3 + lh/2 + 20;
+      } else {
+        ctx.fillStyle = '#ffb347';
+        ctx.font = 'bold ' + Math.round(H * 0.1) + 'px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText('🎓', W / 2, H * 0.3 + yOffset1);
+        logoBottom = H * 0.3 + 40;
       }
       
-      // Brand Name
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold ' + Math.round(H * 0.08) + 'px system-ui';
       ctx.textAlign = 'center';
-      ctx.fillText(this.meta.brand || 'CLASSROOM', W / 2, logoBottom + 40 + yOffset1);
+      ctx.fillText(this.meta.brand || 'ADEWALE CLASSROOM', W / 2, logoBottom + 40 + yOffset1);
       
-      // Motto
-      ctx.fillStyle = '#4f6ef7';
+      ctx.fillStyle = '#ffb347';
       ctx.font = 'bold ' + Math.round(H * 0.035) + 'px system-ui';
       ctx.fillText(this.meta.footer || 'Learning Deliberately.', W / 2, logoBottom + 90 + yOffset1);
     }
 
     // --- SCENE 2 ---
+    ctx.restore();
     if (alpha2 > 0) {
       ctx.globalAlpha = alpha2;
       
@@ -233,27 +247,23 @@ const HMGREC = {
 
       ctx.textAlign = 'left';
       
-      // Topic
       ctx.fillStyle = '#ffb347';
-      ctx.font = 'bold ' + Math.round(H * 0.04) + 'px system-ui';
+      ctx.font = 'bold ' + Math.round(H * 0.035) + 'px system-ui';
       ctx.fillText('TODAY\'S LESSON', W * 0.18 + xOffset2, H * 0.32);
 
-      // Subject
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold ' + Math.round(H * 0.08) + 'px system-ui';
+      ctx.font = 'bold ' + Math.round(H * 0.075) + 'px system-ui';
       const subj = (this.meta.subject || 'Academic Tutoring');
       ctx.fillText(subj, W * 0.18 + xOffset2, H * 0.42);
 
-      // Subtopic
       if (this.meta.topic) {
         ctx.fillStyle = '#eef1ff';
         ctx.font = Math.round(H * 0.045) + 'px system-ui';
         ctx.fillText(this.meta.topic, W * 0.18 + xOffset2, H * 0.50);
       }
 
-      // Tutor Info
       ctx.fillStyle = '#9aa3cf';
-      ctx.font = 'bold ' + Math.round(H * 0.035) + 'px system-ui';
+      ctx.font = 'bold ' + Math.round(H * 0.03) + 'px system-ui';
       ctx.fillText('INSTRUCTOR', W * 0.18 + xOffset2, H * 0.65);
 
       ctx.fillStyle = '#ffffff';
@@ -264,61 +274,104 @@ const HMGREC = {
       ctx.font = Math.round(H * 0.03) + 'px system-ui';
       ctx.fillText(this.meta.staffTitle || 'Professional Tutor', W * 0.18 + xOffset2, H * 0.78);
     }
-    
-    ctx.restore();
   },
 
   /** Draw the outro frame */
   drawOutroFrame(canvas, ctx, W, H, elapsed = 0) {
+    const duration = 7000; 
+    const t = Math.min(1, Math.max(0, elapsed / duration));
+    
     // Background - Deep Royal Blue gradient
     const bgGrad = ctx.createLinearGradient(0, 0, W, H);
     bgGrad.addColorStop(0, '#0a0f25');
     bgGrad.addColorStop(1, '#1a2352');
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
+    
+    // Grid
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.lineWidth = 1;
+    for(let i=0; i<W; i+=60) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, H); ctx.stroke(); }
+    for(let i=0; i<H; i+=60) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(W, i); ctx.stroke(); }
 
     ctx.save();
     
-    // Draw Flyer if available
-    let flyerDrawn = false;
+    let hasFlyer = false;
+    let flyerImg = null;
     if (window.HMGFlyer) {
-       const img = window.HMGFlyer.get && window.HMGFlyer.get();
-       if (img && img.naturalWidth) {
-          const s = Math.min(W/img.naturalWidth, H/img.naturalHeight) * 0.95;
-          ctx.drawImage(img, (W-img.naturalWidth*s)/2, (H-img.naturalHeight*s)/2 - 20, img.naturalWidth*s, img.naturalHeight*s);
-          flyerDrawn = true;
-       }
+       flyerImg = window.HMGFlyer.get && window.HMGFlyer.get();
+       if (flyerImg && flyerImg.naturalWidth) hasFlyer = true;
     }
 
-    if (!flyerDrawn) {
-       // Default Outro Layout
+    // SCENE 1: Flyer (0-4 seconds) IF it exists
+    // SCENE 2: CTA & Details (4-7 seconds, or 0-7 if no flyer)
+    let flyerAlpha = 0;
+    let ctaAlpha = 0;
+    let yOffset = 0;
+    
+    if (hasFlyer) {
+       if (t < 0.55) {
+          flyerAlpha = Math.min(1, t / 0.1);
+          if (t > 0.45) flyerAlpha = 1 - (t - 0.45) / 0.1;
+       } else {
+          ctaAlpha = Math.min(1, (t - 0.55) / 0.1);
+          yOffset = 30 * (1 - ctaAlpha);
+       }
+    } else {
+       ctaAlpha = Math.min(1, t / 0.1);
+       yOffset = 30 * (1 - ctaAlpha);
+    }
+
+    // DRAW FLYER SCENE
+    if (flyerAlpha > 0 && hasFlyer) {
+       ctx.globalAlpha = flyerAlpha;
+       const s = Math.min(W/flyerImg.naturalWidth, H/flyerImg.naturalHeight) * 0.95;
+       // slowly zoom the flyer for cinematic effect
+       const zoom = 1 + (t * 0.05);
+       ctx.translate(W/2, H/2);
+       ctx.scale(zoom, zoom);
+       ctx.translate(-W/2, -H/2);
+       ctx.drawImage(flyerImg, (W-flyerImg.naturalWidth*s)/2, (H-flyerImg.naturalHeight*s)/2, flyerImg.naturalWidth*s, flyerImg.naturalHeight*s);
+       ctx.setTransform(1, 0, 0, 1, 0, 0); 
+    }
+
+    // DRAW CTA SCENE
+    if (ctaAlpha > 0) {
+       ctx.globalAlpha = ctaAlpha;
        ctx.textAlign = 'center';
        
-       // Logo
        if (this.meta.brandLogo && this.meta.brandLogo.complete && this.meta.brandLogo.naturalWidth) {
          const lw = Math.min(W * 0.15, 120);
          const lh = lw * (this.meta.brandLogo.naturalHeight / this.meta.brandLogo.naturalWidth);
-         ctx.drawImage(this.meta.brandLogo, (W - lw) / 2, H * 0.25, lw, lh);
+         ctx.drawImage(this.meta.brandLogo, (W - lw) / 2, H * 0.20 + yOffset, lw, lh);
+       } else {
+         ctx.fillStyle = '#ffb347';
+         ctx.font = 'bold ' + Math.round(H * 0.08) + 'px system-ui';
+         ctx.fillText('🎓', W / 2, H * 0.25 + yOffset);
        }
        
        ctx.fillStyle = '#ffffff';
        ctx.font = 'bold ' + Math.round(H * 0.08) + 'px system-ui';
-       ctx.fillText('THANK YOU FOR WATCHING', W / 2, H * 0.5);
+       ctx.fillText('THANK YOU FOR WATCHING', W / 2, H * 0.48 + yOffset);
 
        ctx.fillStyle = '#9aa3cf';
        ctx.font = Math.round(H * 0.035) + 'px system-ui';
-       ctx.fillText(this.meta.brand || 'Adewale Classroom', W / 2, H * 0.6);
+       ctx.fillText(this.meta.brand || 'Adewale Classroom', W / 2, H * 0.58 + yOffset);
+       
+       ctx.fillStyle = '#ffb347';
+       ctx.font = 'bold ' + Math.round(H * 0.03) + 'px system-ui';
+       ctx.fillText('Instructor: ' + (this.meta.staffName || 'Adewale Adeagbo'), W / 2, H * 0.65 + yOffset);
+
+       // Call To Action Bottom Bar
+       ctx.fillStyle = '#ffb347'; 
+       ctx.fillRect(0, H - Math.round(H * 0.12), W, Math.round(H * 0.12));
+
+       ctx.fillStyle = '#0a0f25';
+       ctx.font = 'bold ' + Math.round(H * 0.045) + 'px system-ui';
+       ctx.textAlign = 'center';
+       ctx.textBaseline = 'middle';
+       ctx.fillText('🚀 READY TO LEARN MORE? CONTACT US TODAY!', W / 2, H - Math.round(H * 0.06));
     }
-
-    // Call To Action Bottom Bar
-    ctx.fillStyle = '#ffb347'; // Engaging CTA color
-    ctx.fillRect(0, H - Math.round(H * 0.12), W, Math.round(H * 0.12));
-
-    ctx.fillStyle = '#0a0f25';
-    ctx.font = 'bold ' + Math.round(H * 0.045) + 'px system-ui';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🚀 READY TO LEARN MORE? CONTACT US TODAY!', W / 2, H - Math.round(H * 0.06));
 
     ctx.restore();
   },
@@ -698,6 +751,27 @@ window.CDSecurity = CDSecurity;
         bar.remove();
         toast('Recovery in progress...', 'ok', 3000);
         // The chunks are in IndexedDB — the user can download them
+        // The chunks are in IndexedDB — the user can download them
+        try {
+          const db = await CDCrashSafe.openDB();
+          const tx = db.transaction(CDCrashSafe.storeName, 'readonly');
+          const store = tx.objectStore(CDCrashSafe.storeName);
+          const all = await new Promise(r => { const q = store.getAll(); q.onsuccess = () => r(q.result); });
+          
+          const sessionIds = [...new Set(all.map(r => r.sessionId))];
+          for (const sid of sessionIds) {
+             const chunks = all.filter(r => r.sessionId === sid).sort((a,b) => a.ts - b.ts).map(r => r.chunk);
+             if (chunks.length > 0) {
+               const blob = new Blob(chunks, { type: 'video/webm' });
+               const fname = 'Recovered_Lesson_' + new Date().toISOString().slice(0,10) + '.webm';
+               const a = document.createElement('a');
+               a.href = URL.createObjectURL(blob);
+               a.download = fname;
+               a.click();
+               URL.revokeObjectURL(a.href);
+             }
+          }
+        } catch(e) { console.error('Recovery failed', e); }
         CDCrashSafe.clearSession('all');
       });
       document.getElementById('recRecoverNo').addEventListener('click', () => {

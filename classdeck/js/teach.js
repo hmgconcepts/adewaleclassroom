@@ -3918,12 +3918,12 @@ onRoomEvent = function (type, p) {
     const S = window.HMG_REC_SESSION;
     const hasHmg = !!window.HMGREC && typeof HMGREC.paintFrame === "function";
     /* Intro & outro phases fully replace the frame */
-    if (hasHmg && S && S.startTs && HMGREC.paintFrame(window.recCanvas, window.recCtx)) {
+    if (hasHmg && S && S.startTs && HMGREC.paintFrame(recCanvas, recCtx)) {
       /* Also draw CBT link overlay during intro */
       try {
         var cbtUrl = localStorage.getItem("hmg_cbt_link") || "";
-        if (cbtUrl && typeof window.drawCBTOverlay === "function" && window.recCtx && window.recCanvas) {
-          window.drawCBTOverlay(window.recCtx, window.recCanvas.width, window.recCanvas.height, cbtUrl);
+        if (cbtUrl && typeof window.drawCBTOverlay === "function" && recCtx && recCanvas) {
+          window.drawCBTOverlay(recCtx, recCanvas.width, recCanvas.height, cbtUrl);
         }
       } catch(e) {}
       return;
@@ -3932,15 +3932,15 @@ onRoomEvent = function (type, p) {
     _origRecordFrame();
     /* Overlays: lower thirds + staff credentials popup + text ads */
     try {
-      if (hasHmg && window.recCtx && window.recCanvas &&
+      if (hasHmg && recCtx && recCanvas &&
           typeof HMGREC.overlayFrame === "function") {
-        HMGREC.overlayFrame(window.recCtx, window.recCanvas.width, window.recCanvas.height);
+        HMGREC.overlayFrame(recCtx, recCanvas.width, recCanvas.height);
       }
       /* CBT link */
       try {
         var cbtUrl = localStorage.getItem("hmg_cbt_link") || "";
-        if (cbtUrl && typeof window.drawCBTOverlay === "function" && window.recCtx && window.recCanvas) {
-          window.drawCBTOverlay(window.recCtx, window.recCanvas.width, window.recCanvas.height, cbtUrl);
+        if (cbtUrl && typeof window.drawCBTOverlay === "function" && recCtx && recCanvas) {
+          window.drawCBTOverlay(recCtx, recCanvas.width, recCanvas.height, cbtUrl);
         }
       } catch(e) {}
     } catch (e) { /* overlays must never break the recorder */ }
@@ -3958,18 +3958,18 @@ onRoomEvent = function (type, p) {
       S.endTs = Date.now();
       const flyerMs = S.showFlyerMs || 3000;
       const outroMs = S.outroMs || 4000;
-      const totalEndMs = flyerMs + outroMs;
+      const totalEndMs = 7000;
       const endDeadline = Date.now() + totalEndMs;
       (function endLoop() {
         var remaining = endDeadline - Date.now();
-        if (remaining > 0 && window.recCanvas && window.recCtx) {
+        if (remaining > 0 && recCanvas && recCtx) {
           try {
-            var W = window.recCanvas.width, H = window.recCanvas.height;
-            HMGREC.drawOutroFrame(window.recCanvas, window.recCtx, W, H, Date.now() - S.endTs);
+            var W = recCanvas.width, H = recCanvas.height;
+            HMGREC.drawOutroFrame(recCanvas, recCtx, W, H, Date.now() - S.endTs);
             /* CBT link if available */
             var cbtUrl = localStorage.getItem("hmg_cbt_link") || "";
             if (cbtUrl && typeof window.drawCBTOverlay === "function") {
-              window.drawCBTOverlay(window.recCtx, W, H, cbtUrl);
+              window.drawCBTOverlay(recCtx, W, H, cbtUrl);
             }
           } catch (e) {}
           requestAnimationFrame(endLoop);
