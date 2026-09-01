@@ -2077,7 +2077,7 @@ rule + '\nOUTPUT CONTRACT — READ TWICE. THIS IS THE MOST IMPORTANT PART.\n' + 
 '4. Wrap EVERY field in double quotes. Escape any inner double quote by\n' +
 '   doubling it (""). This is what lets JSON live inside a CSV cell.\n\n' +
 '5. Use correct UTF-8 for scientific notation: H\u2082O, CO\u2082, \u03c0, \u03a9, \u2264, \u2265, \u00b0C.\n\n' +
-'6. "Section" (Col17) must be exactly: ' + subject + '\n\n' +
+'6. "Section" (Col17) must ' + (key === 'multi_subject' || key === 'multisubject' ? 'contain the EXACT subject name for that specific row (e.g. Mathematics or English).' : 'be exactly: ' + subject) + '\n\n' +
 '7. Never leave "CorrectAnswer" empty on an objective item.\n\n' +
 '8. Any media must be a public https, Google Drive or YouTube LINK. This\n' +
 '   platform NEVER accepts file uploads — links only.\n\n' +
