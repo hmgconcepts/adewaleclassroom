@@ -2040,7 +2040,7 @@ const CBT = {
       'Type counts match the distribution and sum to ' + n + '.',
       'Every JSON cell has inner quotes doubled ("") and the whole cell quoted.',
       'Every objective row has a non-empty, unambiguous key in Col6.',
-      'Col17 is the subject on every row.',
+      (key === 'multi_subject' || key === 'multisubject' ? 'Col17 specifies the ACTUAL subject for that row.' : 'Col17 is the subject on every row.'),
       /* V39 item 6 — the explanation standard is only real if it is checked. */
       'EVERY row\'s Col7 contains all four moves: verdict in words, numbered',
       '   reasoning, a named misconception for EACH wrong option, and a takeaway.',
