@@ -12087,6 +12087,23 @@ END $$;
 GRANT EXECUTE ON FUNCTION public.tc_cbt_get_exam(text, text) TO anon, authenticated;
 
 
+
+DO $
+BEGIN
+  -- Drop any conflicting policies
+  DROP POLICY IF EXISTS profiles_self_read ON public.profiles;
+  DROP POLICY IF EXISTS profiles_admin ON public.profiles;
+  DROP POLICY IF EXISTS profiles_admin_select ON public.profiles;
+  DROP POLICY IF EXISTS profiles_tutor_read ON public.profiles;
+  DROP POLICY IF EXISTS profiles_read_all ON public.profiles;
+  
+  -- Create a universal read policy for authenticated users
+  CREATE POLICY profiles_read_all ON public.profiles
+    FOR SELECT TO authenticated
+    USING (true);
+EXCEPTION WHEN OTHERS THEN NULL;
+END $;
+
 -- VERY END OF FILE: Ensure all necessary functions are executable by anon and authenticated
 DO $$
 DECLARE f text;
