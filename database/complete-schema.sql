@@ -94,7 +94,6 @@ begin
     select 1 from public.profiles p
     where p.id = auth.uid()
       and p.role in ('admin','owner','director','lead_tutor','super_admin')
-      and p.status in ('approved','active')
   );
 end $$;
 
@@ -11922,11 +11921,10 @@ END $$;
 -- FIX UNRESOLVED LINK: ALLOW ADMIN TO READ PROFILES
 DO $$
 BEGIN
-  DROP POLICY IF EXISTS profiles_admin ON public.profiles;
-  CREATE POLICY profiles_admin ON public.profiles
-    FOR ALL TO authenticated
-    USING (public.is_admin())
-    WITH CHECK (public.is_admin());
+  DROP POLICY IF EXISTS profiles_admin_select ON public.profiles;
+  CREATE POLICY profiles_admin_select ON public.profiles
+    FOR SELECT TO authenticated
+    USING (public.is_admin());
 EXCEPTION WHEN OTHERS THEN
   NULL;
 END $$;
@@ -11944,7 +11942,7 @@ RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
-AS $$$
+AS $
 BEGIN
   IF NOT public.tc_is_admin() THEN
     RETURN jsonb_build_object('ok', false, 'error', 'Permission denied');
@@ -11976,7 +11974,7 @@ EXCEPTION WHEN OTHERS THEN NULL;
 END $$;
 
 CREATE OR REPLACE FUNCTION public.tc_inquiry_notif()
-RETURNS trigger LANGUAGE plpgsql AS $$$
+RETURNS trigger LANGUAGE plpgsql AS $
 BEGIN
   -- We want to notify admins about new bookings or applications
   IF NEW.status = 'new' AND (TG_OP = 'INSERT') THEN
@@ -12087,3 +12085,23 @@ BEGIN
     || to_jsonb(exam);
 END $$;
 GRANT EXECUTE ON FUNCTION public.tc_cbt_get_exam(text, text) TO anon, authenticated;
+
+
+-- Ensure all necessary functions are executable by anon and authenticated
+DO $$
+DECLARE f text;
+BEGIN
+  FOR f IN SELECT p.oid::regprocedure::text FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.prokind = 'f'
+      AND p.proname IN (SELECT * FROM public.tc_anon_executable())
+  LOOP
+    EXECUTE 'GRANT EXECUTE ON FUNCTION ' || f || ' TO anon, authenticated';
+  END LOOP;
+  
+  -- Explicitly grant specific ones in case of issues
+  GRANT EXECUTE ON FUNCTION public.tc_free_register TO anon, authenticated;
+  GRANT EXECUTE ON FUNCTION public.tc_free_cohort_public TO anon, authenticated;
+  GRANT EXECUTE ON FUNCTION public.tc_cbt_get_exam TO anon, authenticated;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
