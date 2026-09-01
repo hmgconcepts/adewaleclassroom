@@ -2122,6 +2122,7 @@ async function startRecording() {
       recChunks = [];
     };
     activeRecorder.start(2000);
+    if (window.HMG_REC_SESSION) window.HMG_REC_SESSION.startTs = Date.now();
     $("#btnRec").classList.add("active");
     toast("⏺ Recording started — " + ((activeRecorder.mimeType || mime || "webm").includes("mp4") ? "MP4" : "WebM") + " on this device when you stop", "ok", 5000);
   } catch (e) {

@@ -149,7 +149,7 @@ const HMGREC = {
     const data = Store.get('hmg_rec_logo', null);
     this.meta.brandLogo = new Image();
     if (data) { this.meta.brandLogo.src = data; }
-    else { this.meta.brandLogo.src = 'assets/hmg-academy-logo.png'; }
+    else { this.meta.brandLogo.src = "../assets/img/logo.png"; }
   },
 
   setLogo(file) {
@@ -307,7 +307,7 @@ const HMGREC = {
     ctx.clip();
 
     const speed = 40; // pixels per second
-    const offset = (ts * speed) % (W + ctx.measureText(text).width);
+    const offset = ((ts / 1000) * speed) % (W + ctx.measureText(text).width);
     const x = W - offset;
 
     ctx.fillStyle = '#ffb347';
@@ -333,7 +333,7 @@ const HMGREC = {
 
     const alpha = phase < 300 ? phase / 300 : (phase > duration - 300 ? (duration - phase) / 300 : 1);
     const barH = Math.round(H * 0.07);
-    const y = Math.round(H * 0.18);
+    const y = H - Math.round(H * 0.06) - Math.round(H * 0.07) - 10;
 
     ctx.save();
     ctx.globalAlpha = alpha;
@@ -358,14 +358,14 @@ const HMGREC = {
   /** Draw text-ad overlay on the frame */
   drawAdOverlay(ctx, W, H, ts, recStartTs) {
     if (!this.meta.adText) return;
-    const elapsed = (ts - recStartTs) / 1000;
+    const elapsed = (ts - recStartTs);
     const interval = this.meta.adInterval * 1000;
-    const phase = elapsed % (this.meta.adInterval + 5); // 5 sec display
+    const phase = elapsed % ((this.meta.adInterval * 1000) + 5000); // 5 sec display
 
-    if (phase > this.meta.adInterval) {
+    if (phase > this.meta.adInterval * 1000) {
       // Display ad
       const adDuration = 5000;
-      const localPhase = phase - this.meta.adInterval;
+      const localPhase = phase - (this.meta.adInterval * 1000);
       if (localPhase > adDuration) return;
 
       const alpha = localPhase < 300 ? localPhase / 300 : (localPhase > adDuration - 300 ? (adDuration - localPhase) / 300 : 1);
@@ -715,6 +715,7 @@ window.CDSecurity = CDSecurity;
     prefill("staffName", meta.staffName || defaults.staffName || "Adewale Adeagbo");
     prefill("staffTitle", meta.staffTitle || defaults.staffTitle || "Virtual Tutor | Data Scientist | AI-Augmented Solutions Developer");
     prefill("lowerThird", meta.lowerThird || defaults.lowerThird || "If you want to book virtual classes with us, contact Adewale on 08100866322, 08094481488");
+    prefill("cbtLink", localStorage.getItem("hmg_cbt_link") || "");
     prefill("adText", meta.adText || defaults.adText || "");
     prefill("adInterval", meta.adInterval || defaults.adIntervalSeconds || 60);
     prefill("pulseInterval", meta.pulseInterval || defaults.staffPulseSeconds || 30);
@@ -751,6 +752,8 @@ window.CDSecurity = CDSecurity;
     meta.staffTitle = read("staffTitle") || "Virtual Tutor | Data Scientist";
     meta.lowerThird = read("lowerThird");
     meta.adText = read("adText");
+    meta.cbtLink = read("cbtLink");
+    if (meta.cbtLink) localStorage.setItem("hmg_cbt_link", meta.cbtLink); else localStorage.removeItem("hmg_cbt_link");
     meta.adInterval = Math.max(15, Number(read("adInterval")) || 60);
     meta.pulseInterval = Math.max(10, Number(read("pulseInterval")) || 30);
     meta.footer = read("footer");
@@ -806,7 +809,7 @@ window.CDSecurity = CDSecurity;
       c.height = Math.round(img.naturalHeight * k);
       c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
       try {
-        Store.set("rec_logo", c.toDataURL("image/png"));
+        Store.set("hmg_rec_logo", c.toDataURL("image/png"));
         HMGREC._loadLogo();
         const st = $("#hmgRecLogoStatus");
         if (st) st.textContent = "✓ custom logo saved";
@@ -1022,3 +1025,19 @@ window.addEventListener("beforeunload", () => {
     } catch (e) {}
   });
 })();
+
+
+window.drawCBTOverlay = function(ctx, W, H, url) {
+  if (!url) return;
+  const barH = Math.round(H * 0.05);
+  const y = H - Math.round(H * 0.06) - Math.round(H * 0.07) - barH - 20; // Above staff pulse
+  ctx.save();
+  ctx.fillStyle = 'rgba(4, 120, 87, 0.9)'; // emerald-700
+  ctx.fillRect(W * 0.1, y, W * 0.8, barH);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold ' + Math.round(barH * 0.5) + 'px system-ui';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🔗 Take CBT/Quiz: ' + url, W / 2, y + barH / 2);
+  ctx.restore();
+};
