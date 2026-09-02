@@ -146,7 +146,7 @@ const HMGREC = {
   },
 
   _loadLogo() {
-    const data = Store.get('hmg_rec_logo', null);
+    const data = Store.get('hmg_rec_logo', null) || Store.get('rec_logo', null);
     this.meta.brandLogo = new Image();
     if (data) { this.meta.brandLogo.src = data; }
     else { this.meta.brandLogo.src = "../assets/img/logo.png";
@@ -381,7 +381,8 @@ const HMGREC = {
   drawLowerThird(ctx, W, H, text, ts) {
     if (!text) return;
     const barH = Math.round(H * 0.06);
-    const y = H - barH;
+    const footH = Math.round(H * 0.045);
+    const y = H - footH - barH;
     ctx.save();
 
     // Semi-transparent background
@@ -423,7 +424,8 @@ const HMGREC = {
 
     const alpha = phase < 300 ? phase / 300 : (phase > duration - 300 ? (duration - phase) / 300 : 1);
     const barH = Math.round(H * 0.07);
-    const y = H - Math.round(H * 0.06) - Math.round(H * 0.07) - 10;
+    const footH = Math.round(H * 0.045);
+    const y = H - footH - Math.round(H * 0.06) - Math.round(H * 0.07) - 10;
 
     ctx.save();
     ctx.globalAlpha = alpha;
@@ -460,7 +462,9 @@ const HMGREC = {
 
       const alpha = localPhase < 300 ? localPhase / 300 : (localPhase > adDuration - 300 ? (adDuration - localPhase) / 300 : 1);
       const adH = Math.round(H * 0.05);
-      const adY = Math.round(H * 0.10);
+      let cbtUrl = ''; try { cbtUrl = localStorage.getItem("hmg_cbt_link") || ""; } catch(e){}
+      const headH = Math.round(H * 0.09) + (cbtUrl ? Math.round(H * 0.045) : 0);
+      const adY = headH + Math.round(H * 0.02);
 
       ctx.save();
       ctx.globalAlpha = alpha;
@@ -801,8 +805,8 @@ window.CDSecurity = CDSecurity;
   window.HMG_REC_SESSION = {
     sessionId: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     startTs: 0,
-    introMs: 6000,
-    outroMs: 4000,
+    introMs: 15000,
+    outroMs: 15000,
     ending: false,
     endTs: 0
   };
@@ -836,7 +840,7 @@ window.CDSecurity = CDSecurity;
     const cams = $("#hmgRecIncludeCams");
     if (cams) cams.checked = Store.get("rec_students", false);
     const logoStatus = $("#hmgRecLogoStatus");
-    if (logoStatus) logoStatus.textContent = Store.get("rec_logo", null) ? "✓ custom logo saved" : "Logo: ADEWALE CLASSROOM default";
+    if (logoStatus) logoStatus.textContent = (Store.get("hmg_rec_logo", null) || Store.get("rec_logo", null)) ? "✓ custom logo saved" : "Logo: ADEWALE CLASSROOM default";
     openModal("#mHmgRecSetup");
     return true;
   };

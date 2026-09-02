@@ -3997,12 +3997,7 @@ onRoomEvent = function (type, p) {
           try {
             var W = recCanvas.width, H = recCanvas.height;
             HMGREC.drawOutroFrame(recCanvas, recCtx, W, H, Date.now() - S.endTs);
-            /* CBT link if available */
-            var cbtUrl = localStorage.getItem("hmg_cbt_link") || "";
-            if (cbtUrl && typeof window.drawCBTOverlay === "function") {
-              window.drawCBTOverlay(recCtx, W, H, cbtUrl);
-            }
-          } catch (e) {}
+                      } catch (e) {}
           requestAnimationFrame(endLoop);
           return;
         }
