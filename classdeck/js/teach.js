@@ -1986,6 +1986,7 @@ on("#recBegin", "click", () => {
 
 function drawRecordingFrame() {
   const ctx = recCtx, W = recCanvas.width, H = recCanvas.height;
+  if(ctx) ctx.globalAlpha = 1.0;
   const baseHeadH = Math.round(H * 0.09);
   const footH = Math.round(H * 0.045);
   let cbtUrl = '';

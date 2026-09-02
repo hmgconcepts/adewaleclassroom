@@ -163,6 +163,7 @@ const HMGREC = {
 
   /** Draw the intro frame on a canvas */
   drawIntroFrame(canvas, ctx, W, H, elapsed = 0) {
+    ctx.globalAlpha = 1.0;
     const duration = 15000;
     const t = Math.min(1, Math.max(0, elapsed / duration));
     
@@ -238,8 +239,10 @@ const HMGREC = {
     }
 
     // --- SCENE 2 ---
-    ctx.restore();
+    ctx.restore(); // restore from scene 1
+    ctx.save();    // save for scene 2
     if (alpha2 > 0) {
+      
       ctx.globalAlpha = alpha2;
       
       // Decorative Left Accent Line
@@ -275,10 +278,12 @@ const HMGREC = {
       ctx.font = Math.round(H * 0.03) + 'px system-ui';
       ctx.fillText(this.meta.staffTitle || 'Professional Tutor', W * 0.18 + xOffset2, H * 0.78);
     }
+    ctx.restore(); // restore from scene 2 to prevent globalAlpha leakage into the main video
   },
 
   /** Draw the outro frame */
   drawOutroFrame(canvas, ctx, W, H, elapsed = 0) {
+    ctx.globalAlpha = 1.0;
     const duration = 15000; 
     const t = Math.min(1, Math.max(0, elapsed / duration));
     
@@ -310,12 +315,14 @@ const HMGREC = {
     let ctaAlpha = 0;
     let yOffset = 0;
     
+    // 0-4s Flyer (t < 0.266), 4-15s CTA (t >= 0.266)
     if (hasFlyer) {
-       if (t < 0.55) {
-          flyerAlpha = Math.min(1, t / 0.1);
-          if (t > 0.45) flyerAlpha = 1 - (t - 0.45) / 0.1;
+       if (t < 0.266) {
+          // Fade in (0 to 0.05) and fade out (0.216 to 0.266)
+          flyerAlpha = Math.min(1, t / 0.05);
+          if (t > 0.216) flyerAlpha = 1 - (t - 0.216) / 0.05;
        } else {
-          ctaAlpha = Math.min(1, (t - 0.55) / 0.1);
+          ctaAlpha = Math.min(1, (t - 0.266) / 0.05);
           yOffset = 30 * (1 - ctaAlpha);
        }
     } else {
@@ -325,19 +332,21 @@ const HMGREC = {
 
     // DRAW FLYER SCENE
     if (flyerAlpha > 0 && hasFlyer) {
+       ctx.save();
        ctx.globalAlpha = flyerAlpha;
        const s = Math.min(W/flyerImg.naturalWidth, H/flyerImg.naturalHeight) * 0.95;
-       // slowly zoom the flyer for cinematic effect
-       const zoom = 1 + (t * 0.05);
+       // zoom from 1 to 1.15 over the 4 seconds (t goes from 0 to 0.266)
+       const zoom = 1 + ((t / 0.266) * 0.15);
        ctx.translate(W/2, H/2);
        ctx.scale(zoom, zoom);
        ctx.translate(-W/2, -H/2);
        ctx.drawImage(flyerImg, (W-flyerImg.naturalWidth*s)/2, (H-flyerImg.naturalHeight*s)/2, flyerImg.naturalWidth*s, flyerImg.naturalHeight*s);
-       ctx.setTransform(1, 0, 0, 1, 0, 0); 
+       ctx.restore();
     }
 
     // DRAW CTA SCENE
     if (ctaAlpha > 0) {
+       ctx.save();
        ctx.globalAlpha = ctaAlpha;
        ctx.textAlign = 'center';
        
@@ -364,17 +373,18 @@ const HMGREC = {
        ctx.fillText('Instructor: ' + (this.meta.staffName || 'Adewale Adeagbo'), W / 2, H * 0.65 + yOffset);
 
        // Call To Action Bottom Bar
-       ctx.fillStyle = '#ffb347'; 
-       ctx.fillRect(0, H - Math.round(H * 0.12), W, Math.round(H * 0.12));
+       ctx.fillStyle = '#ff6b00'; 
+       ctx.fillRect(0, H - Math.round(H * 0.15), W, Math.round(H * 0.15));
 
-       ctx.fillStyle = '#0a0f25';
-       ctx.font = 'bold ' + Math.round(H * 0.045) + 'px system-ui';
+       ctx.fillStyle = '#ffffff';
+       ctx.font = 'bold ' + Math.round(H * 0.05) + 'px system-ui';
        ctx.textAlign = 'center';
        ctx.textBaseline = 'middle';
-       ctx.fillText('🚀 READY TO LEARN MORE? CONTACT US TODAY!', W / 2, H - Math.round(H * 0.06));
+       ctx.fillText('🚀 READY TO LEARN MORE? CONTACT US TODAY!', W / 2, H - Math.round(H * 0.075));
+       ctx.restore();
     }
 
-    ctx.restore();
+    ctx.restore(); // restore initial grid/background save block
   },
 
   /** Draw lower thirds bar at the bottom of the frame */
