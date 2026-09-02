@@ -1554,7 +1554,7 @@ function startCompositeStage() {
 async function ensureMic(on) {
   if (on && !micStream) {
     try {
-      micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1, sampleRate: { ideal: 48000 } }, video: false });
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: { ideal: true }, noiseSuppression: { ideal: true }, autoGainControl: { ideal: true }, channelCount: 1, sampleRate: { ideal: 48000 }, googEchoCancellation: true, googAutoGainControl: true, googNoiseSuppression: true, googHighpassFilter: true }, video: false });
       const micTrack = micStream.getAudioTracks()[0];
       if (micTrack) micTrack.addEventListener("ended", () => {
         micOn = false;
@@ -2126,7 +2126,17 @@ async function startRecording() {
       const outType = activeRecorder.mimeType || mime || "video/webm";
       const ext = outType.includes("mp4") ? ".mp4" : ".webm";
       const fname = [safe(recMeta.brand || "Lesson"), safe(recMeta.subject || ""), safe(recMeta.topic || ""), safe(recMeta.klass || ""), new Date().toISOString().slice(0, 10)].filter(Boolean).join("_") + ext;
-      if (chunks.length) downloadBlob(new Blob(chunks, { type: outType }), fname);
+      if (chunks.length) {
+        const rawBlob = new Blob(chunks, { type: outType });
+        if (outType.includes("webm") && window.ysFixWebmDuration && window.HMG_REC_SESSION && window.HMG_REC_SESSION.startTs) {
+          const recordedDurationMs = Date.now() - window.HMG_REC_SESSION.startTs;
+          window.ysFixWebmDuration(rawBlob, recordedDurationMs, function(fixedBlob) {
+            downloadBlob(fixedBlob, fname);
+          });
+        } else {
+          downloadBlob(rawBlob, fname);
+        }
+      }
       /* Clear the mirrored IndexedDB chunks now that the recording is committed. */
       if (window.CDCrashSafe && window.CDCrashSafe.clearSession && window.HMG_REC_SESSION) {
         try { CDCrashSafe.clearSession(window.HMG_REC_SESSION.sessionId); } catch {}
@@ -3988,6 +3998,20 @@ onRoomEvent = function (type, p) {
     if (hasHmg && S && S.startTs && !S.ending && !S.ending) {
       S.ending = true;
       S.endTs = Date.now();
+      try {
+        const block = document.createElement('div');
+        block.id = "hmgRecOutroBlock";
+        block.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);color:#fff;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui;text-align:center';
+        block.innerHTML = '<h1 style="font-size:3rem;color:#ffb347;margin:0">🎬 FINISHING RECORDING</h1><p style="font-size:1.5rem;margin:10px 0">The branded outro is being attached. Please wait.</p><h2 style="font-size:5rem;margin:20px 0" id="hmgRecOutroCount">15</h2>';
+        document.body.appendChild(block);
+        let outroT = 15;
+        const iv = setInterval(() => {
+           outroT--;
+           const c = document.getElementById("hmgRecOutroCount");
+           if (c) c.textContent = outroT;
+           if (outroT <= 0) clearInterval(iv);
+        }, 1000);
+      } catch(e) {}
       const flyerMs = S.showFlyerMs || 3000;
       const outroMs = S.outroMs || 15000;
       const totalEndMs = 15000;
@@ -4002,10 +4026,12 @@ onRoomEvent = function (type, p) {
           requestAnimationFrame(endLoop);
           return;
         }
+        try { const b = document.getElementById("hmgRecOutroBlock"); if(b) b.remove(); } catch(e){}
         _origStopRec();
       })();
       return;
     }
+    try { const b = document.getElementById("hmgRecOutroBlock"); if(b) b.remove(); } catch(e){}
     _origStopRec();
   };
 
