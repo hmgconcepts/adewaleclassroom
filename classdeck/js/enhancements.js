@@ -149,7 +149,8 @@ const HMGREC = {
     const data = Store.get('hmg_rec_logo', null);
     this.meta.brandLogo = new Image();
     if (data) { this.meta.brandLogo.src = data; }
-    else { this.meta.brandLogo.src = "../assets/img/logo.png"; }
+    else { this.meta.brandLogo.src = "../assets/img/logo.png";
+      this.meta.brandLogo.onerror = () => { this.meta.brandLogo.src = "assets/icon-192.png"; }; }
   },
 
   setLogo(file) {
@@ -162,7 +163,7 @@ const HMGREC = {
 
   /** Draw the intro frame on a canvas */
   drawIntroFrame(canvas, ctx, W, H, elapsed = 0) {
-    const duration = 12000;
+    const duration = 15000;
     const t = Math.min(1, Math.max(0, elapsed / duration));
     
     // Background - Deep Royal Blue gradient
@@ -278,7 +279,7 @@ const HMGREC = {
 
   /** Draw the outro frame */
   drawOutroFrame(canvas, ctx, W, H, elapsed = 0) {
-    const duration = 12000; 
+    const duration = 15000; 
     const t = Math.min(1, Math.max(0, elapsed / duration));
     
     // Background - Deep Royal Blue gradient
@@ -921,6 +922,7 @@ window.CDSecurity = CDSecurity;
       try {
         Store.set("hmg_rec_logo", c.toDataURL("image/png"));
         HMGREC._loadLogo();
+        if (typeof loadRecLogo === "function") loadRecLogo();
         const st = $("#hmgRecLogoStatus");
         if (st) st.textContent = "✓ custom logo saved";
         toast("🖼 Logo will appear on recordings", "ok");
@@ -950,10 +952,9 @@ window.CDSecurity = CDSecurity;
     const W = canvas.width, H = canvas.height;
     if (s.ending) { this.drawOutroFrame(canvas, ctx, W, H, Date.now() - (s.endTs || Date.now())); return true; }
     const elapsed = Date.now() - s.startTs;
-    if (elapsed < (s.introMs || 12000)) {
+    if (elapsed < (s.introMs || 15000)) {
       this.drawIntroFrame(canvas, ctx, W, H, elapsed);
-      this.drawLowerThird(ctx, W, H, this.meta.lowerThird, Date.now());
-      if (this.meta.adText) this.drawAdOverlay(ctx, W, H, Date.now(), s.startTs);
+      // Standalone: no lower thirds or ads during intro
       return true;
     }
     return false;

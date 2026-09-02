@@ -1925,6 +1925,7 @@ function loadRecLogo() {
     recLogo.src = data;
   } else {
     recLogo.src = "../assets/img/logo.png";
+    recLogo.onerror = () => { recLogo.src = "assets/icon-192.png"; };
   }
 }
 loadRecLogo();
@@ -2137,7 +2138,7 @@ async function startRecording() {
     toast("⏺ Recording started — " + ((activeRecorder.mimeType || mime || "webm").includes("mp4") ? "MP4" : "WebM") + " on this device when you stop", "ok", 5000);
       if (window.HMGREC && typeof window.HMGREC.paintFrame === "function") {
         
-    const introTime = 12;
+    const introTime = 15;
     const block = document.createElement('div');
     block.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.9);color:#fff;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:system-ui;text-align:center';
     block.innerHTML = '<h1 style="font-size:3rem;color:#ffb347;margin:0">🎬 RECORDING STARTED</h1><p style="font-size:1.5rem;margin:10px 0">The branded intro is currently being recorded.</p><h2 style="font-size:5rem;margin:20px 0" id="hmgRecCount">' + introTime + '</h2><p style="font-size:1.5rem;color:#10b981">Please WAIT before teaching...</p>';
@@ -3987,8 +3988,8 @@ onRoomEvent = function (type, p) {
       S.ending = true;
       S.endTs = Date.now();
       const flyerMs = S.showFlyerMs || 3000;
-      const outroMs = S.outroMs || 12000;
-      const totalEndMs = 12000;
+      const outroMs = S.outroMs || 15000;
+      const totalEndMs = 15000;
       const endDeadline = Date.now() + totalEndMs;
       (function endLoop() {
         var remaining = endDeadline - Date.now();

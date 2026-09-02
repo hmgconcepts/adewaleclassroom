@@ -56,16 +56,6 @@ if(typeof _c === "function") {
   };
 }
 
-window.drawCBTOverlay = function(ctx, W, H, url) {
-  if(!ctx || !url) return;
-  try { var bh = Math.round(H * 0.055);
-    ctx.fillStyle = "rgba(30,42,120,.92)"; ctx.fillRect(0, H-bh-6, W, bh);
-    ctx.fillStyle = "#ffb347";
-    ctx.font = "bold " + Math.round(bh*0.5) + "px system-ui";
-    ctx.textAlign = "left"; ctx.textBaseline = "middle";
-    ctx.fillText("Take the quiz: " + url, 14, H - bh/2 - 6);
-  } catch(e) {}
-};
 
 /* Wire flyer upload + clear buttons in the HMG recording dialog */
   document.addEventListener("click", function(e) {
