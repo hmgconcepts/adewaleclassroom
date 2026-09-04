@@ -151,6 +151,11 @@ const HMGREC = {
     if (data) { this.meta.brandLogo.src = data; }
     else { this.meta.brandLogo.src = "../assets/img/logo.png";
       this.meta.brandLogo.onerror = () => { this.meta.brandLogo.src = "assets/icon-192.png"; }; }
+      
+    // LOAD TEACHER PHOTO
+    const photoData = Store.get('hmg_rec_photo', null);
+    this.meta.teacherPhoto = new Image();
+    if(photoData) this.meta.teacherPhoto.src = photoData;
   },
 
   setLogo(file) {
@@ -315,14 +320,14 @@ const HMGREC = {
     let ctaAlpha = 0;
     let yOffset = 0;
     
-    // 0-4s Flyer (t < 0.266), 4-15s CTA (t >= 0.266)
+    // 0-7s Flyer (t < 0.466), 7-15s CTA (t >= 0.466)
     if (hasFlyer) {
-       if (t < 0.266) {
-          // Fade in (0 to 0.05) and fade out (0.216 to 0.266)
+       if (t < 0.466) {
+          // Fade in (0 to 0.05) and fade out (0.416 to 0.466)
           flyerAlpha = Math.min(1, t / 0.05);
-          if (t > 0.216) flyerAlpha = 1 - (t - 0.216) / 0.05;
+          if (t > 0.416) flyerAlpha = 1 - (t - 0.416) / 0.05;
        } else {
-          ctaAlpha = Math.min(1, (t - 0.266) / 0.05);
+          ctaAlpha = Math.min(1, (t - 0.466) / 0.05);
           yOffset = 30 * (1 - ctaAlpha);
        }
     } else {
@@ -335,8 +340,8 @@ const HMGREC = {
        ctx.save();
        ctx.globalAlpha = flyerAlpha;
        const s = Math.min(W/flyerImg.naturalWidth, H/flyerImg.naturalHeight) * 0.95;
-       // zoom from 1 to 1.15 over the 4 seconds (t goes from 0 to 0.266)
-       const zoom = 1 + ((t / 0.266) * 0.15);
+       // zoom from 1 to 1.15 over the 7 seconds (t goes from 0 to 0.466)
+       const zoom = 1 + ((t / 0.466) * 0.15);
        ctx.translate(W/2, H/2);
        ctx.scale(zoom, zoom);
        ctx.translate(-W/2, -H/2);
@@ -851,6 +856,8 @@ window.CDSecurity = CDSecurity;
     if (cams) cams.checked = Store.get("rec_students", false);
     const logoStatus = $("#hmgRecLogoStatus");
     if (logoStatus) logoStatus.textContent = (Store.get("hmg_rec_logo", null) || Store.get("rec_logo", null)) ? "✓ custom logo saved" : "Logo: ADEWALE CLASSROOM default";
+    const photoStatus = $("#hmgRecPhotoStatus");
+    if (photoStatus) photoStatus.textContent = Store.get("hmg_rec_photo", null) ? "✓ teacher photo saved" : "Photo: Not uploaded";
     openModal("#mHmgRecSetup");
     return true;
   };
@@ -914,6 +921,9 @@ window.CDSecurity = CDSecurity;
     if (e.target && e.target.id === "hmgRecBegin") { HMGREC.begin(); }
     if (e.target && e.target.id === "hmgRecLogoBtn") {
       const f = $("#hmgRecLogoFile"); if (f) f.click();
+    }
+    if (e.target && e.target.id === "hmgRecPhotoBtn") {
+      const f = $("#hmgRecPhotoFile"); if (f) f.click();
     }
   });
   const recLogoFile = document.getElementById("hmgRecLogoFile");

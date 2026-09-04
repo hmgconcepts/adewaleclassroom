@@ -2130,9 +2130,11 @@ async function startRecording() {
         const rawBlob = new Blob(chunks, { type: outType });
         if (outType.includes("webm") && window.ysFixWebmDuration && window.HMG_REC_SESSION && window.HMG_REC_SESSION.startTs) {
           const recordedDurationMs = Date.now() - window.HMG_REC_SESSION.startTs;
-          window.ysFixWebmDuration(rawBlob, recordedDurationMs, function(fixedBlob) {
-            downloadBlob(fixedBlob, fname);
-          });
+          try {
+            window.ysFixWebmDuration(rawBlob, recordedDurationMs, function(fixedBlob) {
+              downloadBlob(fixedBlob || rawBlob, fname);
+            });
+          } catch(err) { downloadBlob(rawBlob, fname); }
         } else {
           downloadBlob(rawBlob, fname);
         }
@@ -2207,21 +2209,26 @@ function stopRecording() {
   let si = 0, moved = false;
   let drag = false, sx = 0, sy = 0, ox = 0, oy = 0;
   sv.addEventListener("pointerdown", (e) => {
-    drag = true; moved = false; sv.setPointerCapture(e.pointerId);
+    drag = true; moved = false; 
+    try { sv.setPointerCapture(e.pointerId); } catch(err){}
     sx = e.clientX; sy = e.clientY;
     const r = sv.getBoundingClientRect(); ox = r.left; oy = r.top;
+    e.preventDefault(); // Prevent touch scroll/zoom issues on mobile
   });
-  sv.addEventListener("pointermove", (e) => {
+  window.addEventListener("pointermove", (e) => { // Bind to window so drag doesn't drop if pointer moves too fast
     if (!drag) return;
     if (Math.hypot(e.clientX - sx, e.clientY - sy) > 8) moved = true;
     if (!moved) return;
     sv.style.left = Math.max(2, Math.min(window.innerWidth - sv.offsetWidth - 2, ox + e.clientX - sx)) + "px";
     sv.style.top  = Math.max(2, Math.min(window.innerHeight - sv.offsetHeight - 2, oy + e.clientY - sy)) + "px";
     sv.style.right = "auto"; sv.style.bottom = "auto";
-  });
-  sv.addEventListener("pointerup", () => {
+    e.preventDefault();
+  }, { passive: false });
+  window.addEventListener("pointerup", (e) => {
+    if (!drag) return;
     drag = false;
-    if (!moved) { si = (si + 1) % sizes.length; sv.style.width = sizes[si] + "px"; }
+    try { sv.releasePointerCapture(e.pointerId); } catch(err){}
+    if (!moved && e.target === sv) { si = (si + 1) % sizes.length; sv.style.width = sizes[si] + "px"; }
   });
 })();
 
@@ -4027,6 +4034,18 @@ onRoomEvent = function (type, p) {
           return;
         }
         try { const b = document.getElementById("hmgRecOutroBlock"); if(b) b.remove(); } catch(e){}
+        // GENERATE THUMBNAIL OF SCENE 2 FOR SOCIAL MEDIA
+        try {
+           const thumbCanvas = document.createElement("canvas");
+           thumbCanvas.width = W || 1280;
+           thumbCanvas.height = H || 720;
+           const tctx = thumbCanvas.getContext("2d");
+           // draw Intro Frame at 10,000ms (10s) which is perfectly in the middle of Scene 2 (Teacher/Subject)
+           HMGREC.drawIntroFrame(thumbCanvas, tctx, thumbCanvas.width, thumbCanvas.height, 10000);
+           thumbCanvas.toBlob((blob) => {
+             downloadBlob(blob, "Thumbnail_" + Date.now() + ".jpg");
+           }, "image/jpeg", 0.95);
+        } catch(e) {}
         _origStopRec();
       })();
       return;
