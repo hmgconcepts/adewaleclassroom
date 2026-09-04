@@ -1719,20 +1719,21 @@ const CBT = {
     },
 
     enterprise: {
-      label: 'Full showcase — all 17 types',
-      role: 'an assessment architect building a reference paper that demonstrates every question format the platform supports',
-      mission: 'Exercise the FULL range of seventeen types. This paper is used to train tutors and to show families what the studio can do, so breadth matters more than balance.',
+      label: 'Auto-Graded Ultimate Pack',
+      role: 'an assessment architect building a reference paper that demonstrates all auto-graded question formats the platform supports',
+      mission: 'Exercise the FULL range of auto-graded question types. Do NOT use any question types that require manual tutor review (like essay, code, audio, file_upload). This paper is used to test students with 100% automated scoring.',
       ref: { mcq: 3, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2,
              categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2,
-             case_study: 2, image_mcq: 1, essay: 1, code: 1 },
+             case_study: 2, image_mcq: 2 },
       dominant: 'mcq',
-      minOne: true,            // every one of the 17 types must appear
+      minOne: true,            // every auto-graded type must appear
       sections: [
-        ['COVERAGE', 'Every one of the seventeen types must appear at least once, even if that\nmeans an unusual fit for the topic. Breadth is the point of this pack.'],
+        ['COVERAGE', 'Every auto-graded type must appear at least once. Exclude essay, code, and file uploads.'],
         ['SELF-DOCUMENTING', 'Because tutors read this paper to learn the formats, each Explanation should\nalso note in one clause why that TYPE suited that question.']
       ],
       quality: [
-        'All seventeen types present.',
+        'All auto-graded types present.',
+        'Strictly NO essay, NO code, NO manual-grading types.',
         'Each structured type has valid, complete JSON in Col13/Col14.',
         'The paper still reads as a coherent assessment, not a format catalogue.'
       ]
