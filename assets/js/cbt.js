@@ -1724,7 +1724,7 @@ const CBT = {
       mission: 'Exercise the FULL range of auto-graded question types. Do NOT use any question types that require manual tutor review (like essay, code, audio, file_upload). This paper is used to test students with 100% automated scoring.',
       ref: { mcq: 3, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2,
              categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2,
-             case_study: 2, image_mcq: 2 },
+             case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2 },
       dominant: 'mcq',
       minOne: true,            // every auto-graded type must appear
       sections: [
@@ -1736,6 +1736,40 @@ const CBT = {
         'Strictly NO essay, NO code, NO manual-grading types.',
         'Each structured type has valid, complete JSON in Col13/Col14.',
         'The paper still reads as a coherent assessment, not a format catalogue.'
+      ]
+    },
+
+    material_upload: {
+      label: 'Uploaded Material CBT',
+      role: 'an expert educator creating an assessment strictly from the provided document material',
+      mission: 'Generate a comprehensive CBT strictly based on the provided material. The user will specify the exact pages, chapters, or sections to cover in their prompt. Do NOT invent facts outside the provided document.',
+      ref: { mcq: 5, tf: 3, short: 2, matching: 2, cloze: 2 },
+      dominant: 'mcq',
+      minOne: false,
+      sections: [
+        ['SOURCE ADHERENCE', 'Every single question MUST be derivable directly from the uploaded material.'],
+        ['TARGETED EXTRACTION', 'Focus entirely on the requested pages, chapters, or sections specified by the user.']
+      ],
+      quality: [
+        'No hallucinated information; stick perfectly to the text.',
+        'Varied auto-graded question types testing comprehension and application.'
+      ]
+    },
+
+    material_link: {
+      label: 'Linked Material CBT',
+      role: 'an expert educator creating an assessment strictly from the provided material via URL',
+      mission: 'Analyze the material at the provided link and generate a comprehensive CBT strictly based on it. The user will specify the exact pages, chapters, or sections to cover in their prompt. Do NOT invent facts outside the linked document.',
+      ref: { mcq: 5, tf: 3, short: 2, matching: 2, cloze: 2 },
+      dominant: 'mcq',
+      minOne: false,
+      sections: [
+        ['SOURCE ADHERENCE', 'Every single question MUST be derivable directly from the linked material.'],
+        ['TARGETED EXTRACTION', 'Focus entirely on the requested pages, chapters, or sections specified by the user.']
+      ],
+      quality: [
+        'No hallucinated information; stick perfectly to the text.',
+        'Varied auto-graded question types testing comprehension and application.'
       ]
     },
 

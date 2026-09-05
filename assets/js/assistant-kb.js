@@ -170,7 +170,7 @@
       title: 'Question bank prompts',
       who: 'Tutor.',
       why: 'We do not call a paid AI API. You paste a pack into any free chat you already use and paste the CSV back.',
-      what: 'Ten packs: Simple, Intermediate, Advanced, Auto-Graded Ultimate Pack, Self, Review, Graded, Reading article, Reading video, Reading pack.',
+      what: 'Ten packs: Simple, Intermediate, Advanced, Auto-Graded Ultimate Pack, Uploaded Material, Linked Material, Self, Review, Graded, Reading article, Reading video, Reading pack.',
       how: ['Pick pack, topic, count, level, optional source URL.', 'Build prompt → Copy.', 'Paste into ChatGPT / Gemini / Claude (your account).', 'Paste the CSV into Quizzes.'],
       next: [['practice.html', 'Save as a quiz'], ['reading.html', 'Reading sources']]
     },
