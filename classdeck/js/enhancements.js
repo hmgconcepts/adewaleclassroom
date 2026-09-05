@@ -919,11 +919,11 @@ window.CDSecurity = CDSecurity;
      ---------------------------------------------------------- */
   document.addEventListener("click", function (e) {
     if (e.target && e.target.id === "hmgRecBegin") { HMGREC.begin(); }
-    if (e.target && e.target.id === "hmgRecLogoBtn") {
-      const f = $("#hmgRecLogoFile"); if (f) f.click();
+    if (e.target && e.target.closest("#hmgRecLogoBtn")) {
+      const f = document.getElementById("hmgRecLogoFile"); if (f) f.click();
     }
-    if (e.target && e.target.id === "hmgRecPhotoBtn") {
-      const f = $("#hmgRecPhotoFile"); if (f) f.click();
+    if (e.target && e.target.closest("#hmgRecPhotoBtn")) {
+      const f = document.getElementById("hmgRecPhotoFile"); if (f) f.click();
     }
   });
   const recLogoFile = document.getElementById("hmgRecLogoFile");
@@ -947,7 +947,7 @@ window.CDSecurity = CDSecurity;
         Store.set("hmg_rec_logo", c.toDataURL("image/png"));
         HMGREC._loadLogo();
         if (typeof loadRecLogo === "function") loadRecLogo();
-        const st = $("#hmgRecLogoStatus");
+        const st = document.getElementById("hmgRecLogoStatus");
         if (st) st.textContent = "✓ custom logo saved";
         toast("🖼 Logo will appear on recordings", "ok");
       } catch { toast("Logo too large to store — choose a smaller image.", "err"); }

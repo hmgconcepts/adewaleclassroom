@@ -2128,10 +2128,10 @@ async function startRecording() {
       const fname = [safe(recMeta.brand || "Lesson"), safe(recMeta.subject || ""), safe(recMeta.topic || ""), safe(recMeta.klass || ""), new Date().toISOString().slice(0, 10)].filter(Boolean).join("_") + ext;
       if (chunks.length) {
         const rawBlob = new Blob(chunks, { type: outType });
-        if (outType.includes("webm") && window.ysFixWebmDuration && window.HMG_REC_SESSION && window.HMG_REC_SESSION.startTs) {
+        if (!outType.includes("mp4") && window.ysFixWebmDuration && window.HMG_REC_SESSION && window.HMG_REC_SESSION.startTs) {
           const recordedDurationMs = Date.now() - window.HMG_REC_SESSION.startTs;
           try {
-            window.ysFixWebmDuration(rawBlob, recordedDurationMs, function(fixedBlob) {
+            window.ysFixWebmDuration(new Blob(chunks, { type: "video/webm" }), recordedDurationMs, function(fixedBlob) {
               downloadBlob(fixedBlob || rawBlob, fname);
             });
           } catch(err) { downloadBlob(rawBlob, fname); }
