@@ -2115,11 +2115,9 @@ async function startRecording() {
   await ensureMic(true);
   if (micStream) micStream.getAudioTracks().forEach((t) => recStream.addTrack(t));
   const candidates = [
-    // FORCE WEBM so ysFixWebmDuration can inject duration metadata for Social Media
     "video/webm;codecs=vp9,opus",
     "video/webm;codecs=vp8,opus",
     "video/webm",
-    // iOS Safari fallback (fragmented MP4 without duration, unavoidable on iOS natively)
     "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
     "video/mp4"
   ];
@@ -2151,11 +2149,12 @@ async function startRecording() {
       const fname = [safe(recMeta.brand || "Lesson"), safe(recMeta.subject || ""), safe(recMeta.topic || ""), safe(recMeta.klass || ""), new Date().toISOString().slice(0, 10)].filter(Boolean).join("_") + ext;
       if (chunks.length) {
         const rawBlob = new Blob(chunks, { type: outType });
-        if (!outType.includes("mp4") && window.ysFixWebmDuration && window.HMG_REC_SESSION && window.HMG_REC_SESSION.startTs) {
-          const recordedDurationMs = Date.now() - window.HMG_REC_SESSION.startTs;
+        if (window.EBML && window.EBML.default && outType.includes("webm")) {
           try {
-            window.ysFixWebmDuration(new Blob(chunks, { type: "video/webm" }), recordedDurationMs, function(fixedBlob) {
+            window.EBML.default(rawBlob).then(function(fixedBlob) {
               downloadBlob(fixedBlob || rawBlob, fname);
+            }).catch(function(err) {
+              downloadBlob(rawBlob, fname);
             });
           } catch(err) { downloadBlob(rawBlob, fname); }
         } else {

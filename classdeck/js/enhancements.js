@@ -273,15 +273,40 @@ const HMGREC = {
 
       ctx.fillStyle = '#9aa3cf';
       ctx.font = 'bold ' + Math.round(H * 0.03) + 'px system-ui';
-      ctx.fillText('INSTRUCTOR', W * 0.18 + xOffset2, H * 0.65);
+      ctx.fillText('INSTRUCTOR', W * 0.18 + xOffset2, H * 0.60);
 
+      // TEACHER PHOTO OR INITIAL
+      const photoSize = Math.round(H * 0.14);
+      const photoX = W * 0.18 + xOffset2;
+      const photoY = H * 0.64;
+      
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(photoX + photoSize/2, photoY + photoSize/2, photoSize/2, 0, Math.PI * 2);
+      ctx.clip();
+      
+      if (this.meta.teacherPhoto && this.meta.teacherPhoto.complete && this.meta.teacherPhoto.naturalWidth) {
+         ctx.drawImage(this.meta.teacherPhoto, photoX, photoY, photoSize, photoSize);
+      } else {
+         ctx.fillStyle = '#4f6ef7';
+         ctx.fillRect(photoX, photoY, photoSize, photoSize);
+         ctx.fillStyle = '#fff';
+         ctx.font = 'bold ' + Math.round(photoSize * 0.6) + 'px system-ui';
+         ctx.textAlign = 'center';
+         ctx.textBaseline = 'middle';
+         ctx.fillText((this.meta.staffName || 'A').charAt(0).toUpperCase(), photoX + photoSize/2, photoY + photoSize/2 + (photoSize * 0.05));
+      }
+      ctx.restore();
+      
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold ' + Math.round(H * 0.05) + 'px system-ui';
-      ctx.fillText(this.meta.staffName || 'Adewale Adeagbo', W * 0.18 + xOffset2, H * 0.72);
+      ctx.fillText(this.meta.staffName || 'Adewale Adeagbo', photoX + photoSize + 25, H * 0.70);
 
       ctx.fillStyle = '#4f6ef7';
       ctx.font = Math.round(H * 0.03) + 'px system-ui';
-      ctx.fillText(this.meta.staffTitle || 'Professional Tutor', W * 0.18 + xOffset2, H * 0.78);
+      ctx.fillText(this.meta.staffTitle || 'Professional Tutor', photoX + photoSize + 25, H * 0.76);
     }
     ctx.restore(); // restore from scene 2 to prevent globalAlpha leakage into the main video
   },
