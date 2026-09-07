@@ -273,16 +273,32 @@ const HMGREC = {
 
       ctx.fillStyle = '#9aa3cf';
       ctx.font = 'bold ' + Math.round(H * 0.03) + 'px system-ui';
-      ctx.fillText('INSTRUCTOR', W * 0.18 + xOffset2, H * 0.60);
+      ctx.fillText('INSTRUCTOR', W * 0.18 + xOffset2, H * 0.65);
 
-      // TEACHER PHOTO OR INITIAL
-      const photoSize = Math.round(H * 0.14);
-      const photoX = W * 0.18 + xOffset2;
-      const photoY = H * 0.64;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold ' + Math.round(H * 0.05) + 'px system-ui';
+      ctx.fillText(this.meta.staffName || 'Adewale Adeagbo', W * 0.18 + xOffset2, H * 0.72);
+
+      ctx.fillStyle = '#4f6ef7';
+      ctx.font = Math.round(H * 0.03) + 'px system-ui';
+      ctx.fillText(this.meta.staffTitle || 'Professional Tutor', W * 0.18 + xOffset2, H * 0.78);
+
+      // TEACHER PHOTO OR INITIAL (MOVED TO RIGHT VACANT SPACE)
+      // We invert the xOffset2 logic so it slides in from the right gracefully
+      const photoSize = Math.round(H * 0.40);
+      const photoX = W * 0.65 - xOffset2; 
+      const photoY = H * 0.35;
       
       ctx.save();
       ctx.beginPath();
       ctx.arc(photoX + photoSize/2, photoY + photoSize/2, photoSize/2, 0, Math.PI * 2);
+      
+      // Add a nice glowing border
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = '#ffb347';
+      ctx.stroke();
       ctx.clip();
       
       if (this.meta.teacherPhoto && this.meta.teacherPhoto.complete && this.meta.teacherPhoto.naturalWidth) {
@@ -297,16 +313,6 @@ const HMGREC = {
          ctx.fillText((this.meta.staffName || 'A').charAt(0).toUpperCase(), photoX + photoSize/2, photoY + photoSize/2 + (photoSize * 0.05));
       }
       ctx.restore();
-      
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'alphabetic';
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold ' + Math.round(H * 0.05) + 'px system-ui';
-      ctx.fillText(this.meta.staffName || 'Adewale Adeagbo', photoX + photoSize + 25, H * 0.70);
-
-      ctx.fillStyle = '#4f6ef7';
-      ctx.font = Math.round(H * 0.03) + 'px system-ui';
-      ctx.fillText(this.meta.staffTitle || 'Professional Tutor', photoX + photoSize + 25, H * 0.76);
     }
     ctx.restore(); // restore from scene 2 to prevent globalAlpha leakage into the main video
   },
@@ -948,6 +954,37 @@ window.CDSecurity = CDSecurity;
   const btnPhoto = document.getElementById("hmgRecPhotoBtn");
   if(btnPhoto) btnPhoto.addEventListener('click', () => { const f = document.getElementById("hmgRecPhotoFile"); if(f) f.click(); });
   
+  
+  // Global Event Delegation for ALL file uploads to prevent broken bindings
+  document.addEventListener("change", async function(e) {
+    if (e.target && e.target.id === "hmgRecPhotoFile") {
+      const f = e.target.files && e.target.files[0];
+      if (!f) return;
+      const fr = new FileReader();
+      fr.onload = async (ev) => {
+        try {
+          const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = ev.target.result; });
+          const c = document.createElement("canvas");
+          const MAX_SIZE = 250;
+          let k = 1;
+          if (img.naturalWidth > MAX_SIZE || img.naturalHeight > MAX_SIZE) {
+             k = Math.min(1, MAX_SIZE / Math.max(img.naturalWidth, img.naturalHeight));
+          }
+          c.width = Math.round(img.naturalWidth * k) || 1;
+          c.height = Math.round(img.naturalHeight * k) || 1;
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          Store.set("hmg_rec_photo", c.toDataURL("image/jpeg", 0.6));
+          HMGREC._loadLogo();
+          const st = document.getElementById("hmgRecPhotoStatus");
+          if (st) st.textContent = "✓ teacher photo saved";
+          if(typeof toast === "function") toast("👤 Photo saved", "ok");
+        } catch(err) {
+          if(typeof toast === "function") toast("Photo error: " + err.message, "err");
+        }
+      };
+      fr.readAsDataURL(f);
+    }
+  });
   document.addEventListener("click", function (e) {
     if (e.target && e.target.id === "hmgRecBegin") { HMGREC.begin(); }
 
