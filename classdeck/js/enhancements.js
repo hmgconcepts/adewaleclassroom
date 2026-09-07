@@ -285,18 +285,19 @@ const HMGREC = {
       ctx.font = Math.round(H * 0.03) + 'px system-ui';
       ctx.fillText(this.meta.staffTitle || 'Professional Tutor', W * 0.18 + xOffset2, H * 0.78);
 
-      // TEACHER PHOTO OR INITIAL (MOVED TO RIGHT VACANT SPACE)
-      // We invert the xOffset2 logic so it slides in from the right gracefully
-      const photoSize = Math.round(H * 0.40);
-      const photoX = W * 0.65 - xOffset2; 
-      const photoY = H * 0.35;
+      // ----------------------------------------------------
+      // MASSIVE TEACHER PHOTO ON THE RIGHT SIDE
+      // ----------------------------------------------------
+      const photoSize = Math.round(H * 0.50); // Massive size (half the screen height)
+      const photoX = W * 0.70 - (photoSize/2) - (xOffset2 * 1.5); // Slides in gracefully from the right
+      const photoY = H * 0.50 - (photoSize/2); // Perfectly centered vertically against the text block
       
       ctx.save();
       ctx.beginPath();
       ctx.arc(photoX + photoSize/2, photoY + photoSize/2, photoSize/2, 0, Math.PI * 2);
       
-      // Add a nice glowing border
-      ctx.lineWidth = 6;
+      // Thick, bold glowing border to make it pop
+      ctx.lineWidth = Math.round(H * 0.015);
       ctx.strokeStyle = '#ffb347';
       ctx.stroke();
       ctx.clip();

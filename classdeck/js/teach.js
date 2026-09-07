@@ -2190,7 +2190,7 @@ async function startRecording() {
       }
       recChunks = [];
     };
-    activeRecorder.start(1000); // 1-second chunks for hyper-resilient streaming
+    activeRecorder.start(); // No timeslice: forces browser to naturally chunk at keyframes, fixing all ExoPlayer seeking/scrubbing issues on mobile
     startKeepAlive();
     if (window.HMG_REC_SESSION) window.HMG_REC_SESSION.startTs = Date.now();
     $("#btnRec").classList.add("active");
