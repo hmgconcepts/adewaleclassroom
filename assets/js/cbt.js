@@ -1091,10 +1091,10 @@ const CBT = {
        and optional $$…$$ / \\frac markers render without confusion.
        ------------------------------------------------------------------ */
     multiline_math: {
-      label: 'Multi-line maths / STEM expressions',
-      role: 'a senior mathematics examiner who writes board-style items with fractions, matrices, indices, logs, simultaneous equations, calculus and statistics — and knows how to encode them in a single CSV cell',
-      mission: 'Produce a paper where EVERY multi-line expression is encoded so Tutoring Connect / ADEWALE CLASSROOM can display it cleanly on phone and desktop. Prefer structured types (multi_numeric, matrix, numeric) over forcing a fraction into a one-line MCQ option.',
-      ref: { multi_numeric: 5, matrix: 4, numeric: 4, mcq: 4, short: 2, case_study: 1 },
+      label: (P.packs['multiline_math'] ? P.packs['multiline_math'].label : 'multiline_math'),
+      role: 'an expert professional, seasoned educator, and experienced world-class examiner crafting a rigorous, self-contained, and perfectly auto-graded assessment for top-tier exams',
+      mission: 'Generate a highly robust and seamless CBT. ONLY use question types that are inherently auto-graded without tutor supervision (exclude essay, code, audio, file_upload). Create challenging questions capable of preparing students for local, national, and international examinations.',
+      ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 },
       dominant: 'multi_numeric',
       sections: [
         ['ENCODING RULES (MANDATORY) — WHAT THE RENDERER ACTUALLY SUPPORTS',
@@ -1204,10 +1204,10 @@ const CBT = {
        (Ofqual / Cambridge / WAEC figure conventions, WCAG 1.1.1 and 1.4.1).
        ------------------------------------------------------------------ */
     image_stimulus: {
-      label: 'Image / diagram stimulus questions (link-only media)',
-      role: 'a chief examiner and diagram editor who builds figure-based papers to international standards — apparatus, circuits, ray diagrams, maps, graphs, data charts, micrographs and cartoons — using LINK-ONLY media, and who knows that a figure-based item is only as good as its text fallback',
-      mission: 'Produce a paper in which every figure genuinely carries assessment weight, loads from a public link on a slow mobile connection, and remains completely answerable if the image never loads at all. A figure that is decoration, or a question that collapses when the image fails, is a defective item.',
-      ref: { image_mcq: 8, case_study: 3, mcq: 3, numeric: 2, short: 2, hot_text: 2 },
+      label: (P.packs['image_stimulus'] ? P.packs['image_stimulus'].label : 'image_stimulus'),
+      role: 'an expert professional, seasoned educator, and experienced world-class examiner crafting a rigorous, self-contained, and perfectly auto-graded assessment for top-tier exams',
+      mission: 'Generate a highly robust and seamless CBT. ONLY use question types that are inherently auto-graded without tutor supervision (exclude essay, code, audio, file_upload). Create challenging questions capable of preparing students for local, national, and international examinations.',
+      ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 },
       dominant: 'image_mcq',
       sections: [
         ['THE HONESTY RULE — READ THIS FIRST',
@@ -1371,10 +1371,10 @@ const CBT = {
        under it are outstanding.
        ================================================================== */
     passage_set: {
-      label: 'Passage / stimulus set — pinned stimulus, any subject',
-      role: 'a chief examiner who builds stimulus-based sets to international standards, where one shared passage, source, data table, experiment description or extract feeds a block of dependent questions',
-      mission: 'Produce a paper built from STIMULUS SETS. Each set is one shared stimulus plus a block of questions that all depend on it, encoded so the platform can pin the stimulus on screen for the whole set. This blueprint is subject-neutral: the stimulus may be a prose passage, a data table, an experimental method, a legal or constitutional extract, a historical source, a dialogue, a code listing or a case file.',
-      ref: { case_study: 10, mcq: 6, short: 2, hot_text: 2, ordering: 1, essay: 1 },
+      label: (P.packs['passage_set'] ? P.packs['passage_set'].label : 'passage_set'),
+      role: 'an expert professional, seasoned educator, and experienced world-class examiner crafting a rigorous, self-contained, and perfectly auto-graded assessment for top-tier exams',
+      mission: 'Generate a highly robust and seamless CBT. ONLY use question types that are inherently auto-graded without tutor supervision (exclude essay, code, audio, file_upload). Create challenging questions capable of preparing students for local, national, and international examinations.',
+      ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 },
       dominant: 'case_study',
       minOne: true,
       sections: [
@@ -1479,10 +1479,10 @@ const CBT = {
        V39 item 5 — the UTME / JAMB English dialect of passage_set.
        ------------------------------------------------------------------ */
     utme_english: {
-      label: 'UTME / JAMB English — full paper (comprehension, summary, lexis, structure)',
-      role: 'a JAMB-experienced Chief Examiner in Use of English who has set and moderated UTME papers, and who knows the exact section structure, register and difficulty curve candidates meet on the day',
-      mission: 'Produce a complete UTME-style Use of English paper covering Comprehension, Summary, Lexis (synonyms, antonyms, word meaning in context), Structure (grammar and sentence interpretation), and Oral Forms (stress and vowel/consonant sounds). Comprehension and Summary must be built as PINNED PASSAGE SETS so the passage stays on the candidate screen for every question that depends on it.',
-      ref: { case_study: 12, mcq: 20, short: 2, hot_text: 2 },
+      label: (P.packs['utme_english'] ? P.packs['utme_english'].label : 'utme_english'),
+      role: 'an expert professional, seasoned educator, and experienced world-class examiner crafting a rigorous, self-contained, and perfectly auto-graded assessment for top-tier exams',
+      mission: 'Generate a highly robust and seamless CBT. ONLY use question types that are inherently auto-graded without tutor supervision (exclude essay, code, audio, file_upload). Create challenging questions capable of preparing students for local, national, and international examinations.',
+      ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 },
       dominant: 'mcq',
       minOne: true,
       sections: [
@@ -1591,10 +1591,10 @@ const CBT = {
     },
 
     stem_combo: {
-      label: 'Mixed multi-line + image paper',
-      role: 'an assessment architect building a realistic mixed paper for ADEWALE CLASSROOM (WAEC/IGCSE/SAT style) that combines diagram items with multi-line algebra',
-      mission: 'Half the paper uses diagrams via media_url links; half uses multi-line mathematical encoding. The CSV must import cleanly into Quizzes and display without confusion on phones.',
-      ref: { image_mcq: 5, multi_numeric: 4, matrix: 3, numeric: 3, mcq: 3, case_study: 2 },
+      label: (P.packs['stem_combo'] ? P.packs['stem_combo'].label : 'stem_combo'),
+      role: 'an expert professional, seasoned educator, and experienced world-class examiner crafting a rigorous, self-contained, and perfectly auto-graded assessment for top-tier exams',
+      mission: 'Generate a highly robust and seamless CBT. ONLY use question types that are inherently auto-graded without tutor supervision (exclude essay, code, audio, file_upload). Create challenging questions capable of preparing students for local, national, and international examinations.',
+      ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 },
       dominant: 'image_mcq',
       sections: [
         ['BLEND', 'Alternate diagram items and multi-line calculation items so a candidate cannot skip a skill area.'],
@@ -1741,35 +1741,59 @@ const CBT = {
 
     material_upload: {
       label: 'Uploaded Material CBT',
-      role: 'an expert educator creating an assessment strictly from the provided document material',
-      mission: 'Generate a comprehensive CBT strictly based on the provided material. The user will specify the exact pages, chapters, or sections to cover in their prompt. Do NOT invent facts outside the provided document.',
-      ref: { mcq: 5, tf: 3, short: 2, matching: 2, cloze: 2 },
+      role: 'an expert professional, seasoned educator, and experienced world-class examiner creating a rigorous auto-graded assessment strictly from the provided document material',
+      mission: 'Generate a highly robust, self-contained, and comprehensive CBT strictly based on the provided material. ONLY use facts found in the document. Exclude any question types requiring manual tutor review (e.g. essay, code). Create challenging questions capable of preparing students for local, national, and international examinations.',
+      ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 },
       dominant: 'mcq',
       minOne: false,
       sections: [
-        ['SOURCE ADHERENCE', 'Every single question MUST be derivable directly from the uploaded material.'],
-        ['TARGETED EXTRACTION', 'Focus entirely on the requested pages, chapters, or sections specified by the user.']
+        ['SOURCE ADHERENCE', 'Every single question MUST be derivable directly from the uploaded material. No external facts.'],
+        ['TARGETED EXTRACTION', 'Focus entirely on the requested pages, chapters, or sections specified by the user.'],
+        ['EXAMINATION RIGOR', 'Design questions that thoroughly test critical thinking, analysis, and application of the text, matching world-class standards.']
       ],
       quality: [
         'No hallucinated information; stick perfectly to the text.',
-        'Varied auto-graded question types testing comprehension and application.'
+        'Extensive use of strictly auto-graded question types.',
+        'Robust, seamless, and self-contained questions with detailed explanations.'
       ]
     },
 
     material_link: {
       label: 'Linked Material CBT',
-      role: 'an expert educator creating an assessment strictly from the provided material via URL',
-      mission: 'Analyze the material at the provided link and generate a comprehensive CBT strictly based on it. The user will specify the exact pages, chapters, or sections to cover in their prompt. Do NOT invent facts outside the linked document.',
-      ref: { mcq: 5, tf: 3, short: 2, matching: 2, cloze: 2 },
+      role: 'an expert professional, seasoned educator, and experienced world-class examiner creating a rigorous auto-graded assessment strictly from the provided linked material via URL',
+      mission: 'Analyze the material at the provided link(s) and generate a highly robust, self-contained, and comprehensive CBT strictly based on it. ONLY use facts found in the linked document. Exclude any question types requiring manual tutor review.',
+      ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 },
       dominant: 'mcq',
       minOne: false,
       sections: [
-        ['SOURCE ADHERENCE', 'Every single question MUST be derivable directly from the linked material.'],
-        ['TARGETED EXTRACTION', 'Focus entirely on the requested pages, chapters, or sections specified by the user.']
+        ['SOURCE ADHERENCE', 'Every single question MUST be derivable directly from the linked material. No external facts.'],
+        ['TARGETED EXTRACTION', 'Focus entirely on the requested pages, chapters, or sections specified by the user.'],
+        ['EXAMINATION RIGOR', 'Design questions that thoroughly test critical thinking, analysis, and application of the text, matching world-class standards.']
       ],
       quality: [
-        'No hallucinated information; stick perfectly to the text.',
-        'Varied auto-graded question types testing comprehension and application.'
+        'No hallucinated information; stick perfectly to the linked text.',
+        'Extensive use of strictly auto-graded question types.',
+        'Robust, seamless, and self-contained questions with detailed explanations.'
+      ]
+    },
+
+    multi_link_multi_subject: {
+      label: 'Multi-Link Multi-Subject Paper',
+      role: 'an expert professional, seasoned educator, and experienced world-class examiner compiling a unified multi-subject CBT from various linked materials',
+      mission: 'Analyze the materials at the provided links. Create a single comprehensive multi-subject CBT, strictly based on these links, organizing questions by subject so each subject receives its own tab at the top. Ensure all question types are purely auto-gradable without tutor supervision.',
+      ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 },
+      dominant: 'mcq',
+      minOne: false,
+      sections: [
+        ['SOURCE ADHERENCE', 'Every question MUST be derivable directly from the provided links.'],
+        ['MULTI-SUBJECT ORGANIZATION', 'You MUST group the questions using Subject headers so the platform natively parses them into separate subject tabs.'],
+        ['TARGETED EXTRACTION', 'Focus entirely on the requested pages, chapters, or sections specified.'],
+        ['EXAMINATION RIGOR', 'Robust, world-class standard assessment capable of preparing students for top-tier examinations.']
+      ],
+      quality: [
+        'Strictly partitioned subjects.',
+        'No hallucinated information.',
+        'Exclusively auto-graded questions.'
       ]
     },
 
@@ -1825,10 +1849,10 @@ const CBT = {
     },
 
     reading_article: {
-      label: 'Reading — article / text',
-      role: 'a comprehension examiner who sets papers on unseen texts',
-      mission: 'Test whether the learner actually READ and UNDERSTOOD the specific material, not whether they already knew the topic.',
-      ref: { case_study: 6, short: 5, mcq: 4, cloze: 3, hot_text: 2 }, dominant: 'case_study',
+      label: (P.packs['reading_article'] ? P.packs['reading_article'].label : 'reading_article'),
+      role: 'an expert professional, seasoned educator, and experienced world-class examiner crafting a rigorous, self-contained, and perfectly auto-graded assessment for top-tier exams',
+      mission: 'Generate a highly robust and seamless CBT. ONLY use question types that are inherently auto-graded without tutor supervision (exclude essay, code, audio, file_upload). Create challenging questions capable of preparing students for local, national, and international examinations.',
+      ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 }, dominant: 'case_study',
       sections: [
         ['SOURCE', 'Base EVERY item on this material: {{SOURCE}}\nA learner who has not read it must not be able to answer from general knowledge.'],
         ['SKILL MIX', 'Cover the four comprehension skills: literal retrieval, inference,\nvocabulary-in-context, and author purpose or tone. Name which skill each\nitem tests in Col16.'],
@@ -1842,10 +1866,10 @@ const CBT = {
     },
 
     reading_video: {
-      label: 'Reading — video source',
-      role: 'a media-literacy examiner setting questions on a specific recording',
-      mission: 'Confirm the learner watched attentively and can reason about what they saw and heard.',
-      ref: { case_study: 5, mcq: 6, short: 4, ordering: 3, tf: 2 }, dominant: 'mcq',
+      label: (P.packs['reading_video'] ? P.packs['reading_video'].label : 'reading_video'),
+      role: 'an expert professional, seasoned educator, and experienced world-class examiner crafting a rigorous, self-contained, and perfectly auto-graded assessment for top-tier exams',
+      mission: 'Generate a highly robust and seamless CBT. ONLY use question types that are inherently auto-graded without tutor supervision (exclude essay, code, audio, file_upload). Create challenging questions capable of preparing students for local, national, and international examinations.',
+      ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 }, dominant: 'mcq',
       sections: [
         ['SOURCE', 'Base EVERY item on this video: {{SOURCE}}\nQuestions must be answerable ONLY by someone who watched it.'],
         ['TIMESTAMPS', 'Where a specific moment matters, cite the timestamp in the Explanation\n(e.g. "see 04:12"). This lets the tutor replay the exact clip.'],
@@ -1859,10 +1883,10 @@ const CBT = {
     },
 
     reading_pack: {
-      label: 'Reading — full comprehension set',
-      role: 'an examiner building a complete comprehension section around one shared passage',
-      mission: 'Produce a coherent comprehension SET, not scattered questions: one shared stimulus, then a graded ladder of questions on it.',
-      ref: { case_study: 10, evidence_mcq: 3, short: 5, cloze: 3, hot_text: 2 }, dominant: 'case_study',
+      label: (P.packs['reading_pack'] ? P.packs['reading_pack'].label : 'reading_pack'),
+      role: 'an expert professional, seasoned educator, and experienced world-class examiner crafting a rigorous, self-contained, and perfectly auto-graded assessment for top-tier exams',
+      mission: 'Generate a highly robust and seamless CBT. ONLY use question types that are inherently auto-graded without tutor supervision (exclude essay, code, audio, file_upload). Create challenging questions capable of preparing students for local, national, and international examinations.',
+      ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 }, dominant: 'case_study',
       sections: [
         ['SOURCE', 'Shared stimulus: {{SOURCE}}\nRepeat the SAME passage in Col14 of every case_study row so each question\nstands alone if shuffled.'],
         ['LADDER', 'Order from literal retrieval, through inference, to evaluation. The last\nthree items should be the most demanding in the set.']
@@ -1907,27 +1931,10 @@ const CBT = {
     },
 
     exam_board: {
-      label: 'Exam-board house style',
-      role: 'a former {{BOARD}} question setter who knows the board\'s house style intimately',
-      mission: 'Produce items indistinguishable from real {{BOARD}} questions in register, command words and mark weighting.',
-      ref: { mcq: 10, short: 3, numeric: 3, case_study: 2, assertion_reason: 2 }, dominant: 'mcq',
-      sections: [
-        ['HOUSE STYLE — {{BOARD}}', 'Mirror the board precisely: its command words (state, define, explain,\ndescribe, calculate, justify), its stem length, its option phrasing, its\nordering from accessible to demanding, and its mark allocations.'],
-        ['SYLLABUS ANCHORING', 'Every item must map to a stated syllabus objective for {{BOARD}}. Put the\nobjective reference in Col16 where you can identify it.'],
-        ['AUTHENTICITY TEST', 'A candidate should not be able to tell these apart from past questions.\nIf an item reads like a textbook exercise rather than an exam question,\nrewrite it.']
-      ],
-      quality: [
-        'Command words match {{BOARD}} conventions exactly.',
-        'Mark values match how {{BOARD}} weights that kind of task.',
-        'Col16 carries a syllabus reference wherever one can be identified.'
-      ]
-    },
-
-    differentiated: {
-      label: 'Differentiated (three tiers)',
-      role: 'an inclusion lead building one paper that works for a mixed-ability group',
-      mission: 'One paper, three visible tiers, so every learner in the room meets questions at the edge of their ability.',
-      ref: { mcq: 8, short: 3, numeric: 3, multi_numeric: 2, case_study: 2, tf: 2 }, dominant: 'mcq',
+      label: 'Exam-board paper',
+      role: 'an expert professional, seasoned educator, and experienced world-class examiner crafting a rigorous, self-contained, and perfectly auto-graded assessment for top-tier exams',
+      mission: 'Generate a highly robust and seamless CBT. ONLY use question types that are inherently auto-graded without tutor supervision (exclude essay, code, audio, file_upload). Create challenging questions capable of preparing students for local, national, and international examinations.',
+      ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 }, dominant: 'mcq',
       sections: [
         ['THREE TIERS', 'Exactly one third foundation, one third core, one third stretch.\nCol15 must read "easy", "moderate" or "demanding" — the tutor filters on it.'],
         ['SAME CONTENT, DIFFERENT DEMAND', 'The tiers must test the SAME sub-topics at different depths, so a foundation\nlearner and a stretch learner can discuss the same lesson afterwards.'],
