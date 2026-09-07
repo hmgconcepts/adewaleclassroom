@@ -66,7 +66,7 @@
 <script src="assets/js/insights.js"></script>
 <script src="assets/js/cbt-richtext.js"></script>
 <script src="assets/js/cbt-speech.js"></script>
-<script src="assets/js/cbt.js?v=21"></script>
+<script src="assets/js/cbt.js?v=22"></script>
 <script src="assets/js/cbt-types.js"></script>
 <script src="assets/js/proctor.js"></script>
 <script src="assets/js/bookings-engine.js"></script>
@@ -204,7 +204,7 @@
           </div>
           <div class="form-group" data-need="subjects" style="grid-column:1/-1" hidden>
             <label>Topic for each subject</label>
-            <div id="subject-topics" class="tcq-parts"></div>
+            <div id="subject-topics" class="tcq-parts" style="display:flex; flex-direction:column; gap:12px;"></div>
             <div class="form-help">Give each subject its own topic. Leave one blank to let the model
               choose a representative topic for that subject.</div>
           </div>
@@ -382,9 +382,12 @@ function syncSubjectTopics(force){
     } else {
       row = document.createElement('div');
       row.className = 'tcq-part';
+      row.style.display = 'flex';
+      row.style.flexDirection = 'column';
+      row.style.gap = '4px';
       const lab = document.createElement('label');
       lab.className = 'tcq-part-label';
-      lab.style.minWidth = '110px';
+      lab.style.fontWeight = 'bold';
       lab.textContent = dynamicLabel;
       input = document.createElement('input');
       input.className = 'form-input';
