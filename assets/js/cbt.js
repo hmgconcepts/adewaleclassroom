@@ -1787,7 +1787,7 @@ const CBT = {
       sections: [
         ['SOURCE ADHERENCE', 'Every question MUST be derivable directly from the provided links.'],
         ['MULTI-SUBJECT ORGANIZATION', 'You MUST group the questions using Subject headers so the platform natively parses them into separate subject tabs.'],
-        ['TARGETED EXTRACTION', 'Focus entirely on the requested pages, chapters, or sections specified.'],
+        ['TARGETED EXTRACTION', 'Focus entirely on the requested pages, chapters, or sections specified.\n\n{{SUBJECT_TOPICS}}'],
         ['EXAMINATION RIGOR', 'Robust, world-class standard assessment capable of preparing students for top-tier examinations.']
       ],
       quality: [
@@ -2065,6 +2065,15 @@ const CBT = {
       .replace(/\{\{SUBJECT_TOPICS\}\}/g, stLines)
       .replace(/\{\{SUBJECTS\}\}/g, subjects);
 
+    let topBlocks = [];
+    if (extra.source && extra.source.trim()) topBlocks.push('SOURCE MATERIAL / STANDARD: ' + extra.source.trim());
+    if (extra.material_target && extra.material_target.trim()) topBlocks.push('TARGET PAGES/CHAPTERS/SECTIONS: ' + extra.material_target.trim());
+    if (extra.material_link && extra.material_link.trim()) topBlocks.push('MATERIAL LINK (URL): ' + extra.material_link.trim());
+    if (extra.multi_links && extra.multi_links.trim()) topBlocks.push('MULTIPLE MATERIAL LINKS: ' + extra.multi_links.trim());
+    
+    const contextHeader = topBlocks.length > 0 ? ('\nCONTEXT:\n' + topBlocks.join('\n') + '\n') : '';
+
+
     const mix = this._mix(P.ref, n, P.dominant, P.minOne);
     const usedTypes = Object.keys(mix);
     const distribution = usedTypes.map(function (k) { return k + '=' + mix[k]; }).join(', ');
@@ -2098,7 +2107,7 @@ const CBT = {
 'ROLE\n' +
 'You are ' + fill(P.role) + '.\n' +
 'You are writing for ' + studio + ', a tutoring studio serving Nigerian and\n' +
-'international learners.\n\n' +
+'international learners.\n' + contextHeader + '\n' +
 'MISSION FOR THIS PARTICULAR PAPER\n' +
 fill(P.mission) + '\n\n' +
 'TASK\n' +
