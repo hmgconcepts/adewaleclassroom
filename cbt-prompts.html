@@ -66,7 +66,7 @@
 <script src="assets/js/insights.js"></script>
 <script src="assets/js/cbt-richtext.js"></script>
 <script src="assets/js/cbt-speech.js"></script>
-<script src="assets/js/cbt.js?v=15"></script>
+<script src="assets/js/cbt.js?v=16"></script>
 <script src="assets/js/cbt-types.js"></script>
 <script src="assets/js/proctor.js"></script>
 <script src="assets/js/bookings-engine.js"></script>
@@ -126,6 +126,7 @@
               <option value="enterprise">Auto-Graded Ultimate Pack</option>
               <option value="material_upload">Uploaded Material (Specific pages/chapters)</option>
               <option value="material_link">Linked Material (Specific pages/chapters via URL)</option>
+              <option value="multi_link_multi_subject">Multi-Link Multi-Subject Paper (Tabs at top)</option>
               <option value="self">Self-Quiz</option>
               <option value="review">Review-Quiz</option>
               <option value="graded">Graded-Quiz</option>
@@ -407,6 +408,9 @@ function renderPrompt(){
     document.getElementById('lv').value,
     {
       source:   document.getElementById('src').value,
+      material_target: (document.getElementById('material_target') || {}).value || '',
+      material_link: (document.getElementById('material_link') || {}).value || '',
+      multi_links: (document.getElementById('multi_links') || {}).value || '',
       subject:  (document.getElementById('subject') || {}).value || '',
       examType: boardEl ? boardEl.value : '',
       board:    boardEl ? boardEl.value : '',
@@ -422,7 +426,13 @@ function renderPrompt(){
   );
 }
 document.getElementById('build').onclick=build;
-document.getElementById('pack').addEventListener('change', build);
+document.getElementById('pack').addEventListener('change', (e) => {
+    const v = e.target.value;
+    document.getElementById('fg_material_target').classList.toggle('hide', !(v === 'material_upload' || v === 'material_link' || v === 'multi_link_multi_subject'));
+    document.getElementById('fg_material_link').classList.toggle('hide', v !== 'material_link');
+    document.getElementById('fg_multi_links').classList.toggle('hide', v !== 'multi_link_multi_subject');
+    build();
+  });
 
 /* The SUBJECTS field is the only one that may restructure the topic boxes.
    Even here syncSubjectTopics() returns immediately when the parsed list has
