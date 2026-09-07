@@ -2140,12 +2140,14 @@ async function startRecording() {
         }
       }
       /* Clear the mirrored IndexedDB chunks now that the recording is committed. */
+      stopKeepAlive();
       if (window.CDCrashSafe && window.CDCrashSafe.clearSession && window.HMG_REC_SESSION) {
         try { CDCrashSafe.clearSession(window.HMG_REC_SESSION.sessionId); } catch {}
       }
       recChunks = [];
     };
-    activeRecorder.start(2000);
+    activeRecorder.start(1000); // 1-second chunks for hyper-resilient streaming
+    startKeepAlive();
     if (window.HMG_REC_SESSION) window.HMG_REC_SESSION.startTs = Date.now();
     $("#btnRec").classList.add("active");
     toast("⏺ Recording started — " + ((activeRecorder.mimeType || mime || "webm").includes("mp4") ? "MP4" : "WebM") + " on this device when you stop", "ok", 5000);
