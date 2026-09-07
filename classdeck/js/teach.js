@@ -2147,43 +2147,20 @@ async function startRecording() {
       const outType = activeRecorder.mimeType || mime || "video/webm";
       const ext = outType.includes("mp4") ? ".mp4" : ".webm";
       const fname = [safe(recMeta.brand || "Lesson"), safe(recMeta.subject || ""), safe(recMeta.topic || ""), safe(recMeta.klass || ""), new Date().toISOString().slice(0, 10)].filter(Boolean).join("_") + ext;
+      
       if (chunks.length) {
         const rawBlob = new Blob(chunks, { type: outType });
-        if (window.EBML && window.EBML.default && outType.includes("webm")) {
+        if (outType.includes("webm") && window.ysFixWebmDuration && window.HMG_REC_SESSION && window.HMG_REC_SESSION.startTs) {
+          const recordedDurationMs = Date.now() - window.HMG_REC_SESSION.startTs;
           try {
-            window.EBML.default(rawBlob).then(function(fixedBlob) {
-              const resBlob = fixedBlob || rawBlob;
-              if (resBlob === rawBlob) { downloadBlob(resBlob, fname); return; }
-              // ANDROID EXOPLAYER FIX: Patch the "Unknown" Segment Size to the actual file size.
-              const reader = new FileReader();
-              reader.onload = function() {
-                const buf = new Uint8Array(reader.result);
-                // Look for Segment ID: 18 53 80 67
-                for(let i=0; i<buf.length - 12; i++) {
-                  if(buf[i]===0x18 && buf[i+1]===0x53 && buf[i+2]===0x80 && buf[i+3]===0x67) {
-                    if(buf[i+4]===0x01 && buf[i+5]===0xFF && buf[i+6]===0xFF && buf[i+7]===0xFF) {
-                      const segmentSize = buf.length - (i + 12);
-                      let hex = segmentSize.toString(16).padStart(14, '0');
-                      buf[i+4] = 0x01; // Marker for 8-byte length
-                      for(let j=0; j<7; j++) {
-                        buf[i+5+j] = parseInt(hex.slice(j*2, j*2+2), 16);
-                      }
-                      break;
-                    }
-                  }
-                }
-                downloadBlob(new Blob([buf], { type: outType }), fname);
-              };
-              reader.readAsArrayBuffer(resBlob);
-            }).catch(function(err) {
-              downloadBlob(rawBlob, fname);
+            window.ysFixWebmDuration(rawBlob, recordedDurationMs, function(fixedBlob) {
+              downloadBlob(fixedBlob || rawBlob, fname);
             });
           } catch(err) { downloadBlob(rawBlob, fname); }
         } else {
           downloadBlob(rawBlob, fname);
         }
       }
-      /* Clear the mirrored IndexedDB chunks now that the recording is committed. */
       stopKeepAlive();
       if (window.CDCrashSafe && window.CDCrashSafe.clearSession && window.HMG_REC_SESSION) {
         try { CDCrashSafe.clearSession(window.HMG_REC_SESSION.sessionId); } catch {}
