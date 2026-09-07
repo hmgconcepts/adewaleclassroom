@@ -529,7 +529,8 @@
     error_spotting: 'hot_text', map_label: 'image_based',
     graph_read: 'case_study', citation: 'short_answer',
     audio_based: 'image_based', video_based: 'image_based',
-    code_output: 'code', hotspot: 'hotspot'
+    code_output: 'code', hotspot: 'hotspot',
+    inline_choice: 'cloze', true_false_not_given: 'mcq'
   };
 
   /* -------------------------------------------------------------------------

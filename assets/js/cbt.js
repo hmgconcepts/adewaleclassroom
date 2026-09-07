@@ -1091,7 +1091,7 @@ const CBT = {
        and optional $$…$$ / \\frac markers render without confusion.
        ------------------------------------------------------------------ */
     multiline_math: {
-      label: (P.packs['multiline_math'] ? P.packs['multiline_math'].label : 'multiline_math'),
+      label: 'Multi-line maths / STEM',
       role: 'an expert professional, seasoned educator, and experienced world-class examiner crafting a rigorous, self-contained, and perfectly auto-graded assessment for top-tier exams',
       mission: 'Generate a highly robust and seamless CBT. ONLY use question types that are inherently auto-graded without tutor supervision (exclude essay, code, audio, file_upload). Create challenging questions capable of preparing students for local, national, and international examinations.',
       ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 },
@@ -1204,7 +1204,7 @@ const CBT = {
        (Ofqual / Cambridge / WAEC figure conventions, WCAG 1.1.1 and 1.4.1).
        ------------------------------------------------------------------ */
     image_stimulus: {
-      label: (P.packs['image_stimulus'] ? P.packs['image_stimulus'].label : 'image_stimulus'),
+      label: 'Image / diagram stimulus',
       role: 'an expert professional, seasoned educator, and experienced world-class examiner crafting a rigorous, self-contained, and perfectly auto-graded assessment for top-tier exams',
       mission: 'Generate a highly robust and seamless CBT. ONLY use question types that are inherently auto-graded without tutor supervision (exclude essay, code, audio, file_upload). Create challenging questions capable of preparing students for local, national, and international examinations.',
       ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 },
@@ -1371,7 +1371,7 @@ const CBT = {
        under it are outstanding.
        ================================================================== */
     passage_set: {
-      label: (P.packs['passage_set'] ? P.packs['passage_set'].label : 'passage_set'),
+      label: 'Passage / stimulus set',
       role: 'an expert professional, seasoned educator, and experienced world-class examiner crafting a rigorous, self-contained, and perfectly auto-graded assessment for top-tier exams',
       mission: 'Generate a highly robust and seamless CBT. ONLY use question types that are inherently auto-graded without tutor supervision (exclude essay, code, audio, file_upload). Create challenging questions capable of preparing students for local, national, and international examinations.',
       ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 },
@@ -1479,7 +1479,7 @@ const CBT = {
        V39 item 5 — the UTME / JAMB English dialect of passage_set.
        ------------------------------------------------------------------ */
     utme_english: {
-      label: (P.packs['utme_english'] ? P.packs['utme_english'].label : 'utme_english'),
+      label: 'UTME / JAMB English',
       role: 'an expert professional, seasoned educator, and experienced world-class examiner crafting a rigorous, self-contained, and perfectly auto-graded assessment for top-tier exams',
       mission: 'Generate a highly robust and seamless CBT. ONLY use question types that are inherently auto-graded without tutor supervision (exclude essay, code, audio, file_upload). Create challenging questions capable of preparing students for local, national, and international examinations.',
       ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 },
@@ -1591,7 +1591,7 @@ const CBT = {
     },
 
     stem_combo: {
-      label: (P.packs['stem_combo'] ? P.packs['stem_combo'].label : 'stem_combo'),
+      label: 'Mixed multi-line + image paper',
       role: 'an expert professional, seasoned educator, and experienced world-class examiner crafting a rigorous, self-contained, and perfectly auto-graded assessment for top-tier exams',
       mission: 'Generate a highly robust and seamless CBT. ONLY use question types that are inherently auto-graded without tutor supervision (exclude essay, code, audio, file_upload). Create challenging questions capable of preparing students for local, national, and international examinations.',
       ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 },
@@ -1849,7 +1849,7 @@ const CBT = {
     },
 
     reading_article: {
-      label: (P.packs['reading_article'] ? P.packs['reading_article'].label : 'reading_article'),
+      label: 'Reading — article',
       role: 'an expert professional, seasoned educator, and experienced world-class examiner crafting a rigorous, self-contained, and perfectly auto-graded assessment for top-tier exams',
       mission: 'Generate a highly robust and seamless CBT. ONLY use question types that are inherently auto-graded without tutor supervision (exclude essay, code, audio, file_upload). Create challenging questions capable of preparing students for local, national, and international examinations.',
       ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 }, dominant: 'case_study',
@@ -1866,7 +1866,7 @@ const CBT = {
     },
 
     reading_video: {
-      label: (P.packs['reading_video'] ? P.packs['reading_video'].label : 'reading_video'),
+      label: 'Reading — video',
       role: 'an expert professional, seasoned educator, and experienced world-class examiner crafting a rigorous, self-contained, and perfectly auto-graded assessment for top-tier exams',
       mission: 'Generate a highly robust and seamless CBT. ONLY use question types that are inherently auto-graded without tutor supervision (exclude essay, code, audio, file_upload). Create challenging questions capable of preparing students for local, national, and international examinations.',
       ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 }, dominant: 'mcq',
@@ -1883,7 +1883,7 @@ const CBT = {
     },
 
     reading_pack: {
-      label: (P.packs['reading_pack'] ? P.packs['reading_pack'].label : 'reading_pack'),
+      label: 'Reading — pack',
       role: 'an expert professional, seasoned educator, and experienced world-class examiner crafting a rigorous, self-contained, and perfectly auto-graded assessment for top-tier exams',
       mission: 'Generate a highly robust and seamless CBT. ONLY use question types that are inherently auto-graded without tutor supervision (exclude essay, code, audio, file_upload). Create challenging questions capable of preparing students for local, national, and international examinations.',
       ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 }, dominant: 'case_study',
