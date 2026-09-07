@@ -66,7 +66,7 @@
 <script src="assets/js/insights.js"></script>
 <script src="assets/js/cbt-richtext.js"></script>
 <script src="assets/js/cbt-speech.js"></script>
-<script src="assets/js/cbt.js?v=16"></script>
+<script src="assets/js/cbt.js?v=17"></script>
 <script src="assets/js/cbt-types.js"></script>
 <script src="assets/js/proctor.js"></script>
 <script src="assets/js/bookings-engine.js"></script>
@@ -171,7 +171,20 @@
               <option>SAT</option><option>ACT</option><option>GRE</option><option>GMAT</option>
               <option>Olympiad / competition</option><option>University entrance</option>
             </select></div>
-          <div class="form-group" style="grid-column:1/-1" data-need="source"><label>Source link — the article, video or past paper the questions come from</label>
+          
+          <div class="form-group" data-need="material_target" style="grid-column:1/-1" hidden>
+            <label>Specific Pages, Chapters, or Sections to test</label>
+            <input type="text" class="form-input" id="material_target" placeholder="e.g. Chapter 3, Pages 45-60, Section 2.1">
+          </div>
+          <div class="form-group" data-need="material_link" style="grid-column:1/-1" hidden>
+            <label>Link to Material (URL)</label>
+            <input type="text" class="form-input" id="material_link" placeholder="e.g. https://example.com/document.pdf">
+          </div>
+          <div class="form-group" data-need="multi_links" style="grid-column:1/-1" hidden>
+            <label>Multiple Links (Comma separated URLs for Multi-Subject CBT)</label>
+            <input type="text" class="form-input" id="multi_links" placeholder="Link 1, Link 2...">
+          </div>
+<div class="form-group" style="grid-column:1/-1" data-need="source"><label>Source link — the article, video or past paper the questions come from</label>
             <input class="form-input" id="src" placeholder="https://… or a Google Drive / YouTube link">
             <div class="form-help">Links only — never upload a file. The learner opens the same link from Reading assignments, so the questions and the material always match.</div></div>
           <!-- ITEM 5 — multi-subject papers.
@@ -234,7 +247,10 @@ function toast(msg, type, ms) {
    fields that matter to the selected pack. */
 const NEEDS = {
   reading_article:['source'], reading_video:['source'], reading_pack:['source'],
-  past_paper:['source'], multi_subject:['subjects']
+  past_paper:['source'], multi_subject:['subjects'],
+  material_upload:['material_target'],
+  material_link:['material_target', 'material_link'],
+  multi_link_multi_subject:['material_target', 'multi_links', 'subjects']
 };
 
 function syncFields(){
@@ -398,41 +414,40 @@ function build(e){
 /* Rewrites ONLY the generated-prompt textarea. Safe to call on every
    keystroke because it does not rebuild a single form control. */
 function renderPrompt(){
-  const pack = document.getElementById('pack').value;
-  const boardEl = document.getElementById('examType');
-  const subjEl  = document.getElementById('subjects');
-  document.getElementById('out').value = CBT.promptPack(
-    pack,
-    document.getElementById('topic').value,
-    Number(document.getElementById('n').value||10),
-    document.getElementById('lv').value,
-    {
-      source:   document.getElementById('src').value,
-      material_target: (document.getElementById('material_target') || {}).value || '',
-      material_link: (document.getElementById('material_link') || {}).value || '',
-      multi_links: (document.getElementById('multi_links') || {}).value || '',
-      subject:  (document.getElementById('subject') || {}).value || '',
-      examType: boardEl ? boardEl.value : '',
-      board:    boardEl ? boardEl.value : '',
-      subjects: subjEl ? subjEl.value : '',
-      subjectTopics: (function(){
-        const out = {};
-        document.querySelectorAll('[data-subject-topic]').forEach(i=>{
-          if (i.value.trim()) out[i.dataset.subjectTopic] = i.value.trim();
-        });
-        return out;
-      })()
-    }
-  );
+  try {
+    const pack = document.getElementById('pack').value;
+    const boardEl = document.getElementById('examType');
+    const subjEl  = document.getElementById('subjects');
+    document.getElementById('out').value = CBT.promptPack(
+      pack,
+      document.getElementById('topic').value,
+      Number(document.getElementById('n').value||10),
+      document.getElementById('lv').value,
+      {
+        source:   document.getElementById('src').value,
+        material_target: (document.getElementById('material_target') || {}).value || '',
+        material_link: (document.getElementById('material_link') || {}).value || '',
+        multi_links: (document.getElementById('multi_links') || {}).value || '',
+        subject:  (document.getElementById('subject') || {}).value || '',
+        examType: boardEl ? boardEl.value : '',
+        board:    boardEl ? boardEl.value : '',
+        subjects: subjEl ? subjEl.value : '',
+        subjectTopics: (function(){
+          const out = {};
+          document.querySelectorAll('[data-subject-topic]').forEach(i=>{
+            if (i.value.trim()) out[i.dataset.subjectTopic] = i.value.trim();
+          });
+          return out;
+        })()
+      }
+    );
+  } catch(err) {
+    document.getElementById('out').value = "ERROR GENERATING PROMPT: " + err.message + "\n\n" + err.stack;
+  }
 }
 document.getElementById('build').onclick=build;
-document.getElementById('pack').addEventListener('change', (e) => {
-    const v = e.target.value;
-    document.getElementById('fg_material_target').classList.toggle('hide', !(v === 'material_upload' || v === 'material_link' || v === 'multi_link_multi_subject'));
-    document.getElementById('fg_material_link').classList.toggle('hide', v !== 'material_link');
-    document.getElementById('fg_multi_links').classList.toggle('hide', v !== 'multi_link_multi_subject');
-    build();
-  });
+document.getElementById('pack').addEventListener('change', build);
+build();
 
 /* The SUBJECTS field is the only one that may restructure the topic boxes.
    Even here syncSubjectTopics() returns immediately when the parsed list has
@@ -446,13 +461,24 @@ document.getElementById('subjects').addEventListener('input', function(){
 /* Everything else only needs the prompt re-rendered. Calling build() here
    was what dragged syncSubjectTopics() — and its innerHTML wipe — into every
    keystroke on the page. */
-['topic','n','lv','src','subject','examType'].forEach(id=>{
+['topic','n','lv','src','subject','examType','material_target','material_link','multi_links'].forEach(id=>{
   const el=document.getElementById(id); if(el) el.addEventListener('input', renderPrompt);
 });
 ['pack','lv','examType'].forEach(id=>{
   const el=document.getElementById(id); if(el) el.addEventListener('change', build);
 });
-document.getElementById('copy').onclick=async()=>{ await navigator.clipboard.writeText(document.getElementById('out').value); toast('Copied — paste into any free chat','success'); };
+document.getElementById('copy').onclick=async()=>{ 
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(document.getElementById('out').value); 
+      } else {
+        const outEl = document.getElementById('out');
+        outEl.select();
+        document.execCommand('copy');
+      }
+      toast('Copied — paste into any free chat','success'); 
+    } catch(err) { toast('Copy failed: ' + err.message, 'error'); }
+  };
 /* Save the CSV the chat gives back, straight to a .csv file (items 7 & 12). */
 (function(){
   const bar=document.createElement('div');
