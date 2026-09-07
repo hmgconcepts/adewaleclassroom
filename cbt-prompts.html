@@ -66,7 +66,7 @@
 <script src="assets/js/insights.js"></script>
 <script src="assets/js/cbt-richtext.js"></script>
 <script src="assets/js/cbt-speech.js"></script>
-<script src="assets/js/cbt.js?v=20"></script>
+<script src="assets/js/cbt.js?v=21"></script>
 <script src="assets/js/cbt-types.js"></script>
 <script src="assets/js/proctor.js"></script>
 <script src="assets/js/bookings-engine.js"></script>
@@ -367,13 +367,17 @@ function syncSubjectTopics(force){
     const key = sub.toLowerCase();
     let input = existing[key];
     let row;
+    const isMultiLink = document.getElementById('pack').value === 'multi_link_multi_subject';
+    const dynamicPlaceholder = isMultiLink ? 'e.g. Chapter 3, Pages 45-60...' : 'Topic for ' + sub;
+    const dynamicLabel = isMultiLink ? 'Pages/Chapters for ' + sub : sub;
+
     if (input) {
       // REUSE the live element. This is the whole point of the fix.
       row = input.closest('.tcq-part');
       const lab = row.querySelector('.tcq-part-label');
-      if (lab && lab.textContent !== sub) lab.textContent = sub;   // re-cased
+      if (lab && lab.textContent !== dynamicLabel) lab.textContent = dynamicLabel; 
       input.dataset.subjectTopic = sub;
-      input.placeholder = 'Topic for ' + sub;
+      input.placeholder = dynamicPlaceholder;
       delete existing[key];
     } else {
       row = document.createElement('div');
@@ -381,11 +385,11 @@ function syncSubjectTopics(force){
       const lab = document.createElement('label');
       lab.className = 'tcq-part-label';
       lab.style.minWidth = '110px';
-      lab.textContent = sub;
+      lab.textContent = dynamicLabel;
       input = document.createElement('input');
       input.className = 'form-input';
       input.dataset.subjectTopic = sub;
-      input.placeholder = 'Topic for ' + sub;
+      input.placeholder = dynamicPlaceholder;
       // A topic does not change which fields are shown, so it must NOT call
       // build(). renderPrompt() only rewrites the output textarea.
       input.addEventListener('input', renderPrompt);
