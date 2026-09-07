@@ -66,7 +66,7 @@
 <script src="assets/js/insights.js"></script>
 <script src="assets/js/cbt-richtext.js"></script>
 <script src="assets/js/cbt-speech.js"></script>
-<script src="assets/js/cbt.js?v=18"></script>
+<script src="assets/js/cbt.js?v=19"></script>
 <script src="assets/js/cbt-types.js"></script>
 <script src="assets/js/proctor.js"></script>
 <script src="assets/js/bookings-engine.js"></script>
@@ -257,12 +257,38 @@ function syncFields(){
   const pack = document.getElementById('pack').value;
   const need = NEEDS[pack] || [];
   document.querySelectorAll('[data-need]').forEach(el=>{
-    el.hidden = need.indexOf(el.dataset.need) === -1;
+    if (need.indexOf(el.dataset.need) === -1) {
+       el.setAttribute('hidden', 'true');
+       el.style.display = 'none';
+    } else {
+       el.removeAttribute('hidden');
+       el.style.display = '';
+    }
   });
+  
   // Fields that are meaningless for this pack are hidden, not just ignored.
+  const isMaterialPack = ['material_upload', 'material_link', 'multi_link_multi_subject'].includes(pack);
+  
   document.querySelectorAll('[data-hide]').forEach(el=>{
-    el.hidden = need.indexOf(el.dataset.hide) !== -1;
+    if (need.indexOf(el.dataset.hide) !== -1 || (isMaterialPack && (el.dataset.hide === 'subjects' || el.querySelector('#topic') || el.querySelector('#subject')))) {
+       el.setAttribute('hidden', 'true');
+       el.style.display = 'none';
+    } else {
+       el.removeAttribute('hidden');
+       el.style.display = '';
+    }
   });
+  
+  // Explicitly hide Topic and Subject for material packs if not caught by data-hide
+  const topicWrapper = document.getElementById('topic') ? document.getElementById('topic').closest('.form-group') : null;
+  const subjectWrapper = document.getElementById('subject') ? document.getElementById('subject').closest('.form-group') : null;
+  if (topicWrapper) {
+     if (isMaterialPack || need.indexOf('subjects') !== -1) { topicWrapper.style.display = 'none'; } else { topicWrapper.style.display = ''; }
+  }
+  if (subjectWrapper) {
+     if (isMaterialPack || need.indexOf('subjects') !== -1) { subjectWrapper.style.display = 'none'; } else { subjectWrapper.style.display = ''; }
+  }
+
   if (need.indexOf('subjects') !== -1) syncSubjectTopics();
 }
 
