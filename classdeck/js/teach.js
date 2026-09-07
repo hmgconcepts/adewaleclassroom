@@ -1,3 +1,24 @@
+
+/* --- KEEPALIVE ENGINE ---
+   Forces the browser to keep the tab fully active in the background
+   to prevent MediaRecorder timestamp gaps on Android/iOS. */
+let keepAliveCtx = null;
+let keepAliveOsc = null;
+function startKeepAlive() {
+  try {
+    if(!keepAliveCtx) keepAliveCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(keepAliveCtx.state === 'suspended') keepAliveCtx.resume();
+    keepAliveOsc = keepAliveCtx.createOscillator();
+    const gain = keepAliveCtx.createGain();
+    gain.gain.value = 0; // completely silent
+    keepAliveOsc.connect(gain);
+    gain.connect(keepAliveCtx.destination);
+    keepAliveOsc.start();
+  } catch(e) {}
+}
+function stopKeepAlive() {
+  try { if(keepAliveOsc) { keepAliveOsc.stop(); keepAliveOsc.disconnect(); keepAliveOsc = null; } } catch(e){}
+}
 /* ============================================================
    ADEWALE CLASSROOM DECK — Teacher Studio controller
    • Dual-pane app loader (whiteboard / pdf / web / notes / image)
@@ -2094,11 +2115,13 @@ async function startRecording() {
   await ensureMic(true);
   if (micStream) micStream.getAudioTracks().forEach((t) => recStream.addTrack(t));
   const candidates = [
-    "video/mp4;codecs=avc1.42E01E,mp4a.40.2", // Safari/new Chromium where available
-    "video/mp4",
+    // FORCE WEBM so ysFixWebmDuration can inject duration metadata for Social Media
     "video/webm;codecs=vp9,opus",
     "video/webm;codecs=vp8,opus",
-    "video/webm"
+    "video/webm",
+    // iOS Safari fallback (fragmented MP4 without duration, unavoidable on iOS natively)
+    "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+    "video/mp4"
   ];
   const mime = candidates.find((m) => typeof MediaRecorder.isTypeSupported !== "function" || MediaRecorder.isTypeSupported(m)) || "";
   try {
@@ -4105,3 +4128,10 @@ try {
    ========================================================================== */
 window.__DECK_TEACH_READY__ = true;
 console.info('[deck] teach.js initialised cleanly — fallback toolbar standing down.');
+
+  // WATCHDOG: Social Media truncation fix. 
+  setInterval(() => {
+    if (recorder && recorder.state === "recording" && typeof drawRecordingFrame === "function") {
+       drawRecordingFrame();
+    }
+  }, 250);
