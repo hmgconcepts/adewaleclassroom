@@ -2115,11 +2115,13 @@ async function startRecording() {
   await ensureMic(true);
   if (micStream) micStream.getAudioTracks().forEach((t) => recStream.addTrack(t));
   const candidates = [
+    // FORCE MP4: It is completely universally supported and inherently avoids all WebM duration/scrubbing bugs across every OS, social media, and native media player.
+    "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+    "video/mp4",
+    // Fallbacks to WebM only if MP4 physically fails to initialize on obscure older browsers
     "video/webm;codecs=vp9,opus",
     "video/webm;codecs=vp8,opus",
-    "video/webm",
-    "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
-    "video/mp4"
+    "video/webm"
   ];
   const mime = candidates.find((m) => typeof MediaRecorder.isTypeSupported !== "function" || MediaRecorder.isTypeSupported(m)) || "";
   try {
