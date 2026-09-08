@@ -1967,9 +1967,10 @@ const CBT = {
 
     multi_subject: {
       label: 'Multi-subject paper',
-      role: 'an examinations officer assembling a combined paper across several subjects',
-      mission: 'Build one sitting that covers several subjects cleanly, with the subject tabs the candidate sees driven correctly by the data.',
-      ref: { mcq: 12, short: 3, numeric: 3, tf: 2 }, dominant: 'mcq',
+      role: 'an expert professional, seasoned educator, and experienced world-class examiner assembling a combined paper across several subjects',
+      mission: 'Build one comprehensive sitting that covers several subjects cleanly, exclusively using auto-graded question types (without tutor supervision). Ensure the subject tabs the candidate sees are driven correctly by the data.',
+      ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 },
+      dominant: 'mcq',
       sections: [
         ['SUBJECTS AND THEIR TOPICS', 'Cover these subjects: {{SUBJECTS}}\n{{SUBJECT_TOPICS}}\nDivide the items as evenly as possible between them.'],
         ['SECTION COLUMN IS CRITICAL', 'Col17 (Section) must contain the SUBJECT NAME for that row, spelled\nidentically every time. This column drives the subject tabs in the exam\nplayer — an inconsistent spelling creates a phantom extra tab.'],
@@ -1978,7 +1979,8 @@ const CBT = {
       quality: [
         'Item counts per subject differ by at most one.',
         'Col17 spellings are identical within each subject, with no stray spaces.',
-        'No item requires knowledge from another subject in the set.'
+        'No item requires knowledge from another subject in the set.',
+        'All question types are entirely auto-graded with robust, self-contained logic.'
       ]
     },
 
@@ -2102,7 +2104,9 @@ const CBT = {
       '   option order can be randomised per candidate.'
     ].concat(P.checks || []).map(function (c) { return '[ ] ' + fill(c); }).join('\n');
 
-    const topicLine = (key === 'multi_subject' || key === 'multisubject') ? 'multiple subjects (' + fill('{{SUBJECTS}}') + ')' : '"' + topic + '"';
+    const isMulti = (key === 'multi_subject' || key === 'multisubject' || key === 'multi_link_multi_subject');
+    const topicLine = isMulti ? 'multiple subjects (' + fill('{{SUBJECTS}}') + ')' : '"' + topic + '"';
+    const subjStr = isMulti ? 'multiple subjects' : subject;
     return 'PACK: ' + P.label.toUpperCase() + '\n\n' +
 'ROLE\n' +
 'You are ' + fill(P.role) + '.\n' +
@@ -2112,7 +2116,7 @@ const CBT = {
 fill(P.mission) + '\n\n' +
 'TASK\n' +
 'Produce EXACTLY ' + n + ' assessment items on ' + topicLine + ' for a ' +
-(klass || 'tutoring learner') + '\nsitting ' + examType + ' in ' + subject + '.\n\n' +
+(klass || 'tutoring learner') + '\nsitting ' + examType + (isMulti ? '.' : ' in ' + subjStr + '.') + '\n\n' +
 rule + '\nOUTPUT CONTRACT — READ TWICE. THIS IS THE MOST IMPORTANT PART.\n' + rule + '\n\n' +
 '0. OUTPUT A DOWNLOADABLE .CSV FILE — NOT RAW CSV TEXT.\n' +
 '   Produce a real, clickable file attachment named "' + fname + '.csv" that the\n' +
