@@ -66,7 +66,7 @@
 <script src="assets/js/insights.js"></script>
 <script src="assets/js/cbt-richtext.js"></script>
 <script src="assets/js/cbt-speech.js"></script>
-<script src="assets/js/cbt.js?v=23"></script>
+<script src="assets/js/cbt.js?v=24"></script>
 <script src="assets/js/cbt-types.js"></script>
 <script src="assets/js/proctor.js"></script>
 <script src="assets/js/bookings-engine.js"></script>
@@ -127,6 +127,7 @@
               <option value="material_upload">Uploaded Material (Specific pages/chapters)</option>
               <option value="material_link">Linked Material (Specific pages/chapters via URL)</option>
               <option value="multi_link_multi_subject">Multi-Link Multi-Subject Paper (Tabs at top)</option>
+              <option value="multi_upload_multi_subject">Multi-Material Multi-Subject Paper (Tabs at top)</option>
               <option value="self">Self-Quiz</option>
               <option value="review">Review-Quiz</option>
               <option value="graded">Graded-Quiz</option>
@@ -250,7 +251,8 @@ const NEEDS = {
   past_paper:['source'], multi_subject:['subjects'],
   material_upload:['material_target'],
   material_link:['material_target', 'material_link'],
-  multi_link_multi_subject:['material_target', 'multi_links', 'subjects']
+  multi_link_multi_subject:['multi_links', 'subjects'],
+  multi_upload_multi_subject:['subjects']
 };
 
 function syncFields(){
@@ -267,10 +269,8 @@ function syncFields(){
   });
   
   // Fields that are meaningless for this pack are hidden, not just ignored.
-  const isMaterialPack = ['material_upload', 'material_link', 'multi_link_multi_subject'].includes(pack);
-  
   document.querySelectorAll('[data-hide]').forEach(el=>{
-    if (need.indexOf(el.dataset.hide) !== -1 || (isMaterialPack && (el.dataset.hide === 'subjects' || el.querySelector('#topic') || el.querySelector('#subject')))) {
+    if (need.indexOf(el.dataset.hide) !== -1) {
        el.setAttribute('hidden', 'true');
        el.style.display = 'none';
     } else {
@@ -278,16 +278,6 @@ function syncFields(){
        el.style.display = '';
     }
   });
-  
-  // Explicitly hide Topic and Subject for material packs if not caught by data-hide
-  const topicWrapper = document.getElementById('topic') ? document.getElementById('topic').closest('.form-group') : null;
-  const subjectWrapper = document.getElementById('subject') ? document.getElementById('subject').closest('.form-group') : null;
-  if (topicWrapper) {
-     if (isMaterialPack || need.indexOf('subjects') !== -1) { topicWrapper.style.display = 'none'; } else { topicWrapper.style.display = ''; }
-  }
-  if (subjectWrapper) {
-     if (isMaterialPack || need.indexOf('subjects') !== -1) { subjectWrapper.style.display = 'none'; } else { subjectWrapper.style.display = ''; }
-  }
 
   if (need.indexOf('subjects') !== -1) syncSubjectTopics();
 }
@@ -367,9 +357,10 @@ function syncSubjectTopics(force){
     const key = sub.toLowerCase();
     let input = existing[key];
     let row;
-    const isMultiLink = document.getElementById('pack').value === 'multi_link_multi_subject';
-    const dynamicPlaceholder = isMultiLink ? 'e.g. Chapter 3, Pages 45-60...' : 'Topic for ' + sub;
-    const dynamicLabel = isMultiLink ? 'Pages/Chapters for ' + sub : sub;
+    const packVal = document.getElementById('pack').value;
+    const isMultiDocs = packVal === 'multi_link_multi_subject' || packVal === 'multi_upload_multi_subject';
+    const dynamicPlaceholder = isMultiDocs ? 'e.g. Chapter 3, Pages 45-60...' : 'Topic for ' + sub;
+    const dynamicLabel = isMultiDocs ? 'Pages/Chapters for ' + sub : sub;
 
     if (input) {
       // REUSE the live element. This is the whole point of the fix.
