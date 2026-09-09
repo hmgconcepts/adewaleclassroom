@@ -1777,6 +1777,26 @@ const CBT = {
       ]
     },
 
+    multi_upload_multi_subject: {
+      label: 'Multi-Material Multi-Subject Paper',
+      role: 'an expert professional, seasoned educator, and experienced world-class examiner compiling a unified multi-subject CBT from various uploaded materials',
+      mission: 'Analyze the attached materials. Create a single comprehensive multi-subject CBT, strictly based on these materials, organizing questions by subject so each subject receives its own tab at the top. Ensure all question types are purely auto-gradable without tutor supervision.',
+      ref: { mcq: 4, tf: 2, mrq: 2, short: 2, numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, multi_numeric: 2, matrix: 2, hot_text: 2, assertion_reason: 2, case_study: 2, image_mcq: 2, inline_choice: 2, hotspot: 2, true_false_not_given: 2 },
+      dominant: 'mcq',
+      minOne: false,
+      sections: [
+        ['SOURCE ADHERENCE', 'Every question MUST be derivable directly from the attached materials. No external facts.'],
+        ['MULTI-SUBJECT ORGANIZATION', 'You MUST group the questions using Subject headers so the platform natively parses them into separate subject tabs.'],
+        ['TARGETED EXTRACTION', 'Focus entirely on the requested pages, chapters, or sections specified for each subject.\n\n{{SUBJECT_TOPICS}}'],
+        ['EXAMINATION RIGOR', 'Robust, world-class standard assessment capable of preparing students for top-tier examinations.']
+      ],
+      quality: [
+        'Strictly partitioned subjects.',
+        'No hallucinated information.',
+        'Exclusively auto-graded questions.'
+      ]
+    },
+
     multi_link_multi_subject: {
       label: 'Multi-Link Multi-Subject Paper',
       role: 'an expert professional, seasoned educator, and experienced world-class examiner compiling a unified multi-subject CBT from various linked materials',
@@ -2046,10 +2066,11 @@ const CBT = {
     const source = extra.source || '[SOURCE LINK]';
     const subjects = extra.subjects || subject;
     const n = Number(count) || 20;
-    const fname = (topic || 'questions').toString().toLowerCase()
+    const key = String(level || '').toLowerCase();
+    const isMulti = (key === 'multi_subject' || key === 'multisubject' || key === 'multi_link_multi_subject' || key === 'multi_upload_multi_subject');
+    const fname = isMulti ? 'multi-subject-paper' : (topic || 'questions').toString().toLowerCase()
       .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'questions';
 
-    const key = String(level || '').toLowerCase();
     const P = this.PACKS[key] || this.PACKS.intermediate;
 
     /* ITEM 5 — each subject may carry its own topic. Without this every
@@ -2104,7 +2125,6 @@ const CBT = {
       '   option order can be randomised per candidate.'
     ].concat(P.checks || []).map(function (c) { return '[ ] ' + fill(c); }).join('\n');
 
-    const isMulti = (key === 'multi_subject' || key === 'multisubject' || key === 'multi_link_multi_subject');
     const topicLine = isMulti ? 'multiple subjects (' + fill('{{SUBJECTS}}') + ')' : '"' + topic + '"';
     const subjStr = isMulti ? 'multiple subjects' : subject;
     return 'PACK: ' + P.label.toUpperCase() + '\n\n' +
