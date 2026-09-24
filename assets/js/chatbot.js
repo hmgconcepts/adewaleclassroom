@@ -270,6 +270,11 @@
       var query = String(q || '').trim();
       if (!query) return 'Ask me about any page or process — for example “where do I mark attendance”, “how do bookings work”, or “who can see my child’s scores”.';
 
+      var lower = query.toLowerCase();
+      if (lower === 'hi' || lower === 'hello') return 'Hi there! 👋 I am the Studio Assistant. Ask me anything about Tutoring Connect.';
+      if (lower.includes('thank')) return 'You\'re welcome! 🎉';
+      if (lower.includes('bye')) return 'Goodbye! Come back anytime.';
+
       // 1. Explicit process questions get the authored explanation first.
       var procs = this.matchProcess(query);
       var out = '';

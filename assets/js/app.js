@@ -1419,43 +1419,7 @@ const App = {
     if (window.Chatbot || document.getElementById('tc-bot-fab')) {
       // Real assistant present: remove any legacy duplicate and stand down.
       document.querySelectorAll('.tc-chat-fab, #chatbot-window').forEach(el => el.remove());
-    } else if (!document.getElementById('chatbot-window')) {
-      const fab = document.createElement('button');
-      fab.type = 'button';
-      fab.className = 'tc-chat-fab';
-      fab.setAttribute('data-chatbot', 'open');
-      fab.setAttribute('aria-label', 'Open studio assistant');
-      fab.textContent = '💬';
-      fab.style.cssText = 'position:fixed;right:20px;bottom:20px;z-index:9997;width:52px;height:52px;border-radius:50%;border:0;background:linear-gradient(135deg,#134e4a,#0f766e);color:#fff;font-size:1.4rem;cursor:pointer;box-shadow:0 8px 20px rgba(19,78,74,.35)';
-      const win = document.createElement('div');
-      win.id = 'chatbot-window';
-      win.style.cssText = 'display:none;position:fixed;right:20px;bottom:80px;z-index:9998;width:min(380px,calc(100vw - 32px));height:460px;background:#fff;color:#0f172a;border-radius:18px;box-shadow:0 20px 50px rgba(15,23,42,.25);flex-direction:column;overflow:hidden;border:1px solid #e2e8f0';
-      win.innerHTML = '<div style="padding:12px 14px;background:linear-gradient(135deg,#134e4a,#0f766e);color:#fff;display:flex;justify-content:space-between;align-items:center"><strong>Studio Assistant</strong><button type="button" data-chatbot="close" style="border:0;background:transparent;color:#fff;font-size:1.2rem;cursor:pointer">×</button></div>' +
-        '<div id="chatbot-messages" style="flex:1;overflow:auto;padding:12px;background:#f8fafc"></div>' +
-        '<div style="display:flex;gap:6px;padding:10px;border-top:1px solid #e2e8f0"><input id="chatbot-input" placeholder="Ask about bookings, quizzes, Drive…" style="flex:1;border:1px solid #e2e8f0;border-radius:10px;padding:8px 10px"><button type="button" class="btn btn-primary btn-sm" data-chatbot="send">Send</button></div>';
-      document.body.appendChild(fab);
-      document.body.appendChild(win);
-      // Wire the fallback widget so it can never be a dead button.
-      const toggle = (show) => { win.style.display = show ? 'flex' : 'none'; };
-      fab.addEventListener('click', () => toggle(win.style.display === 'none'));
-      win.querySelector('[data-chatbot="close"]').addEventListener('click', () => toggle(false));
-      const send = () => {
-        const inp = document.getElementById('chatbot-input');
-        const box = document.getElementById('chatbot-messages');
-        if (!inp || !box || !inp.value.trim()) return;
-        const q = inp.value.trim();
-        box.innerHTML += '<div style="margin:6px 0;text-align:right"><span style="display:inline-block;background:#0506ae;color:#fff;padding:7px 11px;border-radius:12px;max-width:80%">' + q.replace(/[<>&]/g, '') + '</span></div>';
-        let a = 'Open the ❓ Page Help button on any page for a full explanation of that screen.';
-        try {
-          const kb = window.ASSISTANT_KB || (window.TC && window.TC.ASSISTANT_KB);
-          if (kb && kb.answer) a = kb.answer(q);
-        } catch (e) {}
-        box.innerHTML += '<div style="margin:6px 0"><span style="display:inline-block;background:#fff;color:#0f172a;border:1px solid #e2e8f0;padding:7px 11px;border-radius:12px;max-width:85%">' + a + '</span></div>';
-        box.scrollTop = box.scrollHeight;
-        inp.value = '';
-      };
-      win.querySelector('[data-chatbot="send"]').addEventListener('click', send);
-      win.querySelector('#chatbot-input').addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+    } else /* Fallback UI removed, deferred to chatbot.js */);
     }
 
     /* Any page that hard-codes the legacy markup still works: delegate
