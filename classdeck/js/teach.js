@@ -2115,13 +2115,13 @@ async function startRecording() {
   await ensureMic(true);
   if (micStream) micStream.getAudioTracks().forEach((t) => recStream.addTrack(t));
   const candidates = [
-    // FORCE MP4: It is completely universally supported and inherently avoids all WebM duration/scrubbing bugs across every OS, social media, and native media player.
-    "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
-    "video/mp4",
-    // Fallbacks to WebM only if MP4 physically fails to initialize on obscure older browsers
+    // STRICTLY FORCE WEBM so we can run the EBML Repair Tool.
+    // If we use MP4, Chrome outputs Fragmented MP4 which has NO MOOV atom and cannot seek at all.
     "video/webm;codecs=vp9,opus",
     "video/webm;codecs=vp8,opus",
-    "video/webm"
+    "video/webm",
+    "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+    "video/mp4"
   ];
   const mime = candidates.find((m) => typeof MediaRecorder.isTypeSupported !== "function" || MediaRecorder.isTypeSupported(m)) || "";
   try {
@@ -2147,20 +2147,45 @@ async function startRecording() {
     activeRecorder.onstop = () => {
       const safe = (value) => String(value || "").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-");
       const outType = activeRecorder.mimeType || mime || "video/webm";
-      const ext = outType.includes("mp4") ? ".mp4" : ".webm";
+      // The user explicitly demands the .mp4 extension for cross-platform file manager compatibility.
+      const ext = ".mp4"; 
       const fname = [safe(recMeta.brand || "Lesson"), safe(recMeta.subject || ""), safe(recMeta.topic || ""), safe(recMeta.klass || ""), new Date().toISOString().slice(0, 10)].filter(Boolean).join("_") + ext;
       
       if (chunks.length) {
         const rawBlob = new Blob(chunks, { type: outType });
-        if (outType.includes("webm") && window.ysFixWebmDuration && window.HMG_REC_SESSION && window.HMG_REC_SESSION.startTs) {
-          const recordedDurationMs = Date.now() - window.HMG_REC_SESSION.startTs;
+        if (outType.includes("webm") && window.EBML && window.EBML.default && window.HMG_REC_SESSION && window.HMG_REC_SESSION.startTs) {
           try {
-            window.ysFixWebmDuration(rawBlob, recordedDurationMs, function(fixedBlob) {
-              downloadBlob(fixedBlob || rawBlob, fname);
+            window.EBML.default(rawBlob).then(function(fixedBlob) {
+              const resBlob = fixedBlob || rawBlob;
+              if (resBlob === rawBlob) { downloadBlob(resBlob, fname); return; }
+              
+              // ANDROID EXOPLAYER FIX: Patch the "Unknown" Segment Size to the actual file size.
+              const reader = new FileReader();
+              reader.onload = function() {
+                const buf = new Uint8Array(reader.result);
+                for(let i=0; i<buf.length - 12; i++) {
+                  if(buf[i]===0x18 && buf[i+1]===0x53 && buf[i+2]===0x80 && buf[i+3]===0x67) {
+                    if(buf[i+4]===0x01 && buf[i+5]===0xFF && buf[i+6]===0xFF && buf[i+7]===0xFF) {
+                      const segmentSize = buf.length - (i + 12);
+                      let hex = segmentSize.toString(16).padStart(14, '0');
+                      buf[i+4] = 0x01; // Marker for 8-byte length
+                      for(let j=0; j<7; j++) {
+                        buf[i+5+j] = parseInt(hex.slice(j*2, j*2+2), 16);
+                      }
+                      break;
+                    }
+                  }
+                }
+                // Save it with the .mp4 extension as requested by the user
+                downloadBlob(new Blob([buf], { type: "video/mp4" }), fname);
+              };
+              reader.readAsArrayBuffer(resBlob);
+            }).catch(function(err) {
+              downloadBlob(rawBlob, fname);
             });
           } catch(err) { downloadBlob(rawBlob, fname); }
         } else {
-          downloadBlob(rawBlob, fname);
+          downloadBlob(new Blob(chunks, { type: "video/mp4" }), fname);
         }
       }
       stopKeepAlive();
