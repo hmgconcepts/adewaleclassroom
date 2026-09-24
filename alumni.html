@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>Alumni Network • ADEWALE CLASSROOM</title>
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/layouts.css">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#ffffff">
+</head>
+<body class="app-layout">
+<nav class="sidebar" id="sidebar"></nav>
+<div class="main-content">
+  <header class="topbar">
+    <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu">☰</button>
+    <div class="topbar-right">
+      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">🌙</button>
+      <div class="user-profile" id="user-profile"></div>
+    </div>
+  </header>
+  <main class="page-content">
+    <div class="container-fluid">
+      <h1 class="app-page-title">Alumni Network</h1>
+      <div class="card fade-in">
+        <div class="page-intro-head"><strong>Alumni Network</strong><span class="page-intro-badge" style="background:#0f766e">🛡️ Admin & Staff</span></div>
+        <p class="page-intro-what">Keep in touch with graduated students, track their university destinations, and manage success stories.</p>
+        <div id="crud-root" data-table="alumni"></div>
+      </div>
+    </div>
+  </main>
+</div>
+<div id="toast-container" class="toast-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/crud.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.CRUD) {
+    CRUD.init({
+      el: document.getElementById('crud-root'),
+      table: 'alumni',
+      title: 'Alumni Network',
+      schema: [
+        { name: 'name', label: 'Name', type: 'text', required: true },
+        { name: 'graduation_year', label: 'Graduation Year', type: 'text', required: true },
+        { name: 'destination_university', label: 'Destination / University', type: 'text', required: true },
+        { name: 'contact_email', label: 'Contact Email', type: 'text', required: true },
+        { name: 'status', label: 'Status', type: 'text', required: true }
+      ]
+    });
+  }
+});
+</script>
+</body>
+</html>
