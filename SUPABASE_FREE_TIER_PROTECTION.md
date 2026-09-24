@@ -1,8 +1,8 @@
 # Supabase Free-Tier Protection — Complete, Automated & Unambiguous
 
-> **The problem:** Supabase **pauses** every FREE-tier project that records **no database activity for ~7 consecutive days**. A paused studio portal shows connection errors until someone logs into the Supabase dashboard and manually restores it. On the free tier there are **no automatic backups**, and a project left paused too long can eventually be **deleted**.
+> **The problem:** Supabase **pauses** every FREE-tier project that records **no database activity for ~7 consecutive days**. A paused school portal shows connection errors until someone logs into the Supabase dashboard and manually restores it. On the free tier there are **no automatic backups**, and a project left paused too long can eventually be **deleted**.
 >
-> **Key fact (verified):** the inactivity detector counts **real database activity** (queries/writes hitting Postgres). A ping that never touches the database does **not** reliably reset the timer. That is why every layer below performs an actual **database write** through the `tc_keep_alive()` RPC.
+> **Key fact (verified):** the inactivity detector counts **real database activity** (queries/writes hitting Postgres). A ping that never touches the database does **not** reliably reset the timer. That is why every layer below performs an actual **database write** through the `sc_keep_alive()` RPC.
 
 ---
 
@@ -12,12 +12,12 @@
 
 | Object | Purpose |
 |---|---|
-| `public.tc_heartbeat` table | One row storing the last ping time, source and count |
-| `public.tc_keep_alive(src)` RPC | Performs a real `UPDATE` (genuine DB activity) — callable with the anon key, exposes no school data |
-| `pg_cron` job `tc-keep-alive` | **Layer 4** — internal DB scheduler fires every 2 days automatically (skipped gracefully where pg_cron is unavailable) |
+| `public.sc_heartbeat` table | One row storing the last ping time, source and count |
+| `public.sc_keep_alive(src)` RPC | Performs a real `UPDATE` (genuine DB activity) — callable with the anon key, exposes no school data |
+| `pg_cron` job `sc-keep-alive` | **Layer 4** — internal DB scheduler fires every 2 days automatically (skipped gracefully where pg_cron is unavailable) |
 
 **Layer 1 — Site-visit heartbeat (automatic, nothing to configure)**
-`assets/js/app.js` on every page calls `tc_keep_alive('site-visit')` at most **once per device per 6 hours** (and again when the tab regains focus / every 6 hours while open). As long as *anyone* (a teacher, a parent, even you) opens the site once a week, the project never pauses. This is fully automated the moment the site is deployed.
+`assets/js/app.js` on every page calls `sc_keep_alive('site-visit')` at most **once per device per 24 hours**. As long as *anyone* (a teacher, a parent, even you) opens the site once a week, the project never pauses. This is fully automated the moment the site is deployed.
 
 Because school traffic can stop during long holidays, add the independent external layers below. **Total setup time: under 15 minutes, once, at handover. After that everything is automatic.**
 
@@ -77,7 +77,7 @@ To activate it, GitHub needs to know your Supabase URL and anon key. You store t
    - ❌ If it warns that secrets are not set, re-check Step B/C — the names must match exactly.
 5. Optional double-check inside Supabase → SQL Editor:
    ```sql
-   select last_ping, last_source, ping_count from public.tc_heartbeat;
+   select last_ping, last_source, ping_count from public.sc_heartbeat;
    ```
    `last_source` should now say `github-actions`.
 
@@ -192,7 +192,7 @@ supabase functions deploy ping --no-verify-jwt
 
 ### Part 2 — Create the UptimeRobot monitor (calls the function forever)
 
-UptimeRobot is a free monitoring service: you give it a URL and it visits that URL on a schedule, forever, from its own servers. Every visit to your `ping` URL performs a real database write — so once this monitor exists, UptimeRobot keeps your database awake automatically even if nobody opens the studio site for months.
+UptimeRobot is a free monitoring service: you give it a URL and it visits that URL on a schedule, forever, from its own servers. Every visit to your `ping` URL performs a real database write — so once this monitor exists, UptimeRobot keeps your database awake automatically even if nobody opens the school site for months.
 
 **Step 1 — Create the free account (one time).**
 1. Go to [uptimerobot.com](https://uptimerobot.com) and click **Register for FREE** (top-right) — or **Sign up** on the pricing page. You can register with an email + password or with your Google account.
@@ -236,7 +236,7 @@ Within one interval (a few minutes) the monitor's status dot turns **green/Up**.
 1. **In UptimeRobot:** the monitor's status dot turns **green / "Up"** within a few minutes of creation, and the response-time chart starts filling. If it shows red/"Down", click the monitor and read the reason (wrong URL and forgetting `--no-verify-jwt` at deploy are the two usual causes).
 2. **In Supabase (the definitive proof):** SQL Editor →
    ```sql
-   select last_ping, last_source, ping_count from public.tc_heartbeat;
+   select last_ping, last_source, ping_count from public.sc_heartbeat;
    ```
    After the monitor has run, `last_source` shows **`edge-ping`** and `ping_count` keeps increasing day after day. Check it again tomorrow: if the number grew, the whole chain (UptimeRobot → edge function → database) is proven working.
 3. **Email test (optional):** temporarily edit the monitor's URL to something wrong, wait for the "Down" email, then fix it back. Now you know alerting works too.
@@ -265,13 +265,13 @@ This one watches your actual school website, so you learn immediately if the *si
 
 ## Layer 4 — pg_cron (fully internal, installed automatically)
 
-`complete-schema.sql` (or the standalone `database/keep-alive.sql`) schedules a Postgres cron job that runs `tc_keep_alive('pg_cron')` **every 2 days inside the database itself** — no external service at all. Internal scheduled queries count as database activity. If the pg_cron extension is not available on your project, installation skips it silently and the other layers still protect you.
+`complete-schema.sql` (or the standalone `database/keep-alive.sql`) schedules a Postgres cron job that runs `sc_keep_alive('pg_cron')` **every 2 days inside the database itself** — no external service at all. Internal scheduled queries count as database activity. If the pg_cron extension is not available on your project, installation skips it silently and the other layers still protect you.
 
 ---
 
 ## Layer 5 — Manual heartbeat button (zero setup, human-triggered)
 
-On the **Platform Health Console** (`platform-health.html`) there is now a big **"💓 Send keep-alive heartbeat NOW"** button. Any admin can press it — it performs a real database write via `tc_keep_alive('manual-button')` and instantly shows the confirmed server timestamp plus the updated ping counter.
+On the **Platform Health Console** (`platform-health.html`) there is now a big **"💓 Send keep-alive heartbeat NOW"** button. Any admin can press it — it performs a real database write via `sc_keep_alive('manual-button')` and instantly shows the confirmed server timestamp plus the updated ping counter.
 
 **When to use it:** once a week during long school holidays, before travel, or any time you want visible, human-confirmed proof that the inactivity timer was just reset. It complements (never replaces) the automated layers — pressing it also lets you *see* on the same page whether the automated layers have been firing (check `last_source` and `ping_count`).
 
@@ -308,7 +308,7 @@ On the **Platform Health Console** (`platform-health.html`) there is now a big *
 3. A successful execution shows **status 200 (OK)**. Open the execution's details and check the response body contains **`heartbeat written`** — that is the proof of a real database write, not just a reachable URL.
 4. Cross-check in Supabase → SQL Editor:
    ```sql
-   select last_ping, last_source, ping_count from public.tc_heartbeat;
+   select last_ping, last_source, ping_count from public.sc_heartbeat;
    ```
    `last_source` should read `edge-ping` and `last_ping` should be within the last few minutes of the execution.
 
@@ -324,7 +324,7 @@ Run `database/keep-alive.sql` once in the Supabase **SQL Editor** (Dashboard →
 
 Run in the SQL Editor:
 ```sql
-select last_ping, last_source, ping_count from public.tc_heartbeat;
+select last_ping, last_source, ping_count from public.sc_heartbeat;
 ```
 `last_ping` should never be older than ~4 days. `last_source` tells you which layer fired last (`site-visit`, `github-actions`, `edge-ping`, `pg_cron`, `manual-button`, `vercel-cron`, `apps-script`, `auto-restore-watchdog`).
 
@@ -338,14 +338,14 @@ select last_ping, last_source, ping_count from public.tc_heartbeat;
 - [ ] Layer 6: cron-job.org daily job on the same `ping` URL (5 min)
 - [ ] Layer 7/8: Vercel Cron env vars, or the Google Apps Script trigger (pick at least one)
 - [ ] Layer 10: add `SUPABASE_ACCESS_TOKEN` + `SUPABASE_PROJECT_REF` secrets → auto-restore active
-- [ ] Verify: `select * from public.tc_heartbeat;`
+- [ ] Verify: `select * from public.sc_heartbeat;`
 
 With Layers 1 + 4 alone the project stays alive automatically; Layers 2, 3, 6, 7 and 8 add independent external redundancy; Layer 5 gives the admin a one-press manual reset; Layer 9 keeps the GitHub schedulers themselves alive forever; and Layer 10 automatically un-pauses the project if the impossible ever happens — ten safeguards in total, every one of them automated.
 
 > **Best long-term option for a production school:** the Supabase **Pro plan** ($25/mo) removes pausing entirely and adds 7-day backups. The free layers above are a robust zero-cost alternative.
 
 ---
-Maintained by Tutoring Connect — Tutoring Connect Generator
+Maintained by HMG Concepts — Tutoring Connect Generator
 
 
 ---
@@ -369,7 +369,7 @@ Your site already lives on Vercel; Vercel's free Hobby plan includes cron jobs
    export default async function handler(req, res) {
      const url = process.env.SUPABASE_URL, key = process.env.SUPABASE_ANON_KEY;
      if (!url || !key) return res.status(500).json({ ok:false, error:'env missing' });
-     const r = await fetch(url + '/rest/v1/rpc/tc_keep_alive', {
+     const r = await fetch(url + '/rest/v1/rpc/sc_keep_alive', {
        method: 'POST', headers: { apikey:key, Authorization:'Bearer '+key, 'Content-Type':'application/json' },
        body: JSON.stringify({ src:'vercel-cron' })
      });
@@ -394,7 +394,7 @@ Completely independent of GitHub/Vercel/UptimeRobot — great third leg.
 2. Replace the editor contents with:
    ```js
    function keepAlive() {
-     const url = 'https://YOUR-PROJECT.supabase.co/rest/v1/rpc/tc_keep_alive';
+     const url = 'https://YOUR-PROJECT.supabase.co/rest/v1/rpc/sc_keep_alive';
      const key = 'YOUR_ANON_KEY';
      const res = UrlFetchApp.fetch(url, {
        method: 'post', contentType: 'application/json',
@@ -469,7 +469,7 @@ Without these two secrets the workflow simply skips with a notice — it never f
 | 1 | Site-visit heartbeat | every visitor's browser | every visit | 0 | prevent |
 | 2 | GitHub Actions | GitHub | Mon + Thu | 5 min | prevent |
 | 3 | Edge Function + UptimeRobot | UptimeRobot | every 5 min–12 h | 10 min | prevent + alert |
-| 4 | pg_cron `tc-keep-alive` | inside the DB | every 2 days | 0 (bonus only — pauses with the project) | prevent |
+| 4 | pg_cron `sc-keep-alive` | inside the DB | every 2 days | 0 (bonus only — pauses with the project) | prevent |
 | 5 | 💓 Manual button | Platform Health page | on demand | 0 | prevent |
 | 6 | cron-job.org | cron-job.org | daily | 5 min | prevent + alert |
 | 7 | **Vercel Cron** | Vercel | daily | 3 min | prevent |
