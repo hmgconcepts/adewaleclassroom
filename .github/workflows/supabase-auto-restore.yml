@@ -92,7 +92,7 @@ jobs:
           # After any successful check/restore, write a heartbeat so the
           # inactivity timer restarts from zero (only if Layer-2 secrets exist).
           if [ -n "$SUPABASE_URL" ] && [ -n "$SUPABASE_ANON_KEY" ] && { [ "$status" = "ACTIVE_HEALTHY" ] || [ "$status" = "COMING_UP" ]; }; then
-            hb=$(curl -s -X POST "$SUPABASE_URL/rest/v1/rpc/tc_keep_alive" \
+            hb=$(curl -s -X POST "$SUPABASE_URL/rest/v1/rpc/sc_keep_alive" \
               -H "apikey: $SUPABASE_ANON_KEY" -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
               -H "Content-Type: application/json" -d '{"src":"auto-restore-watchdog"}' || true)
             echo "Heartbeat: $hb"
