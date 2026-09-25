@@ -133,29 +133,75 @@
       if (!slug) { root.innerHTML = '<p class="muted">No post selected. <a href="blog.html">Browse the blog</a>.</p>'; return; }
       root.innerHTML = '<p class="muted">Loading…</p>';
       var self = this;
-      var done = function (post) {
+            var done = function (post) {
         if (!post) {
           root.innerHTML = '<div class="card" style="max-width:560px;margin:30px auto;text-align:center;padding:40px"><h3>Post not found</h3><p class="muted">It may have been unpublished.</p><p><a class="btn btn-primary" href="blog.html">Back to blog</a></p></div>';
           return;
         }
         d.title = (post.title || 'Post') + ' · ' + d.title.split('·').pop().trim();
+        var wordCount = (post.body || '').split(/\s+/).length;
+        var readTime = Math.max(1, Math.ceil(wordCount / 200));
         var cover = post.cover_url
-          ? '<div style="border-radius:18px;overflow:hidden;margin:18px 0;border:1px solid var(--gray-200,#e2e8f0)"><img src="' + esc(post.cover_url) + '" alt="" style="width:100%;max-height:380px;object-fit:cover;display:block"></div>'
+          ? '<div style="border-radius:24px;overflow:hidden;margin:32px 0;box-shadow:0 12px 35px rgba(0,0,0,0.08)"><img src="' + esc(post.cover_url) + '" alt="" style="width:100%;max-height:550px;object-fit:cover;display:block;background:#f8fafc"></div>'
           : '';
+        var authorInitials = esc(post.author_name || 'T S').split(' ').map(n => n[0]).join('').slice(0, 2);
+        
+        var clapBtn = '<button id="btn-clap" style="background:none;border:none;cursor:pointer;font-size:1.4rem;display:flex;align-items:center;gap:8px;color:#475569;padding:10px 20px;border-radius:99px;background:#f1f5f9;transition:all 0.2s;font-family:var(--font);font-weight:600">👏 <span id="clap-count">' + (post.view_count || 0) + '</span></button>';
+        
+        var shareBtns = '<div style="display:flex;gap:12px;align-items:center;margin:20px 0;font-family:var(--font)">' +
+          '<button onclick="navigator.clipboard.writeText(location.href);toast(\'Link copied!\',\'success\')" class="btn btn-sm btn-outline" style="border-radius:99px;padding:8px 16px;font-weight:600">🔗 Copy Link</button>' +
+          '<a href="https://twitter.com/intent/tweet?url=' + encodeURIComponent(location.href) + '&text=' + encodeURIComponent(post.title) + '" target="_blank" class="btn btn-sm btn-outline" style="border-radius:99px;padding:8px 16px;font-weight:600">𝕏 Post</a>' +
+          '<a href="https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(location.href) + '" target="_blank" class="btn btn-sm btn-outline" style="border-radius:99px;padding:8px 16px;font-weight:600">💼 Share</a>' +
+          '</div>';
+
         root.innerHTML =
-          '<article style="max-width:760px;margin:0 auto">' +
-            '<div style="font-size:.75rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--primary,#0506ae)">' + esc(post.category || 'News') + '</div>' +
-            '<h1 style="font-size:clamp(1.6rem,4vw,2.4rem);line-height:1.25;margin:10px 0 8px">' + esc(post.title) + '</h1>' +
-            '<p class="muted" style="font-size:.85rem;margin:0 0 6px">✍️ ' + esc(post.author_name || 'The Studio') + ' · ' + fmt(post.published_at) + ' · 👁 ' + (post.view_count || 0) + ' reads</p>' +
+          '<article style="max-width:800px;margin:40px auto;padding:0 20px;font-family:\'Source Serif 4\', Georgia, serif;">' +
+            '<div style="text-align:center;max-width:720px;margin:0 auto">' +
+              '<div style="font-family:var(--font);font-size:.85rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--primary,#0506ae);margin-bottom:20px">' + esc(post.category || 'News') + '</div>' +
+              '<h1 style="font-size:clamp(2.2rem,5vw,3.4rem);line-height:1.15;margin:0 0 24px;font-weight:800;color:#0f172a;letter-spacing:-0.02em">' + esc(post.title) + '</h1>' +
+              (post.excerpt ? '<h2 style="font-family:var(--font);font-weight:400;font-size:1.35rem;color:#475569;line-height:1.6;margin:0 0 36px">' + esc(post.excerpt) + '</h2>' : '') +
+              
+              '<div style="display:flex;align-items:center;justify-content:center;gap:16px;font-family:var(--font);border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;padding:24px 0;margin-bottom:36px;flex-wrap:wrap">' +
+                '<div style="width:52px;height:52px;border-radius:50%;background:var(--gradient);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.2rem;box-shadow:0 4px 12px rgba(5,6,174,.2)">' + authorInitials + '</div>' +
+                '<div style="text-align:left">' +
+                  '<div style="font-weight:800;color:#0f172a;font-size:1.1rem">' + esc(post.author_name || 'The Studio') + '</div>' +
+                  '<div style="font-size:.9rem;color:#64748b;font-weight:500">' + fmt(post.published_at) + ' · ' + readTime + ' min read</div>' +
+                '</div>' +
+                '<div style="flex:1;min-width:40px"></div>' +
+                shareBtns +
+              '</div>' +
+            '</div>' +
             cover +
-            '<div style="font-size:1.02rem;line-height:1.8">' + md(post.body) + '</div>' +
-            (post.tags ? '<div style="margin-top:24px;display:flex;gap:8px;flex-wrap:wrap">' + String(post.tags).split(',').map(function (t) { return '<span style="background:var(--surface-soft,#f1f5f9);border:1px solid var(--gray-200,#e2e8f0);border-radius:99px;padding:4px 12px;font-size:.78rem">#' + esc(t.trim()) + '</span>'; }).join('') + '</div>' : '') +
-            '<div style="margin-top:28px;padding-top:18px;border-top:1px solid var(--gray-200,#e2e8f0);display:flex;gap:10px;flex-wrap:wrap">' +
-              '<a class="btn btn-outline" href="blog.html">← All posts</a>' +
-              '<a class="btn btn-outline" href="apply.html">Interested in tutoring? Apply</a>' +
+            '<div class="blog-body" style="font-size:1.25rem;line-height:1.8;color:#1e293b;margin:40px auto;max-width:720px">' + md(post.body) + '</div>' +
+            
+            '<div style="max-width:720px;margin:40px auto;display:flex;justify-content:space-between;align-items:center;padding:24px 0;border-top:1px solid #e2e8f0;font-family:var(--font);flex-wrap:wrap;gap:16px">' +
+              (post.tags ? '<div style="display:flex;gap:8px;flex-wrap:wrap">' + String(post.tags).split(',').map(function (t) { return '<span style="background:#f8fafc;color:#475569;border-radius:8px;padding:6px 14px;font-size:.85rem;font-weight:700;border:1px solid #e2e8f0">#' + esc(t.trim()) + '</span>'; }).join('') + '</div>' : '<div></div>') +
+              clapBtn +
+            '</div>' +
+
+            '<div style="max-width:720px;margin:60px auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:24px;padding:32px;display:flex;align-items:center;gap:24px;font-family:var(--font);box-shadow:0 10px 30px rgba(15,23,42,0.03)">' +
+              '<div style="width:80px;height:80px;border-radius:50%;background:var(--gradient);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:2rem;flex-shrink:0">' + authorInitials + '</div>' +
+              '<div>' +
+                '<div style="font-size:.85rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#64748b;margin-bottom:6px">Written by</div>' +
+                '<h3 style="margin:0 0 10px;font-size:1.6rem;color:#0f172a;font-weight:800">' + esc(post.author_name || 'The Studio') + '</h3>' +
+                '<p style="margin:0;color:#475569;font-size:1.05rem;line-height:1.55">Tutor and contributor at ADEWALE CLASSROOM. Passionate about empowering learners through digital and hybrid education strategies.</p>' +
+              '</div>' +
             '</div>' +
           '</article>';
-      };
+          
+        var cb = d.getElementById('btn-clap');
+        if (cb) {
+          cb.onclick = function() {
+            var el = d.getElementById('clap-count');
+            el.textContent = parseInt(el.textContent) + 1;
+            cb.style.background = '#e0e7ff';
+            cb.style.color = '#4338ca';
+            if (w.sb && post.id) {
+               w.sb.rpc('tc_blog_clap', { p_id: post.id }).catch(()=>{});
+            }
+          };
+        }
+      };};
       if (w.sb) {
         w.sb.rpc('tc_blog_get', { p_slug: slug }).then(function ({ data, error }) {
           if (error) { root.innerHTML = '<p class="muted">Could not load post: ' + esc(error.message) + '</p>'; return; }
@@ -384,27 +430,22 @@
         return;
       }
       var badge = { published: '🟢 Published', draft: '🟡 Draft', archived: '⚪ Archived' };
-      
-        box.style.gridTemplateColumns = 'repeat(auto-fill, minmax(320px, 1fr))';
-        box.style.gap = '24px';
-        box.innerHTML = posts.map(function (p, i) {
-          var isHero = (i === 0 && !query && !category);
-          var cover = p.cover_url
-            ? '<div style="height:'+(isHero?'280px':'200px')+'; background:#f1f5f9 center/cover no-repeat url(&quot;' + esc(p.cover_url) + '&quot;); transition: transform 0.4s ease;" class="blog-img"></div>'
-            : '<div style="height:'+(isHero?'280px':'200px')+'; background:var(--gradient,linear-gradient(135deg,#0506ae,#964eec)); display:flex; align-items:center; justify-content:center; color:#fff; font-size:3rem; transition: transform 0.4s ease;" class="blog-img">📄</div>';
-          
-          return '<a class="card blog-card" style="text-decoration:none; color:inherit; overflow:hidden; display:flex; flex-direction:column; padding:0; border:none; box-shadow:0 10px 25px rgba(0,0,0,0.05); transition: box-shadow 0.3s ease; border-radius: 16px; ' + (isHero ? 'grid-column: 1 / -1; flex-direction: row; align-items: center;' : '') + '" href="blog-post.html?slug=' + encodeURIComponent(p.slug) + '" onmouseover="this.style.boxShadow=\'0 20px 40px rgba(0,0,0,0.1)\'; this.querySelector(\'.blog-img\').style.transform=\'scale(1.05)\';" onmouseout="this.style.boxShadow=\'0 10px 25px rgba(0,0,0,0.05)\'; this.querySelector(\'.blog-img\').style.transform=\'scale(1)\';">' +
-            '<div style="overflow:hidden; '+(isHero?'width:50%; height:100%;':'')+'">' + cover + '</div>' +
-            '<div style="padding:24px; display:flex; flex-direction:column; flex:1; '+(isHero?'width:50%;':'')+'">' +
-              '<div style="font-size:.75rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--primary,#0506ae); margin-bottom: 8px;">' + esc(p.category || 'News') + ' · ' + fmt(p.published_at) + '</div>' +
-              '<h3 style="margin:0 0 12px; line-height:1.35; font-size:'+(isHero?'2rem':'1.4rem')+'; font-weight:800; color:#0f172a;">' + esc(p.title) + '</h3>' +
-              (p.excerpt ? '<p style="margin:0 0 16px; font-size:'+(isHero?'1.1rem':'0.95rem')+'; line-height:1.6; color:#475569; flex:1;">' + esc(p.excerpt) + '</p>' : '<div style="flex:1"></div>') +
-              '<div style="font-size:.85rem; color:#64748b; font-weight: 500; display:flex; align-items:center; gap: 12px;">' +
-                '<span style="background:#f1f5f9; padding:6px 12px; border-radius:999px;">✍️ ' + esc(p.author_name || 'The Studio') + '</span>' +
-                '<span>👁 ' + (p.view_count || 0) + ' reads</span>' +
-              '</div>' +
-            '</div></a>';
-        }).join('');
+      box.style.gridTemplateColumns = '';
+      box.style.gap = '';
+      box.innerHTML = '<div class="table-wrap"><table style="width:100%"><thead><tr><th align="left">Title</th><th align="left">Status</th><th align="left">Category</th><th align="right">Views</th><th align="right">Actions</th></tr></thead><tbody>' +
+        posts.map(function(p) {
+          return '<tr>' +
+            '<td><strong>' + esc(p.title) + '</strong><br><small class="muted">' + fmt(p.published_at || p.created_at) + '</small></td>' +
+            '<td><span class="badge">' + (badge[p.status] || p.status) + '</span></td>' +
+            '<td>' + esc(p.category || 'News') + '</td>' +
+            '<td align="right">' + (p.view_count || 0) + '</td>' +
+            '<td align="right" style="white-space:nowrap">' +
+              '<button type="button" class="btn btn-sm btn-outline" data-edit="' + esc(p.id) + '">Edit</button> ' +
+              (p.status === 'published' ? '<a href="blog-post.html?slug=' + encodeURIComponent(p.slug) + '" class="btn btn-sm btn-outline" target="_blank">View</a>' : '') +
+            '</td>' +
+          '</tr>';
+        }).join('') +
+      '</tbody></table></div>';
       var self = this;
       box.querySelectorAll('[data-edit]').forEach(function (b) {
         b.onclick = async function () {
@@ -420,6 +461,17 @@
       if (d.getElementById('blog-admin-root')) this.mountAdmin();
     }
   };
+
+  
+  d.head.insertAdjacentHTML('beforeend', '<style>' +
+    '.blog-body p { margin-bottom: 1.8em; }' +
+    '.blog-body h2 { font-family: var(--font); font-size: 2rem; margin: 2em 0 1em; font-weight: 800; letter-spacing: -0.01em; color: #0f172a; }' +
+    '.blog-body h3 { font-family: var(--font); font-size: 1.5rem; margin: 1.5em 0 0.8em; font-weight: 700; color: #1e293b; }' +
+    '.blog-body ul, .blog-body ol { margin-bottom: 1.8em; padding-left: 1.5em; }' +
+    '.blog-body li { margin-bottom: 0.8em; }' +
+    '.blog-body blockquote { font-style: italic; border-left: 4px solid var(--primary); padding-left: 20px; margin: 2em 0; color: #475569; font-size: 1.4rem; }' +
+    '.blog-body a { color: var(--primary); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }' +
+  '</style>');
 
   w.Blog = Blog;
   if (d.readyState === 'loading') d.addEventListener('DOMContentLoaded', function () { Blog.init(); });

@@ -802,7 +802,18 @@ const CRUD = {
       if (!this._refCache[key]) {
         const m = {};
         if (this.sb) {
-          const { data } = await this.sb.from(c.refTable).select('*').limit(1000);
+          let data = [];
+          let offset = 0;
+          while (true) {
+            const { data: chunk } = await this.sb.from(c.refTable).select('*').range(offset, offset + 999);
+            if (chunk && chunk.length) {
+              data = data.concat(chunk);
+              offset += 1000;
+              if (chunk.length < 1000) break;
+            } else {
+              break;
+            }
+          }
           (data || []).forEach(d => { m[String(d[c.refStore || c.refValue])] = d[c.refValue] || d.email || d.name || d.title || 'Unnamed'; });
         } else {
           ((window.DEMO && window.DEMO[c.refTable]) || []).forEach(d => { m[String(d[c.refStore || c.refValue])] = d[c.refValue] || d.email || d.name || d.title || 'Unnamed'; });
@@ -824,7 +835,7 @@ const CRUD = {
       const label = maps[col.key][String(raw)];
       return label
         ? TC.esc(label)
-        : (maps[col.key].hasOwnProperty(String(raw)) ? '<span class="muted" title="' + TC.esc(String(raw)) + '">unnamed link</span>' : '<span class="muted" title="' + TC.esc(String(raw)) + '">unresolved link</span>');
+        : (maps[col.key].hasOwnProperty(String(raw)) ? '<span class="muted" title="' + TC.esc(String(raw)) + '">unnamed link</span>' :  (String(raw).includes('@') ? TC.esc(String(raw)) : '<span class="muted" title="' + TC.esc(String(raw)) + '">Unlinked</span>'));
     }
     if (col.type === 'checkbox' || typeof raw === 'boolean') {
       return raw
