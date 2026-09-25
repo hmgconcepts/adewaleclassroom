@@ -1419,8 +1419,7 @@ const App = {
     if (window.Chatbot || document.getElementById('tc-bot-fab')) {
       // Real assistant present: remove any legacy duplicate and stand down.
       document.querySelectorAll('.tc-chat-fab, #chatbot-window').forEach(el => el.remove());
-    } else /* Fallback UI removed, deferred to chatbot.js */);
-    }
+    } /* Fallback UI removed, deferred to chatbot.js */
 
     /* Any page that hard-codes the legacy markup still works: delegate
        data-chatbot clicks to the real assistant if it is loaded. */
