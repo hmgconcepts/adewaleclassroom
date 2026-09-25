@@ -835,7 +835,7 @@ const CRUD = {
       const label = maps[col.key][String(raw)];
       return label
         ? TC.esc(label)
-        : (maps[col.key].hasOwnProperty(String(raw)) ? '<span class="muted" title="' + TC.esc(String(raw)) + '">unnamed link</span>' :  (String(raw).includes('@') ? TC.esc(String(raw)) : '<span class="muted" title="' + TC.esc(String(raw)) + '">Unlinked</span>'));
+        : (maps[col.key].hasOwnProperty(String(raw)) ? '<span class="muted" title="' + TC.esc(String(raw)) + '">unnamed link</span>' :  ((String(raw).includes('@') ? TC.esc(String(raw)) : ((col.key === 'user_id' && String(raw).length > 20) ? '<span class="badge badge-success">Linked ✓</span>' : '<span class="muted" title="' + TC.esc(String(raw)) + '">Unlinked</span>'))));
     }
     if (col.type === 'checkbox' || typeof raw === 'boolean') {
       return raw

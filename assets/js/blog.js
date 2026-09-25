@@ -201,7 +201,8 @@
             }
           };
         }
-      };};
+      };
+
       if (w.sb) {
         w.sb.rpc('tc_blog_get', { p_slug: slug }).then(function ({ data, error }) {
           if (error) { root.innerHTML = '<p class="muted">Could not load post: ' + esc(error.message) + '</p>'; return; }
