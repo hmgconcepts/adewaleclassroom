@@ -926,6 +926,47 @@
     ]
   },
   {
+    "icon": "🏢",
+    "title": "Operations",
+    "items": [
+      {
+        "id": "hostel",
+        "href": "hostel.html",
+        "label": "Facility & Hostel",
+        "icon": "🛏️",
+        "aud": "staff"
+      },
+      {
+        "id": "health",
+        "href": "health.html",
+        "label": "Health & Medical",
+        "icon": "🩺",
+        "aud": "staff"
+      },
+      {
+        "id": "inventory",
+        "href": "inventory.html",
+        "label": "Inventory & Assets",
+        "icon": "📦",
+        "aud": "staff"
+      },
+      {
+        "id": "transport",
+        "href": "transport.html",
+        "label": "Transport & Pickup",
+        "icon": "🚌",
+        "aud": "staff"
+      },
+      {
+        "id": "alumni",
+        "href": "alumni.html",
+        "label": "Alumni Network",
+        "icon": "🎓",
+        "aud": "staff"
+      }
+    ]
+  },
+  {
     "icon": "⚙️",
     "title": "Administration",
     "items": [

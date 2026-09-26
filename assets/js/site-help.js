@@ -19,6 +19,7 @@
    ========================================================================= */
 const SiteHelp = {
   descriptions: {
+    'hostel': "🛏️ **Facility & Hostel** — Manage rooms, hostels and physical facilities: capacity, who is assigned where, and maintenance status.",
     'health': "🏥 **Health & Medical** — Track medical conditions, allergies, emergency contacts, and sick-bay incidents.",
     'inventory': "📦 **Inventory & Assets** — Manage physical assets like textbooks, tablets, and stationary.",
     'alumni': "🎓 **Alumni Network** — Keep in touch with graduated students and manage success stories.",

@@ -10,9 +10,45 @@ const CRUD = {
     packages: [], invoices: [], payments: [], inbox: ['tutor','parent','student'],
     messages: ['tutor','parent','student'], complaints: ['tutor','parent','student'],
     polls: ['parent','student'], bookings: ['parent'], homework: ['student'],
-    flashcards: ['student','tutor'], surveys: ['parent','student']
+    flashcards: ['student','tutor'], surveys: ['parent','student'],
+    hostel: ['tutor'], health: ['tutor'], inventory: ['tutor'], transport: ['tutor'], alumni: ['tutor']
   },
   SCHEMA: {
+    hostel: { table: 'facility_hostel', title: 'Room / facility', cols: [
+      { key: 'room_name', label: 'Room / facility name', type: 'text', required: true },
+      { key: 'category', label: 'Category', type: 'select', options: ['dormitory','classroom','lab','library','office','other'] },
+      { key: 'capacity', label: 'Capacity', type: 'number' },
+      { key: 'assigned_to', label: 'Assigned to', type: 'text' },
+      { key: 'status', label: 'Status', type: 'select', options: ['active','maintenance','closed'] }
+    ]},
+    health: { table: 'health_records', title: 'Health record', cols: [
+      { key: 'student', label: 'Student', type: 'text', required: true },
+      { key: 'condition_allergy', label: 'Condition / allergy', type: 'text', required: true },
+      { key: 'action_plan', label: 'Action plan', type: 'textarea', required: true },
+      { key: 'emergency_contact', label: 'Emergency contact', type: 'text', required: true },
+      { key: 'last_updated', label: 'Last updated', type: 'date' }
+    ]},
+    inventory: { table: 'inventory', title: 'Inventory item', cols: [
+      { key: 'item_name', label: 'Item name', type: 'text', required: true },
+      { key: 'category', label: 'Category', type: 'select', options: ['textbooks','tablets','stationery','furniture','equipment','other'] },
+      { key: 'quantity', label: 'Quantity', type: 'text' },
+      { key: 'condition', label: 'Condition', type: 'select', options: ['new','good','fair','needs repair','retired'] },
+      { key: 'assigned_to', label: 'Assigned to', type: 'text' }
+    ]},
+    transport: { table: 'transport', title: 'Transport / pickup', cols: [
+      { key: 'student', label: 'Student', type: 'text', required: true },
+      { key: 'authorized_pickup', label: 'Authorized pickup person(s)', type: 'text', required: true },
+      { key: 'route_van', label: 'Route / van', type: 'text' },
+      { key: 'status', label: 'Status', type: 'select', options: ['active','inactive'] },
+      { key: 'contact', label: 'Contact phone', type: 'text' }
+    ]},
+    alumni: { table: 'alumni', title: 'Alumnus', cols: [
+      { key: 'name', label: 'Name', type: 'text', required: true },
+      { key: 'graduation_year', label: 'Graduation year', type: 'text' },
+      { key: 'destination_university', label: 'Destination / university', type: 'text' },
+      { key: 'contact_email', label: 'Contact email', type: 'text' },
+      { key: 'status', label: 'Status', type: 'select', options: ['active','mentor','unreachable'] }
+    ]},
     engagements: { table: 'engagements', title: 'Engagement', cols: [
       { key: 'name', label: 'Name', type: 'text', required: true, help: 'e.g. Ama — IGCSE Maths 1:1, or SAT Weekend Group' },
       { key: 'kind', label: 'Kind', type: 'select', options: ['one_on_one','group'], required: true },

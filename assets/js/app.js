@@ -1018,6 +1018,109 @@ const App = {
     if (role === 'parent' || this.isAdminRole(role)) {
       setTimeout(() => this.renderParentChildrenDashboard(role), 50);
     }
+    if (role === 'student' || role === 'learner') {
+      setTimeout(() => this.renderLearnerWorkBoard(), 50);   /* My Work board */
+    }
+  },
+
+  /* =====================================================================
+     MY WORK BOARD (learner + parent). Homework, reading and CBT papers
+     assigned to a learner, a GROUP or a whole cohort appear here
+     automatically. Backed by tc_my_work() so the assignment rules live
+     in ONE place inside the database and RLS still guards every row.
+     ===================================================================== */
+  async renderLearnerWorkBoard(learnerId, hostEl) {
+    const host = hostEl || document.getElementById('dash-my-work');
+    if (!host) return;
+    if (!window.sb || !window.sb.rpc) { host.innerHTML = '<p class="muted">Sign in to see your work board.</p>'; return; }
+    try {
+      const args = learnerId ? { p_learner_id: learnerId } : {};
+      const { data, error } = await window.sb.rpc('tc_my_work', args);
+      if (error) throw new Error(error.message);
+      if (!data || data.ok === false) {
+        host.innerHTML = '<p class="muted">' + (data && data.reason === 'no_learner_record'
+          ? 'No learner record is linked to your account yet — ask the studio admin to link it on the Learners page, then reload.'
+          : data && data.reason === 'not_your_child' ? 'You can only view work for learners linked to your account.'
+          : 'Work board unavailable right now.') + '</p>';
+        return;
+      }
+      const hw = (data.homework || []).filter(x => String(x.status || '') !== 'marked');
+      const exams = data.exams || [];
+      const reading = (data.reading || []).filter(x => String(x.status || 'open') === 'open');
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const chip = (txt, tone) => '<span class="badge" style="margin-left:6px;background:' + (tone === 'ok' ? '#dcfce7' : tone === 'warn' ? '#fef3c7' : '#f1f5f9') + ';color:#0f172a">' + esc(txt) + '</span>';
+      const dueLabel = d => {
+        if (!d) return '';
+        const dt = new Date(String(d).slice(0, 10) + 'T00:00:00');
+        const days = Math.round((dt - today) / 86400000);
+        return days < 0 ? 'overdue ' + Math.abs(days) + 'd' : days === 0 ? 'due today' : 'in ' + days + 'd';
+      };
+      const row = (icon, title, sub, right, action) =>
+        '<div style="display:flex;gap:10px;align-items:center;border:1px solid var(--gray-200);border-radius:12px;padding:10px 12px;margin-bottom:8px;background:#fff;flex-wrap:wrap">' +
+        '<div style="flex:1;min-width:180px"><b>' + icon + ' ' + esc(title) + '</b>' +
+        (sub ? '<div class="muted" style="font-size:.82rem">' + esc(sub) + '</div>' : '') + '</div>' +
+        (right || '') + (action || '') + '</div>';
+      let html = '';
+      if (!hw.length && !exams.length && !reading.length) {
+        html = '<p class="muted">Nothing due right now — homework, quizzes and reading appear here the moment your tutor assigns them to you or your group. 🎉</p>';
+      } else {
+        if (hw.length) {
+          html += '<div style="margin-bottom:10px"><b>📝 Homework</b>' + chip(hw.length + ' to do', 'warn') + '</div>' +
+            hw.slice(0, 8).map(a => row('📝', a.title,
+              (a.engagement || '') + (a.group ? ' · whole group' : ' · set for you'),
+              a.due ? '<div style="font-size:.82rem;text-align:right"><b>' + esc(dueLabel(a.due)) + '</b><br><span class="muted">' + esc(String(a.due).slice(0, 10)) + '</span></div>' : '',
+              '<span class="badge">' + esc(a.status || 'set') + '</span>')).join('');
+        }
+        if (exams.length) {
+          html += '<div style="margin-bottom:10px;margin-top:14px"><b>🧪 Quizzes & CBT papers</b>' + chip(exams.length + ' assigned') + '</div>' +
+            exams.slice(0, 8).map(x => row('🧪', x.title,
+              (x.subject || x.kind || 'quiz') + ' · ' + (x.minutes || 40) + ' minutes',
+              '',
+              '<a class="btn btn-primary btn-sm" href="cbt-exam.html?code=' + encodeURIComponent(x.code || '') + '">Start ➜</a>')).join('');
+        }
+        if (reading.length) {
+          html += '<div style="margin-bottom:10px;margin-top:14px"><b>📖 Reading</b>' + chip(reading.length + ' open') + '</div>' +
+            reading.slice(0, 5).map(r => row('📖', r.title, r.engagement || '',
+              r.due ? '<div style="font-size:.82rem"><b>' + esc(dueLabel(r.due)) + '</b></div>' : '',
+              '<a class="btn btn-outline btn-sm" href="reading.html">Open</a>')).join('');
+        }
+      }
+      if (data.next_class && data.next_class.starts) {
+        html += '<div class="muted" style="margin-top:10px">🕒 Next class: <b>' + esc(data.next_class.engagement || 'class') + '</b> — ' +
+          new Date(data.next_class.starts).toLocaleString([], { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) +
+          (data.next_class.url ? ' · <a href="' + esc(data.next_class.url) + '" target="_blank" rel="noopener">join link</a>' : '') + '</div>';
+      }
+      host.innerHTML = html;
+    } catch (e) {
+      host.innerHTML = '<p class="muted">Could not load your work board: ' + esc(e.message || e) + '</p>';
+    }
+  },
+
+  /* Parent dashboard: per-child "work due" pills under each child card. */
+  async renderChildWorkSummaries(childIds) {
+    if (!window.sb || !window.sb.rpc || !Array.isArray(childIds) || !childIds.length) return;
+    for (const cid of childIds) {
+      try {
+        const link = document.querySelector('a[href="learner-360.html?learner=' + encodeURIComponent(cid) + '"]');
+        const card = link ? link.closest('div[style*="display:flex"]') : null;
+        if (!card || card.dataset.workPill) continue;
+        card.dataset.workPill = '1';
+        const { data } = await window.sb.rpc('tc_my_work', { p_learner_id: cid });
+        if (!data || data.ok === false) continue;
+        const dueHw = (data.homework || []).filter(x => String(x.status || '') !== 'marked').length;
+        const exams = (data.exams || []).length;
+        const reading = (data.reading || []).filter(x => String(x.status || 'open') === 'open').length;
+        const pill = document.createElement('div');
+        pill.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin-top:8px';
+        pill.innerHTML =
+          (dueHw ? '<span class="badge" style="background:#fef3c7;color:#92400e">📝 ' + dueHw + ' homework due</span>'
+                 : '<span class="badge" style="background:#dcfce7;color:#166534">📝 no homework due</span>') +
+          (exams ? '<span class="badge" style="background:#e0e7ff;color:#3730a3">🧪 ' + exams + ' quiz' + (exams > 1 ? 'zes' : '') + ' assigned</span>' : '') +
+          (reading ? '<span class="badge" style="background:#fce7f3;color:#9d174d">📖 ' + reading + ' reading open</span>' : '');
+        const btnRow = card.querySelector('div[style*="gap:6px;flex-wrap:wrap"]');
+        if (btnRow) card.insertBefore(pill, btnRow); else card.appendChild(pill);
+      } catch (e) {}
+    }
   },
 
   paintUser() {
@@ -1068,6 +1171,7 @@ const App = {
           '<a class="btn btn-outline btn-sm" href="attendance.html?learner=' + encodeURIComponent(k.id) + '">Attendance</a>' +
           '</div></div></div>';
       }).join('') || '<div style="color:var(--gray-500)">No linked learner record was found.</div>';
+      try { this.renderChildWorkSummaries(ids); } catch (e2) {}
     } catch (e) {
       box.innerHTML = '<div style="color:#b91c1c">Could not load linked children: ' + esc(e.message || e) + '</div>';
     }
