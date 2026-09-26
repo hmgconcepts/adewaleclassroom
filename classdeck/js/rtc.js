@@ -76,6 +76,7 @@ class TeacherRoom {
     this.groups = null;                               // v8: group assignments
     this.activeQuiz = null;                           // v3: quiz engine
     this.stageCalls = new Map();                      // enterprise fix: close old teacher→student stage calls when switching source
+    this._permMem = new Map();                        // v9: permission memory by student name — survives reconnects
     this.camCalls = new Map();                        // enterprise fix: close old teacher camera calls cleanly
     this.stats = { start: 0, peak: 0, joins: 0, chats: 0, polls: [], quizzes: [], reactions: 0, hands: 0, captions: 0 }; // analytics
     this._reconnectTimer = null;
@@ -190,11 +191,18 @@ class TeacherRoom {
 
   /* v4: admit a student (directly, or from the waiting room) */
   _admit(conn, name) {
-    this.students.set(conn.peer, { conn, name, joinedAt: Date.now(), hand: false, micAllowed: false, mediaCalls: [], score: 0 });
+    const stu = { conn, name, joinedAt: Date.now(), hand: false, micAllowed: false, mediaCalls: [], score: 0 };
+    /* v9: if this student had mic permission before a network blip / reload,
+       re-apply it automatically so the teacher never has to re-click. */
+    const permKey = String(name || "").trim().toLowerCase();
+    const mem = this._permMem.get(permKey);
+    if (mem && mem.micAllowed) stu.micAllowed = true;
+    this.students.set(conn.peer, stu);
     this.attendance.push({ name, event: "joined", time: nowStamp() });
     this.stats.joins++;
     this.stats.peak = Math.max(this.stats.peak, this.students.size);
     conn.send({ t: "welcome", roomName: this.roomName || this.code, count: this.students.size, rejoined: !!(conn.metadata && conn.metadata.rejoin) });
+    if (stu.micAllowed) { try { conn.send({ t: "micAllow", on: true }); } catch {} }
     this._broadcastRoster();
     this.onEvent("student-joined", { peerId: conn.peer, name });
     
@@ -238,6 +246,8 @@ class TeacherRoom {
   muteAllStudents() {
     for (const [, stu] of this.students) {
       stu.micAllowed = false;
+      const permKey = String(stu.name || "").trim().toLowerCase();
+      if (permKey) this._permMem.set(permKey, { micAllowed: false }); // v9 keep memory in sync
       for (const call of stu.mediaCalls.filter((c) => c._hmgKind === "stumic")) {
         try { call.close(); } catch {}
       }
@@ -311,6 +321,12 @@ class TeacherRoom {
         break;
       case "ping":
         conn.send({ t: "pong", time: Date.now() });
+        break;
+      case "screenNack":   /* v9: student device cannot capture its screen */
+        this.onEvent("screen-nack", { name: stu.name, reason: String(d.reason || "").slice(0, 120) });
+        break;
+      case "permQuery":    /* v9: rejoined student re-syncs mic permission */
+        try { stu.conn.send({ t: "micAllow", on: !!stu.micAllowed }); } catch {}
         break;
       case "boardStrokes": {   /* v8: student whiteboard sync */
         if (!this.boardsOn) break;
@@ -423,6 +439,8 @@ class TeacherRoom {
     const stu = this.students.get(peerId);
     if (!stu) return;
     stu.micAllowed = !!on;
+    const permKey = String(stu.name || "").trim().toLowerCase();
+    if (permKey) this._permMem.set(permKey, { micAllowed: !!on });   // v9 memory
     if (!stu.micAllowed) {
       for (const call of stu.mediaCalls.filter((c) => c._hmgKind === "stumic")) {
         try { call.close(); } catch {}
@@ -778,6 +796,8 @@ class StudentRoom {
   answerPoll(index)   { this.send({ t: "pollAnswer", index }); }
   answerQuiz(qIndex, answer) { this.send({ t: "quizAnswer", qIndex, answer }); } // v3
   sendReaction(emoji) { this.send({ t: "reaction", emoji }); }                   // v4
+  sendScreenNack(reason) { this.send({ t: "screenNack", reason: String(reason || "unsupported").slice(0, 120) }); } // v9
+  requestPermSync()     { this.send({ t: "permQuery" }); }                       // v9: re-sync mic permission after reconnect
   sendBoardStrokes(strokes, full) { this.send({ t: "boardStrokes", strokes, full: !!full }); } // v8
   sendActivityResp(resp) { this.send({ t: "activityResp", resp }); }             // v8
 
@@ -787,23 +807,38 @@ class StudentRoom {
       if (this._camStream) { this._camStream.getTracks().forEach((t) => t.stop()); this._camStream = null; }
       return null;
     }
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !this.peer || !this.conn) throw new Error("Camera sharing is unavailable until you are connected to the class.");
+    if (!this.peer || !this.conn) throw new Error("You are not connected to the class yet — join first, then share your camera.");
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("This browser does not support camera sharing.");
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { width: { ideal: 480 }, frameRate: { ideal: 12 } }, audio: false
     });
     this._camStream = stream;
     this.camCall = this.peer.call(RTC_PREFIX + this.code + "-host", stream, { metadata: { kind: "stucam" } });
+    const camCallRef = this.camCall;
+    if (camCallRef) camCallRef.on("close", () => {
+      if (this.camCall === camCallRef) this.camCall = null;
+      try { if (this._camStream) { this._camStream.getTracks().forEach((t) => t.stop()); this._camStream = null; } } catch {}
+      this.onEvent("camEnded");
+    });
     return stream;
   }
 
-  /* v5 (issue 1): student screen share — sent to the teacher as "stuscreen" */
+  /* v5 (issue 1): student screen share — sent to the teacher as "stuscreen".
+     v9 fix: the old guard mixed "no getDisplayMedia" (every phone browser) with
+     "not connected", so connected students on phones were wrongly told to
+     "join the class". Errors are now precise and a camera fallback exists. */
   async shareScreen(on) {
     if (!on) {
       if (this.screenCall) { try { this.screenCall.close(); } catch {} this.screenCall = null; }
       if (this._screenStream) { this._screenStream.getTracks().forEach((t) => t.stop()); this._screenStream = null; }
       return null;
     }
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia || !this.peer || !this.conn) throw new Error("Screen sharing is unavailable until you are connected to the class.");
+    if (!this.peer || !this.conn) throw new Error("You are not connected to the class yet — join first, then share.");
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      const e = new Error("This device cannot share its screen — most phone browsers cannot. Use “Show my work with camera” instead.");
+      e.noDisplayMedia = true;
+      throw e;
+    }
     const stream = await navigator.mediaDevices.getDisplayMedia({
       video: { frameRate: { ideal: 8 } }, audio: false
     });
@@ -813,6 +848,38 @@ class StudentRoom {
       this.onEvent("screenEnded");
     });
     this.screenCall = this.peer.call(RTC_PREFIX + this.code + "-host", stream, { metadata: { kind: "stuscreen" } });
+    const scrCallRef = this.screenCall;
+    if (scrCallRef) scrCallRef.on("close", () => {
+      if (this.screenCall === scrCallRef) this.screenCall = null;
+      this.onEvent("screenEnded");
+    });
+    return stream;
+  }
+
+  /* v9: mobile fallback — phone browsers cannot capture the screen, so the
+     student points the REAR camera at their notebook/workbook. Delivered to the
+     teacher as "stuscreen" so it appears in the same tile with no changes. */
+  async shareCameraView() {
+    if (!this.peer || !this.conn) throw new Error("You are not connected to the class yet — join first, then share.");
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("This browser does not support camera sharing.");
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, frameRate: { ideal: 15 } }, audio: false
+    });
+    try { if (this.screenCall) { this.screenCall.close(); } } catch {}
+    try { if (this._screenStream) { this._screenStream.getTracks().forEach((t) => t.stop()); } } catch {}
+    this._screenStream = stream;
+    this.screenCall = this.peer.call(RTC_PREFIX + this.code + "-host", stream, { metadata: { kind: "stuscreen" } });
+    const camViewRef = this.screenCall;
+    if (camViewRef) camViewRef.on("close", () => {
+      if (this.screenCall === camViewRef) this.screenCall = null;
+      try { if (this._screenStream) { this._screenStream.getTracks().forEach((t) => t.stop()); this._screenStream = null; } } catch {}
+      this.onEvent("screenEnded");
+    });
+    stream.getVideoTracks()[0].addEventListener("ended", () => {
+      try { if (this.screenCall) { this.screenCall.close(); } } catch {}
+      this.screenCall = null; this._screenStream = null;
+      this.onEvent("screenEnded");
+    });
     return stream;
   }
 
@@ -822,10 +889,19 @@ class StudentRoom {
       if (this._micStream) { this._micStream.getTracks().forEach((t) => t.stop()); this._micStream = null; }
       return;
     }
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !this.peer || !this.conn) throw new Error("Microphone sharing is unavailable until you are connected to the class.");
+    if (!this.peer || !this.conn) throw new Error("You are not connected to the class yet — join first, then speak.");
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("This browser does not support microphone sharing.");
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
     this._micStream = stream;
     this.micCall = this.peer.call(RTC_PREFIX + this.code + "-host", stream, { metadata: { kind: "stumic" } });
+    const micCallRef = this.micCall;
+    if (micCallRef) micCallRef.on("close", () => {
+      /* v9: if the teacher (or network) closes the mic call, tell the student UI
+         immediately — before, the student kept "speaking" into a dead call. */
+      if (this.micCall === micCallRef) this.micCall = null;
+      try { if (this._micStream) { this._micStream.getTracks().forEach((t) => t.stop()); this._micStream = null; } } catch {}
+      this.onEvent("micEnded");
+    });
   }
 
   leave() {

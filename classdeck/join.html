@@ -57,6 +57,7 @@
       <input class="input" id="inPin" placeholder="e.g. 2468" maxlength="8" inputmode="numeric" />
     </div>
     <button class="btn primary" id="btnJoin" style="padding:12px">Join class ➜</button>
+    <button class="btn ghost hide" id="btnOpenBrowser" type="button" style="margin-top:8px">🌐 Open this class in Chrome / Safari</button>
     <p class="sub" id="joinStatus"></p>
     <div id="joinDiag" class="sub" style="text-align:left;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:11.8px"></div>
   </div>
@@ -185,6 +186,27 @@
     <p style="color:var(--text-dim);font-size:14px;margin:10px 0">You're in the waiting room.<br/>Your teacher will admit you shortly — please stay on this page.</p>
     <div class="badge live" style="display:inline-block">waiting…</div>
     <button class="btn ghost" id="btnLeaveWaiting" type="button" style="margin-top:12px">✕ Leave waiting room</button>
+  </div>
+</div>
+
+<!-- v9: teacher allowed your mic — ONE tap to speak -->
+<div class="modal-back" id="mMicAsk">
+  <div class="modal" style="text-align:center">
+    <h3>🎙 Your teacher allowed you to speak</h3>
+    <p style="color:var(--text-dim);font-size:14px;margin:10px 0">Tap below, then allow the microphone when your browser asks.</p>
+    <button class="btn primary" id="btnMicYes" type="button" style="width:100%">🎤 Speak now</button>
+    <button class="btn ghost" id="btnMicLater" type="button" style="width:100%;margin-top:8px">Not now — the 🎙 button stays ready</button>
+  </div>
+</div>
+
+<!-- v9: show your work — real screen share OR phone camera fallback -->
+<div class="modal-back" id="mScreenAsk">
+  <div class="modal" style="text-align:center">
+    <h3>🖥 Show your work</h3>
+    <p style="color:var(--text-dim);font-size:14px;margin:10px 0">Share your screen if you can — or point your camera at your book.</p>
+    <button class="btn primary" id="btnScrShare" type="button" style="width:100%">🖥 Share my screen</button>
+    <button class="btn primary" id="btnCamView" type="button" style="width:100%;margin-top:8px">📷 Show my book (camera)</button>
+    <button class="btn ghost" id="btnScrNo" type="button" style="width:100%;margin-top:8px">Not now</button>
   </div>
 </div>
 

@@ -1737,6 +1737,15 @@ function renderRoster() {
       <button class="btn small" data-act="mic" title="Allow/revoke mic">🎙</button>
       <button class="btn small danger" data-act="kick" title="Remove">✕</button>` : "");
     if (room) {
+      /* v9: reflect the real state (permission memory + live calls) instead of
+         always starting grey — after a student reconnects the teacher must see
+         mic/cam/screen are still active. */
+      const micB = row.querySelector('[data-act="mic"]');
+      const camB = row.querySelector('[data-act="cam"]');
+      const scrB = row.querySelector('[data-act="scr"]');
+      if (micB) micB.classList.toggle("active", !!stu.micAllowed);
+      if (camB) camB.classList.toggle("active", stu.mediaCalls.some((c) => c._hmgKind === "stucam"));
+      if (scrB) scrB.classList.toggle("active", stu.mediaCalls.some((c) => c._hmgKind === "stuscreen"));
       row.querySelector('[data-act="cam"]').addEventListener("click", (e) => {
         const b = e.currentTarget;
         const on = !b.classList.contains("active");
@@ -1782,9 +1791,21 @@ function removeCamTile(pid) {
 const stuAudio = new Map();
 function playStudentAudio(pid, stream) {
   let a = stuAudio.get(pid);
-  if (!a) { a = document.createElement("audio"); a.autoplay = true; a.playsInline = true; document.body.appendChild(a); stuAudio.set(pid, a); }
+  if (!a) {
+    a = document.createElement("audio");
+    a.autoplay = true; a.playsInline = true; a.muted = false; a.volume = 1;
+    document.body.appendChild(a); stuAudio.set(pid, a);
+  }
   a.srcObject = stream;
-  a.play().catch(() => {});
+  const started = a.play();
+  /* v9: if the browser's autoplay policy defers playback, retry on the
+     teacher's very next click/tap — never leave a student unheard. */
+  if (started && started.catch) started.catch(() => {
+    const retry = () => { try { a.play().catch(() => {}); } catch {} };
+    document.addEventListener("click", retry, { once: true });
+    document.addEventListener("touchstart", retry, { once: true });
+    document.addEventListener("keydown", retry, { once: true });
+  });
 }
 function removeStudentAudio(pid) {
   const a = stuAudio.get(pid);
@@ -3214,7 +3235,11 @@ onRoomEvent = function (type, p) {
     toast("🚪 " + ((p && p.name) || "A student") + " is waiting — admit them in the Students panel.", "", 7000);
   }
   if (type === "reaction") flyEmoji(p.emoji, p.name);
-  if (type === "student-joined" || type === "student-left") renderWaiting();
+  if (type === "student-joined" || type === "student-left") { renderWaiting(); renderRoster(); }
+  if (type === "screen-nack") {
+    toast("📵 " + ((p && p.name) || "A student") + " can't capture their screen from that device — they can use “Show my work with camera” instead.", "", 8000);
+  }
+  if (type === "student-media") renderRoster();   /* v9: keep 🖥/📷 button state true */
 };
 
 /* spotlight a student from the roster (long-press name = spotlight) */

@@ -25,7 +25,14 @@ if (invitedRoom) {
   if (chip) { chip.textContent = "Class: " + invitedRoom; chip.classList.remove("hide"); }
 }
 $("#inName").value = Store.get("stuname", "");
-setTimeout(() => { try { $("#inName").focus(); } catch {} }, 300);
+setTimeout(() => {
+  try {
+    /* v9: if a class link + remembered name are both present, one tap is all
+       that is needed — focus the Join button so Enter joins instantly. */
+    if (invitedRoom && Store.get("stuname", "")) $("#btnJoin").focus();
+    else $("#inName").focus();
+  } catch {}
+}, 300);
 
 function browserLabel() {
   const ua = navigator.userAgent || "";
@@ -54,7 +61,23 @@ function updateJoinDiagnostics() {
   good.push((window.Peer ? "✅" : "❌") + " Join engine: " + (window.Peer ? "loaded" : "missing"));
   good.push("ℹ️ Browser: " + browserLabel());
   const inApp = inAppBrowserName();
-  if (inApp) issues.push("Open this link in Chrome, Edge or Safari — it is currently inside " + inApp + ", which often blocks classroom joining.");
+  if (inApp) {
+    issues.push("Open this link in Chrome, Edge or Safari — it is currently inside " + inApp + ", which often blocks classroom joining.");
+    /* v9: one-tap escape hatch out of the in-app browser */
+    const ob = $("#btnOpenBrowser");
+    if (ob) {
+      ob.classList.remove("hide");
+      ob.onclick = () => {
+        const url = location.href;
+        if (/android/i.test(navigator.userAgent)) {
+          location.href = url.replace(/^https?:\/\//, "intent://") + "#Intent;scheme=https;package=com.android.chrome;end";
+        } else {
+          toast("Tap the ⋯ / Share menu and choose “Open in Safari”, then reopen the class link.", "", 9000);
+          try { if (navigator.share) navigator.share({ title: "My class link", url }); } catch {}
+        }
+      };
+    }
+  }
   if (location.protocol !== "https:" && location.hostname !== "localhost") issues.push("Use the deployed HTTPS website. Camera, microphone and WebRTC are unreliable on non-HTTPS pages.");
   if (!window.RTCPeerConnection) issues.push("This browser does not support WebRTC classrooms. Try Chrome, Edge or Safari.");
   if (!navigator.onLine) issues.push("This device appears offline right now.");
@@ -109,7 +132,7 @@ async function join() {
 }
 
 /* ---------- v5: lobby (auto-join when teacher goes live) ---------- */
-let lobbyTimer = null, lobbyOn = false;
+let lobbyTimer = null, lobbyOn = false, lobbyAttempt = 0;
 function showWaitingState(code, name) {
   lobbyOn = true;
   clearTimeout(lobbyTimer);
@@ -124,6 +147,7 @@ function showWaitingState(code, name) {
 }
 function startLobby(code, name, why) {
   lobbyOn = true;
+  lobbyAttempt = 0;
   clearTimeout(lobbyTimer);
   closeModal("#mWaiting");
   $("#joinGate").classList.remove("hide");
@@ -162,7 +186,8 @@ function startLobby(code, name, why) {
         $("#joinStatus").textContent = e.message || "The teacher rejected this join request.";
         return;
       }
-      lobbyTimer = setTimeout(tick, 8000);   // retry every 8 s
+      lobbyAttempt++;
+      lobbyTimer = setTimeout(tick, Math.min(12000, 4000 + lobbyAttempt * 2000));   // v9: 6s→12s gentle backoff
     }
   }, 4000);
 }
@@ -208,6 +233,8 @@ function onEvent(type, p) {
       clearTimeout(lobbyTimer);
       lobbyTimer = null;
       rejoinTries = 0;
+      lobbyAttempt = 0;
+      try { sRoom && sRoom.requestPermSync(); } catch {}   /* v9: teacher re-applies mic permission if it was granted */
       restoreJoinButton();
       Store.set("joined_" + (sRoom ? sRoom.code : normaliseRoomCode($("#inRoom").value)), true);
       closeModal("#mWaiting");
@@ -278,10 +305,9 @@ function onEvent(type, p) {
       toast("🌟 " + p.name + ", it's your turn!", "ok", 6000);
       break;
     case "camRequest": handleCamRequest(p.on); break;
-    case "screenRequest":                              /* v5 */
-      if (p.on && !myScreenOn) {
-        if (confirm("Your teacher asks you to SHARE YOUR SCREEN (e.g. to show your work). Allow?")) toggleMyScreen();
-      } else if (!p.on && myScreenOn) { toggleMyScreen(); }
+    case "screenRequest":                              /* v5 → v9 chooser */
+      if (p.on && !myScreenOn) openScreenAsk();
+      else if (!p.on && myScreenOn) { stopMyScreenShare(); }
       break;
     case "screenEnded":
       myScreenOn = false;
@@ -290,8 +316,28 @@ function onEvent(type, p) {
     case "micAllow":
       micAllowed = p.on;
       $("#sBtnMic").disabled = !p.on;
-      toast(p.on ? "🎙 Teacher allowed your mic — tap the mic button to speak" : "Mic permission removed", p.on ? "ok" : "", 5000);
-      if (!p.on && myMicOn) toggleMyMic();
+      if (p.on) {
+        if (myMicOn) toast("🎙 Your mic is already on", "ok", 3000);
+        else {
+          openModal("#mMicAsk");   /* v9: ONE tap to speak — the old flow made
+                                      students hunt for the mic button, so the
+                                      teacher heard silence. */
+          toast("🎙 Teacher allowed your mic", "ok", 4000);
+        }
+      } else {
+        toast("Mic permission removed", "", 4000);
+        if (myMicOn) toggleMyMic();
+      }
+      break;
+    case "micEnded":                                   /* v9: call closed remotely */
+      myMicOn = false; micAllowed = false;
+      $("#sBtnMic").classList.remove("active");
+      $("#sBtnMic").disabled = true;
+      toast("🎙 Mic stopped", "", 4000);
+      break;
+    case "camEnded":                                   /* v9: call closed remotely */
+      myCamOn = false;
+      $("#sBtnCam").classList.remove("active");
       break;
     case "kicked":
       cleanupAndGate("You were removed from the class by the teacher.");
@@ -306,6 +352,15 @@ function onEvent(type, p) {
       cleanupAndGate("Class has ended. Thanks for attending! 🎓");
       break;
     case "disconnected":
+      if (lobbyOn) {
+        /* v9: waiting (pre-live lobby OR teacher's waiting room). A blip must
+           never strand the student on a dead gate — auto-restart the lobby so
+           they still get in the moment the teacher is ready. */
+        toast("Connection blip — still waiting for the class…", "", 3000);
+        const wr = sRoom ? sRoom.code : normaliseRoomCode($("#inRoom").value);
+        startLobby(wr, Store.get("stuname", "Student"), "");
+        break;
+      }
       if (!stageEntered) { cleanupAndGate("Connection to the teacher was lost. Tap Join class to try again."); break; }
       toast("Connection lost — trying to rejoin…", "err", 5000);
       attemptRejoin();
@@ -478,17 +533,58 @@ async function toggleMyScreen() {
       $("#sBtnScreen").classList.add("active");
       toast("🖥 You are sharing your screen with the teacher", "ok", 5000);
     } else {
-      await sRoom.shareScreen(false);
-      myScreenOn = false;
-      $("#sBtnScreen").classList.remove("active");
-      toast("Screen sharing stopped");
+      stopMyScreenShare();
     }
   } catch (e) {
-    toast(e.message || "Screen share blocked. On phones use Chrome/Edge; some browsers don't allow it.", "err", 6000);
+    if (e && e.noDisplayMedia) {
+      /* v9: phone browsers have no screen-capture API — offer the camera
+         fallback and tell the teacher why, instead of the misleading
+         "join the class" error. */
+      try { sRoom && sRoom.sendScreenNack("device_cannot_capture_screen"); } catch {}
+      openScreenAsk();
+    } else if (e && (e.name === "NotAllowedError" || e.name === "PermissionDeniedError")) {
+      toast("Screen share was blocked. Allow it in the browser prompt, then tap the 🖥 button again.", "err", 6000);
+    } else {
+      toast(e.message || "Screen share blocked. On phones use Chrome/Edge; some browsers don't allow it.", "err", 6000);
+    }
   }
 }
+function stopMyScreenShare() {
+  /* Stops BOTH real screen shares and camera-view fallbacks. */
+  myScreenOn = false;
+  $("#sBtnScreen").classList.remove("active");
+  try { sRoom && sRoom.shareScreen(false); } catch {}
+  toast("Sharing stopped");
+}
+async function startCameraView() {
+  try {
+    await sRoom.shareCameraView();
+    myScreenOn = true;
+    $("#sBtnScreen").classList.add("active");
+    closeModal("#mScreenAsk");
+    toast("📷 Showing your work — point your camera at your book", "ok", 6000);
+  } catch (e) {
+    toast(e.message || "Camera unavailable. Allow camera access and try again.", "err", 6000);
+  }
+}
+/* v9 chooser: real screen share on desktop, camera fallback on phones. */
+function openScreenAsk() { openModal("#mScreenAsk"); }
 
 $("#sBtnMic").addEventListener("click", toggleMyMic);
+
+/* v9: one-tap mic / screen chooser modal buttons */
+document.addEventListener("click", (ev) => {
+  const t = ev.target.closest ? ev.target.closest("button") : null;
+  if (!t) return;
+  if (t.id === "btnMicYes")   { closeModal("#mMicAsk"); if (!myMicOn) toggleMyMic(); }
+  if (t.id === "btnMicLater") { closeModal("#mMicAsk"); toast("Mic button is ready whenever you are.", "", 4000); }
+  if (t.id === "btnScrShare") { closeModal("#mScreenAsk"); if (!myScreenOn) toggleMyScreen(); }
+  if (t.id === "btnCamView")  { startCameraView(); }
+  if (t.id === "btnScrNo")    {
+    closeModal("#mScreenAsk");
+    try { sRoom && sRoom.sendScreenNack("student_declined"); } catch {}
+  }
+});
 async function toggleMyMic() {
   if (!micAllowed && !myMicOn) { toast("Raise your hand — the teacher must allow your mic first."); return; }
   try {
