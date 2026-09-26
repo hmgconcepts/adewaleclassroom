@@ -163,7 +163,7 @@
 const AP = {
   rows: [],
   esc: s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])),
-  ROLES: ['parent','learner','tutor','staff','admin'],
+  ROLES: ['parent','learner','student','tutor','staff','lead_tutor','admin','director','owner'],
 
   async load(){
     const host=document.getElementById('ap-list');
@@ -232,20 +232,71 @@ const AP = {
         this.setStatus(b.dataset.sus,'suspended');
     });
     host.querySelectorAll('[data-role]').forEach(sel=>sel.onchange=async()=>{
-      const {error}=await sb.from('profiles').update({role:sel.value}).eq('id',sel.dataset.role);
-      if(error) toast(error.message,'danger');
-      else toast('Role set to '+sel.value+'. It applies the next time they load a page.','success');
+      const done = await AP.applyRoleStatus(sel.dataset.role, sel.value, null);
+      if(done) toast('Role set to '+sel.value+'. It applies the next time they load a page.','success');
     });
+  },
+
+  /* v15: single hardened write path — RPC first (bypasses the RLS trap),
+     verification second, honest errors third. Returns true on success. */
+  async applyRoleStatus(id, role, status){
+    let rpcErr = null, ok = false;
+    try {
+      const { data, error } = await sb.rpc('tc_admin_set_role_status', {
+        p_user_id: id,
+        p_role: role || null,
+        p_status: status || null,
+        p_note: 'approvals page'
+      });
+      if (error) rpcErr = error.message;
+      else if (data && data.ok === false) {
+        const why = data.reason || 'denied';
+        rpcErr = why === 'not_manager'      ? 'Only an approved owner / admin / director can change accounts.'
+              : why === 'cannot_change_self'? 'You cannot change your own account on this page.'
+              : why === 'bad_role'          ? 'That role is not allowed by the database.'
+              : why === 'bad_status'        ? 'That status is not allowed by the database.'
+              : why === 'no_profile'        ? 'That account has no profile row (refresh the page).'
+              : 'Change refused (' + why + ').';
+      } else ok = true;
+    } catch (e) { rpcErr = e.message; }
+
+    if (!ok) {
+      /* Fallback for older databases without the RPC: direct update, but
+         VERIFIED — a 0-row result is the silent RLS no-op that caused accounts
+         to stay "pending" after approval, so it is surfaced, never hidden. */
+      try {
+        const patch = {};
+        if (role) patch.role = role;
+        if (status) patch.status = status;
+        const { data, error } = await sb.from('profiles').update(patch).eq('id', id).select('id,role,status');
+        if (error) throw new Error(error.message);
+        if (!data || !data.length) {
+          throw new Error('Saved 0 rows — blocked by row-level security. Re-run database/complete-schema.sql (it adds the admin update policy), then try again.');
+        }
+        ok = true;
+      } catch (e) {
+        toast((rpcErr ? rpcErr + ' — ' : '') + (e.message || 'Could not save.'), 'danger', 9000);
+        return false;
+      }
+    }
+
+    /* Verify + refresh local state so the list reflects the truth instantly. */
+    try {
+      const { data } = await sb.from('profiles').select('id,role,status').eq('id', id).single();
+      if (data) { const r = this.rows.find(x => x.id === id); if (r) { r.role = data.role; r.status = data.status; } }
+    } catch {}
+    this.render();
+    return true;
   },
 
   async setStatus(id,status){
     const row=this.rows.find(r=>r.id===id)||{};
     const role=(document.querySelector('[data-role="'+id+'"]')||{}).value || row.role || 'parent';
-    const {error}=await sb.from('profiles').update({status,role}).eq('id',id);
-    if(error){ toast(error.message,'danger'); return; }
+    const done = await this.applyRoleStatus(id, role, status);
+    if(!done) return;
     toast(status==='approved'
       ? '✓ Approved '+(row.full_name||row.email||'account')+' as '+role+'.'
-      : 'Account suspended.','success');
+      : 'Account '+(status==='suspended'?'suspended.':'updated.'),'success');
     this.load();
   }
 };

@@ -1,40 +1,52 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
 <script src="assets/js/auth-guard.js?v=42"></script>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Inventory & Assets • ADEWALE CLASSROOM</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="description" content="Textbooks, tablets, equipment — quantities, condition and custody.">
+<meta name="theme-color" content="#0506ae">
+<meta name="author" content="HMG Technologies · HMG Concepts">
+<link rel="icon" type="image/svg+xml" href="assets/img/logo.png">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;800&display=swap" rel="stylesheet">
+<meta property="og:title" content="Inventory & Assets • ADEWALE CLASSROOM">
+<meta property="og:description" content="Textbooks, tablets, equipment — quantities, condition and custody.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="stylesheet" href="assets/css/layouts.css">
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#ffffff">
-</head>
-<body class="app-layout">
-<nav class="sidebar" id="sidebar"></nav>
-<div class="main-content">
-  <header class="topbar">
-    <button class="menu-toggle" id="menu-toggle" aria-label="Toggle menu">☰</button>
-    <div class="topbar-right">
-      <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">🌙</button>
-      <div class="user-profile" id="user-profile"></div>
-    </div>
-  </header>
-  <main class="page-content">
-    <div class="container-fluid">
-      <h1 class="app-page-title">Inventory & Assets</h1>
-      <div class="card fade-in">
-        <div class="page-intro-head"><strong>Inventory & Assets</strong><span class="page-intro-badge" style="background:#0f766e">🛡️ Admin & Staff</span></div>
-        <p class="page-intro-what">Manage physical assets: textbooks, digital tablets, science kits, and stationary.</p>
-        <div id="crud-root" data-table="inventory"></div>
-      </div>
-    </div>
-  </main>
-</div>
-<div id="toast-container" class="toast-container"></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/js/config.js?v=42"></script>
+<style>
+.help-card{background:linear-gradient(135deg,#ecfdf5,#fff7ed);border:1px solid #d1fae5;border-radius:16px;padding:16px 18px;margin-bottom:16px}
+.help-card p{margin:.4rem 0 0;color:#334155;line-height:1.55}
+.workflow{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 0}
+.workflow span{background:#fff;border:1px solid #e2e8f0;border-radius:999px;padding:4px 10px;font-size:.78rem;font-weight:700}
+.related{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.pwa-install-banner{display:none;position:fixed;left:16px;right:16px;bottom:16px;z-index:9990;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 16px 40px rgba(15,23,42,.18);padding:12px 14px;gap:12px;align-items:center}
+.pwa-install-banner.show{display:flex}
+.toast-container{position:fixed;right:16px;top:16px;z-index:10001;display:flex;flex-direction:column;gap:8px}
+.toast{background:#0f172a;color:#fff;border-radius:12px;padding:10px 14px;max-width:360px}
+.toast-success{background:#166534}.toast-danger{background:#991b1b}.toast-warning{background:#92400e}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:10000;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.show{display:flex}
+.modal{background:#fff;border-radius:16px;max-width:720px;width:100%;max-height:90vh;overflow:auto}
+.modal-header,.modal-footer{padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.modal-body{padding:18px}
+.notif-dropdown.show{display:block!important}
 
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js?v=42"></script>
+<script src="assets/js/config.js?v=42"></script>
+<script src="assets/js/theme-engine.js?v=42"></script>
+<script src="assets/js/catalog.js?v=42"></script>
+<script src="assets/js/license.js?v=42"></script>
+<script src="assets/js/media.js?v=42"></script>
+<script src="assets/js/brand.js?v=42"></script>
 <script src="assets/js/notifications.js?v=42"></script>
 <script src="assets/js/pwa-install.js?v=42"></script>
 <script src="assets/js/site-help.js?v=42"></script>
@@ -46,30 +58,73 @@
 <script src="assets/js/schema-doctor.js?v=42" defer></script>
 <script src="assets/js/quota-guard.js?v=42" defer></script>
 <script src="assets/js/chatbot.js?v=42"></script>
+<script src="assets/js/ai-assistant.js?v=42"></script>
 <script src="assets/js/security-guard.js?v=42"></script>
+<script src="assets/js/voting.js?v=42"></script>
+<script src="assets/js/enterprise.js?v=42"></script>
+<script src="assets/js/crud.js?v=42"></script>
+<script src="assets/js/insights.js?v=42"></script>
+<script src="assets/js/cbt-richtext.js?v=42"></script>
+<script src="assets/js/cbt-speech.js?v=42"></script>
+<script src="assets/js/cbt.js?v=42"></script>
+<script src="assets/js/cbt-types.js?v=42"></script>
+<script src="assets/js/proctor.js?v=42"></script>
+<script src="assets/js/bookings-engine.js?v=42"></script>
+<script src="assets/js/analytics.js?v=42"></script>
+<script src="assets/js/super.js?v=42"></script>
+<script src="assets/js/record-actions.js?v=42"></script>
+<script src="assets/js/receipts.js?v=42"></script>
 <script src="assets/js/nav-model.js?v=42"></script>
+<script src="assets/js/app.js?v=42"></script>
+<script src="assets/js/rbac.js?v=42"></script>
+<script src="assets/js/cbt-marking.js?v=42"></script>
+<script src="assets/js/scope-check.js?v=42"></script>
+<script src="assets/js/free-classes.js?v=42"></script>
+<script src="assets/js/cbt-manage.js?v=42"></script>
+<script src="assets/js/cert-studio.js?v=42"></script>
+<script src="assets/js/desk-kit.js?v=42"></script>
 <script src="assets/js/nav.js?v=42"></script>
 <script src="assets/js/legibility.js?v=42" defer></script>
 <script src="assets/js/ux-enhance.js?v=42" defer></script>
-<script src="assets/js/app.js?v=42"></script>
-<script src="assets/js/crud.js?v=42"></script>
+<script src="assets/js/ops-desk.js?v=42"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
+</head>
+<body>
+<div class="app-layout" data-require-role="any" id="app-layout">
+  <aside class="app-sidebar" id="app-sidebar">
+    <div class="app-brand"><img data-logo src="assets/img/logo.png" alt=""><div><strong data-practice-name>ADEWALE CLASSROOM</strong><span class="muted">Tutoring Connect</span></div></div>
+    <nav class="app-nav" id="app-nav" aria-label="Studio menu" data-nav="model">
+      <noscript><a href="site-index.html">All pages A–Z</a></noscript>
+    </nav>
+  </aside>
+  <div class="app-main">
+    <header class="app-topbar">
+      <button class="mobile-toggle" type="button" aria-label="Menu">☰</button>
+      <h1 class="app-page-title">Inventory & Assets</h1>
+      <div class="user-chip"><strong id="user-display-name" data-user-name></strong>
+        <span id="user-display-role" data-user-role></span>
+        <button class="btn btn-sm btn-ghost" id="btn-dark" type="button">Theme</button>
+        <button class="btn btn-sm btn-ghost" type="button" data-signout onclick="App.signOut()">Sign out</button></div>
+    </header>
+    <main class="app-content">
+      <section class="help-card page-intro">
+        <div class="page-intro-head"><strong>Inventory & Assets</strong><span class="page-intro-badge" style="background:#334155">📦 Staff only</span></div>
+        <p class="page-intro-what">Every shared asset the studio owns — textbooks, tablets, lab equipment, stationery — with quantities, condition and who currently holds each item.</p>
+        <p class="page-intro-who"><b>Who it is for.</b> Admins and staff run the register; tutors request and return items against it.</p>
+        <p class="page-intro-why"><b>Why it matters.</b> Shared resources leak away silently. A live custody list means end-of-term reconciliation takes minutes, not a stock-take weekend.</p>
+        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Add each item type with its category.</li><li>Update quantity as stock moves in and out.</li><li>Record condition after returns; flag items needing repair.</li><li>Note who an item is assigned to before it leaves the room.</li></ol></details>
+        <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access.</li><li><b>Tutor:</b> Read and update as part of their duties.</li><li><b>Parent:</b> No access — operations records are staff-side.</li><li><b>Learner:</b> No access.</li></ul></details>
+        <p class="page-intro-rel"><b>Related:</b> <a href="documents.html">documents</a> · <a href="eresources.html">eresources</a> · <a href="hostel.html">hostel</a> · <a href="finance.html">finance</a> · <a href="storage.html">storage</a></p>
+      </section>
+      <div id="crud-root"></div>
+      <script>document.addEventListener('DOMContentLoaded',()=>{ if(window.CRUD) CRUD.renderList('inventory'); });</script>
+    </main>
+  </div>
+</div>
+<div id="toast-container" class="toast-container"></div>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  if (window.CRUD) {
-    CRUD.init({
-      el: document.getElementById('crud-root'),
-      table: 'inventory',
-      title: 'Inventory & Assets',
-      schema: [
-        { name: 'item_name', label: 'Item Name', type: 'text', required: true },
-        { name: 'category', label: 'Category', type: 'text', required: true },
-        { name: 'quantity', label: 'Quantity', type: 'text', required: true },
-        { name: 'condition', label: 'Condition', type: 'text', required: true },
-        { name: 'assigned_to', label: 'Assigned To', type: 'text', required: true }
-      ]
-    });
-  }
-});
+
 </script>
 </body>
 </html>

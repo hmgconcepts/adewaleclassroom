@@ -115,6 +115,23 @@
         <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access to every link and registration.</li><li><b>Tutor:</b> Full access to the links they created, and their registrations.</li><li><b>Parent:</b> No access — parents use the public registration page.</li><li><b>Learner:</b> No access.</li></ul></details>
         <p class="page-intro-rel"><b>Related:</b> <a href="free-classes.html">free classes</a> · <a href="class-register.html">public registration page</a> · <a href="application-links.html">application links</a> · <a href="inquiries.html">inquiries</a> · <a href="public-book.html">public self-booking</a></p>
       </section>
+
+      <section class="card" style="margin-bottom:14px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <strong style="flex:1">🧭 Feature guide — every public link & module</strong>
+          <input id="fg-q" class="form-input" placeholder="Search modules…" style="min-width:170px;width:auto">
+          <select id="fg-role" class="form-select" style="width:auto">
+            <option value="">All roles</option>
+            <option value="admin">Admin</option>
+            <option value="tutor">Tutor</option>
+            <option value="parent">Parent</option>
+            <option value="student">Student</option>
+            <option value="public">Public</option>
+          </select>
+          <span class="muted" id="fg-count" style="font-size:.85rem"></span>
+        </div>
+        <div id="guide-root" style="margin-top:12px"></div>
+      </section>
       <div id="class-links-root"></div>
     </main></main>
   </div>

@@ -526,7 +526,8 @@
 
         if (window.DriveSync && DriveSync.mount) { try { DriveSync.mount('drive-root'); } catch (e) {} }
         else {
-          document.getElementById('drive-root').innerHTML =
+          var _driveRoot = document.getElementById('drive-root');
+          if (_driveRoot) _driveRoot.innerHTML =
             '<p class="muted">Google Drive sync is configured in <a href="settings.html">Settings</a> → ' +
             'Integrations. Once a client ID is saved there, the connect button appears here.</p>';
         }
