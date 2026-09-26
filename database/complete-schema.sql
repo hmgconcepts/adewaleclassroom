@@ -12119,3 +12119,219 @@ END $$;
 
 -- Force PostgREST schema cache reload so new views are immediately available via API
 NOTIFY pgrst, 'reload schema';
+-- Add admin update policy to profiles table
+DO $$
+BEGIN
+  DROP POLICY IF EXISTS profiles_admin_update ON public.profiles;
+  CREATE POLICY profiles_admin_update ON public.profiles
+    FOR UPDATE TO authenticated
+    USING (public.tc_is_admin())
+    WITH CHECK (public.tc_is_admin());
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+-- Add admin update policy to profiles table
+DO $$
+BEGIN
+  DROP POLICY IF EXISTS profiles_admin_update ON public.profiles;
+  CREATE POLICY profiles_admin_update ON public.profiles
+    FOR UPDATE TO authenticated
+    USING (public.tc_is_admin() OR public.is_admin())
+    WITH CHECK (public.tc_is_admin() OR public.is_admin());
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+
+
+-- =====================================================================
+-- V_MY_WORK: the learner Work Board.
+-- When staff assign homework / reading / a CBT paper to an engagement
+-- (group or cohort) or to an individual learner, ONE call returns the
+-- learner's full work picture. RLS-equivalent checks run INSIDE the
+-- function (security definer), so a parent can only query their own
+-- children and a learner only themselves.
+-- Safe to re-run.
+-- =====================================================================
+create or replace function public.tc_my_work(p_learner_id uuid default null)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_learner_id uuid := p_learner_id;
+  v_me public.learners%rowtype;
+  v_eng_ids uuid[];
+  v_out jsonb;
+begin
+  if v_learner_id is null then
+    select l.* into v_me from public.learners l where l.user_id = auth.uid() limit 1;
+  else
+    if not public.is_family_of_learner(v_learner_id) and not public.tc_is_manager() then
+      return jsonb_build_object('ok', false, 'reason', 'not_your_child');
+    end if;
+    select l.* into v_me from public.learners l where l.id = v_learner_id limit 1;
+  end if;
+  if v_me.id is null then
+    return jsonb_build_object('ok', false, 'reason', 'no_learner_record');
+  end if;
+
+  select coalesce(array_agg(em.engagement_id), '{}') into v_eng_ids
+    from public.engagement_members em
+   where em.learner_id = v_me.id
+     and coalesce(em.status, 'active') = 'active';
+
+  select jsonb_build_object(
+    'ok', true,
+    'learner', jsonb_build_object('id', v_me.id, 'name', v_me.full_name, 'year', v_me.year_group),
+    'engagements', (select coalesce(jsonb_agg(jsonb_build_object(
+                      'id', e.id, 'name', e.name, 'subject', e.subject, 'kind', e.kind) order by e.name), '[]'::jsonb)
+                      from public.engagements e
+                     where e.id = any(v_eng_ids) and coalesce(e.status,'active') = 'active'),
+    'homework', (select coalesce(jsonb_agg(jsonb_build_object(
+                    'id', a.id, 'title', a.title, 'due', a.due_on, 'status', a.status,
+                    'score', a.score, 'max', a.max_score,
+                    'group', a.learner_id is null,
+                    'engagement', (select e.name from public.engagements e where e.id = a.engagement_id)
+                  ) order by a.due_on nulls last, a.created_at desc), '[]'::jsonb)
+                  from public.assignments a
+                 where (a.engagement_id = any(v_eng_ids) or a.learner_id = v_me.id)
+                   and (a.learner_id is null or a.learner_id = v_me.id)),
+    'reading', (select coalesce(jsonb_agg(jsonb_build_object(
+                    'id', r.id, 'title', r.title, 'due', r.due_on, 'status', r.status,
+                    'engagement', (select e.name from public.engagements e where e.id = r.engagement_id)
+                  ) order by r.due_on nulls last, r.created_at desc), '[]'::jsonb)
+                  from public.reading_assignments r
+                 where r.engagement_id = any(v_eng_ids)),
+    'exams', (select coalesce(jsonb_agg(jsonb_build_object(
+                    'id', x.id, 'code', x.code, 'title', x.title, 'minutes', x.duration_min,
+                    'kind', x.quiz_kind, 'subject', x.subject
+                  ) order by x.created_at desc), '[]'::jsonb)
+                  from public.cbt_exams x
+                 where x.engagement_id = any(v_eng_ids)
+                   and (lower(coalesce(x.status, 'draft')) in ('published','live','open')
+                        or coalesce(x.is_open, false))),
+    'next_class', (select jsonb_build_object(
+                      'starts', s.starts_at,
+                      'engagement', (select e.name from public.engagements e where e.id = s.engagement_id),
+                      'url', s.meeting_url)
+                     from public.sessions s
+                    where s.engagement_id = any(v_eng_ids)
+                      and s.starts_at >= now()
+                      and coalesce(s.status, 'scheduled') = 'scheduled'
+                    order by s.starts_at limit 1)
+  ) into v_out;
+  return v_out;
+end $$;
+
+grant execute on function public.tc_my_work(uuid) to authenticated;
+revoke all on function public.tc_my_work(uuid) from public, anon;
+
+select 'My Work board installed (tc_my_work)' as status;
+
+
+-- =====================================================================
+-- OPERATIONS TABLES — the missing database layer for the operations
+-- pages (hostel, health, inventory, transport, alumni).
+-- These pages shipped as HTML/JS but their tables were never defined,
+-- so every list opened with "relation does not exist". This migration
+-- installs the five tables with owner/admin + tutor write access and
+-- read access for staff, and appends them to the audit + touch-trigger
+-- machinery. Safe to re-run.
+-- =====================================================================
+
+-- 1. FACILITY & HOSTEL -------------------------------------------------
+create table if not exists public.facility_hostel (
+  id uuid primary key default gen_random_uuid(),
+  room_name text not null,
+  category text,
+  capacity int,
+  assigned_to text,
+  status text default 'active',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- 2. HEALTH & MEDICAL --------------------------------------------------
+create table if not exists public.health_records (
+  id uuid primary key default gen_random_uuid(),
+  student text not null,
+  condition_allergy text,
+  action_plan text,
+  emergency_contact text,
+  last_updated text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- 3. INVENTORY & ASSETS ------------------------------------------------
+create table if not exists public.inventory (
+  id uuid primary key default gen_random_uuid(),
+  item_name text not null,
+  category text,
+  quantity text,
+  condition text,
+  assigned_to text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- 4. TRANSPORT & PICKUP ------------------------------------------------
+create table if not exists public.transport (
+  id uuid primary key default gen_random_uuid(),
+  student text not null,
+  authorized_pickup text,
+  route_van text,
+  status text default 'active',
+  contact text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- 5. ALUMNI NETWORK ----------------------------------------------------
+create table if not exists public.alumni (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  graduation_year text,
+  destination_university text,
+  contact_email text,
+  status text default 'active',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- ROW LEVEL SECURITY ---------------------------------------------------
+alter table public.facility_hostel enable row level security;
+alter table public.health_records    enable row level security;
+alter table public.inventory         enable row level security;
+alter table public.transport         enable row level security;
+alter table public.alumni            enable row level security;
+
+do $$
+declare t text;
+begin
+  foreach t in array array['facility_hostel','health_records','inventory','transport','alumni'] loop
+    execute format('drop policy if exists %I on public.%I', t||'_ops_staff', t);
+    execute format(
+      'create policy %I on public.%I for all to authenticated
+         using (public.tc_is_manager() or public.is_tutor())
+         with check (public.tc_is_manager() or public.is_tutor())',
+      t||'_ops_staff', t);
+
+    /* read-only for the remaining authenticated staff (secretary etc.) */
+    execute format('drop policy if exists %I on public.%I', t||'_ops_read', t);
+    execute format(
+      'create policy %I on public.%I for select to authenticated using (true)',
+      t||'_ops_read', t);
+
+    /* updated_at touch trigger */
+    execute format('drop trigger if exists %I on public.%I', t||'_touch', t);
+    execute format('create trigger %I before update on public.%I
+       for each row execute function public.tc_set_updated_at()', t||'_touch', t);
+
+    /* audit trail */
+    execute format('drop trigger if exists %I on public.%I', t||'_audit', t);
+    execute format('create trigger %I after insert or update or delete on public.%I
+       for each row execute function public.tc_audit()', t||'_audit', t);
+  end loop;
+end $$;
+
+select 'Operations tables installed (facility_hostel, health_records, inventory, transport, alumni)' as status;
