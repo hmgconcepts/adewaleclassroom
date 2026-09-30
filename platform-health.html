@@ -252,27 +252,67 @@ const PH = {
   async loadFleet(){
     const box = document.getElementById('fleet-status');
     const checks = [];
-    /* RPC probe — the exact call the fleet console makes */
-    try { const r = await sb.rpc('sc_keep_alive', { src: 'platform-health' });
-      checks.push({ ok: !r.error, label: 'sc_keep_alive RPC (fleet ping endpoint)' }); } catch(e){
-      checks.push({ ok:false, label: 'sc_keep_alive RPC (fleet ping endpoint)' }); }
-    /* table probe — heartbeat age read */
-    try { const r = await sb.from('sc_keepalive').select('pinged_at,src').limit(1);
-      checks.push({ ok: !r.error, label: 'sc_keepalive table (fleet heartbeat read)' });
-      if (r.data && r.data.length) this._fleetRow = r.data[0]; } catch(e){
-      checks.push({ ok:false, label: 'sc_keepalive table (fleet heartbeat read)' }); }
-    /* license probe — fleet reads .state */
-    try { const r = await sb.rpc('sc_license_status');
-      checks.push({ ok: !r.error, label: 'sc_license_status RPC (fleet licence verdict)' });
-      this._fleetLicense = r.data; } catch(e){ checks.push({ ok:false, label: 'sc_license_status RPC (fleet licence verdict)' }); }
+    /* Ask the pack registry FIRST, so this card never tells you to
+       "install the pack" when the pack IS installed and an endpoint is
+       failing for a different reason (the v11.0.2 lesson: sc_keep_alive
+       existed and was listed INSTALLED, but calling it raised 42702). */
+    let fleetPackInstalled = null;
+    try {
+      const pr = await sb.rpc('tc_installed_packs');
+      const packs = Array.isArray(pr.data) ? pr.data
+                  : (typeof pr.data === 'string' ? JSON.parse(pr.data) : null);
+      if (packs) fleetPackInstalled = packs.some(x => /fleet/i.test(x.pack) && x.installed);
+    } catch(_){ /* registry not reachable — headline falls back */ }
+
+    const probe = async (label, run) => {
+      try {
+        const r = await run();
+        const err = r && r.error ? (r.error.message || JSON.stringify(r.error)) : null;
+        checks.push({ ok: !err, label, err });
+        return r;
+      } catch (e) {
+        checks.push({ ok: false, label, err: (e && e.message) || String(e) });
+        return null;
+      }
+    };
+    await probe('sc_keep_alive RPC (fleet ping endpoint)', () => sb.rpc('sc_keep_alive', { src: 'platform-health' }));
+    const tbl = await probe('sc_keepalive table (fleet heartbeat read)', () => sb.from('sc_keepalive').select('pinged_at,src').limit(1));
+    if (tbl && tbl.data && tbl.data.length) this._fleetRow = tbl.data[0];
+    const lic = await probe('sc_license_status RPC (fleet licence verdict)', () => sb.rpc('sc_license_status'));
+    if (lic && !lic.error) this._fleetLicense = lic.data;
+
     const ok = checks.every(c => c.ok);
-    box.innerHTML = (ok ? '<p style="margin:0;color:#065f46;font-weight:700">✅ FLEET-READY — every endpoint the console probes answers correctly.</p>'
-                        : '<p style="margin:0;color:#b42318;font-weight:700">⚠️ Not fleet-ready yet — install database/v11-enterprise-pack.sql.</p>') +
-      '<ul style="margin:8px 0 0;padding-left:18px;font-size:.85rem;line-height:1.8">' +
-      checks.map(c => '<li>' + (c.ok?'✅':'❌') + ' <code>' + c.label + '</code></li>').join('') + '</ul>' +
-      (this._fleetRow ? '<p class="muted" style="font-size:.8rem;margin:8px 0 0">Last fleet-row ping: ' + this.esc(new Date(this._fleetRow.pinged_at).toLocaleString()) + ' from <b>' + this.esc(this._fleetRow.src||'—') + '</b>. ' +
-        (String(this._fleetRow.src||'').includes('fleet') ? 'The Fleet Console has this project registered and is keeping it alive.' : 'No Fleet Console ping recorded yet — register this project so it is watched automatically.') + '</p>' : '');
-    document.getElementById('fleet-card').style.borderColor = ok ? 'rgba(16,185,129,.5)' : 'rgba(239,68,68,.5)';
+    const advice = (err) => {
+      const m = String(err || '');
+      if (/42702|ambiguous/i.test(m))
+        return 'The installed <code>sc_keep_alive</code> is the v11.0.0/v11.0.1 build — its <code>src</code> parameter collided with the table column of the same name. Re-run <code>database/v11-enterprise-pack.sql</code> (v11.0.2 or later); it replaces the function with the fixed version.';
+      if (/PGRST202|42883|does not exist|Could not find/i.test(m))
+        return 'Not installed yet — run <code>database/v11-enterprise-pack.sql</code> in the Supabase SQL Editor, then <code>notify pgrst, \'reload schema\';</code>.';
+      if (/42501|permission/i.test(m))
+        return 'A grant or policy is missing — re-running <code>database/v11-enterprise-pack.sql</code> re-issues every grant and policy.';
+      if (m) return 'Raw error: <code>' + this.esc(m.slice(0, 160)) + '</code>';
+      return 'Unknown failure.';
+    };
+    const headline = ok
+      ? '<p style="margin:0;color:#065f46;font-weight:700">✅ FLEET-READY — every endpoint the console probes answers correctly.</p>'
+      : fleetPackInstalled === true
+        ? '<p style="margin:0;color:#b42318;font-weight:700">⚠️ The fleet pack IS installed, but an endpoint returned an error — the exact problem and its fix are listed below.</p>'
+        : fleetPackInstalled === false
+          ? '<p style="margin:0;color:#b42318;font-weight:700">⚠️ Not fleet-ready yet — run <code>database/v11-enterprise-pack.sql</code> in the Supabase SQL Editor.</p>'
+          : '<p style="margin:0;color:#b42318;font-weight:700">⚠️ Could not verify fleet readiness — see the per-check errors below.</p>';
+    box.innerHTML = headline +
+      '<ul style="margin:8px 0 0;padding-left:18px;font-size:.85rem;line-height:1.9">' +
+      checks.map(c => '<li>' + (c.ok ? '✅' : '❌') + ' <code>' + c.label + '</code>' +
+        (c.ok ? '' : '<br><span style="color:#b42318;font-size:.8rem">' + advice(c.err) + '</span>') + '</li>').join('') + '</ul>' +
+      (this._fleetRow
+        ? '<p class="muted" style="font-size:.8rem;margin:8px 0 0">Last fleet-row ping: ' + this.esc(new Date(this._fleetRow.pinged_at).toLocaleString()) +
+          ' from <b>' + this.esc(this._fleetRow.src || '—') + '</b>. ' +
+          (String(this._fleetRow.src || '').includes('fleet')
+            ? 'The Fleet Console has this project registered and is keeping it alive.'
+            : 'No Fleet Console ping recorded yet — register this project so it is watched automatically.') + '</p>'
+        : '');
+    const card = document.getElementById('fleet-card');
+    if (card) card.style.borderColor = ok ? 'rgba(16,185,129,.5)' : 'rgba(239,68,68,.5)';
   },
   async loadPacks(){
     const box = document.getElementById('packs-table');
@@ -380,14 +420,27 @@ const PH = {
 };
 document.getElementById('ping').onclick = async () => {
   if(!window.sb) return;
+  /* supabase-js does NOT throw on RPC errors — it returns {error}. Both
+     endpoints are checked properly, and a 42702 gets its own instruction. */
+  let ok = false, msg = '';
   try {
-    await sb.rpc('sc_keep_alive', { src: 'manual' });
-    try { await sb.rpc('tc_keep_alive', { src: 'manual' }); } catch(_){}
+    const r = await sb.rpc('sc_keep_alive', { src: 'manual' });
+    if (r && r.error) msg = r.error.message || JSON.stringify(r.error); else ok = true;
+  } catch(e) { msg = (e && e.message) || String(e); }
+  if (!ok) {
+    try {
+      const r2 = await sb.rpc('tc_keep_alive', { src: 'manual' });
+      if (r2 && r2.error) throw new Error(r2.error.message || JSON.stringify(r2.error));
+      ok = true;
+    } catch(e2) { msg += (msg ? ' · ' : '') + ((e2 && e2.message) || String(e2)); }
+  }
+  if (ok) {
     toast('Heartbeat written — Supabase will not pause this project for another 7 days.', 'success');
     PH.load();
-  } catch(e) {
-    toast('Fleet endpoint missing — run database/v11-enterprise-pack.sql. Falling back to the classic ping.', 'warning', 8000);
-    try { await sb.rpc('tc_keep_alive', { src: 'manual' }); toast('Heartbeat written (classic endpoint).', 'success'); PH.load(); } catch(_){}
+  } else if (/42702|ambiguous/i.test(msg)) {
+    toast('Keep-alive hit the v11.0.0 name-collision bug (42702). Re-run database/v11-enterprise-pack.sql (v11.0.2) to replace the function.', 'danger', 10000);
+  } else {
+    toast('Keep-alive failed: ' + msg, 'danger', 9000);
   }
 };
 document.getElementById('lock').onclick = async () => {

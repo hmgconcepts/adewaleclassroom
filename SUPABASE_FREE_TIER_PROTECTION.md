@@ -52,6 +52,12 @@ You (the operator) run the **HMG Fleet Console** at <https://hmgfleetconsole.ver
 3. Paste this project's **Project URL** and **anon key** (Dashboard → Project Settings → API). ⚠️ Never the `service_role` key — the console is designed to work safely with the anon key and explicitly rejects service-role JWTs.
 4. Save. The console immediately pings `sc_keep_alive`; within seconds the Platform Health console here shows **🛰️ HMG Fleet Console** as the last ping source, and the fleet card turns green.
 
+### If "Keep All alive now" reports `HTTP 400 … 42702: column reference "src"`
+
+That was a real bug in `sc_keep_alive` builds **v11.0.0/v11.0.1**: the function's parameter is named `src` (it must be — the Fleet Console POSTs `{"src": …}` and PostgREST matches JSON keys to argument names), but the `sc_keepalive` table also has a column named `src`, and PL/pgSQL's default `variable_conflict = error` made every call fail with 42702 even though the function existed and the pack showed INSTALLED. **Fixed in v11.0.2**: the parameter is copied into a collision-proof local (`v_src`), a `#variable_conflict use_variable` guard is compiled into the function, and the Platform Health fleet card now shows the *actual* per-endpoint error with its exact fix instead of a generic "install the pack".
+
+To repair an affected project: re-run `database/v11-enterprise-pack.sql` (v11.0.2 or later) in the Supabase SQL Editor — nothing else changes, and the "Keep All alive now" button in the console goes green immediately.
+
 ### Verifying it worked (never assume — verify)
 
 - **In the Fleet Console:** the project row shows a fresh heartbeat age and licence state — not "no-rpc", and no toast telling you to "run Ops Toolkit SQL".
