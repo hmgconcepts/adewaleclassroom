@@ -8,7 +8,7 @@
    requests, making the site feel native on repeat visits.
    Bump CACHE_VERSION whenever you deploy changes.
    ============================================================ */
-const CACHE_VERSION = "hmg-classdeck-v11.2.1-v39-bridge-css";   /* bumped: v39 portal-bridge CSS newline fix — purges cached broken JS */
+const CACHE_VERSION = "hmg-classdeck-v11.3.0-v10-lobby-cache-fix";   /* bumped: v39 portal-bridge CSS newline fix — purges cached broken JS */
 
 const SHELL = [
   "./",
@@ -93,7 +93,10 @@ self.addEventListener("fetch", (e) => {
   e.respondWith(
     (async () => {
       const cache = await caches.open(CACHE_VERSION);
-      const cached = await cache.match(e.request, { ignoreSearch: true });
+      /* v10: exact match — a new ?v= query is a cache MISS, so updated JS
+         reaches students on their very next load. (ignoreSearch served the
+         stale precached copy forever and defeated every version bump.) */
+      const cached = await cache.match(e.request) || (url.search === "" ? await cache.match(url.pathname) : null);
       const fetchPromise = fetch(e.request).then(res => {
         if (res && res.ok) cache.put(e.request, res.clone());
         return res;
@@ -112,7 +115,9 @@ self.addEventListener("fetch", (e) => {
       } catch (err) {
         // For navigation requests, return index.html as offline fallback
         if (e.request.mode === "navigate") {
-          const fallback = await cache.match("./index.html");
+          /* v10: fall back to the SAME page (offline), not the homepage */
+          const same = await cache.match(url.pathname);
+          const fallback = same || await cache.match("./index.html");
           if (fallback) return fallback;
         }
         return Response.error();

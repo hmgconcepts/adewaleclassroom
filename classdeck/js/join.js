@@ -105,6 +105,7 @@ async function join() {
   hideRejoinBanner();
   clearTimeout(lobbyTimer);
   lobbyOn = false;
+  lobbyGen++;               /* v10: invalidate any in-flight lobby tick */
 
   $("#btnJoin").disabled = true;
   $("#joinStatus").textContent = "Connecting to class…";
@@ -132,7 +133,7 @@ async function join() {
 }
 
 /* ---------- v5: lobby (auto-join when teacher goes live) ---------- */
-let lobbyTimer = null, lobbyOn = false, lobbyAttempt = 0;
+let lobbyTimer = null, lobbyOn = false, lobbyAttempt = 0, lobbyGen = 0;
 function showWaitingState(code, name) {
   lobbyOn = true;
   clearTimeout(lobbyTimer);
@@ -148,6 +149,8 @@ function showWaitingState(code, name) {
 function startLobby(code, name, why) {
   lobbyOn = true;
   lobbyAttempt = 0;
+  lobbyGen++;               /* v10: a fresh wait session — its tick owns this generation */
+  const gen = lobbyGen;
   clearTimeout(lobbyTimer);
   closeModal("#mWaiting");
   $("#joinGate").classList.remove("hide");
@@ -160,12 +163,18 @@ function startLobby(code, name, why) {
   // A successful transport handshake that reports "waiting" is a real
   // waiting room, not a reason to keep opening new PeerJS connections.
   lobbyTimer = setTimeout(async function tick() {
-    if (!lobbyOn) return;
+    if (!lobbyOn || gen !== lobbyGen) return;
     const candidate = new StudentRoom(code, name, { onEvent: onEvent, pin: $("#inPin").value.trim(), tok: qs.get("tok") || "" });
     sRoom = candidate;
     try {
       const result = await candidate.join();
-      if (!lobbyOn) { candidate.leave(); return; }
+      /* v10 FIX: the "welcome" event fires SYNCHRONOUSLY before this
+         continuation and legitimately sets lobbyOn=false — the old guard
+         read that as "user stopped waiting" and EVICTED the freshly
+         admitted student (the stuck-in-lobby bug). Abandon the candidate
+         ONLY if this wait session was really abandoned (generation moved
+         on, e.g. Stop waiting / manual re-join). */
+      if (gen !== lobbyGen) { try { candidate.leave(); } catch {} return; }
       if (result && result.state === "waiting") {
         showWaitingState(code, name);
         return;
@@ -186,13 +195,15 @@ function startLobby(code, name, why) {
         $("#joinStatus").textContent = e.message || "The teacher rejected this join request.";
         return;
       }
+      if (gen !== lobbyGen) return;   /* v10: wait session abandoned */
       lobbyAttempt++;
-      lobbyTimer = setTimeout(tick, Math.min(12000, 4000 + lobbyAttempt * 2000));   // v9: 6s→12s gentle backoff
+      lobbyTimer = setTimeout(tick, Math.min(12000, 4000 + lobbyAttempt * 2000));
     }
   }, 4000);
 }
 function stopLobby() {
   lobbyOn = false;
+  lobbyGen++;               /* v10: any in-flight tick join must abandon itself */
   clearTimeout(lobbyTimer);
   lobbyTimer = null;
   const oldRoom = sRoom;
