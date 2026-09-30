@@ -8,13 +8,18 @@
 
 ## What is already built in (zero setup for the client)
 
-`database/complete-schema.sql` installs a tiny heartbeat system:
+`database/complete-schema.sql` (V11 and later, including `database/v11-enterprise-pack.sql`) installs a twin-ledger heartbeat system — one ledger for the platform's own Platform Health console, one that speaks the exact dialect the HMG Fleet Console and the GitHub Action already use:
 
 | Object | Purpose |
 |---|---|
-| `public.sc_heartbeat` table | One row storing the last ping time, source and count |
-| `public.sc_keep_alive(src)` RPC | Performs a real `UPDATE` (genuine DB activity) — callable with the anon key, exposes no school data |
+| `public.tc_heartbeat` table | The platform ledger: last ping time, source and count (read through the `tc_keep_alive_status()` RPC; the table itself is revoked from clients) |
+| `public.tc_keep_alive(src)` RPC | The classic heartbeat: a real `UPDATE` (genuine DB activity), anon-callable, exposes no business data |
+| `public.sc_keepalive` table | The fleet ledger: `id`, `pinged_at`, `src` — world-readable (public SELECT policy) so the Fleet Console can read the heartbeat age with only the anon key |
+| `public.sc_keep_alive(src)` RPC | **Fleet-compatible heartbeat.** One call updates BOTH ledgers. This is also the exact endpoint `.github/workflows/keep-supabase-alive.yml` calls — before V11 that workflow named a function this database never had, so the Monday/Thursday pings were silently failing. V11 fixes that |
+| `public.sc_license_status()` RPC | Subscription verdict in the shape the Fleet Console reads (`{state: …}`) — maps onto our `tc_license_status()` |
 | `pg_cron` job `sc-keep-alive` | **Layer 4** — internal DB scheduler fires every 2 days automatically (skipped gracefully where pg_cron is unavailable) |
+
+**Where the last ping came from.** Every ping records a `src`: `site-visit` (anybody opened the site), `manual` (somebody pressed 💓 Ping now), `hmg-fleet-console` (Layer 5 below), `github-actions` (Layer 2), or `install`. The Platform Health console shows this beside the heartbeat so you always know *who* is keeping the project alive — and whether the automated layers are actually working.
 
 **Layer 1 — Site-visit heartbeat (automatic, nothing to configure)**
 `assets/js/app.js` on every page calls `sc_keep_alive('site-visit')` at most **once per device per 24 hours**. As long as *anyone* (a teacher, a parent, even you) opens the site once a week, the project never pauses. This is fully automated the moment the site is deployed.
@@ -22,6 +27,38 @@
 Because school traffic can stop during long holidays, add the independent external layers below. **Total setup time: under 15 minutes, once, at handover. After that everything is automatic.**
 
 ---
+
+
+---
+
+## Layer 5 — HMG Fleet Console (the operator's own monitoring platform, recommended)
+
+You (the operator) run the **HMG Fleet Console** at <https://hmgfleetconsole.vercel.app/> — a dashboard that watches **every client Supabase project in one place** and can **prevent pausing with one click**. V11 makes this platform fleet-ready out of the box: no SQL of your own to write, no adapters.
+
+### What the console does with this project once registered
+
+| Console action | What it calls here | What V11 provides |
+|---|---|---|
+| One-click **Prevent pause** | `POST /rest/v1/rpc/sc_keep_alive` with `{src:'hmg-fleet-console'}` | ✅ Installed — writes both ledgers |
+| **Heartbeat age** check | `GET /rest/v1/sc_keepalive?select=pinged_at&limit=1` | ✅ Table + public-read policy installed |
+| **Health probe** | `GET /rest/v1/` root + `/auth/v1/health` (401/404 still proves the project is up) | Nothing to install — Supabase built-in |
+| **Licence verdict** | `POST /rest/v1/rpc/sc_license_status` → reads `.state` | ✅ Installed — maps our `tc_license_status()` into the console's vocabulary (`active` / `lifetime` / `grace` / `expired` / `suspended` / `warning`) |
+| **Latency + incident log** | Timed probes on every check | Nothing to install — console-side |
+
+### One-time registration (about 2 minutes)
+
+1. Run `database/v11-enterprise-pack.sql` in the Supabase SQL Editor if this database predates V11 (new installs via `complete-schema.sql` already have it). Nothing else is needed.
+2. Open the **Fleet Console** → **Projects** → **Add project**.
+3. Paste this project's **Project URL** and **anon key** (Dashboard → Project Settings → API). ⚠️ Never the `service_role` key — the console is designed to work safely with the anon key and explicitly rejects service-role JWTs.
+4. Save. The console immediately pings `sc_keep_alive`; within seconds the Platform Health console here shows **🛰️ HMG Fleet Console** as the last ping source, and the fleet card turns green.
+
+### Verifying it worked (never assume — verify)
+
+- **In the Fleet Console:** the project row shows a fresh heartbeat age and licence state — not "no-rpc", and no toast telling you to "run Ops Toolkit SQL".
+- **In this platform:** open **Platform Health** → the *Last ping came from* tile should read 🛰️ HMG Fleet Console, and the fleet-linkage card should show three ✅ ticks.
+- **Timings:** the console checks every project on its schedule and logs an incident on every state or licence transition, so a paused-then-restored project leaves a visible trail.
+
+**Belt-and-braces rule:** keep Layer 2 (GitHub Actions) enabled even after registering with the fleet console. Two independent pingers in different time zones is the difference between "never paused" and "usually not paused".
 
 ## Layer 2 — GitHub Actions heartbeat (recommended, ~5 minutes)
 
@@ -485,3 +522,29 @@ week) heals itself within a day. Layer 9 is now built into the workflow file
 itself, so GitHub's 60-day freeze is permanently off the table. The odds of
 all of these failing in the same week are effectively zero — and if they did,
 Layer 10 un-pauses the project the next morning without any human involved.
+
+---
+
+## The wider free-tier protection stack (V11)
+
+Anti-pause is one concern; the free tier also caps the **database at 500 MB** and offers **no automatic backups**. V11 completes the rest of the stack, all of it visible on **Platform Health** and **Storage Manager**:
+
+| Layer | What it does | Where to see it |
+|---|---|---|
+| **Keep-alive (5 layers)** | Site visits, manual pings, GitHub Actions, pg_cron, Fleet Console — each one a real database write through `sc_keep_alive`/`tc_keep_alive` | Platform Health → Keep-alive card |
+| **Schema Doctor pack registry** | The database itself reports **every SQL pack** in `database/` and whether it is installed (`tc_installed_packs()` inspects `pg_proc`/`pg_class`/columns/privileges/buckets) | Platform Health → 🩺 Schema Doctor |
+| **Quota guard** | Table-by-table size report against the 500 MB cap (`tc_db_report`), warning and critical thresholds | Platform Health → 🗄️ card; Storage Manager |
+| **Retention policy** | Per-table retention days stored in `data_retention_settings`; nothing auto-deleted | Storage Manager → 🌿 Efficiency Centre |
+| **Archive Vault** | Moves old rows out of the 500 MB database into the **separate 1 GB File Storage** as restorable JSON (`archives` bucket, owner-only) | Storage Manager → 📦 Archive Vault |
+| **Owner-gated purge** | `purge_old(p_table, p_days)` deletes past-retention rows **only** for owner roles, and logs itself to the audit trail | Storage Manager → 🧹 Purge; Activity log |
+| **Google Drive backup** | Sealed JSON backups to the studio's own Drive — outside Supabase entirely | Platform Health → ☁️ card; Admin Data |
+| **Sign-in audit** | Every login with email, event, IP and device (`login_audit.ip` added in V11) — "who logged in" is never a guess | Platform Health → 🕵️ card; Activity log → Sign-in audit tab |
+
+**The one-page checklist for a client handover:**
+
+1. ✅ `complete-schema.sql` (or `v11-enterprise-pack.sql` on older installs) has been run — Platform Health shows **every pack INSTALLED**.
+2. ✅ Fleet Console card green; a fleet ping appears as the last source.
+3. ✅ GitHub Actions secrets `SUPABASE_URL` + `SUPABASE_ANON_KEY` set; the Actions tab shows green runs.
+4. ✅ Platform Health heartbeat age under 3 days, source labelled.
+5. ✅ Drive sync configured; last backup green.
+6. ✅ Retention policy saved on the Storage Manager; first archive pass done.
