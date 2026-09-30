@@ -114,6 +114,70 @@ const DataPortability = {
      This Storage vault remains available for operators who deliberately want a
      copy inside Supabase, but it is now OPT-IN, it refuses to run unless the
      caller passes {confirm:true}, and it states the quota cost up front. */
+  /* ---------- V11 ARCHIVE VAULT (File Storage offload) ----------
+     Moves old rows OUT of the 500 MB database INTO the separate 1 GB
+     File Storage as restorable JSON. Workflow on Storage Manager:
+     archive → verify in list → purge the same table/days → restore
+     any archive back into the database whenever it is needed. */
+  async exportTable(table) {
+    this.init(window.sb);
+    const rows = await this.fetchAll(table);
+    this.download('export-' + table + '-' + new Date().toISOString().slice(0, 10) + '.json',
+      JSON.stringify({ table, exported_at: new Date().toISOString(), rows }, null, 2),
+      'application/json');
+    if (typeof toast === 'function') toast('📥 Exported ' + rows.length + ' row(s) from ' + table + '.', 'success');
+    return rows.length;
+  },
+  async archiveToVault(table, days) {
+    this.init(window.sb);
+    if (!this.sb) throw Error('Database not connected.');
+    const cut = new Date(Date.now() - Math.max(1, days || 180) * 86400000).toISOString();
+    const r = await this.sb.from(table).select('*').lt('created_at', cut).order('created_at').limit(50000);
+    if (r.error) throw Error(r.error.message);
+    const rows = r.data || [];
+    if (!rows.length) { if (typeof toast === 'function') toast('Nothing older than ' + days + ' days in ' + table + '.', 'info'); return { rows: 0, path: null }; }
+    const path = 'archives/' + table + '/' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
+    const body = JSON.stringify({ table, archived_at: new Date().toISOString(), cutoff: cut, days: days, rows }, null, 2);
+    const up = await this.sb.storage.from(this.VAULT_BUCKET).upload(path, new Blob([body], { type: 'application/json' }));
+    if (up.error) throw Error(up.error.message + ' — run database/storage-offload.sql (archives bucket)');
+    return { rows: rows.length, path };
+  },
+  async listVault() {
+    this.init(window.sb);
+    if (!this.sb) throw Error('Database not connected.');
+    const out = [];
+    const top = await this.sb.storage.from(this.VAULT_BUCKET).list('archives', { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
+    if (top.error) throw Error(top.error.message);
+    for (const d of (top.data || [])) {
+      if (!d.id) continue; // folders
+      out.push({ path: 'archives/' + d.name, size: d.metadata ? d.metadata.size : 0, created: d.created_at });
+    }
+    return out;
+  },
+  async _vaultRead(path) {
+    const dl = await this.sb.storage.from(this.VAULT_BUCKET).download(path);
+    if (dl.error) throw Error(dl.error.message);
+    return JSON.parse(await dl.text());
+  },
+  async restoreFromVault(path) {
+    this.init(window.sb);
+    if (!this.sb) throw Error('Database not connected.');
+    const pack = await this._vaultRead(path);
+    if (!pack || !Array.isArray(pack.rows)) throw Error('Archive is not a valid row archive.');
+    const report = await this.importArchive({ tables: { [pack.table]: pack.rows }, meta: { restored_from: path } }, 'upsert');
+    return report;
+  },
+  async downloadVault(path) {
+    this.init(window.sb);
+    const pack = await this._vaultRead(path);
+    this.download(path.split('/').pop(), JSON.stringify(pack, null, 2), 'application/json');
+  },
+  async deleteVault(path) {
+    this.init(window.sb);
+    const del = await this.sb.storage.from(this.VAULT_BUCKET).remove([path]);
+    if (del.error) throw Error(del.error.message);
+    return true;
+  },
   async vaultUpload(env, opts) {
     opts = opts || {};
     if (!opts.confirm) {

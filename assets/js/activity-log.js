@@ -26,6 +26,11 @@
       if (!root) return;
       var self = this;
       root.innerHTML =
+        '<div class="card" style="padding:12px 16px;margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
+          '<button class="btn btn-sm btn-primary" type="button" id="al-tab-activity">📝 Activity log</button>' +
+          '<button class="btn btn-sm btn-outline" type="button" id="al-tab-logins">🔑 Sign-in audit</button>' +
+          '<span class="muted" style="font-size:.82rem">Sign-in audit lists every login attempt with email, IP and device — the "who logged in" view.</span>' +
+        '</div>' +
         '<div class="card" style="padding:16px;margin-bottom:14px">' +
           '<div class="grid grid-2" style="gap:10px">' +
             '<div class="form-group" style="margin:0"><label>Search (actor, table, action, row)</label><input class="form-input" id="al-q" placeholder="e.g. learner, delete, TC-0001"></div>' +
@@ -36,17 +41,42 @@
           '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">' +
             '<button class="btn btn-primary btn-sm" type="button" id="al-run">🔍 Apply filters</button>' +
             '<button class="btn btn-outline btn-sm" type="button" id="al-csv">⬇ Export CSV</button>' +
+            '<button class="btn btn-outline btn-sm" type="button" id="al-pdf">📄 Print / PDF</button>' +
             '<button class="btn btn-ghost btn-sm" type="button" id="al-clear">Clear</button>' +
             '<span class="muted" id="al-count" style="align-self:center;font-size:.82rem"></span>' +
           '</div>' +
         '</div>' +
+        '<div class="card" style="padding:16px;margin-bottom:14px;border:2px solid rgba(239,68,68,.35)" id="alp-card">' +
+          '<h3 style="margin-top:0">🕰️ Retention &amp; Purge (owner only)</h3>' +
+          '<p class="muted" style="margin-top:0">Audit rows older than your retention policy can be exported then purged to free database space. Nothing is auto-deleted; you choose the table and the age.</p>' +
+          '<div class="grid grid-3" style="gap:10px">' +
+            '<div class="form-group" style="margin:0"><label>Table</label><select class="form-select" id="alp-table">' +
+              '<option value="activity_log">activity_log (audit trail)</option>' +
+              '<option value="login_audit">login_audit (login history)</option>' +
+            '</select></div>' +
+            '<div class="form-group" style="margin:0"><label>Older than (days)</label><input class="form-input" id="alp-days" type="number" value="180" min="7" max="730"></div>' +
+            '<div class="form-group" style="margin:0"><label>&nbsp;</label><div style="display:flex;gap:8px;flex-wrap:wrap">' +
+              '<button class="btn btn-outline btn-sm" type="button" id="alp-export">⬇ Export first (portable JSON)</button>' +
+              '<button class="btn btn-sm btn-outline" style="color:#b42318;border-color:#b42318" type="button" id="alp-purge">🗑 Purge old rows</button>' +
+            '</div></div>' +
+          '</div>' +
+          '<p class="muted" style="margin:8px 0 0;font-size:.78rem">Purge runs the owner-gated <code>purge_old</code> RPC from <code>database/v11-enterprise-pack.sql</code> and logs itself to the activity trail.</p>' +
+        '</div>' +
         '<div class="card" style="padding:14px 16px;margin-bottom:14px;display:flex;gap:14px;flex-wrap:wrap" id="al-stats"></div>' +
         '<div class="card" style="padding:0;overflow:hidden"><div class="table-wrap"><table style="min-width:820px">' +
-          '<thead><tr><th style="padding:12px 14px;text-align:left">When</th><th style="padding:12px 14px;text-align:left">Who</th><th style="padding:12px 14px;text-align:left">Action</th><th style="padding:12px 14px;text-align:left">Table</th><th style="padding:12px 14px;text-align:left">Row</th></tr></thead>' +
+          '<thead><tr id="al-head"><th style="padding:12px 14px;text-align:left">When</th><th style="padding:12px 14px;text-align:left">Who</th><th style="padding:12px 14px;text-align:left">Action</th><th style="padding:12px 14px;text-align:left">Table</th><th style="padding:12px 14px;text-align:left">Row</th></tr></thead>' +
           '<tbody id="al-body"><tr><td colspan="5" style="padding:26px;text-align:center" class="muted">Loading…</td></tr></tbody>' +
         '</table></div></div>';
       this._cache = null;
+      this._mode = 'activity';
       this._loadTables();
+      d.getElementById('al-tab-activity').onclick = function () { self._tab('activity'); };
+      d.getElementById('al-tab-logins').onclick = function () { self._tab('logins'); };
+      d.getElementById('al-pdf').onclick = function () { window.print(); };
+      var alpPurge = d.getElementById('alp-purge');
+      if (alpPurge) alpPurge.onclick = function () { self._purge(); };
+      var alpExport = d.getElementById('alp-export');
+      if (alpExport) alpExport.onclick = function () { self._exportFirst(); };
       ['al-run', 'al-clear'].forEach(function (id) {
         var el = d.getElementById(id);
         if (el) el.onclick = function () { self._run(); };
@@ -55,6 +85,98 @@
       q.addEventListener('keydown', function (e) { if (e.key === 'Enter') self._run(); });
       d.getElementById('al-csv').onclick = function () { self._csv(); };
       this._run();
+    },
+
+    _tab(mode) {
+      this._mode = mode;
+      var bA = d.getElementById('al-tab-activity'), bL = d.getElementById('al-tab-logins');
+      bA.className = 'btn btn-sm ' + (mode === 'activity' ? 'btn-primary' : 'btn-outline');
+      bL.className = 'btn btn-sm ' + (mode === 'logins' ? 'btn-primary' : 'btn-outline');
+      var head = d.getElementById('al-head');
+      if (head) head.innerHTML = mode === 'activity'
+        ? '<th style="padding:12px 14px;text-align:left">When</th><th style="padding:12px 14px;text-align:left">Who</th><th style="padding:12px 14px;text-align:left">Action</th><th style="padding:12px 14px;text-align:left">Table</th><th style="padding:12px 14px;text-align:left">Row</th>'
+        : '<th style="padding:12px 14px;text-align:left">When</th><th style="padding:12px 14px;text-align:left">Email</th><th style="padding:12px 14px;text-align:left">Event</th><th style="padding:12px 14px;text-align:left">IP</th><th style="padding:12px 14px;text-align:left">Device</th>';
+      this._run();
+    },
+
+    async _fetchLogins() {
+      if (!w.sb) return [];
+      var q = w.sb.from('login_audit').select('user_id,email,event,ip,user_agent,created_at,profiles(full_name)')
+                 .order('created_at', { ascending: false }).limit(500);
+      var qv = (d.getElementById('al-q').value || '').trim();
+      if (qv) q = q.or('email.ilike.%' + qv + '%,event.ilike.%' + qv + '%,ip.ilike.%' + qv + '%');
+      var from = d.getElementById('al-from').value;
+      var to = d.getElementById('al-to').value;
+      if (from) q = q.gte('created_at', from + 'T00:00:00');
+      if (to) q = q.lte('created_at', to + 'T23:59:59');
+      var r = await q;
+      if (r.error) throw r.error;
+      return r.data || [];
+    },
+
+    async _renderLogins() {
+      var body = d.getElementById('al-body');
+      var count = d.getElementById('al-count');
+      try {
+        var rows = await this._fetchLogins();
+        this._rows = rows.map(function (r) {
+          return { created_at: r.created_at, actor_name: (r.profiles && r.profiles.full_name) || r.email,
+                   action: r.event || 'login', table_name: r.ip || '', row_id: String(r.user_agent || 'unknown device').slice(0, 60) };
+        });
+        count.textContent = rows.length + ' sign-in event(s) shown (latest 500).';
+        if (!rows.length) {
+          body.innerHTML = '<tr><td colspan="5" style="padding:26px;text-align:center" class="muted">No sign-ins recorded yet. The v11 pack adds the IP column; the auth callback writes every login.</td></tr>';
+          return;
+        }
+        body.innerHTML = rows.map(function (r) {
+          var ok = /login|success/i.test(r.event || '');
+          return '<tr>' +
+            '<td style="padding:10px 14px;white-space:nowrap;font-size:.82rem">' + esc(when(r.created_at)) + '</td>' +
+            '<td style="padding:10px 14px">' + esc((r.profiles && r.profiles.full_name) || r.email || 'unknown') + (r.email ? '<div class="muted" style="font-size:.72rem">' + esc(r.email) + '</div>' : '') + '</td>' +
+            '<td style="padding:10px 14px"><span style="background:' + (ok ? '#d1fae5' : '#fee2e2') + ';border-radius:8px;padding:2px 8px;font-size:.78rem;font-weight:700">' + esc(r.event || 'login') + '</span></td>' +
+            '<td style="padding:10px 14px"><code style="font-size:.78rem">' + esc(r.ip || '—') + '</code></td>' +
+            '<td style="padding:10px 14px;font-size:.78rem" title="' + esc(r.user_agent || '') + '">' + esc(String(r.user_agent || 'unknown device').slice(0, 60)) + '</td>' +
+          '</tr>';
+        }).join('');
+        this._stats(this._rows);
+      } catch (e) {
+        body.innerHTML = '<tr><td colspan="5" style="padding:26px;text-align:center;color:#b42318">Heads up. Could not load sign-ins: ' + esc(e && e.message || e) + '</td></tr>';
+      }
+    },
+
+    async _exportFirst() {
+      var table = d.getElementById('alp-table').value;
+      if (w.DataPortability && w.DataPortability.exportTable) {
+        try { await w.DataPortability.exportTable(table); return; } catch (_) { /* fall through */ }
+      }
+      if (!w.sb) { toast('Connect to the database first.', 'warning'); return; }
+      var r = await w.sb.from(table).select('*').order('created_at', { ascending: false }).limit(50000);
+      var blob = new Blob([JSON.stringify({ table: table, exported_at: new Date().toISOString(), rows: r.data || [] }, null, 2)], { type: 'application/json' });
+      var a = d.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = table + '-before-purge-' + new Date().toISOString().slice(0, 10) + '.json';
+      d.body.appendChild(a); a.click(); a.remove();
+      toast('📥 Exported ' + (r.data || []).length + ' rows. Keep this file safe before purging.', 'success');
+    },
+
+    async _purge() {
+      var table = d.getElementById('alp-table').value;
+      var days = Number(d.getElementById('alp-days').value || 180);
+      if (!w.sb) { toast('Connect to the database first.', 'warning'); return; }
+      if (!confirm('PURGE rows from "' + table + '" older than ' + days + ' days?\n\nThis frees database space but cannot be undone from the app. Export first (button beside this one) if you might need them.')) return;
+      try {
+        var r = await w.sb.rpc('purge_old', { p_table: table, p_days: days });
+        if (r.error) throw r.error;
+        toast('🗑 Purged ' + (r.data || 0) + ' row(s) from ' + table + '.', 'success', 7000);
+        this._run();
+      } catch (e) {
+        var msg = e && e.message || String(e);
+        if (/function .* does not exist|PGRST202/i.test(msg)) {
+          toast('The purge_old function is not installed yet — run database/v11-enterprise-pack.sql in the Supabase SQL Editor.', 'danger', 9000);
+        } else {
+          toast('Purge failed: ' + msg, 'danger');
+        }
+      }
     },
 
     async _loadTables() {
@@ -99,6 +221,7 @@
       var body = d.getElementById('al-body');
       var count = d.getElementById('al-count');
       if (!body) return;
+      if (this._mode === 'logins') return this._renderLogins();
       body.innerHTML = '<tr><td colspan="5" style="padding:26px;text-align:center" class="muted">Loading…</td></tr>';
       try {
         var rows = await this._fetch();

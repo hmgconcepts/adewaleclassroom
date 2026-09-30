@@ -71,6 +71,14 @@
              esc(x.id) + '" title="See it exactly as a candidate does, without recording a sitting">👁 Preview</button>');
       b.push('<button class="btn btn-sm btn-outline" type="button" data-cbtm="questions" data-id="' +
              esc(x.id) + '" title="List, reorder and remove individual questions">❓ Questions</button>');
+      b.push('<button class="btn btn-sm btn-outline" type="button" data-cbtm="paper" data-id="' + esc(x.id) +
+             '" title="Print an offline question paper, with answer key and bubble sheet">📄 Paper</button>');
+      b.push('<button class="btn btn-sm btn-outline" type="button" data-cbtm="package" data-id="' + esc(x.id) +
+             '" title="Export this paper as a reusable JSON package">📦 Package</button>');
+      b.push('<button class="btn btn-sm btn-outline" type="button" data-cbtm="schedule" data-id="' + esc(x.id) +
+             '" title="Set when the paper opens (waiting room) and closes automatically">⏰ Schedule</button>');
+      b.push('<button class="btn btn-sm btn-outline" type="button" data-cbtm="bank" data-id="' + esc(x.id) +
+             '" title="Save this paper\'s questions to the reusable question bank, or pull from it">🏦 Bank</button>');
       b.push('<button class="btn btn-sm btn-outline" type="button" data-edit="' + esc(x.id) +
              '" title="Load the whole paper back into the form above">✏️ Edit</button>');
       b.push('<button class="btn btn-sm btn-outline" type="button" data-cbtm="results" data-id="' +
@@ -111,6 +119,10 @@
           if (a === 'questions') return self.questions(x, reload);
           if (a === 'results')   return self.results(x);
           if (a === 'share')     return self.share(x, reload);
+          if (a === 'paper')     return self.paper(x);
+          if (a === 'package')   return self.exportPackage(x);
+          if (a === 'schedule')  return self.schedule(x, reload);
+          if (a === 'bank')      return self.bank(x, reload);
           return self.setState(x, a, reload);
         });
       });
@@ -177,6 +189,20 @@
        gets a working, shareable link plus a plain explanation — instead of a
        dead end in the middle of a class.
        ------------------------------------------------------------------- */
+    /* HMG Academy port: the WhatsApp message carries the details a parent
+       actually needs — what, how long, the direct link, the code, and a
+       loud note when the paper is not yet open. */
+    _waMessage: function (x, url) {
+      var locked = (x.is_open === false) ||
+        (x.start_at && new Date(x.start_at).getTime() > Date.now());
+      return (x.title || 'Quiz') +
+        (x.subject ? ' — ' + x.subject : '') + '\n' +
+        'Duration: ' + (x.duration_min || 30) + ' minutes\n\n' +
+        'Option 1 — open directly:\n' + url + '\n\n' +
+        'Option 2 — enter this code on the learner page:\n*' + (x.code || '') + '*' +
+        (locked ? '\n\n⚠️ NOTE FOR TUTORS: this paper is not open yet. Open it (🔓) or set its schedule (⏰) before learners try to enter.' : '');
+    },
+
     async share(x, reload) {
       var s = sb();
       if (!s) return toast('Not connected to the database.', 'warning');
@@ -230,7 +256,7 @@
           '<button class="btn btn-primary" type="button" id="cbtm-copy">Copy</button></div>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
           '<a class="btn btn-outline btn-sm" target="_blank" rel="noopener" href="https://wa.me/?text=' +
-            encodeURIComponent('Your quiz: ' + (x.title || '') + '\n' + url) + '">Send on WhatsApp</a>' +
+            encodeURIComponent(self._waMessage(x, url)) + '">Send on WhatsApp</a>' +
           '<a class="btn btn-outline btn-sm" href="mailto:?subject=' +
             encodeURIComponent('Quiz: ' + (x.title || '')) + '&body=' + encodeURIComponent(url) + '">Email it</a>' +
           '<button class="btn btn-ghost btn-sm" type="button" id="cbtm-unshare">Turn the link off</button>' +
@@ -391,6 +417,246 @@
        Question manager — look at, reorder and remove single questions without
        re-importing the whole CSV.
        --------------------------------------------------------------------- */
+    /* ---------------------------------------------------------------------
+       📄 PAPER EXAM (ported from the HMG Academy CBT system). Prints an
+       offline copy of the paper for power cuts, network failure and
+       invigilated halls: the question paper, a candidate bubble sheet,
+       and (on its own page so it can be withheld) the answer key.
+       ------------------------------------------------------------------- */
+    paper: function (x) {
+      var qs = Array.isArray(x.questions) ? x.questions : [];
+      if (!qs.length) return toast('That paper has no questions to print.', 'warning');
+      var letters = ['A','B','C','D','E','F'];
+      var brand = (window.BRAND && BRAND.name) || 'ADEWALE CLASSROOM';
+      var dur = Number(x.duration_min || 30);
+      var html = '<!doctype html><html><head><meta charset="utf-8"><title>' + esc(x.title || 'Exam paper') + '</title>' +
+        '<style>' +
+        'body{font-family:Georgia,"Times New Roman",serif;margin:0;padding:24px;color:#111;line-height:1.5}' +
+        'h1{font-size:20px;margin:0 0 2px}h2{font-size:15px;margin:26px 0 8px;border-bottom:2px solid #111;padding-bottom:4px}' +
+        '.meta{font-size:12px;color:#333;margin-bottom:14px}' +
+        '.hd{border:2px solid #111;padding:10px 14px;margin-bottom:16px}' +
+        '.q{margin:12px 0;page-break-inside:avoid}' +
+        '.q b{margin-right:6px}' +
+        '.opt{margin:3px 0 3px 26px;font-size:14px}' +
+        '.ans{margin:4px 0 4px 26px;font-size:13px;color:#555}' +
+        '.key{page-break-before:always}' +
+        '.key td,.key th{border:1px solid #999;padding:5px 10px;font-size:13px;text-align:center}' +
+        '.bub{border-collapse:collapse;margin:10px 0}' +
+        '.bub td{border:1px solid #111;width:30px;height:26px;text-align:center;font-size:12px}' +
+        '.bub td.n{width:44px;font-weight:700;background:#f3f4f6}' +
+        '.name{border-bottom:1px solid #111;display:inline-block;width:60%;margin:6px 24px 6px 0;font-size:13px}' +
+        '@media print{.np{page-break-before:always}}' +
+        '</style></head><body>' +
+        '<div class="hd"><h1>' + esc(x.title || 'Examination paper') + '</h1>' +
+        '<div class="meta">' + esc(brand) + ' · ' + esc(x.subject || '') +
+        (x.code ? ' · Code: <b>' + esc(x.code) + '</b>' : '') +
+        ' · Duration: ' + dur + ' minutes · ' + qs.length + ' question(s)</div>' +
+        '<div class="meta">Name: <span class="name">&nbsp;</span> Class/Group: <span class="name" style="width:30%">&nbsp;</span> Date: <span class="name" style="width:20%">&nbsp;</span></div>' +
+        '<div class="meta"><b>Instructions:</b> ' + esc(x.instructions || 'Answer ALL questions. Write clearly. No phones or notes. Cross-check your name before submitting.') + '</div></div>' +
+        '<h2>Section A — Questions</h2>' +
+        qs.map(function (q, i) {
+          var body = String(q.question || q.text || '');
+          var opts = Array.isArray(q.options) ? q.options : null;
+          return '<div class="q"><b>Q' + (i + 1) + '.</b> ' + esc(body) +
+            (q.mark ? ' <span style="color:#555;font-size:12px">[' + esc(q.mark) + ' mark' + (q.mark == 1 ? '' : 's') + ']</span>' : '') +
+            (opts ? opts.map(function (o, j) {
+              return '<div class="opt">(' + letters[j] + ') ' + esc(o) + '</div>';
+            }).join('') : '') + '</div>';
+        }).join('') +
+        '<div class="np"><h2>Section B — Candidate bubble sheet (OMR)</h2>' +
+        '<p style="font-size:12px">Shade the letter of your answer fully, in pencil. To change an answer, erase completely.</p>' +
+        '<table class="bub">' + qs.map(function (q, i) {
+          var n = (Array.isArray(q.options) ? q.options.length : 4);
+          n = Math.max(2, Math.min(n, 5));
+          var cells = '';
+          for (var j = 0; j < n; j++) cells += '<td>' + letters[j] + '</td>';
+          return '<tr><td class="n">Q' + (i + 1) + '</td>' + cells + '</tr>';
+        }).join('') + '</table></div>' +
+        '<div class="key"><h2>Answer key — TUTOR COPY (withhold before printing for candidates)</h2>' +
+        '<table><tr><th>Q</th><th>Answer</th><th>Mark</th></tr>' +
+        qs.map(function (q, i) {
+          var a = q.answer;
+          if (a == null || a === '') return '<tr><td>' + (i + 1) + '</td><td colspan="2" style="color:#b42318">⚠ no answer set</td></tr>';
+          if (Array.isArray(q.options) && !isNaN(Number(a)) && Number(a) >= 0 && Number(a) < q.options.length) {
+            a = letters[Number(a)] + ' — ' + q.options[Number(a)];
+          }
+          return '<tr><td>' + (i + 1) + '</td><td style="text-align:left">' + esc(a) + '</td><td>' + esc(q.mark || 1) + '</td></tr>';
+        }).join('') + '</table>' +
+        '<p style="font-size:12px;margin-top:10px">Generated ' + new Date().toLocaleString() + ' from the online paper. If the online paper changes, reprint this.</p></div>' +
+        '</body></html>';
+      var w = window.open('', '_blank');
+      if (!w) return toast('The browser blocked the print window. Allow pop-ups for this page and try again.', 'warning', 8000);
+      w.document.write(html);
+      w.document.close();
+      setTimeout(function () { try { w.focus(); w.print(); } catch (_) {} }, 350);
+    },
+
+    /* ---------------------------------------------------------------------
+       📦 PACKAGE EXPORT (HMG Academy port). One JSON file that carries the
+       entire paper — settings AND questions — so it can be re-imported on
+       any other installation of this platform, or archived for the
+       examiner. Import lives on the builder page.
+       ------------------------------------------------------------------- */
+    exportPackage: function (x) {
+      var qs = Array.isArray(x.questions) ? x.questions : [];
+      var pack = {
+        package_type: 'TC_CBT_EXAM_PACKAGE',
+        version: '1.0',
+        exported_at: new Date().toISOString(),
+        exported_by: (window.App && App.user && App.user.email) || '',
+        brand: { name: (window.BRAND && BRAND.name) || 'ADEWALE CLASSROOM', platform: 'Tutoring Connect' },
+        exam: {
+          title: x.title, code: x.code, subject: x.subject,
+          quiz_kind: x.quiz_kind, exam_mode: x.exam_mode,
+          duration_min: x.duration_min, pass_mark: x.pass_mark,
+          instructions: x.instructions, anti_cheat: x.anti_cheat || {},
+          shuffle_questions: x.shuffle_questions, shuffle_options: x.shuffle_options,
+          attempt_limit: x.attempt_limit, is_open: false,
+          start_at: x.start_at || null, close_at: x.close_at || null,
+          original_id: x.id,
+          questions: qs
+        }
+      };
+      var safe = String(x.title || x.subject || 'exam').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'exam';
+      var a = d.createElement('a');
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(pack, null, 2)], { type: 'application/json' }));
+      a.download = 'cbt_' + safe + '_package.json';
+      d.body.appendChild(a); a.click(); a.remove();
+      toast('📦 Paper package exported (' + qs.length + ' questions). Re-import it from the builder page or another install.', 'success', 8000);
+    },
+
+    /* ---------------------------------------------------------------------
+       ⏰ SCHEDULE (HMG Academy port). start_at = waiting room (nobody can
+       begin until that moment, enforced SERVER-SIDE by tc_cbt_get_exam);
+       close_at = automatic close. Both optional and independent.
+       ------------------------------------------------------------------- */
+    schedule: function (x, reload) {
+      var self = this;
+      var toLocal = function (iso) {
+        if (!iso) return '';
+        try { var dt = new Date(iso); dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+          return dt.toISOString().slice(0, 16); } catch (_) { return ''; }
+      };
+      var curStart = toLocal(x.start_at), curClose = toLocal(x.close_at);
+      this._modal('⏰ Schedule — ' + esc(x.title || ''),
+        '<p class="muted">Two independent windows, both enforced by the database — not by the candidate\'s browser.</p>' +
+        '<div class="form-group"><label>Opens at (waiting room until this moment — leave blank to open immediately)</label>' +
+        '<input class="form-input" type="datetime-local" id="cbtm-start" value="' + esc(curStart) + '"></div>' +
+        '<div class="form-group"><label>Closes automatically at (leave blank to close manually)</label>' +
+        '<input class="form-input" type="datetime-local" id="cbtm-close" value="' + esc(curClose) + '"></div>' +
+        '<p class="muted" style="font-size:.82rem">Before the opening time candidates see a waiting-room message with the exact opening time. After the closing time the paper refuses new sittings automatically — even if you forget. Results already submitted are never touched.</p>' +
+        '<button class="btn btn-primary" type="button" id="cbtm-sched-save">💾 Save schedule</button>',
+        function (body) {
+          body.querySelector('#cbtm-sched-save').addEventListener('click', async function () {
+            var s = sb();
+            if (!s) return toast('Not connected to the database.', 'warning');
+            var sv = function (id) {
+              var v = body.querySelector(id).value;
+              return v ? new Date(v).toISOString() : null;
+            };
+            var row = { start_at: sv('#cbtm-start'), close_at: sv('#cbtm-close') };
+            if (row.start_at && row.close_at && new Date(row.close_at) <= new Date(row.start_at)) {
+              return toast('The close time must be after the open time.', 'danger');
+            }
+            try {
+              var r = await s.from('cbt_exams').update(row).eq('id', x.id);
+              if (r.error) throw r.error;
+              toast('✅ Schedule saved.' +
+                (row.start_at ? ' Waiting room until ' + new Date(row.start_at).toLocaleString() + '.' : '') +
+                (row.close_at ? ' Closes automatically ' + new Date(row.close_at).toLocaleString() + '.' : ''), 'success', 8000);
+              self._close();
+              if (reload) reload();
+            } catch (e) {
+              var m = String(e.message || e);
+              if (/column .*start_at|column .*close_at/i.test(m)) {
+                toast('The schedule columns are not installed yet — run database/v11-enterprise-pack.sql in the Supabase SQL Editor.', 'danger', 9000);
+              } else toast('Could not save: ' + m, 'danger');
+            }
+          });
+        });
+    },
+
+    /* ---------------------------------------------------------------------
+       🏦 QUESTION BANK (HMG Academy port). Every paper's questions can be
+       saved into public.tc_question_bank, searched, and pulled into the
+       current paper. Reuse beats retyping.
+       ------------------------------------------------------------------- */
+    bank: async function (x, reload) {
+      var self = this;
+      var s = sb();
+      if (!s) return toast('Not connected to the database.', 'warning');
+      var rows = [];
+      try {
+        var r = await s.from('tc_question_bank').select('*').order('created_at', { ascending: false }).limit(300);
+        if (r.error) throw r.error;
+        rows = r.data || [];
+      } catch (e) {
+        var m = String(e.message || e);
+        return toast(/relation .* does not exist|Could not find the table/i.test(m)
+          ? 'The question bank table is not installed yet — run database/v11-enterprise-pack.sql.'
+          : 'Could not open the bank: ' + m, 'danger', 9000);
+      }
+      var qs = Array.isArray(x.questions) ? x.questions : [];
+      var draw = function (body) {
+        var q = (body.querySelector('#cbtm-bank-q').value || '').toLowerCase();
+        var list = rows.filter(function (r2) {
+          if (!q) return true;
+          return JSON.stringify(r2).toLowerCase().indexOf(q) !== -1;
+        }).slice(0, 60);
+        body.querySelector('#cbtm-bank-list').innerHTML = list.length ? list.map(function (r2, i) {
+          var qq = r2.question || {};
+          return '<div style="display:flex;gap:8px;align-items:flex-start;border-bottom:1px solid #e2e8f0;padding:7px 0">' +
+            '<div style="flex:1;min-width:0"><b>' + esc(String(qq.question || qq.text || '(question)').slice(0, 130)) + '</b>' +
+            '<div class="muted" style="font-size:.78rem">' + esc(r2.subject || 'general') +
+            (r2.topic ? ' · ' + esc(r2.topic) : '') + ' · used ' + (r2.used_count || 0) + '× · answer: ' +
+            esc(String(qq.answer == null ? '⚠ none' : qq.answer).slice(0, 40)) + '</div></div>' +
+            '<button class="btn btn-sm btn-outline" type="button" data-bank-add="' + esc(r2.id) +
+            '" title="Append this question to ' + esc(x.title || 'this paper') + '">＋ Add</button></div>';
+        }).join('') : '<p class="muted">No bank entries match. Save questions from a paper first.</p>';
+        body.querySelectorAll('[data-bank-add]').forEach(function (b2) {
+          b2.onclick = async function () {
+            var id = b2.getAttribute('data-bank-add');
+            var row = rows.filter(function (r3) { return r3.id === id; })[0];
+            if (!row) return;
+            var next = (x.questions || []).concat([row.question]);
+            try {
+              var up = await s.from('cbt_exams').update({ questions: next }).eq('id', x.id);
+              if (up.error) throw up.error;
+              await s.rpc('tc_qbank_used', { p_id: id }).catch(function(){});
+              toast('Question added to the paper (' + next.length + ' total).', 'success');
+              x.questions = next;
+              if (reload) reload();
+            } catch (e2) { toast('Could not add: ' + (e2.message || e2), 'danger'); }
+          };
+        });
+      };
+      this._modal('🏦 Question bank — ' + esc(x.title || ''),
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">' +
+        '<input class="form-input" id="cbtm-bank-q" placeholder="Search the bank (subject, topic, text…)" style="flex:1;min-width:200px">' +
+        '<button class="btn btn-outline btn-sm" type="button" id="cbtm-bank-save" title="Copy every question from this paper into the reusable bank">💾 Save this paper\'s questions to the bank</button></div>' +
+        '<p class="muted" style="font-size:.82rem;margin:0 0 8px">The bank holds ' + rows.length + ' reusable question(s). ＋ Add appends a bank question to <b>' + esc(x.title || 'this paper') + '</b> without touching existing questions.</p>' +
+        '<div id="cbtm-bank-list" style="max-height:50vh;overflow:auto"></div>',
+        function (body) {
+          draw(body);
+          body.querySelector('#cbtm-bank-q').addEventListener('input', function () { draw(body); });
+          body.querySelector('#cbtm-bank-save').addEventListener('click', async function () {
+            if (!qs.length) return toast('This paper has no questions to save.', 'warning');
+            var payload = qs.map(function (q2) {
+              return { subject: x.subject || q2.subject || null, topic: null, kind: Array.isArray(q2.options) ? 'objective' : 'theory',
+                       question: q2, created_by: null };
+            });
+            try {
+              var ins = await s.from('tc_question_bank').insert(payload);
+              if (ins.error) throw ins.error;
+              toast('💾 ' + payload.length + ' question(s) saved to the bank.', 'success');
+              var r2 = await s.from('tc_question_bank').select('*').order('created_at', { ascending: false }).limit(300);
+              rows = r2.data || [];
+              draw(body);
+            } catch (e2) { toast('Could not save: ' + (e2.message || e2), 'danger'); }
+          });
+        });
+    },
+
     questions: function (x, reload) {
       var self = this;
       var qs = (Array.isArray(x.questions) ? x.questions : []).slice();
