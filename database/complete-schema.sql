@@ -12419,10 +12419,28 @@ grant execute on function public.sc_license_status() to anon, authenticated;
 -- ---------------------------------------------------------------------
 alter table if exists public.login_audit add column if not exists ip text;
 alter table if exists public.login_audit alter column event set default 'login';
-do $$ begin
-  alter table public.login_audit
-    add constraint login_audit_user_fkey foreign key (user_id) references public.profiles(id) on delete set null;
-exception when duplicate_object or null_value_equality then null; end $$;
+
+-- v11.0.1 HOTFIX: this block originally read
+--   "exception when duplicate_object or null_value_equality"
+-- but null_value_equality is NOT a real PostgreSQL condition name, so
+-- Postgres refused to compile the DO block and aborted the whole
+-- complete-schema.sql run. Replaced with an existence check that cannot
+-- raise in the first place, plus a self-explaining safety net.
+do $fk$
+begin
+  if to_regclass('public.login_audit') is not null
+     and not exists (
+       select 1 from pg_constraint c
+        where c.conrelid = to_regclass('public.login_audit')
+          and c.conname  = 'login_audit_user_fkey')
+  then
+    alter table public.login_audit
+      add constraint login_audit_user_fkey
+      foreign key (user_id) references public.profiles(id) on delete set null;
+  end if;
+exception when others then
+  raise notice 'login_audit foreign key not added: % (not fatal — the audit trail works without it).', sqlerrm;
+end $fk$;
 
 create or replace function public.purge_old(p_table text, p_days integer)
 returns integer
@@ -12739,3 +12757,10 @@ grant execute on function public.tc_qbank_used(uuid) to authenticated;
 -- ---------------------------------------------------------------------
 alter table if exists public.finance_entries add column if not exists created_at timestamptz default now();
 alter table if exists public.reading_progress add column if not exists created_at timestamptz default now();
+
+-- ---------------------------------------------------------------------
+-- Finally: make PostgREST see every object created above. Without this,
+-- a function created seconds ago can be present in the database and
+-- still invisible to the API (identical error to "function missing").
+-- ---------------------------------------------------------------------
+notify pgrst, 'reload schema';
