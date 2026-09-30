@@ -1383,9 +1383,14 @@ declare
   lid uuid;
   subj text;
   rec jsonb;
-  sc numeric;
-  tot numeric;
-  pct numeric;
+  -- v11.0.2 hardening: these locals used to be named sc/tot/pct. Postgres
+  -- resolves INSERT ... VALUES to the variable (target columns are not in
+  -- scope there), so it worked — but scoresheet.pct shares the name, and a
+  -- PL/pgSQL variable that matches a column of a queried table is exactly
+  -- how the sc_keep_alive 42702 bug happened. Prefixed, collision-proof.
+  v_sc  numeric;
+  v_tot numeric;
+  v_pct numeric;
 begin
   select * into exam from public.cbt_exams where id = new.exam_id;
   if exam.quiz_kind is distinct from 'graded' and exam.push_to_scoresheet is not true then
@@ -1415,13 +1420,13 @@ begin
       if lower(subj) in ('overall','general','total','aggregate') then
         continue;
       end if;
-      sc := coalesce((rec->>'score')::numeric, (rec->>'got')::numeric, 0);
-      tot := coalesce((rec->>'total')::numeric, (rec->>'max')::numeric, 0);
-      if tot = 0 then continue; end if;
-      pct := round((sc / tot) * 100, 1);
+      v_sc := coalesce((rec->>'score')::numeric, (rec->>'got')::numeric, 0);
+      v_tot := coalesce((rec->>'total')::numeric, (rec->>'max')::numeric, 0);
+      if v_tot = 0 then continue; end if;
+      v_pct := round((v_sc / v_tot) * 100, 1);
       insert into public.scoresheet(learner_id, engagement_id, source, source_id, title, subject, score, max_score, pct, taken_on)
       values (lid, exam.engagement_id, 'graded_quiz_subject', new.id,
-              exam.title || ' — ' || subj, subj, sc, tot, pct, current_date);
+              exam.title || ' — ' || subj, subj, v_sc, v_tot, v_pct, current_date);
     end loop;
   end if;
 
@@ -12338,7 +12343,7 @@ select 'Operations tables installed (facility_hostel, health_records, inventory,
 
 
 -- =====================================================================
--- V11 ENTERPRISE PACK — Fleet Console integration, log retention,
+-- V11.0.2 ENTERPRISE PACK — Fleet Console integration, log retention,
 -- CBT scheduling + question bank, login-audit IP.
 -- Idempotent: safe to run any number of times.
 -- =====================================================================
@@ -12368,27 +12373,41 @@ insert into public.sc_keepalive (id, pinged_at, src)
 values (1, now(), 'install')
 on conflict (id) do nothing;
 
+-- v11.0.2 HOTFIX (42702): the parameter is named src because the Fleet
+-- Console and the GitHub workflow POST {"src": ...} and PostgREST matches
+-- JSON keys to argument names. But public.sc_keepalive also has a COLUMN
+-- named src, and PL/pgSQL's default variable_conflict=error made every
+-- call fail with:
+--   42702: column reference "src" ... could refer to either a PL/pgSQL
+--   variable or a table column
+-- Fix: copy the parameter into a non-colliding local (v_src) once, use
+-- only v_src inside the queries, and keep #variable_conflict use_variable
+-- as a guard so a future edit can never reintroduce the ambiguity.
 create or replace function public.sc_keep_alive(src text default 'fleet')
 returns timestamptz
 language plpgsql
 security definer
 set search_path = public
 as $$
-declare v_t timestamptz;
+#variable_conflict use_variable
+declare
+  v_src text := left(coalesce(src, 'fleet'), 40);
+  v_t   timestamptz;
 begin
   -- One write, two ledgers: the fleet-visible row AND our richer heartbeat.
   update public.sc_keepalive
-     set pinged_at = now(), src = left(coalesce(src,'fleet'),40)
+     set pinged_at = now(), src = v_src
    where id = 1
   returning pinged_at into v_t;
   if v_t is null then
-    insert into public.sc_keepalive (id, pinged_at, src) values (1, now(), left(coalesce(src,'fleet'),40))
+    insert into public.sc_keepalive (id, pinged_at, src)
+    values (1, now(), v_src)
     on conflict (id) do update set pinged_at = now(), src = excluded.src
     returning pinged_at into v_t;
   end if;
   begin
     update public.tc_heartbeat
-       set last_ping = now(), last_source = left(coalesce(src,'fleet'),40), ping_count = ping_count + 1
+       set last_ping = now(), last_source = v_src, ping_count = ping_count + 1
      where id = 1;
   exception when others then null;
   end;
@@ -12398,18 +12417,38 @@ end $$;
 grant execute on function public.sc_keep_alive(text) to anon, authenticated;
 
 -- Subscription verdict in the shape the Fleet Console reads ({state:…}).
+-- v11.0.2: tc_license_status() speaks ok/remind/grace/suspended/expired,
+-- but the Fleet Console reads active/lifetime/grace/expired/suspended/
+-- warning — so the state is translated and the raw details are preserved
+-- alongside. (Note the || order: the translated state must come LAST so
+-- it wins the duplicate jsonb key.)
 create or replace function public.sc_license_status()
 returns jsonb
 language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_raw   jsonb;
+  v_state text;
+  v_fleet text;
 begin
   if exists (select 1 from pg_proc p join pg_namespace n on p.pronamespace = n.oid
               where n.nspname = 'public' and p.proname = 'tc_license_status') then
-    return public.tc_license_status();
+    v_raw   := public.tc_license_status();
+    v_state := lower(coalesce(v_raw ->> 'state', 'ok'));
+    v_fleet := case
+      when v_state = 'suspended' then 'suspended'
+      when v_state = 'expired'   then 'expired'
+      when v_state = 'grace'     then 'grace'
+      when v_state = 'remind'    then 'warning'
+      when coalesce(v_raw ->> 'model', 'lifetime') in ('lifetime','one_time','perpetual')
+                                then 'lifetime'
+      else 'active'
+    end;
+    return v_raw || jsonb_build_object('state', v_fleet, 'fleet_compatible', true);
   end if;
-  return jsonb_build_object('state', 'lifetime', 'locked', false);
+  return jsonb_build_object('state', 'lifetime', 'locked', false, 'fleet_compatible', true);
 end $$;
 
 grant execute on function public.sc_license_status() to anon, authenticated;
