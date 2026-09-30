@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="assets/js/auth-guard.js?v=42"></script>
+<script src="assets/js/auth-guard.js?v=43"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Practice analytics • ADEWALE CLASSROOM</title>
+<title>Analytics • ADEWALE CLASSROOM</title>
 <meta name="robots" content="noindex,nofollow">
-<meta name="description" content="Studio KPIs, conversion, score bands. No AI API.">
+<meta name="description" content="Studio-wide KPIs, trends and the academic decision centre — all live from the database.">
 <meta name="theme-color" content="#0506ae">
 <meta name="author" content="HMG Technologies · HMG Concepts">
 <link rel="icon" type="image/svg+xml" href="assets/img/logo.png">
@@ -14,8 +14,8 @@
 <link rel="apple-touch-icon" href="assets/img/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Source+Serif+4:wght@600;800&display=swap" rel="stylesheet">
-<meta property="og:title" content="Practice analytics • ADEWALE CLASSROOM">
-<meta property="og:description" content="Studio KPIs, conversion, score bands. No AI API.">
+<meta property="og:title" content="Analytics • ADEWALE CLASSROOM">
+<meta property="og:description" content="Studio-wide KPIs, trends and the academic decision centre.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="assets/css/style.css">
@@ -40,53 +40,53 @@
 
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js?v=42"></script>
-<script src="assets/js/config.js?v=42"></script>
-<script src="assets/js/theme-engine.js?v=42"></script>
-<script src="assets/js/catalog.js?v=42"></script>
-<script src="assets/js/license.js?v=42"></script>
-<script src="assets/js/media.js?v=42"></script>
-<script src="assets/js/brand.js?v=42"></script>
-<script src="assets/js/notifications.js?v=42"></script>
-<script src="assets/js/pwa-install.js?v=42"></script>
-<script src="assets/js/site-help.js?v=42"></script>
-<script src="assets/js/assistant-kb.js?v=42"></script>
-<script src="assets/js/ics.js?v=42"></script>
-<script src="assets/js/page-guide.js?v=42" defer></script>
-<script src="assets/js/seo.js?v=42" defer></script>
-<script src="assets/js/keepalive-monitor.js?v=42" defer></script>
-<script src="assets/js/schema-doctor.js?v=42" defer></script>
-<script src="assets/js/quota-guard.js?v=42" defer></script>
-<script src="assets/js/chatbot.js?v=42"></script>
-<script src="assets/js/ai-assistant.js?v=42"></script>
-<script src="assets/js/security-guard.js?v=42"></script>
-<script src="assets/js/voting.js?v=42"></script>
-<script src="assets/js/enterprise.js?v=42"></script>
-<script src="assets/js/crud.js?v=42"></script>
-<script src="assets/js/insights.js?v=42"></script>
-<script src="assets/js/cbt-richtext.js?v=42"></script>
-<script src="assets/js/cbt-speech.js?v=42"></script>
-<script src="assets/js/cbt.js?v=42"></script>
-<script src="assets/js/cbt-types.js?v=42"></script>
-<script src="assets/js/proctor.js?v=42"></script>
-<script src="assets/js/bookings-engine.js?v=42"></script>
-<script src="assets/js/analytics.js?v=42"></script>
-<script src="assets/js/super.js?v=42"></script>
-<script src="assets/js/record-actions.js?v=42"></script>
-<script src="assets/js/receipts.js?v=42"></script>
-<script src="assets/js/nav-model.js?v=42"></script>
-<script src="assets/js/app.js?v=42"></script>
-<script src="assets/js/rbac.js?v=42"></script>
-<script src="assets/js/cbt-marking.js?v=42"></script>
-<script src="assets/js/scope-check.js?v=42"></script>
-<script src="assets/js/free-classes.js?v=42"></script>
-<script src="assets/js/cbt-manage.js?v=42"></script>
-<script src="assets/js/cert-studio.js?v=42"></script>
-<script src="assets/js/desk-kit.js?v=42"></script>
-<script src="assets/js/nav.js?v=42"></script>
-<script src="assets/js/legibility.js?v=42" defer></script>
-<script src="assets/js/ux-enhance.js?v=42" defer></script>
-<script src="assets/js/ops-desk.js?v=42"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js?v=43"></script>
+<script src="assets/js/config.js?v=43"></script>
+<script src="assets/js/theme-engine.js?v=43"></script>
+<script src="assets/js/catalog.js?v=43"></script>
+<script src="assets/js/license.js?v=43"></script>
+<script src="assets/js/media.js?v=43"></script>
+<script src="assets/js/brand.js?v=43"></script>
+<script src="assets/js/notifications.js?v=43"></script>
+<script src="assets/js/pwa-install.js?v=43"></script>
+<script src="assets/js/site-help.js?v=43"></script>
+<script src="assets/js/assistant-kb.js?v=43"></script>
+<script src="assets/js/ics.js?v=43"></script>
+<script src="assets/js/page-guide.js?v=43" defer></script>
+<script src="assets/js/seo.js?v=43" defer></script>
+<script src="assets/js/keepalive-monitor.js?v=43" defer></script>
+<script src="assets/js/schema-doctor.js?v=43" defer></script>
+<script src="assets/js/quota-guard.js?v=43" defer></script>
+<script src="assets/js/chatbot.js?v=43"></script>
+<script src="assets/js/ai-assistant.js?v=43"></script>
+<script src="assets/js/security-guard.js?v=43"></script>
+<script src="assets/js/voting.js?v=43"></script>
+<script src="assets/js/enterprise.js?v=43"></script>
+<script src="assets/js/crud.js?v=43"></script>
+<script src="assets/js/insights.js?v=43"></script>
+<script src="assets/js/cbt-richtext.js?v=43"></script>
+<script src="assets/js/cbt-speech.js?v=43"></script>
+<script src="assets/js/cbt.js?v=43"></script>
+<script src="assets/js/cbt-types.js?v=43"></script>
+<script src="assets/js/proctor.js?v=43"></script>
+<script src="assets/js/bookings-engine.js?v=43"></script>
+<script src="assets/js/analytics.js?v=43"></script>
+<script src="assets/js/super.js?v=43"></script>
+<script src="assets/js/record-actions.js?v=43"></script>
+<script src="assets/js/receipts.js?v=43"></script>
+<script src="assets/js/nav-model.js?v=43"></script>
+<script src="assets/js/app.js?v=43"></script>
+<script src="assets/js/rbac.js?v=43"></script>
+<script src="assets/js/cbt-marking.js?v=43"></script>
+<script src="assets/js/scope-check.js?v=43"></script>
+<script src="assets/js/free-classes.js?v=43"></script>
+<script src="assets/js/cbt-manage.js?v=43"></script>
+<script src="assets/js/cert-studio.js?v=43"></script>
+<script src="assets/js/desk-kit.js?v=43"></script>
+<script src="assets/js/nav.js?v=43"></script>
+<script src="assets/js/legibility.js?v=43" defer></script>
+<script src="assets/js/ux-enhance.js?v=43" defer></script>
+<script src="assets/js/ops-desk.js?v=43"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
 </head>
@@ -101,56 +101,394 @@
   <div class="app-main">
     <header class="app-topbar">
       <button class="mobile-toggle" type="button" aria-label="Menu">☰</button>
-      <h1 class="app-page-title">Practice analytics</h1>
+      <h1 class="app-page-title">Analytics</h1>
       <div class="user-chip"><strong id="user-display-name" data-user-name></strong>
         <span id="user-display-role" data-user-role></span>
         <button class="btn btn-sm btn-ghost" id="btn-dark" type="button">Theme</button>
         <button class="btn btn-sm btn-ghost" type="button" data-signout onclick="App.signOut()">Sign out</button></div>
     </header>
     <main class="app-content">
+    <main class="app-content">
       <section class="help-card page-intro">
-        <div class="page-intro-head"><strong>Practice analytics</strong><span class="page-intro-badge" style="background:#334155">🎓 Staff only</span></div>
-        <p class="page-intro-what">Two things on one page. The top half is the studio's automatic analysis — score bands, new learners, attendance, the enquiry funnel and fee collection, all computed from live rows. The bottom half is a practice desk where a tutor records work done OFF the platform: past papers, worksheets, weekend problem sets and anything set by a school. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.</p>
-        <p class="page-intro-who"><b>Who it is for.</b> Tutors and administrators. A tutor's figures cover only their own learners.</p>
-        <p class="page-intro-why"><b>Why it matters.</b> For an exam-preparation studio, most practice does not happen in a browser. Counting only platform quizzes understates what a learner has done, sometimes by a factor of five, and makes the analytics an argument nobody can win.</p>
-        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Read the eight headline figures first — they are counts, not estimates.</li><li>Open the charts underneath for the shape behind each figure.</li><li>Scroll to the practice desk and log any off-platform work: subject, topic, where it came from, questions set and questions correct.</li><li>Accuracy is computed by the database from those two numbers, so it can never disagree with them.</li><li>Export to CSV when you want the numbers in a spreadsheet.</li></ol></details>
-        <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access.</li><li><b>Tutor:</b> Full access for the learners and groups assigned to them, and nothing else.</li><li><b>Parent:</b> No access.</li><li><b>Learner:</b> No access.</li></ul></details>
-        <p class="page-intro-rel"><b>Related:</b> <a href="scoresheet.html">scoresheet</a> · <a href="progress-reports.html">progress reports</a> · <a href="learner-360.html">learner 360</a> · <a href="insights.html">insights</a> · <a href="group-insights.html">group insights</a> · <a href="at-risk.html">at risk</a></p>
+        <div class="page-intro-head"><strong>Analytics</strong><span class="page-intro-badge" style="background:#7f1d1d">🔐 Owner / admin only</span></div>
+        <p class="page-intro-what">Studio-wide KPIs and trends, all live from the database: enrolment, income, attendance, quizzes, group sizes, staff mix, birthdays, demographics, an academic decision centre with term/session filters, and the top / at-risk learner tables. Nothing here is stored — every chart is computed from your tables on open.</p>
+        <p class="page-intro-who"><b>Who it is for.</b> Owners and admins making decisions; tutors see the teaching pages, not studio finances.</p>
+        <p class="page-intro-why"><b>Why it matters.</b> You cannot improve what you never measure. This page turns raw rows into the six decisions that matter: who to enroll next, which group is slipping, which subject needs a fix, who to celebrate, and whether the money is working.</p>
+        <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Read the KPI tiles for the headline position.</li><li>Scan the trend charts — enrolment, fees, income vs expense.</li><li>Open the Academic decision centre, pick a term/session/class/subject and press Analyse.</li><li>Act on the Top 10 and At-risk tables; export either as JSON.</li><li>Press 🔄 Refresh after entering new data anywhere in the studio.</li></ol></details>
+        <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access.</li><li><b>Admin:</b> Full access.</li><li><b>Tutor:</b> No access — this page includes studio finances.</li><li><b>Parent / Learner:</b> No access.</li></ul></details>
+        <p class="page-intro-rel"><b>Related:</b> <a href="insights.html">insights</a> · <a href="at-risk.html">at-risk</a> · <a href="scoresheet.html">scoresheet</a> · <a href="finance.html">finance</a> · <a href="group-insights.html">group insights</a> · <a href="bookings.html">bookings</a></p>
       </section>
-      <div class="grid grid-4">
-        <div class="stat-card"><div class="stat-value" id="kpi-learners">—</div><div class="stat-label">Learners</div></div>
-        <div class="stat-card"><div class="stat-value" id="kpi-tutors">—</div><div class="stat-label">Tutors</div></div>
-        <div class="stat-card"><div class="stat-value" id="kpi-engagements">—</div><div class="stat-label">Engagements</div></div>
-        <div class="stat-card"><div class="stat-value" id="kpi-sessions">—</div><div class="stat-label">Sessions</div></div>
-        <div class="stat-card"><div class="stat-value" id="kpi-exams">—</div><div class="stat-label">Quizzes</div></div>
-        <div class="stat-card"><div class="stat-value" id="kpi-results">—</div><div class="stat-label">Sittings</div></div>
-        <div class="stat-card"><div class="stat-value" id="kpi-inquiries">—</div><div class="stat-label">Inquiries</div></div>
-        <div class="stat-card"><div class="stat-value" id="kpi-fees">—</div><div class="stat-label">Collected</div></div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
+        <div><h2 style="margin:0">📈 Analytics — studio-wide KPIs, at a glance</h2>
+        <p class="muted" style="margin:4px 0 0" id="an-refreshed">Loading…</p></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <a class="btn btn-outline" href="dashboard.html">← Dashboard</a>
+          <button class="btn btn-outline" onclick="AN.exportCSV()">⬇ Export raw data (JSON)</button>
+          <button class="btn btn-outline" onclick="AN.exportPDF()">📄 Print / PDF</button>
+          <button class="btn btn-primary" onclick="AN.refresh()">🔄 Refresh all</button>
+        </div>
       </div>
+
+      <div class="stats-grid" style="margin-bottom:18px">
+        <div class="stat-card"><div class="stat-value" id="an-learners">—</div><div class="stat-label">Learners</div></div>
+        <div class="stat-card"><div class="stat-value" id="an-engagements">—</div><div class="stat-label">Active engagements</div></div>
+        <div class="stat-card"><div class="stat-value" id="an-fees">—</div><div class="stat-label">Fees collected (all time)</div></div>
+        <div class="stat-card"><div class="stat-value" id="an-att">—</div><div class="stat-label">Attendance (30d)</div></div>
+        <div class="stat-card"><div class="stat-value" id="an-cbt">—</div><div class="stat-label">Quizzes (30d)</div></div>
+        <div class="stat-card"><div class="stat-value" id="an-news">—</div><div class="stat-label">Announcements (7d)</div></div>
+        <div class="stat-card"><div class="stat-value" id="an-unread">—</div><div class="stat-label">Unread notifications</div></div>
+        <div class="stat-card"><div class="stat-value" id="an-inquiries">—</div><div class="stat-label">New inquiries (30d)</div></div>
+      </div>
+
+      <div class="grid grid-2">
+        <article class="card"><h3>📈 Enrolment trend (12 months)</h3><div style="height:260px"><canvas id="an-enroll"></canvas></div></article>
+        <article class="card"><h3>💰 Fees collected (12 months)</h3><div style="height:260px"><canvas id="an-fees-chart"></canvas></div></article>
+        <article class="card"><h3>📊 Attendance by engagement (30 days)</h3><div style="height:300px"><canvas id="an-att-chart"></canvas></div></article>
+        <article class="card"><h3>📝 Recent quizzes (10)</h3><div style="height:300px"><canvas id="an-cbt-chart"></canvas></div></article>
+        <article class="card"><h3>👥 Group / engagement sizes</h3><div style="height:300px"><canvas id="an-class-size"></canvas></div></article>
+        <article class="card"><h3>💼 Staff &amp; tutor mix by role</h3><div style="height:300px"><canvas id="an-staff-role"></canvas></div></article>
+        <article class="card"><h3>📊 Top subjects (by engagements)</h3><div style="height:260px"><canvas id="an-top-subj"></canvas></div></article>
+        <article class="card"><h3>🎂 Learner birthdays by month</h3><div style="height:260px"><canvas id="an-bday"></canvas></div></article>
+        <article class="card"><h3>🚻 Learner gender split</h3><div style="height:260px"><canvas id="an-gender"></canvas></div></article>
+        <article class="card"><h3>🧒 Year groups</h3><div style="height:260px"><canvas id="an-year"></canvas></div></article>
+        <article class="card" style="grid-column:1/-1"><h3>📊 Income vs Expense — monthly trend (12 months)</h3><div style="height:300px"><canvas id="an-finance-trend"></canvas></div>
+          <p class="muted" style="margin:8px 0 0">Income = fee payments + finance income entries. Expense = finance expense entries.</p></article>
+        <article class="card"><h3>⏰ Check-in activity (30 days)</h3><div style="height:260px"><canvas id="an-checkins"></canvas></div>
+          <p class="muted" style="margin:8px 0 0">Daily check-ins recorded from the QR check-in tools.</p></article>
+        <article class="card"><h3>🧭 Reading this page</h3>
+          <ul class="muted" style="margin:0;padding-left:18px;line-height:1.8">
+            <li><b>Enrolment trend</b> — new learners per month plus the cumulative total; a flat line means growth has stalled.</li>
+            <li><b>Attendance by engagement</b> — green ≥ 85%, amber ≥ 70%, red below. Red bars are groups to call this week.</li>
+            <li><b>Income vs expense</b> — the honest picture; income must clear expenses by enough to prepay tutor hours.</li>
+            <li><b>Academic decision centre</b> — official scoresheet averages by class and subject, with pass rates.</li>
+            <li><b>At-risk table</b> — the lowest averages. Intervene before the exam, not after.</li>
+          </ul></article>
+      </div>
+
+      <section class="card" style="margin-top:16px;border:2px solid rgba(79,70,229,.3)">
+        <h3 style="margin-top:0">🎓 Term / Session Academic Performance Decision Centre</h3>
+        <p class="muted" style="margin-top:0">Official scoresheet averages — by session, term, engagement and subject. Filters fill from your own data.</p>
+        <div class="grid grid-4" style="margin-bottom:10px">
+          <div class="form-group"><label>Session</label><select class="form-select" id="ai-session" onchange="AN.loadAcademicInsights()"><option value="">All sessions</option></select></div>
+          <div class="form-group"><label>Term</label><select class="form-select" id="ai-term" onchange="AN.loadAcademicInsights()"><option value="">All terms</option></select></div>
+          <div class="form-group"><label>Engagement</label><select class="form-select" id="ai-class" onchange="AN.loadAcademicInsights()"><option value="">All engagements</option></select></div>
+          <div class="form-group"><label>Subject</label><select class="form-select" id="ai-subject" onchange="AN.loadAcademicInsights()"><option value="">All subjects</option></select></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="AN.loadAcademicInsights()">📊 Analyse performance</button>
+          <button class="btn btn-outline" onclick="AN.exportAcademicInsights()">⬇ Export analysis (JSON)</button>
+        </div>
+        <div id="ai-output" style="margin-top:12px"><p class="muted">Press <b>Analyse performance</b> to compute school averages, class and subject performance, and the top / at-risk tables.</p></div>
+      </section>
+
       <div class="grid grid-2" style="margin-top:16px">
-        <article class="card"><h3>Score bands</h3><canvas id="chart-cbt" height="180"></canvas></article>
-        <article class="card"><h3>New learners</h3><canvas id="chart-enrol" height="180"></canvas></article>
-        <article class="card"><h3>Attendance %</h3><canvas id="chart-attendance" height="180"></canvas></article>
-        <article class="card"><h3>Inquiry funnel</h3><canvas id="chart-funnel" height="180"></canvas></article>
-        <article class="card"><h3>Fees</h3><canvas id="chart-fees" height="180"></canvas></article>
+        <article class="card"><h3>🏆 Top 10 learners</h3><div id="an-top-students"><p class="muted">Loading…</p></div></article>
+        <article class="card"><h3>⚠️ At-risk learners (lowest 10)</h3><div id="an-low-students"><p class="muted">Loading…</p></div></article>
       </div>
-      <div id="analytics-insights" style="margin-top:16px"></div>
-      <section class="card" style="margin-top:18px">
-        <h2 style="margin:0 0 4px">✏️ Record practice done off the platform</h2>
-        <p class="muted" style="margin:0">Quizzes sat here are counted automatically. Past papers,
-          worksheets and anything set by a school are not — and for an exam-preparation studio that is
-          most of the practice there is. Log it below and it joins the figures above.</p>
-      </section>
-      <div id="desk-root"></div>
-      <script>document.addEventListener('DOMContentLoaded',function(){
-        if(window.Desk)Desk.mount('practice_analytics');
-      });</script>
+    </main>
     </main>
   </div>
 </div>
 <div id="toast-container" class="toast-container"></div>
 <script>
+/* ============================================================================
+   ANALYTICS — studio-wide KPIs, trends and the academic decision centre.
+   Every chart computes from live tables; empty data shows a helpful hint,
+   never a silent blank box. Adapted from the School Connect analytics
+   engine to the Tutoring Connect schema (learners, engagements, sessions,
+   payments, finance_entries, cbt_exams, scoresheet, login_audit).
+   ============================================================================ */
+const AN = {
+  charts: {}, data: {}, academicExport: null,
+  esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); },
+  async safeFetch(table, select){
+    try { const r = await sb.from(table).select(select); return (r.data) || []; } catch(e){ return []; }
+  },
+  async refresh(){
+    this.data = {};
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    if (!window.sb) { document.querySelectorAll('[id^="an-"]').forEach(el => el.textContent = '—'); return; }
+    try {
+      const [learners, engagements, members, payments, finance, attendance, sessions, cbt, news, unread, inquiries, checkins, tutors, profiles, subjects] = await Promise.all([
+        this.safeFetch('learners', 'id,full_name,year_group,date_of_birth,created_at,gender'),
+        this.safeFetch('engagements', 'id,name,kind,subject,status'),
+        this.safeFetch('engagement_members', 'id,engagement_id,learner_id,status'),
+        this.safeFetch('payments', 'id,amount,paid_on,created_at'),
+        this.safeFetch('finance_entries', 'id,kind,amount,created_at,entry_on'),
+        this.safeFetch('session_attendance', 'id,session_id,learner_id,status,created_at'),
+        this.safeFetch('sessions', 'id,engagement_id,starts_at,status,created_at'),
+        this.safeFetch('cbt_exams', 'id,title,subject,is_open,created_at,status'),
+        this.safeFetch('announcements', 'id,created_at'),
+        this.safeFetch('notifications', 'id,read_by,created_at'),
+        this.safeFetch('inquiries', 'id,created_at,status'),
+        this.safeFetch('attendance_checkins', 'id,method,created_at'),
+        this.safeFetch('tutors', 'id,full_name,status'),
+        this.safeFetch('profiles', 'id,role,status'),
+        this.safeFetch('subjects', 'id,name')
+      ]);
+      this.data = { learners, engagements, payments, finance, attendance, sessions, cbt, checkins };
+      const cut30 = new Date(Date.now() - 30*86400000).toISOString().slice(0,10);
+      set('an-learners', learners.length);
+      set('an-engagements', engagements.filter(e => (e.status||'active')==='active').length);
+      const feesTotal = payments.reduce((a,b) => a + (Number(b.amount)||0), 0);
+      set('an-fees', '₦' + Math.round(feesTotal).toLocaleString());
+      const att30 = attendance.filter(a => String(a.created_at||'').slice(0,10) >= cut30);
+      const attPresent = att30.filter(a => String(a.status).toLowerCase()==='present').length;
+      set('an-att', att30.length ? Math.round(attPresent/att30.length*100)+'%' : '—');
+      const cbt30 = cbt.filter(c => String(c.created_at||'').slice(0,10) >= cut30);
+      set('an-cbt', cbt30.length ? cbt30.length + ' quiz' + (cbt30.length===1?'':'zes') : '—');
+      set('an-news', news.filter(n => String(n.created_at||'') >= new Date(Date.now()-7*86400000).toISOString()).length);
+      set('an-unread', unread.filter(n => !n.read_at).length);
+      set('an-inquiries', inquiries.filter(i => String(i.created_at||'').slice(0,10) >= cut30).length);
+      const stamp = document.getElementById('an-refreshed');
+      if (stamp) stamp.textContent = 'Data refreshed ' + new Date().toLocaleTimeString() + ' — every number below is live from your database.';
+      this.renderAll({ learners, engagements, members, payments, finance, attendance, sessions, cbt, checkins, tutors, profiles, subjects });
+      await this.initAcademicFilters();
+      await this.loadAcademicInsights();
+    } catch (e) {
+      console.warn('Analytics load failed', e);
+      document.querySelectorAll('[id^="an-"]').forEach(el => { if (el.tagName !== 'SECTION' && el.tagName !== 'ARTICLE') el.textContent = '—'; });
+    }
+  },
+  renderAll(d){
+    if (!window.Chart) return;
+    const months = [];
+    for (let i = 11; i >= 0; i--) { const dt = new Date(); dt.setMonth(dt.getMonth()-i);
+      months.push({ label: dt.toLocaleDateString('en',{month:'short',year:'2-digit'}), key: dt.toISOString().slice(0,7) }); }
 
+    /* Enrolment trend: new + cumulative */
+    const enrollData = months.map(m => d.learners.filter(s => String(s.created_at||'').slice(0,7) === m.key).length);
+    const enrollCum = []; let cum = d.learners.length - enrollData.reduce((a,b)=>a+b,0);
+    enrollData.forEach(n => { cum += n; enrollCum.push(cum); });
+    this.makeChart('an-enroll','line',{labels:months.map(m=>m.label), datasets:[
+      {label:'New', data:enrollData, borderColor:'#4f46e5', backgroundColor:'rgba(79,70,229,.15)', fill:true, tension:.3},
+      {label:'Cumulative', data:enrollCum, borderColor:'#06b6d4', fill:false, tension:.3}]}, {scales:{y:{beginAtZero:true}}});
+
+    /* Fees (12mo) — payments.paid_on or created_at */
+    const feesData = months.map(m => d.payments.filter(f => String(f.paid_on||f.created_at||'').slice(0,7) === m.key)
+      .reduce((a,b)=>a+(Number(b.amount)||0),0));
+    this.makeChart('an-fees-chart','bar',{labels:months.map(m=>m.label), datasets:[{label:'₦ collected', data:feesData, backgroundColor:'rgba(16,185,129,.7)', borderRadius:6}]}, {scales:{y:{beginAtZero:true}}});
+
+    /* Attendance by engagement (30d) — session_attendance → session → engagement */
+    const engName = {}; d.engagements.forEach(e => engName[e.id] = e.name);
+    const sessEng = {}; d.sessions.forEach(s => sessEng[s.id] = s.engagement_id);
+    const cut30 = new Date(Date.now()-30*86400000).toISOString().slice(0,10);
+    const byEng = {};
+    d.attendance.filter(a => String(a.created_at||'').slice(0,10) >= cut30).forEach(a => {
+      const nm = engName[sessEng[a.session_id]] || 'Unlinked';
+      byEng[nm] = byEng[nm] || { total: 0, present: 0 };
+      byEng[nm].total++;
+      if (String(a.status).toLowerCase()==='present') byEng[nm].present++;
+    });
+    const attRows = Object.entries(byEng).map(([name,v]) => ({ name, rate: v.total ? Math.round(v.present/v.total*100) : 0 }))
+      .sort((a,b)=>b.rate-a.rate).slice(0,12);
+    this.makeChart('an-att-chart','bar',{labels:attRows.map(x=>x.name), datasets:[{label:'%', data:attRows.map(x=>x.rate),
+      backgroundColor:attRows.map(x=>x.rate>=85?'#10b981':x.rate>=70?'#f59e0b':'#ef4444'), borderRadius:6}]},
+      {scales:{y:{beginAtZero:true,max:100}}, plugins:{legend:{display:false}}});
+
+    /* Recent quizzes — sittings per paper */
+    const recentCbt = d.cbt.slice(0,10).map(c => ({ t: (c.title||c.subject||'Quiz').slice(0,22), open: c.is_open !== false }));
+    this.makeChart('an-cbt-chart','bar',{labels:recentCbt.map(c=>c.t), datasets:[{label:'Open', data:recentCbt.map(c=>c.open?1:0),
+      backgroundColor:recentCbt.map(c=>c.open?'#06b6d4':'#94a3b8'), borderRadius:6}]},
+      {scales:{y:{beginAtZero:true,max:1,ticks:{stepSize:1}}}, plugins:{legend:{display:false}}});
+
+    /* Group sizes */
+    const sizeRows = d.engagements.filter(e => (e.status||'active')==='active').map(e => ({
+      name: e.name, size: d.members.filter(m => m.engagement_id===e.id && (m.status||'active')==='active').length }))
+      .sort((a,b)=>b.size-a.size).slice(0,12);
+    this.makeChart('an-class-size','bar',{labels:sizeRows.map(x=>x.name), datasets:[{label:'Learners', data:sizeRows.map(x=>x.size),
+      backgroundColor:'rgba(139,92,246,.7)', borderRadius:6}]}, {plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}});
+
+    /* Staff & tutor mix by role (profiles) */
+    const roleCounts = {};
+    d.profiles.filter(p => (p.status||'')==='approved'||(p.status||'')==='active').forEach(p => { roleCounts[p.role||'unknown'] = (roleCounts[p.role||'unknown']||0)+1; });
+    this.makeChart('an-staff-role','doughnut',{labels:Object.keys(roleCounts), datasets:[{data:Object.values(roleCounts),
+      backgroundColor:['#4f46e5','#06b6d4','#10b981','#f59e0b','#ec4899','#8b5cf6','#ef4444','#64748b']}]}, {plugins:{legend:{position:'right'}}});
+
+    /* Top subjects by engagements */
+    const subjCounts = {};
+    d.engagements.forEach(e => { const s = e.subject || 'General'; subjCounts[s] = (subjCounts[s]||0)+1; });
+    const subjRows = Object.entries(subjCounts).map(([name,count])=>({name,count})).sort((a,b)=>b.count-a.count).slice(0,5);
+    this.makeChart('an-top-subj','bar',{labels:subjRows.map(s=>s.name), datasets:[{label:'Engagements', data:subjRows.map(s=>s.count),
+      backgroundColor:'rgba(245,158,11,.7)', borderRadius:6}]}, {plugins:{legend:{display:false}}, indexAxis:'y', scales:{x:{beginAtZero:true,ticks:{stepSize:1}}}});
+
+    /* Birthdays by month */
+    const bdayMonths = Array(12).fill(0);
+    d.learners.forEach(s => { if (s.date_of_birth) { const m = new Date(s.date_of_birth).getMonth(); if (!isNaN(m)) bdayMonths[m]++; } });
+    this.makeChart('an-bday','bar',{labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+      datasets:[{label:'Birthdays', data:bdayMonths, backgroundColor:'rgba(236,72,153,.7)', borderRadius:6}]},
+      {plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}});
+
+    /* Gender split */
+    const genders = {};
+    d.learners.forEach(s => { const g = String(s.gender||'').trim().toLowerCase();
+      const k = g.startsWith('m')?'Male':g.startsWith('f')?'Female':'Not set'; genders[k]=(genders[k]||0)+1; });
+    this.makeChart('an-gender','doughnut',{labels:Object.keys(genders), datasets:[{data:Object.values(genders),
+      backgroundColor:['#4f46e5','#ec4899','#94a3b8']}]}, {plugins:{legend:{position:'right'}}});
+
+    /* Year groups */
+    const years = {};
+    d.learners.forEach(s => { const y = (s.year_group||'Not set').trim()||'Not set'; years[y]=(years[y]||0)+1; });
+    this.makeChart('an-year','bar',{labels:Object.keys(years), datasets:[{label:'Learners', data:Object.values(years),
+      backgroundColor:'rgba(6,182,212,.7)', borderRadius:6}]}, {plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}});
+
+    /* Income vs expense (12mo) */
+    const finIncome = months.map(m =>
+      d.finance.filter(f => f.kind==='income' && String(f.created_at||f.entry_on||'').slice(0,7)===m.key).reduce((a,b)=>a+(Number(b.amount)||0),0) +
+      d.payments.filter(f => String(f.paid_on||f.created_at||'').slice(0,7)===m.key).reduce((a,b)=>a+(Number(b.amount)||0),0));
+    const finExpense = months.map(m =>
+      d.finance.filter(f => f.kind==='expense' && String(f.created_at||f.entry_on||'').slice(0,7)===m.key).reduce((a,b)=>a+(Number(b.amount)||0),0));
+    this.makeChart('an-finance-trend','bar',{labels:months.map(m=>m.label), datasets:[
+      {label:'Income', data:finIncome, backgroundColor:'#10b981', borderRadius:4},
+      {label:'Expense', data:finExpense, backgroundColor:'#ef4444', borderRadius:4}]}, {scales:{y:{beginAtZero:true}}});
+
+    /* Check-in activity (30d) */
+    const checkDays = {};
+    d.checkins.filter(c => String(c.created_at||'').slice(0,10) >= cut30)
+      .forEach(c => { const k = String(c.created_at).slice(5,10); checkDays[k]=(checkDays[k]||0)+1; });
+    const ckLabels = Object.keys(checkDays).sort().slice(-30);
+    this.makeChart('an-checkins','bar',{labels:ckLabels, datasets:[{label:'Check-ins', data:ckLabels.map(k=>checkDays[k]),
+      backgroundColor:'rgba(79,70,229,.7)', borderRadius:4}]}, {plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}});
+  },
+  makeChart(id, type, data, opts){
+    const cv = document.getElementById(id);
+    if (!cv || !window.Chart) return;
+    if (this.charts[id]) { try { this.charts[id].destroy(); } catch(_){} }
+    const flat = (data.datasets||[]).flatMap(d => d.data||[]);
+    const empty = !flat.length || flat.every(v => !v);
+    let hint = cv.parentNode.querySelector('.an-empty');
+    if (empty) {
+      cv.style.display = 'none';
+      if (!hint) { hint = document.createElement('div'); hint.className = 'an-empty';
+        hint.setAttribute('style','height:100%;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--gray-500);font-size:.85rem;padding:14px');
+        cv.parentNode.appendChild(hint); }
+      hint.textContent = this.EMPTY_HINTS[id] || 'No data yet — this chart fills up as the studio uses the platform.';
+      return;
+    }
+    if (hint) hint.remove();
+    cv.style.display = '';
+    this.charts[id] = new Chart(cv, { type, data, options: Object.assign({ responsive:true, maintainAspectRatio:false }, opts||{}) });
+  },
+  EMPTY_HINTS: {
+    'an-enroll': 'No enrolment dates yet — add learners and this trend draws itself.',
+    'an-fees-chart': 'No payments recorded yet — record payments on the Payments page to see the monthly trend.',
+    'an-att-chart': 'No attendance in the last 30 days — mark attendance and per-engagement rates appear here.',
+    'an-cbt-chart': 'No quizzes yet — create one from the Quizzes page.',
+    'an-class-size': 'Add engagements and members to see group sizes.',
+    'an-staff-role': 'No approved accounts yet — approve accounts to see the role split.',
+    'an-top-subj': 'Set subjects on engagements to see popularity.',
+    'an-bday': 'Add learner dates of birth to see the birthday spread.',
+    'an-gender': 'Set the gender field on learner records to see the split (Settings → v11 pack adds the field).',
+    'an-year': 'Set year groups on learner records to see the spread.',
+    'an-finance-trend': 'Record income/expenses (Finance) or payments to see the trend.',
+    'an-checkins': 'Check-ins appear after the QR check-in tools are used.'
+  },
+
+  /* ---------- Academic decision centre ---------- */
+  async initAcademicFilters(){
+    if (this._academicFiltersReady) return;
+    const fetch = async (t, s) => { try { const r = await sb.from(t).select(s); return r.data || []; } catch(e){ return []; } };
+    const [eng, subj, scores] = await Promise.all([
+      fetch('engagements','name'),
+      fetch('subjects','name'),
+      fetch('scoresheet','subject,taken_on,engagement_id')
+    ]);
+    const fill = (id, vals, label) => { const e = document.getElementById(id);
+      if (e) e.innerHTML = '<option value="">All '+label+'</option>' + [...new Set(vals.filter(Boolean))].map(v => '<option value="'+this.esc(v)+'">'+this.esc(v)+'</option>').join(''); };
+    const engName = {}; (await fetch('engagements','id,name')).forEach(e => engName[e.id]=e.name);
+    fill('ai-class', eng.map(x=>x.name), 'engagements');
+    fill('ai-subject', subj.map(x=>x.name), 'subjects');
+    const sessions = [...new Set(scores.map(x => x.taken_on ? String(x.taken_on).slice(0,4) : '').filter(Boolean))].sort().reverse();
+    const ses = document.getElementById('ai-session');
+    if (ses) ses.innerHTML = '<option value="">All years</option>' + sessions.map(v => '<option value="'+this.esc(v)+'">'+this.esc(v)+'</option>').join('');
+    this._academicFiltersReady = true;
+  },
+  async loadAcademicInsights(){
+    if (!window.sb) return;
+    const host = document.getElementById('ai-output');
+    const val = id => (document.getElementById(id)||{}).value || '';
+    const cls = val('ai-class'), subject = val('ai-subject'), year = val('ai-session'), term = val('ai-term');
+    try {
+      let q = sb.from('scoresheet').select('learner_id,subject,pct,taken_on,engagement_id,title').limit(20000);
+      if (subject) q = q.eq('subject', subject);
+      const r = await q;
+      if (r.error) throw new Error(r.error.message);
+      let rows = r.data || [];
+      if (year) rows = rows.filter(x => String(x.taken_at||x.taken_on||'').slice(0,4) === year);
+      if (cls) rows = rows.filter(x => x.engagement_id && this._engName(x.engagement_id) === cls);
+      this.academicExport = { filters: { year, term, engagement: cls, subject }, rows, generated_at: new Date().toISOString() };
+      if (!rows.length) {
+        host.innerHTML = '<p class="muted">No official scoresheet rows match these filters. Graded quizzes push here automatically, or enter scores manually on the Scoresheet page.</p>';
+        document.getElementById('an-top-students').innerHTML = '<p class="muted">No official scores.</p>';
+        document.getElementById('an-low-students').innerHTML = '<p class="muted">No official scores.</p>';
+        return;
+      }
+      const avg = a => a.length ? a.reduce((x,y)=>x+Number(y||0),0)/a.length : 0;
+      const schoolAvg = avg(rows.map(x=>x.pct));
+      const pass = rows.filter(x => Number(x.pct)>=50).length / rows.length * 100;
+      const learnerMap = {}, engMap = {}, subjectMap = {};
+      const engNames = this._engNames();
+      rows.forEach(x => {
+        const sk = x.learner_id || 'unknown';
+        (learnerMap[sk] || (learnerMap[sk] = { values: [], engagement: engNames[x.engagement_id] || '' })).values.push(Number(x.pct||0));
+        const ek = engNames[x.engagement_id] || 'Unlinked';
+        (engMap[ek] || (engMap[ek] = [])).push(Number(x.pct||0));
+        (subjectMap[x.subject||'General'] || (subjectMap[x.subject||'General'] = [])).push(Number(x.pct||0));
+      });
+      const learners = Object.entries(learnerMap).map(([k,v]) => ({ id: k, avg: avg(v.values), engagement: v.engagement }))
+        .sort((a,b)=>b.avg-a.avg);
+      const engs = Object.entries(engMap).map(([name,v])=>({name,avg:avg(v)})).sort((a,b)=>b.avg-a.avg);
+      const subjs = Object.entries(subjectMap).map(([name,v])=>({name,avg:avg(v),pass:v.filter(x=>x>=50).length/v.length*100})).sort((a,b)=>b.avg-a.avg);
+      this.academicExport.summary = { school_average: +schoolAvg.toFixed(1), pass_rate: +pass.toFixed(1),
+        learner_count: learners.length, engagement_count: engs.length, subject_count: subjs.length };
+      const table = (title, data, extra) => '<div><h4 style="margin:10px 0 6px">'+title+'</h4><div class="table-wrap"><table style="width:100%"><thead><tr><th>#</th><th>Name</th><th>Average</th>'+(extra?'<th>Pass rate</th>':'')+'</tr></thead><tbody>' +
+        data.map((x,i)=>'<tr><td>'+(i+1)+'</td><td>'+this.esc(x.name)+'</td><td><b>'+x.avg.toFixed(1)+'%</b></td>'+(extra?'<td>'+x.pass.toFixed(1)+'%</td>':'')+'</tr>').join('') +
+        '</tbody></table></div></div>';
+      host.innerHTML = '<div class="stats-grid"><div class="stat-card"><div class="stat-value">'+schoolAvg.toFixed(1)+'%</div><div class="stat-label">Studio average</div></div>' +
+        '<div class="stat-card"><div class="stat-value">'+pass.toFixed(1)+'%</div><div class="stat-label">Subject pass rate</div></div>' +
+        '<div class="stat-card"><div class="stat-value">'+learners.length+'</div><div class="stat-label">Learners analysed</div></div>' +
+        '<div class="stat-card"><div class="stat-value">'+rows.length+'</div><div class="stat-label">Score records</div></div></div>' +
+        '<div class="grid grid-2" style="margin-top:10px">' + table('Engagement performance', engs, false) + table('Subject performance', subjs, true) + '</div>' +
+        '<p class="muted" style="margin-top:10px">Decision guide: prioritise subjects/engagements below 50%; compare pass rate and average; review learners in the at-risk table; document the intervention and re-check next term.</p>';
+      this._renderLearnerTables(learners);
+    } catch (e) {
+      host.innerHTML = '<p class="muted">Could not analyse: '+this.esc(e.message)+'</p>';
+    }
+  },
+  _engNameCache: null,
+  async _engNames(){ return this._engNamesMap || {}; },
+  _engNameMap: {},
+  _engName(id){ return this._engNameMap[id] || 'Engagement'; },
+  async _loadEngNames(){
+    try { const r = await sb.from('engagements').select('id,name'); (r.data||[]).forEach(e => this._engNameMap[e.id]=e.name); } catch(e){}
+  },
+  async _renderLearnerTables(learners){
+    await this._loadEngNames();
+    let nameMap = {};
+    try { const r = await sb.from('learners').select('id,full_name'); (r.data||[]).forEach(l => nameMap[l.id]=l.full_name); } catch(e){}
+    const rows = learners.map(x => ({ name: nameMap[x.id] || 'Learner', engagement: this._engName(x.engagement_id), avg: x.avg }));
+    const mk = (arr, status) => '<div class="table-wrap"><table style="width:100%"><thead><tr><th>Rank</th><th>Learner</th><th>Engagement</th><th>Average</th><th>Status</th></tr></thead><tbody>' +
+      arr.map((x,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+this.esc(x.name)+'</b></td><td>'+this.esc(x.engagement||'')+'</td><td>'+x.avg.toFixed(1)+'%</td><td>'+status(x.avg)+'</td></tr>').join('') + '</tbody></table></div>';
+    document.getElementById('an-top-students').innerHTML = mk(rows.slice(0,10), a => a>=80?'Excellent':a>=70?'Very good':'Good');
+    document.getElementById('an-low-students').innerHTML = mk(rows.slice().sort((a,b)=>a.avg-b.avg).slice(0,10), a => a<40?'Critical':a<50?'At risk':'Monitor');
+  },
+  exportAcademicInsights(){
+    if (!this.academicExport) { toast('Run the academic analysis first.', 'warning'); return; }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(this.academicExport, null, 2)], { type: 'application/json' }));
+    a.download = 'academic-performance-' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+  },
+  exportCSV(){
+    const blob = new Blob([JSON.stringify(this.data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = 'analytics-raw.json'; a.click();
+    toast('📥 Raw data exported.', 'success');
+  },
+  exportPDF(){ window.print(); }
+};
+document.addEventListener('DOMContentLoaded', () => AN.refresh());
 </script>
 </body>
 </html>
