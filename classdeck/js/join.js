@@ -146,6 +146,23 @@ function showWaitingState(code, name) {
   $("#joinGate").classList.add("hide");
   openModal("#mWaiting");
 }
+/* v11: every retryable failure used to be reported as "The class hasn't
+   started yet" — which is actively UNTRUE when the class is live and the
+   student's network simply cannot reach the teacher's device (the exact
+   "stuck in the lobby" complaint). Classify the real cause instead. */
+function lobbyReasonText(why, code) {
+  const w = String(why || "");
+  if (/Class not found|not be live|peer-unavailable/i.test(w))
+    return "The class room " + code + " is not live right now (or the code is wrong). If your teacher has started, check the code with them. This page keeps retrying automatically.";
+  if (/Could not reach|closed before admission|Could not connect|signalling|classroom service/i.test(w))
+    return "Your network could not reach the teacher's device directly. If you are inside WhatsApp/Facebook/Instagram, tap the “Open in browser” button below and reload. If it still fails, switch to mobile data (or a different Wi-Fi) and reopen the link. This page keeps retrying automatically.";
+  return "The class hasn't started yet — this page will join you automatically the moment your teacher goes live. Keep it open.";
+}
+function lobbyStatusLine(code) {
+  const inApp = inAppBrowserName();
+  return "🕐 Waiting for class " + code + " · attempt " + (lobbyAttempt + 1) +
+    (inApp ? " · ⚠️ you are inside " + inApp + " — tap “Open in browser” for a reliable join" : "");
+}
 function startLobby(code, name, why) {
   lobbyOn = true;
   lobbyAttempt = 0;
@@ -154,9 +171,7 @@ function startLobby(code, name, why) {
   clearTimeout(lobbyTimer);
   closeModal("#mWaiting");
   $("#joinGate").classList.remove("hide");
-  $("#joinStatus").textContent = "🕐 You're in the lobby. " +
-    (why && /PIN|secure invite|rejected/i.test(why) ? why :
-    "The class hasn't started yet — this page will join you automatically the moment your teacher goes live. Keep it open.");
+  $("#joinStatus").innerHTML = escapeHtml(lobbyReasonText(why, code)) + "<br><span style=\"opacity:.75;font-size:.92em\">" + escapeHtml(lobbyStatusLine(code)) + "</span>";
   $("#btnJoin").textContent = "✕ Stop waiting";
   $("#btnJoin").disabled = false;
   window._wantWake = true; keepAwake(true);
@@ -181,6 +196,7 @@ function startLobby(code, name, why) {
       }
       lobbyOn = false;
       restoreJoinButton();
+      $("#joinStatus").textContent = "Connected — waiting for the teacher's screen…";
       toast("🎉 Your teacher is live — joining now!", "ok");
       // The welcome event normally enters the stage; this is a safe fallback.
       enterStage();
@@ -197,6 +213,11 @@ function startLobby(code, name, why) {
       }
       if (gen !== lobbyGen) return;   /* v10: wait session abandoned */
       lobbyAttempt++;
+      /* v11: tell the student the REAL reason every time, and after two
+         failures run the connection doctor once — the lobby must never
+         silently repeat a false "class hasn't started". */
+      $("#joinStatus").innerHTML = escapeHtml(lobbyReasonText(e && e.message, code)) + "<br><span style=\"opacity:.75;font-size:.92em\">" + escapeHtml(lobbyStatusLine(code)) + "</span>";
+      if (lobbyAttempt >= 2 && !window._doctorRan) { window._doctorRan = true; runConnectionDoctor(); }
       lobbyTimer = setTimeout(tick, Math.min(12000, 4000 + lobbyAttempt * 2000));
     }
   }, 4000);
@@ -220,6 +241,51 @@ function restoreJoinButton() {
   $("#btnJoin").disabled = false;
 }
 $("#btnLeaveWaiting")?.addEventListener("click", stopLobby);
+
+/* ---------- v11: connection doctor ----------
+   After repeated join failures, prove (not guess) whether this device's
+   network can do WebRTC at all: gather ICE candidates with the same
+   server list the classroom uses and report what was found. */
+function runConnectionDoctor() {
+  const box = $("#joinDiag");
+  if (!box || typeof RTCPeerConnection === "undefined") return;
+  const report = document.createElement("div");
+  report.style.cssText = "margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(255,255,255,.06);border:1px dashed rgba(255,255,255,.25)";
+  report.innerHTML = "<b>🔎 Connection doctor</b><br><span style=\"opacity:.75;font-size:.92em\">Testing whether this network allows classroom connections…</span>";
+  box.appendChild(report);
+  try {
+    const pc = new RTCPeerConnection(peerConfig().config);
+    const found = { host: 0, srflx: 0, relay: 0 };
+    pc.createDataChannel("doctor");
+    pc.onicecandidate = (e) => {
+      if (!e.candidate) return;
+      const t = e.candidate.type || "";
+      if (t === "host") found.host++;
+      else if (t === "srflx") found.srflx++;
+      else if (t === "relay") found.relay++;
+    };
+    pc.createOffer().then((o) => pc.setLocalDescription(o)).catch(() => {});
+    setTimeout(() => {
+      try { pc.close(); } catch {}
+      let verdict, color = "var(--ok)";
+      if (!found.host && !found.srflx && !found.relay) {
+        verdict = "❌ This network blocks WebRTC completely (no candidates at all). Switch to mobile data or another Wi-Fi network, or open the link in Chrome/Safari instead of an in-app browser.";
+        color = "var(--warn)";
+      } else if (found.srflx === 0 && found.relay === 0) {
+        verdict = "⚠️ Only local candidates found — this network is very restrictive and direct classroom connections will usually fail. Use mobile data, or ask your teacher to add a TURN relay in Settings → Relay.";
+        color = "var(--warn)";
+      } else if (found.relay === 0) {
+        verdict = "ℹ️ Your network can connect directly (" + found.srflx + " public candidate(s) found). If joining still fails, the block is on the teacher's network — ask them to add a TURN relay in Settings → Relay.";
+      } else {
+        verdict = "✅ Your network supports classroom connections, including the relay (" + found.relay + " relay candidate(s)). If joining still fails, ask your teacher to check their connection or share a fresh link.";
+      }
+      report.innerHTML = "<b>🔎 Connection doctor</b><br><span style=\"color:" + color + "\"><div style=\"margin-top:4px\">" + escapeHtml(verdict) + "</div></span>" +
+        "<div class=\"muted\" style=\"margin-top:4px\">Candidates found — local: " + found.host + ", public: " + found.srflx + ", relay: " + found.relay + "</div>";
+    }, 6500);
+  } catch (e) {
+    report.innerHTML = "<b>🔎 Connection doctor</b><br><span style=\"color:var(--warn)\">Could not run: " + escapeHtml(e.message || e) + "</span>";
+  }
+}
 
 function enterStage() {
   if (stageEntered) return;

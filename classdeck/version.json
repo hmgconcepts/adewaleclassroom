@@ -1,8 +1,8 @@
 {
-  "version": "11.3.0",
-  "build": 10,
+  "version": "11.4.0",
+  "build": 11,
   "channel": "stable",
-  "released": "2026-09-29",
+  "released": "2026-09-30",
   "features": [
     "custom-room-codes",
     "two-folder-generator",
@@ -17,6 +17,12 @@
     "restored-rec-report-noise-tabletlive-modals",
     "v39-bridge-css-newline-fix",
     "v10-lobby-admission-fix",
-    "sw-exact-cache-match"
+    "sw-exact-cache-match",
+    "v11-honest-lobby-diagnostics",
+    "v11-connection-doctor",
+    "v11-teacher-join-blocked-alerts",
+    "v11-configurable-turn-relay",
+    "v11-owner-account-restored",
+    "v11-branded-intro-synced-both-repos"
   ]
 }

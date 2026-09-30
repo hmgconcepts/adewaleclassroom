@@ -32,24 +32,60 @@ function safeBoardStrokes(raw, maxStrokes = 40) {
   }).filter(Boolean);
 }
 
-const PEER_CONFIG = {
-  // Public PeerJS cloud (free). Only brokers signalling; media is P2P.
-  debug: 1,
-  config: {
-    iceCandidatePoolSize: 4,
-    iceServers: [
-      { urls: "stun:stun.l.google.com:19302" },
-      { urls: "stun:stun1.l.google.com:19302" },
-      { urls: "stun:stun2.l.google.com:19302" },
-      // Free public TURN (OpenRelay) – improves connectivity on restrictive Wi‑Fi / mobile data.
-      { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
-      { urls: "turn:openrelay.metered.ca:80?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
-      { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
-      { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
-      { urls: "turns:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
-    ]
-  }
-};
+/* ---------------------------------------------------------------
+   ICE / relay configuration (v11 — "students stuck in the lobby" fix)
+   ----------------------------------------------------------------
+   WHY THIS EXISTS: the classroom is peer-to-peer. When the teacher is
+   on a phone/tablet hotspot, devices ON THAT SAME HOTSPOT join via
+   local network candidates and always work — but students on the
+   internet must cross the carrier's NAT, and on many mobile networks a
+   direct path simply does not exist. Without a working TURN relay
+   those students retry forever and are told "the class hasn't
+   started", which is not true.
+
+   The server list is now assembled at CONNECT TIME, in priority order:
+     1. a relay the TEACHER pasted into Settings → Relay (Store key
+        "relay_servers") — use this for a Cloudflare/metered.ca TURN
+        account (both have free tiers);
+     2. a relay baked into this deployment via window.CD_RELAY in
+        js/config.js;
+     3. the built-in free STUN (Google + Cloudflare) and TURN
+        (OpenRelay) fallbacks.
+   ---------------------------------------------------------------- */
+function cdCollectIceServers() {
+  const servers = [];
+  const pushAll = (list, origin) => {
+    if (!Array.isArray(list)) return;
+    for (const s of list) {
+      if (!s || !s.urls) continue;
+      if (typeof s.urls === "string" && !/^stun:|^turn:|^turns:/i.test(s.urls)) continue;
+      servers.push({ urls: s.urls, username: s.username || undefined, credential: s.credential || undefined });
+    }
+  };
+  let teacherRelay = null;
+  try { teacherRelay = JSON.parse(Store.get("relay_servers", "[]") || "[]"); } catch (e) { teacherRelay = null; }
+  if (Array.isArray(teacherRelay) && teacherRelay.length) pushAll(teacherRelay, "teacher");
+  if (window.CD_RELAY && Array.isArray(window.CD_RELAY.iceServers)) pushAll(window.CD_RELAY.iceServers, "config");
+  pushAll([
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun.cloudflare.com:3478" },
+    // Free public TURN (OpenRelay) – best-effort fallback for restrictive Wi-Fi / mobile data.
+    { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
+    { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
+    { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
+  ], "builtin");
+  return servers;
+}
+function peerConfig() {
+  return {
+    debug: 1,
+    config: { iceCandidatePoolSize: 4, iceServers: cdCollectIceServers() }
+  };
+}
+/* Back-compat alias: older code (and the WHIP relay publisher) still
+   reads PEER_CONFIG.config. */
+const PEER_CONFIG = { get config() { return peerConfig().config; } };
 
 /* ============================================================
    TEACHER SIDE
@@ -137,7 +173,28 @@ class TeacherRoom {
   _wire() {
     // Students open a data connection first.
     this.peer.on("connection", (conn) => {
+      /* v11 join-failure visibility: PeerJS fires "connection" the moment
+         the offer arrives, but the data channel only opens once the
+         direct/relay path is established. If it NEVER opens, the student
+         is sitting on the join page being told "the class hasn't
+         started" — which is false — and the teacher previously saw
+         nothing at all. Watch every incoming connection and report the
+         ones that die before opening. */
+      const attemptName = String((conn.metadata && conn.metadata.name) || "Someone").slice(0, 40);
+      let opened = false;
+      const reportBlocked = (why) => {
+        if (opened || this._ended || this.locked || this._blockedSeen && this._blockedSeen.has(conn.peer)) return;
+        if (!this._blockedSeen) this._blockedSeen = new Set();
+        this._blockedSeen.add(conn.peer);
+        this.attendance.push({ name: attemptName, event: "join-blocked", time: nowStamp() });
+        this.onEvent("join-blocked", { name: attemptName, reason: why });
+      };
+      const watch = setTimeout(() => {
+        if (!opened) reportBlocked("The direct connection to this student's device was never established (20s) — most likely a network/NAT restriction.");
+      }, 20000);
       conn.on("open", () => {
+        opened = true;
+        clearTimeout(watch);
         if (this.locked) {
           conn.send({ t: "rejected", reason: "Room is locked by the teacher." });
           setTimeout(() => conn.close(), 400);
@@ -167,8 +224,16 @@ class TeacherRoom {
         this._admit(conn, name);
       });
       conn.on("data", (d) => this._onData(conn, d));
-      conn.on("close", () => { this.pending.delete(conn.peer); this._dropStudent(conn.peer); });
-      conn.on("error", () => { this.pending.delete(conn.peer); this._dropStudent(conn.peer); });
+      conn.on("close", () => {
+        if (!opened) reportBlocked("The connection to this student's device closed before it could open (network restriction).");
+        opened = true; clearTimeout(watch);
+        this.pending.delete(conn.peer); this._dropStudent(conn.peer);
+      });
+      conn.on("error", () => {
+        if (!opened) reportBlocked("The connection to this student's device failed before it could open (network restriction).");
+        opened = true; clearTimeout(watch);
+        this.pending.delete(conn.peer); this._dropStudent(conn.peer);
+      });
     });
 
     // Students may call us back with their camera / mic.

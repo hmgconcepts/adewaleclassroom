@@ -112,3 +112,51 @@ The GitHub `main` branch has **no `js/config.js`** (404) — i.e. the fixes I ma
 5. Open `teach.html` → sign in with `buildingmyictcareer@gmail.com` / `Walex@28120215` → every control works.
 
 See `DEPLOYMENT-GUIDE.md` for the complete, unambiguous steps.
+
+
+---
+
+## 5. ROUND 3 — v11.4.0 build 11 (2026-09-30): the "stuck in lobby" regression
+
+**User report:** students opening the shared link were held in the lobby with
+"the class hasn't started" although the class was LIVE and the waiting room was
+OFF. Joins between the teacher's own devices (same tablet hotspot) worked;
+remote students never got in.
+
+**Root cause (verified, not assumed):** ClassDeck is P2P WebRTC. Same-subnet
+joins succeed over local ICE candidates; remote students must cross
+carrier-grade NAT, which needs a TURN relay. No guaranteed TURN was configured.
+On failure, `join.js` labelled EVERY retryable error "The class hasn't started
+yet" — untrue and misleading. The live deployment was verified current
+(join.js byte-identical), so stale deploys were ruled out first.
+
+**Dropped features found by the full re-audit and restored:**
+1. `window.HMG_OWNER` owner account was missing from `js/config.js` (14 refs in
+   auth.js; it only survived in config.js.bak) — restored in BOTH repos.
+2. `tutoringconnect/classdeck/js/enhancements.js` was 236 lines short (old
+   simple drawIntroFrame) — restored by copy; branded intro now identical.
+
+**v11.4.0 changes (both repos):**
+- `js/rtc.js` — `peerConfig()`/`cdCollectIceServers()`: merge order = teacher
+  relay (Settings → Relay, Store key `relay_servers`) → `window.CD_RELAY`
+  (config.js) → built-ins (Google/Cloudflare STUN + OpenRelay TURN best-effort).
+  `PEER_CONFIG` retained as a getter alias. TeacherRoom emits
+  `join-blocked` (+ attendance row) when a conn never opens in 20s or
+  closes/errors before open (deduped per peer).
+- `js/join.js` — truthful lobby reasons (`lobbyReasonText`), attempt counter +
+  in-app-browser warning, connection doctor after 2 failures
+  (`runConnectionDoctor` ICE census → verdict), success text on admission.
+- `js/teach.js` — `handleJoinBlocked` (audit + toast + `#joinBlockedBadge`
+  counter), Settings → Relay save/load with JSON validation.
+- `teach.html` — Relay card in Settings, joinBlockedBadge sibling of
+  `#btnStudents`.
+- `js/config.js` — HMG_OWNER restored + `window.CD_RELAY`.
+- `sw.js` CACHE_VERSION bumped → returning students get the fix.
+- `docs/JOIN_TROUBLESHOOTING_GUIDE.md` — student self-help + teacher TURN setup
+  (Cloudflare Realtime / metered.ca free tier).
+
+**Verification:** 39-check VM harness (mock PeerJS with real event ordering:
+caller open → receiver connection → receiver open) across both repos — 27/27
+scenario + 12/12 doctor/settings, including the v10 no-eviction regression,
+stopLobby generation guard, relay merge order, and the verbatim teach.js relay
+validation handler. All classdeck JS passes `node --check`; HTML tags balanced.

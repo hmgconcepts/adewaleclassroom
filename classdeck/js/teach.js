@@ -1668,7 +1668,23 @@ function endLive(force = false) {
 /* ---- room events ---- */
 const camTiles = new Map();
 /* lastPrivatePeer hoisted */
+/* v11: a student tried to join but the direct connection could not be
+   established (NAT / blocked network). This is NOT the waiting room and
+   it is NOT "class hasn't started" — without this alert the teacher has
+   no idea anyone is stranded. */
+let joinBlockedCount = 0;
+function handleJoinBlocked(p) {
+  joinBlockedCount++;
+  const name = (p && p.name) || "Someone";
+  audit("join-blocked", name + " — connection could not be established");
+  toast("⚠️ " + name + " is trying to join but the connection to their device is failing — this is a network block, not the waiting room. Fixes: (1) ask them to open the link in Chrome/Safari, NOT inside WhatsApp; (2) add a TURN relay in ⚙ Settings → Relay (see the guide); (3) they can try mobile data.", "err", 12000);
+  try {
+    const el = $("#joinBlockedBadge");
+    if (el) { el.textContent = "📶 " + joinBlockedCount + " blocked"; el.classList.remove("hide"); }
+  } catch {}
+}
 function onRoomEvent(type, p) {
+  if (type === "join-blocked") handleJoinBlocked(p);
   switch (type) {
     case "student-joined":
       toast("👋 " + p.name + " joined", "ok");
@@ -2318,6 +2334,9 @@ on("#btnSettings", "click", () => {
   /* Custom room code: prefill current custom value */
   const rc = $("#setRoomCode");
   if (rc) rc.value = Store.get("roomcode_custom", "");
+  /* v11: relay servers (advanced) — prefill the raw JSON */
+  const rl = $("#setRelay");
+  if (rl) rl.value = Store.get("relay_servers", "") || "";
   $("#setNewRoom").checked = false;
   openModal("#mSettings");
 });
@@ -2353,6 +2372,30 @@ on("#setSave", "click", () => {
     roomCode = Store.get("roomcode", null) || roomCode; // keep current auto code
     const lbl = $("#roomCodeLbl");
     if (lbl) lbl.textContent = currentRoomCode();
+  }
+  /* v11: relay servers (advanced). Accepts a JSON array of
+     {urls, username, credential} entries (what Cloudflare/metered.ca
+     give you). Bad JSON is refused with a clear message — never saved
+     silently, because a broken relay list would break every join. */
+  const rl = $("#setRelay");
+  if (rl) {
+    const raw = rl.value.trim();
+    if (raw) {
+      let parsed = null;
+      try { parsed = JSON.parse(raw); } catch (e) {
+        toast("Relay setting not saved — it must be a JSON array like: [ {\"urls\":\"turn:turn.example.com:443\",\"username\":\"abc\",\"credential\":\"xyz\"} ]", "err", 10000);
+        return;
+      }
+      if (!Array.isArray(parsed) || !parsed.every((s) => s && typeof s.urls === "string")) {
+        toast("Relay setting not saved — every entry needs a \"urls\" string (turn: or turns:).", "err", 10000);
+        return;
+      }
+      Store.set("relay_servers", JSON.stringify(parsed));
+      toast("📶 Relay saved — it will be used by you AND your students on new connections. Test with a student on another network.", "ok", 8000);
+    } else if (Store.get("relay_servers", "")) {
+      Store.set("relay_servers", "");
+      toast("Relay cleared — the built-in free servers are used again.", "ok");
+    }
   }
   setQuality($("#setQuality").value);
   closeModal("#mSettings");
@@ -3484,7 +3527,7 @@ async function publishWhip(stream, gateway, streamName) {
   try {
     // Reuse the classroom ICE set, including TURN fallbacks, for restrictive
     // mobile networks instead of relying on a single STUN server.
-    pc = new RTCPeerConnection(PEER_CONFIG.config);
+    pc = new RTCPeerConnection(peerConfig().config);
     stream.getTracks().forEach((track) => pc.addTrack(track, stream));
     await pc.setLocalDescription(await pc.createOffer());
     await waitForIceComplete(pc);
