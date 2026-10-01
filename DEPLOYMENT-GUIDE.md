@@ -288,3 +288,35 @@ Run the one `complete-schema.sql` on a fresh project and the version notice read
 If you already ran the schema before V42, you can run
 `database/v42-enterprise-hardening.sql` once on the existing project to apply the
 consolidated grants.
+
+## V43 — class cohorts, per-class library and the enterprise blog (round 5)
+
+`complete-schema.sql` now ends with **V43**
+(`database/v43-engagement-cohorts-library-blog.sql`). It adds:
+
+- **Roster helpers** — `tc_roster_bulk` / `tc_roster_view` on the existing
+  `engagement_members` table (teacher-owned: another tutor's class returns
+  `not_your_engagement`), powering the roster console on the Engagements
+  and Groups pages.
+- **Per-class library + e-resources + physical homework** —
+  `library_items`, `eresources` and `assignments` gain `engagement_id`
+  scoping with author stamps (`tc_stamp_library_author`), so students only
+  ever see their own class's shelf and only the owner can edit items.
+- **`tc_my_work`** — one RPC that returns a learner's classes, homework
+  (physical or online), quizzes, reading, class library and next class;
+  the student/parent dashboards render it as the "My Work" board.
+- **Enterprise blog layer** — `tc_blog_subscribers`, `tc_blog_reactions`,
+  `tc_blog_comments` tables plus `tc_blog_list/get/react/comment_add/
+  subscribe/stats/my_posts` functions: reading time, reactions, comments
+  with moderation, newsletter, tag filters, scheduling and pinning.
+
+Run the one `complete-schema.sql` on a fresh project and the version notice
+reads **V43**. On an existing project, run
+`database/v43-engagement-cohorts-library-blog.sql` once (it is idempotent —
+`create … if not exists` / `create or replace` throughout).
+
+**Round-5 front-end notes:** every platform page now loads `?v=44`; the
+ClassDeck pages load `?v=45` (v13: TCP/TLS relay entries for hotspot Wi-Fi
+students, adaptive retry, student-page chip fix). The blog
+(`assets/js/blog.js` V44) is white-label — it reads the practice name from
+`[data-practice-name]`, so the same file serves both products.
