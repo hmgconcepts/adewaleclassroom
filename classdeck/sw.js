@@ -8,7 +8,7 @@
    requests, making the site feel native on repeat visits.
    Bump CACHE_VERSION whenever you deploy changes.
    ============================================================ */
-const CACHE_VERSION = "hmg-classdeck-v12.0.0-captains-flip-relayfix";  /* bumped: v12 universal relay paste, Cloudflare key generator, relay tester, class captains, class-full guard, empty personal boards, camera flip, self view, join jitter */
+const CACHE_VERSION = "hmg-classdeck-v13.0.0-hotspot-tcp-chipfix";  /* bumped: v13 TCP/TLS TURN fallbacks, adaptive retry, student-page chip fix (top icons accessible again) */
 
 const SHELL = [
   "./",

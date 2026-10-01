@@ -157,12 +157,13 @@ function lobbyReasonText(why, code) {
   if (/Class not found|not be live|peer-unavailable/i.test(w))
     return "The class room " + code + " is not live right now (or the code is wrong). If your teacher has started, check the code with them. This page keeps retrying automatically.";
   if (/Could not reach|closed before admission|Could not connect|signalling|classroom service/i.test(w))
-    return "Your network could not reach the teacher's device directly. If you are inside WhatsApp/Facebook/Instagram, tap the “Open in browser” button below and reload. If it still fails, switch to mobile data (or a different Wi-Fi) and reopen the link. This page keeps retrying automatically.";
+    return "Your network could not reach the teacher's device directly — this usually happens on Wi-Fi hotspots that block the direct path (mobile data almost always works). If you are inside WhatsApp/Facebook/Instagram, tap the “Open in browser” button below and reload. This page keeps retrying automatically and now also tries TCP/TLS routes that pass hotspot blocks.";
   return "The class hasn't started yet — this page will join you automatically the moment your teacher goes live. Keep it open.";
 }
 function lobbyStatusLine(code) {
   const inApp = inAppBrowserName();
   return "🕐 Waiting for class " + code + " · attempt " + (lobbyAttempt + 1) +
+    (lobbyAttempt >= 1 ? " · 🔁 now trying TCP/TLS paths for Wi-Fi hotspots" : "") +
     (inApp ? " · ⚠️ you are inside " + inApp + " — tap “Open in browser” for a reliable join" : "");
 }
 function startLobby(code, name, why) {
@@ -181,6 +182,10 @@ function startLobby(code, name, why) {
   // waiting room, not a reason to keep opening new PeerJS connections.
   lobbyTimer = setTimeout(async function tick() {
     if (!lobbyOn || gen !== lobbyGen) return;
+    /* v13: first attempt = normal UDP-first; every retry flips the ICE list
+       to TCP/TLS-relay-first (window.__cdPreferTcp) so students stuck on a
+       UDP-blocking Wi-Fi hotspot get through on the next try. */
+    window.__cdPreferTcp = lobbyAttempt >= 1;
     const candidate = new StudentRoom(code, name, { onEvent: onEvent, pin: $("#inPin").value.trim(), tok: qs.get("tok") || "" });
     sRoom = candidate;
     try {

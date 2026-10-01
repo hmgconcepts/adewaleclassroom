@@ -1,6 +1,6 @@
 {
-  "version": "12.0.0",
-  "build": 12,
+  "version": "13.0.0",
+  "build": 13,
   "channel": "stable",
   "released": "2026-09-30",
   "features": [
@@ -34,6 +34,11 @@
     "v12-student-self-view",
     "v12-join-jitter-storm-protection",
     "v12-roster-throttle-rtt-badges",
-    "v12-stun-diversity"
+    "v12-stun-diversity",
+    "v13-tcp-tls-turn-builtin",
+    "v13-adaptive-transport-retry",
+    "v13-hotspot-timeout-pool",
+    "v13-student-page-chip-fix",
+    "v13-student-top-safe-area"
   ]
 }

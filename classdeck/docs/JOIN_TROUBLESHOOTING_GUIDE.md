@@ -1,4 +1,4 @@
-# ClassDeck — Join Troubleshooting & Relay Setup Guide (v12)
+# ClassDeck — Join Troubleshooting & Relay Setup Guide (v13)
 
 **Who this is for:** the teacher. Everything here is free. No servers to rent,
 no credit card, no command line required (one optional command is included for
@@ -25,6 +25,28 @@ credentials inside the app** (section 3).
 > free STUN servers + three OpenRelay TURN ports, retries automatically with
 > jittered timing, and the connection doctor runs after two failed attempts.
 > A relay is the *guarantee* for the strictest networks, not a requirement.
+
+### What changed in v13 — hotspot Wi-Fi students
+
+Round-5 field reports showed the exact split: students on **mobile data**
+joined fine, but students on a **phone-hotspot Wi-Fi with no data of their
+own** failed. Those networks block UDP outright (some also inspect and
+throttle packets). v13 ships three fixes, all automatic, all free:
+
+1. **TCP and TLS relay entries are now built in** — OpenRelay TURN over
+   port 80 TCP, port 443, and TURN-over-TLS on 443 (`turns:`). These ports
+   look like ordinary web traffic, so hotspot firewalls and DPI let them
+   through. Nobody has to configure anything.
+2. **Adaptive retry** — if the first join attempt fails, the student's page
+   automatically retries with **TCP/TLS tried first** (`window.__cdPreferTcp`)
+   and says so on screen ("retrying over web-friendly ports…"). The teacher
+   does nothing; the student just presses Join again if even told to.
+3. **20-second handshake window + bigger candidate pool** — hotspot NATs are
+   slow to open; the join no longer gives up before they finish.
+
+In short: **mobile data and hotspot Wi-Fi both work without setting up a
+relay server.** Sections 2–5 below remain for teachers who want the
+ belt-and-braces guarantee of their own relay on the strictest networks.
 
 ---
 

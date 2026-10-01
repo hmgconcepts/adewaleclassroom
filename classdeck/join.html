@@ -23,6 +23,14 @@
 /* Install banner for join page too */
 .join-install-banner { display:flex; align-items:center; gap:8px; background:linear-gradient(135deg,#1e2a78,#4f6ef7); color:#fff; border-radius:10px; padding:8px 12px; margin-bottom:8px; font-size:12px; cursor:pointer }
 .join-install-banner:hover { opacity:.92 }
+/* v13: nothing may cover the student's top controls.
+   - every fixed top element clears the notch / OS status bar via safe-area
+   - student drawers (z-6500) sit above any portal bar (z-5000) that a
+     future integration might inject */
+#stageStatus { top: calc(14px + env(safe-area-inset-top, 0px)) !important; z-index: 700; }
+#sCapBadge   { top: calc(10px + env(safe-area-inset-top, 0px)) !important; }
+#teacherPip  { top: 70px; }
+#stuControls { bottom: calc(14px + env(safe-area-inset-bottom, 0px)); }
 </style>
 </head>
 <body>
@@ -248,13 +256,13 @@
   </div>
 </div>
 
-<script src="vendor/peerjs.min.js?v=44"></script>
-<script src="js/common.js?v=44"></script>
-<script src="js/config.js?v=44"></script>
-<script src="js/portal-bridge.js?v=44"></script>
-<script src="js/license.js?v=44"></script>
-<script src="js/rtc.js?v=44"></script>
-<script src="js/join.js?v=44"></script>
+<script src="vendor/peerjs.min.js?v=45"></script>
+<script src="js/common.js?v=45"></script>
+<script src="js/config.js?v=45"></script>
+<script src="js/portal-bridge.js?v=45"></script>
+<script src="js/license.js?v=45"></script>
+<script src="js/rtc.js?v=45"></script>
+<script src="js/join.js?v=45"></script>
 <script>
 /* Issue #9: force install banner on the join page (re-appears until installed). */
 function joinInstall() {

@@ -12,7 +12,9 @@
 "use strict";
 
 const RTC_PREFIX = "hmg-classdeck-v1-";
-const RTC_HANDSHAKE_TIMEOUT = 15000;
+const RTC_HANDSHAKE_TIMEOUT = 20000;   /* v13: hotspot ICE is slow — 15s cut off
+                                          some phones whose candidates only arrive
+                                          after a STUN/TURN timeout round. */
 
 function safeBoardStrokes(raw, maxStrokes = 40) {
   if (!Array.isArray(raw)) return [];
@@ -222,17 +224,35 @@ function cdCollectIceServers() {
     { urls: ["stun:stun1.l.google.com:19302"] },
     { urls: ["stun:stun.cloudflare.com:3478"] },
     { urls: ["stun:stun.relay.metered.ca:80"] },   /* metered.ca: free unlimited STUN */
-    // Free public TURN (OpenRelay) – best-effort fallback for restrictive Wi-Fi / mobile data.
+    /* Free public TURN (OpenRelay) – best-effort fallback for restrictive
+       Wi-Fi / mobile data. v13 adds the TCP + TLS variants: hotspots that
+       block UDP (the "no mobile data, on someone's Wi-Fi" case) still pass
+       TCP :80, and turns: over 443 looks like ordinary HTTPS to hotspots
+       with deep-packet inspection. UDP entries first for speed on normal
+       networks; retries flip the order (see preferTcp below). */
     { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
     { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
-    { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
+    { urls: "turn:openrelay.metered.ca:80?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
+    { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
+    { urls: "turns:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
   ], "builtin");
+  /* v13 ADAPTIVE TRANSPORT: the student join loop sets window.__cdPreferTcp
+     once the first attempt fails — every retry then puts TCP/TLS relays at
+     the TOP of the list, so a UDP-blocking hotspot gets a TCP path on the
+     very next try instead of repeating the same failure. ICE still tries
+     every server; only the gathering/priority order changes. */
+  const preferTcp = (typeof window !== "undefined" && window.__cdPreferTcp) || false;
+  if (preferTcp) {
+    const isTcpish = (s) => s.urls.some((u) => /^turns:/i.test(u) || /transport=tcp/i.test(u));
+    const tcp = servers.filter(isTcpish), rest = servers.filter((s) => !isTcpish(s));
+    return tcp.concat(rest);
+  }
   return servers;
 }
 function peerConfig() {
   return {
     debug: 1,
-    config: { iceCandidatePoolSize: 4, iceServers: cdCollectIceServers() }
+    config: { iceCandidatePoolSize: 6, iceServers: cdCollectIceServers() }
   };
 }
 /* Back-compat alias: older code (and the WHIP relay publisher) still

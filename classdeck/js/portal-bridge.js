@@ -72,8 +72,25 @@
     } catch (e) {}
   }
 
+  function isStudentJoinPage() {
+    /* v13 FIX (reported): on the STUDENT join page the fixed chip sat at
+       top:0 z-index 5000 and covered the student's own top controls — the
+       stage status chips, the top-anchored chat drawer and its ✕ close
+       button, and the teacher PiP. The chip exists for STAFF navigating
+       back to the studio; students never need it. Do not render it here. */
+    try {
+      if (/join\.html?$/i.test(w.location.pathname)) return true;
+      if (d.getElementById('stuControls') || d.getElementById('joinGate')) return true;
+    } catch (e) {}
+    return false;
+  }
+
   function installChip() {
     if (d.getElementById('acd-portal-chip')) return;
+    if (isStudentJoinPage()) return;              /* never on the student page */
+    try {
+      if (w.sessionStorage && w.sessionStorage.getItem('acd-chip-dismissed')) return;
+    } catch (e) {}
     var b = (w.CLASSDECK && w.CLASSDECK.BRAND) || {};
     var p = readPractice() || {};
     var studio = p.name || b.studioName || 'ADEWALE CLASSROOM';
@@ -86,7 +103,12 @@
       '<span style="opacity:.85">· Classroom Deck</span>' +
       (hasSbSession() ? '<span style="color:#bbf7d0;margin-left:6px">· signed in</span>' : '') +
       '<span style="flex:1"></span>' +
-      '<a href="../sessions.html" style="color:#e0e7ff;text-decoration:none;font-size:11px">Sessions</a>';
+      '<a href="../sessions.html" style="color:#e0e7ff;text-decoration:none;font-size:11px">Sessions</a>' +
+      /* v13: dismissible — a bar that cannot be dismissed can always end up
+         covering something on some odd device. One tap hides it for the
+         session; teachers get it back on the next visit. */
+      '<button id="acd-chip-x" title="Hide this bar (it comes back next visit)" aria-label="Hide bar" ' +
+      'style="background:none;border:0;color:#fff;opacity:.75;font:700 14px/1 system-ui,sans-serif;cursor:pointer;padding:2px 6px">✕</button>';
     chip.setAttribute('role', 'navigation');
     chip.style.cssText = [
       'position:fixed', 'left:0', 'right:0', 'top:0',
@@ -99,6 +121,17 @@
       'pointer-events:auto'
     ].join(';');
     d.body.appendChild(chip);
+    try {
+      d.getElementById('acd-chip-x').onclick = function (ev) {
+        ev.preventDefault(); ev.stopPropagation();
+        try { w.sessionStorage.setItem('acd-chip-dismissed', '1'); } catch (e) {}
+        var st = d.getElementById('acd-chip-style');
+        if (st) st.remove();
+        chip.remove();
+        try { d.documentElement.style.removeProperty('--acd-chip-h'); } catch (e) {}
+        try { d.body.style.paddingTop = ''; } catch (e) {}
+      };
+    } catch (e) {}
     // Push the whole studio down so topbar buttons stay clickable
     try {
       d.documentElement.style.setProperty('--acd-chip-h', '28px');
