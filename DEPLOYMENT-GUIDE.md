@@ -315,8 +315,11 @@ reads **V43**. On an existing project, run
 `database/v43-engagement-cohorts-library-blog.sql` once (it is idempotent —
 `create … if not exists` / `create or replace` throughout).
 
-**Round-5 front-end notes:** every platform page now loads `?v=44`; the
-ClassDeck pages load `?v=45` (v13: TCP/TLS relay entries for hotspot Wi-Fi
-students, adaptive retry, student-page chip fix). The blog
+**Round-5/6 front-end notes:** every platform page loads `?v=44`; the
+ClassDeck pages load `?v=46` (v13: TCP/TLS relay entries for hotspot Wi-Fi
+students, adaptive retry, student-page chip fix. v13.1: the device
+remembers the route that worked — hotspot students join first-try on every
+later class — and the chip is notch/safe-area aware and folds compact on
+phones). The blog
 (`assets/js/blog.js` V44) is white-label — it reads the practice name from
 `[data-practice-name]`, so the same file serves both products.
