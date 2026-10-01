@@ -77,9 +77,12 @@
        top:0 z-index 5000 and covered the student's own top controls — the
        stage status chips, the top-anchored chat drawer and its ✕ close
        button, and the teacher PiP. The chip exists for STAFF navigating
-       back to the studio; students never need it. Do not render it here. */
+       back to the studio; students never need it. Do not render it here.
+       v13.1: the path match now also covers trailing slashes and bare
+       /join (pretty-URL hosts), so no student entry variant slips through. */
     try {
-      if (/join\.html?$/i.test(w.location.pathname)) return true;
+      if (/join(\.html?)?\/?$/i.test(w.location.pathname)) return true;
+      if (/\/join\/|^\/join$/i.test(w.location.pathname)) return true;
       if (d.getElementById('stuControls') || d.getElementById('joinGate')) return true;
     } catch (e) {}
     return false;
@@ -103,22 +106,25 @@
       '<span style="opacity:.85">· Classroom Deck</span>' +
       (hasSbSession() ? '<span style="color:#bbf7d0;margin-left:6px">· signed in</span>' : '') +
       '<span style="flex:1"></span>' +
-      '<a href="../sessions.html" style="color:#e0e7ff;text-decoration:none;font-size:11px">Sessions</a>' +
+      '<a href="../sessions.html" class="acd-chip-sess" style="color:#e0e7ff;text-decoration:none;font-size:11px">Sessions</a>' +
       /* v13: dismissible — a bar that cannot be dismissed can always end up
          covering something on some odd device. One tap hides it for the
          session; teachers get it back on the next visit. */
       '<button id="acd-chip-x" title="Hide this bar (it comes back next visit)" aria-label="Hide bar" ' +
       'style="background:none;border:0;color:#fff;opacity:.75;font:700 14px/1 system-ui,sans-serif;cursor:pointer;padding:2px 6px">✕</button>';
     chip.setAttribute('role', 'navigation');
+    /* v13.1: safe-area aware — on notched phones the bar must sit BELOW the
+       OS status bar/notch (env(safe-area-inset-top)), never on top of it,
+       and the pushed-down studio must be offset by the same amount. */
     chip.style.cssText = [
       'position:fixed', 'left:0', 'right:0', 'top:0',
-      'height:28px', 'z-index:5000',
+      'height:calc(28px + env(safe-area-inset-top,0px))', 'z-index:5000',
       'display:flex', 'align-items:center', 'gap:8px', 'flex-wrap:nowrap',
-      'padding:0 10px',
+      'padding:0 10px', 'padding-top:env(safe-area-inset-top,0px)',
       'background:linear-gradient(135deg,#0506ae,#964eec)',
       'color:#fff', 'font:600 12px/28px system-ui,sans-serif',
       'box-shadow:0 2px 10px rgba(5,6,174,.3)',
-      'pointer-events:auto'
+      'pointer-events:auto', 'box-sizing:border-box'
     ].join(';');
     d.body.appendChild(chip);
     try {
@@ -134,18 +140,25 @@
     } catch (e) {}
     // Push the whole studio down so topbar buttons stay clickable
     try {
-      d.documentElement.style.setProperty('--acd-chip-h', '28px');
+      d.documentElement.style.setProperty('--acd-chip-h', 'calc(28px + env(safe-area-inset-top,0px))');
       var st = d.getElementById('acd-chip-style');
       if (!st) {
         st = d.createElement('style');
         st.id = 'acd-chip-style';
         st.textContent = [
-          'body{padding-top:28px !important; box-sizing:border-box;}',
-          '.studio{height:calc(100dvh - 28px) !important;}',
+          'body{padding-top:calc(28px + env(safe-area-inset-top,0px)) !important; box-sizing:border-box;}',
+          '.studio{height:calc(100dvh - 28px - env(safe-area-inset-top,0px)) !important;}',
           /* ensure topbar stays above workspace, below chip only */
           '.topbar{position:relative;z-index:20;}',
           '.topbar .btn{pointer-events:auto !important; position:relative; z-index:21;}',
-          '#authGate,.auth-gate{display:none !important; pointer-events:none !important;}'
+          '#authGate,.auth-gate{display:none !important; pointer-events:none !important;}',
+          /* v13.1: compact on phones — smaller type, tighter gaps, and the
+             secondary Sessions link folds away so the brand + ✕ never
+             crowd or wrap over the topbar controls below. */
+          '@media (max-width:520px){',
+          '  #acd-portal-chip{font-size:11px;line-height:24px;gap:6px;}',
+          '  #acd-portal-chip .acd-chip-sess{display:none;}',
+          '}'
         ].join('\n');
         d.head.appendChild(st);
       }

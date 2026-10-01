@@ -89,6 +89,38 @@ updateJoinDiagnostics();
 ["#inRoom", "#inName", "#inPin"].forEach((sel) => $(sel) && $(sel).addEventListener("input", updateJoinDiagnostics));
 
 /* ---------- join flow ---------- */
+/* v13.1 TRANSPORT MEMORY (boot): if this device ever needed the TCP/TLS
+   route to get into a class (Wi-Fi hotspot with no mobile data of its
+   own), it starts with that route already preferred. The student's FIRST
+   attempt then succeeds instead of burning a UDP-first failure + retry
+   every single class. Cleared automatically if the network changes and a
+   plain join ever succeeds first-try again (rememberTransport stores
+   "udp" on any clean non-TCP success). */
+try { if (Store.get("ice_pref", "") === "tcp") window.__cdPreferTcp = true; } catch (e) {}
+
+/* v13.1: record which transport actually worked, so this device never
+   repeats the one that failed. Only CLEAR signals are stored:
+     • a clean success while UDP-first was in effect      → "udp"
+     • a TCP-first success that followed a TRANSPORT-class
+       failure ("Could not reach", "closed before
+       admission", signalling errors)                      → "tcp"
+   A success after "class not live" failures stores NOTHING — that says
+   nothing about the network, and a wrong "tcp" would route a healthy
+   student through the relay unnecessarily. */
+function isTransportFailure(msg) {
+  return /Could not reach|closed before admission|Could not connect|signalling|classroom service/i.test(String(msg || ""));
+}
+function rememberTransport(lastFailure) {
+  try {
+    /* the preference IN EFFECT for the attempt that just succeeded —
+       stored memory counts even when the runtime flag was never flipped
+       (rtc.js orders the ICE list from either source) */
+    const eff = !!(window.__cdPreferTcp || Store.get("ice_pref", "") === "tcp");
+    if (!eff) { Store.set("ice_pref", "udp"); return; }
+    if (isTransportFailure(lastFailure)) Store.set("ice_pref", "tcp");
+  } catch (e) {}
+}
+
 $("#btnJoin").addEventListener("click", () => { lobbyOn ? stopLobby() : join(); });
 $("#inName").addEventListener("keydown", (e) => { if (e.key === "Enter" && !lobbyOn) join(); });
 
@@ -113,6 +145,7 @@ async function join() {
   sRoom = new StudentRoom(code, name, { onEvent: onEvent, pin: $("#inPin").value.trim(), tok: qs.get("tok") || "" });
   try {
     const result = await sRoom.join();
+    rememberTransport(null);   /* v13.1: a clean first-try success = this network does UDP fine */
     if (result && result.state === "waiting") {
       showWaitingState(code, name);
     } else {
@@ -157,13 +190,14 @@ function lobbyReasonText(why, code) {
   if (/Class not found|not be live|peer-unavailable/i.test(w))
     return "The class room " + code + " is not live right now (or the code is wrong). If your teacher has started, check the code with them. This page keeps retrying automatically.";
   if (/Could not reach|closed before admission|Could not connect|signalling|classroom service/i.test(w))
-    return "Your network could not reach the teacher's device directly — this usually happens on Wi-Fi hotspots that block the direct path (mobile data almost always works). If you are inside WhatsApp/Facebook/Instagram, tap the “Open in browser” button below and reload. This page keeps retrying automatically and now also tries TCP/TLS routes that pass hotspot blocks.";
+    return "Your network could not reach the teacher's device directly — this usually happens on Wi-Fi hotspots that block the direct path (mobile data almost always works). If you are inside WhatsApp/Facebook/Instagram, tap the “Open in browser” button below and reload. This page keeps retrying automatically, now over TCP/TLS ports that pass hotspot blocks — and once a route works, this device remembers it for every future class.";
   return "The class hasn't started yet — this page will join you automatically the moment your teacher goes live. Keep it open.";
 }
 function lobbyStatusLine(code) {
   const inApp = inAppBrowserName();
   return "🕐 Waiting for class " + code + " · attempt " + (lobbyAttempt + 1) +
-    (lobbyAttempt >= 1 ? " · 🔁 now trying TCP/TLS paths for Wi-Fi hotspots" : "") +
+    (lobbyAttempt >= 1 ? " · 🔁 now trying TCP/TLS paths for Wi-Fi hotspots"
+      : window.__cdPreferTcp ? " · 🔁 using the TCP/TLS route that worked here before" : "") +
     (inApp ? " · ⚠️ you are inside " + inApp + " — tap “Open in browser” for a reliable join" : "");
 }
 function startLobby(code, name, why) {
@@ -180,6 +214,7 @@ function startLobby(code, name, why) {
   window._wantWake = true; keepAwake(true);
   // A successful transport handshake that reports "waiting" is a real
   // waiting room, not a reason to keep opening new PeerJS connections.
+  let lastFail = why;   /* v13.1: feeds rememberTransport on success */
   lobbyTimer = setTimeout(async function tick() {
     if (!lobbyOn || gen !== lobbyGen) return;
     /* v13: first attempt = normal UDP-first; every retry flips the ICE list
@@ -197,6 +232,7 @@ function startLobby(code, name, why) {
          ONLY if this wait session was really abandoned (generation moved
          on, e.g. Stop waiting / manual re-join). */
       if (gen !== lobbyGen) { try { candidate.leave(); } catch {} return; }
+      rememberTransport(lastFail);   /* v13.1: persist the route that finally worked */
       if (result && result.state === "waiting") {
         showWaitingState(code, name);
         return;
@@ -220,6 +256,7 @@ function startLobby(code, name, why) {
       }
       if (gen !== lobbyGen) return;   /* v10: wait session abandoned */
       lobbyAttempt++;
+      lastFail = e && e.message;   /* v13.1: classify the failure for transport memory */
       /* v11: tell the student the REAL reason every time, and after two
          failures run the connection doctor once — the lobby must never
          silently repeat a false "class hasn't started". */
@@ -233,7 +270,10 @@ function startLobby(code, name, why) {
       const base = isFull ? 30000 : Math.min(12000, 4000 + lobbyAttempt * 2000);
       lobbyTimer = setTimeout(tick, Math.round(base * (0.85 + Math.random() * 0.3)));
     }
-  }, 4000);
+    /* v13.1: 2s (was 4s) — a student whose first attempt failed on a
+       hotspot gets the TCP/TLS-first retry twice as fast. Later attempts
+       keep the jittered backoff above. */
+  }, 2000);
 }
 function stopLobby() {
   lobbyOn = false;
@@ -856,6 +896,7 @@ async function attemptRejoin() {
   const code = normaliseRoomCode($("#inRoom").value);
   const name = Store.get("stuname", "Student");
   try {
+    let rejoinLastFail = null;   /* v13.1: transport memory for mid-class reconnects */
     while (stageEntered && !lobbyOn && rejoinTries < REJOIN_MAX_TRIES) {
       rejoinTries++;
       await new Promise((r) => setTimeout(r, Math.min(8000, 2000 + rejoinTries * 500)));
@@ -866,6 +907,7 @@ async function attemptRejoin() {
       try {
         const result = await candidate.join();
         if (!stageEntered) { candidate.leave(); return; }
+        rememberTransport(rejoinLastFail);   /* v13.1: the route that reconnected us is the one to keep */
         rejoinTries = 0;
         hideRejoinBanner();
         if (result && result.state === "waiting") {
@@ -880,6 +922,11 @@ async function attemptRejoin() {
           cleanupAndGate(e.message || "The teacher rejected this join request.");
           return;
         }
+        rejoinLastFail = e && e.message;   /* v13.1 */
+        /* v13.1: same adaptive escalation as the lobby — the SECOND rejoin
+           attempt onwards goes TCP/TLS-first, so a hotspot student whose
+           connection dropped reconnects on a route that can pass. */
+        if (rejoinTries >= 1) window.__cdPreferTcp = true;
       }
     }
     if (stageEntered && rejoinTries >= REJOIN_MAX_TRIES) {

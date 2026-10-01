@@ -240,8 +240,13 @@ function cdCollectIceServers() {
      once the first attempt fails — every retry then puts TCP/TLS relays at
      the TOP of the list, so a UDP-blocking hotspot gets a TCP path on the
      very next try instead of repeating the same failure. ICE still tries
-     every server; only the gathering/priority order changes. */
-  const preferTcp = (typeof window !== "undefined" && window.__cdPreferTcp) || false;
+     every server; only the gathering/priority order changes.
+     v13.1 TRANSPORT MEMORY: a device that ever needed the TCP/TLS route
+     (Wi-Fi hotspot, no mobile data of its own) remembers it in Store
+     ("ice_pref" = "tcp") and starts with it already preferred — the doomed
+     UDP-first attempt is skipped entirely on every future class. */
+  const preferTcp = (typeof window !== "undefined" && window.__cdPreferTcp) ||
+                    (Store.get("ice_pref", "") === "tcp");
   if (preferTcp) {
     const isTcpish = (s) => s.urls.some((u) => /^turns:/i.test(u) || /transport=tcp/i.test(u));
     const tcp = servers.filter(isTcpish), rest = servers.filter((s) => !isTcpish(s));

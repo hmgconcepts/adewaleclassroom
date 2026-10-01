@@ -1,4 +1,4 @@
-# ClassDeck — Join Troubleshooting & Relay Setup Guide (v13)
+# ClassDeck — Join Troubleshooting & Relay Setup Guide (v13.1)
 
 **Who this is for:** the teacher. Everything here is free. No servers to rent,
 no credit card, no command line required (one optional command is included for
@@ -47,6 +47,18 @@ throttle packets). v13 ships three fixes, all automatic, all free:
 In short: **mobile data and hotspot Wi-Fi both work without setting up a
 relay server.** Sections 2–5 below remain for teachers who want the
  belt-and-braces guarantee of their own relay on the strictest networks.
+
+### v13.1 — the device now remembers the route that worked
+
+The student's phone stores which transport finally got them into class
+(`ice_pref`). A student whose first class needed the TCP/TLS route starts
+every later class on it automatically — no failed first attempt, no
+waiting: the join simply works first-try. The memory is written only from
+clear evidence (a real network block followed by a TCP-first success), so
+a healthy network is never pushed onto the relay, and any clean first-try
+join heals a stale entry. Mid-class auto-reconnect uses the same memory
+and escalates to TCP-first after one failed attempt. Nothing to configure;
+nothing to renew.
 
 ---
 

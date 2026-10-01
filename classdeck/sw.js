@@ -8,7 +8,7 @@
    requests, making the site feel native on repeat visits.
    Bump CACHE_VERSION whenever you deploy changes.
    ============================================================ */
-const CACHE_VERSION = "hmg-classdeck-v13.0.0-hotspot-tcp-chipfix";  /* bumped: v13 TCP/TLS TURN fallbacks, adaptive retry, student-page chip fix (top icons accessible again) */
+const CACHE_VERSION = "hmg-classdeck-v13.1.0-transport-memory-chip-safearea";  /* bumped: v13.1 device remembers the TCP/TLS route that worked (hotspot Wi-Fi); chip respects the notch; faster first retry */
 
 const SHELL = [
   "./",
