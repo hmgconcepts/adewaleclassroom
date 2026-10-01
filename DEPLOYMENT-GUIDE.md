@@ -316,10 +316,13 @@ reads **V43**. On an existing project, run
 `create … if not exists` / `create or replace` throughout).
 
 **Round-5/6 front-end notes:** every platform page loads `?v=44`; the
-ClassDeck pages load `?v=46` (v13: TCP/TLS relay entries for hotspot Wi-Fi
+ClassDeck pages load `?v=47` (v13: TCP/TLS relay entries for hotspot Wi-Fi
 students, adaptive retry, student-page chip fix. v13.1: the device
 remembers the route that worked — hotspot students join first-try on every
-later class — and the chip is notch/safe-area aware and folds compact on
-phones). The blog
+later class. v13.2: the dead OpenRelay TURN entries are removed, Cloudflare
+port-53 URLs are filtered, expired relays are skipped, and Cloudflare
+credentials renew themselves — the teacher's 2-minute relay setup is
+strictly one-time. The fixed top chip is gone: an inline studio link on
+topbar pages, a bottom-corner pill elsewhere, nothing on student pages). The blog
 (`assets/js/blog.js` V44) is white-label — it reads the practice name from
 `[data-practice-name]`, so the same file serves both products.
