@@ -1,4 +1,4 @@
-# PROMPT AUDIT — Round 5 (2026-10-01)
+# PROMPT AUDIT — Rounds 5 + 6 (2026-10-01)
 
 Every binding item from the round-5 brief, traced to the exact files that
 implement it and the exact test that proves it. The QA battery lives in
@@ -93,3 +93,61 @@ argument (sign-in message never shown); heading regex in the harness itself.
 
 `node -c` clean on every touched JS file in both repos. SQL dollar-tag
 parity verified on all four schema files.
+
+---
+
+# ROUND 6 — hotspot joins & the top bar (classdeck v13.1)
+
+The two field-reported issues were re-stated; both were hardened beyond
+the v13 fixes. All work ships in `classdeck v13.1.0` (pages `?v=46`,
+service-worker cache bumped so returning devices update immediately).
+
+## Item 1 — hotspot Wi-Fi students join seamlessly, no relay setup
+
+v13 already baked free TCP/TLS TURN entries (OpenRelay :80/:443/turns:443)
+into the ICE list and flipped to TCP-first after a failed attempt. v13.1
+removes the remaining tax and closes the remaining gaps:
+
+| Upgrade | File | Verified by |
+|---|---|---|
+| **Transport memory** — a device that ever needed the TCP/TLS route remembers it (`ice_pref`) and starts every future class TCP-first; the doomed UDP-first attempt is skipped entirely | `rtc.js` (orders ICE from the store), `join.js` (restores the flag at boot) | H1–H5, H10–H11 |
+| **Honest classification** — only a TCP-first success that followed a real transport failure ("Could not reach", "closed before admission", signalling) stores `tcp`; "class not live" failures never poison the memory; any clean UDP-first success stores `udp` and heals a stale entry | `join.js` `rememberTransport()`/`isTransportFailure()` | H7, H14, H15 |
+| **Faster escalation** — first lobby retry at 2s (was 4s); later retries keep jittered backoff | `join.js` `startLobby()` | H16 |
+| **Mid-class rejoin escalates too** — the auto-reconnect loop now flips TCP-first after one failed attempt and feeds the same transport memory | `join.js` `attemptRejoin()` | H17–H18 |
+| **Returning-device status line** says "🔁 using the TCP/TLS route that worked here before" | `join.js` `lobbyStatusLine()` | H5 |
+| End-to-end hotspot journey: UDP-first fail → auto-retry TCP-first → admitted → memory saved → next class instant | all | H6–H11 |
+| Teacher + rejoin paths read the stored preference directly (not just the runtime flag) | `rtc.js` | H19 |
+
+## Item 2 — the "ADEWALE CLASSROOM · Classroom Deck" top bar never blocks a student's icons
+
+v13 suppressed the chip on student pages and made it dismissible. v13.1
+completes the hardening:
+
+| Upgrade | File | Verified by |
+|---|---|---|
+| Student suppression covers every entry variant — `join.html`, `join.htm`, `/join/`, `/join`, `?query` and any page carrying `#joinGate`/`#stuControls` | `portal-bridge.js` `isStudentJoinPage()` | C1 (6 paths) |
+| Chip is **notch/safe-area aware** — height and body offset are `calc(28px + env(safe-area-inset-top,0px))` so it never sits under the OS status bar on phones | `portal-bridge.js` | C2 |
+| **Compact on phones** — `@media (max-width:520px)` shrinks type/gaps and folds the secondary Sessions link away so nothing crowds the topbar | `portal-bridge.js` | C2 |
+| Studio height compensates chip + notch; topbar buttons keep pointer-events | `portal-bridge.js` | C2 |
+| Dismiss (✕) clears chip + style + CSS var, remembered per session | `portal-bridge.js` | C2 |
+| join.html's own fixed tops sit below the notch (z-700) and above the home indicator | `join.html` | C3 |
+
+## Item 3 — every file updated across all repos
+
+`classdeck v13.1.0` synced byte-identical to `tutoringconnect` (rtc.js,
+join.js, portal-bridge.js, all 11 HTML pages `?v=46`, version.json,
+sw.js cache string). One pre-existing flaky v12 test (class-full 30s
+jittered poll vs a fixed 31s wait) was de-flaked to wait for the outcome.
+
+## Round-6 QA tally (per repo, both repos green)
+
+    v11 regression  24 ✓      v12 features    34 ✓   (de-flaked, 10/10 stable)
+    captains/scale  21 ✓      settings        23 ✓
+    blog V44        48 ✓      roster console  15 ✓
+    work board      16 ✓      hotspot v13.1   19 ✓   (NEW)
+    chip v13.1      20 ✓      ─────────────────────
+                               220/220 per repo × 2 repos
+
+**Deployment note:** the fixes live in the workspace + ZIPs. The live
+site only changes after the new build is uploaded and redeployed — a
+device that still shows the old behaviour is serving the old snapshot.
