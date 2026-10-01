@@ -1047,6 +1047,11 @@ const App = {
       const hw = (data.homework || []).filter(x => String(x.status || '') !== 'marked');
       const exams = data.exams || [];
       const reading = (data.reading || []).filter(x => String(x.status || 'open') === 'open');
+      /* v43: the class library/e-resources aimed at this learner's classes,
+         and the learner's own class chips (kind shows group vs cohort). */
+      const library = (data.library || []).concat(data.resources || []);
+      const myEngagements = data.engagements || [];
+      const KIND_LABEL = { one_on_one: '1:1', group: 'group', cohort: 'cohort' };
       const today = new Date(); today.setHours(0, 0, 0, 0);
       const chip = (txt, tone) => '<span class="badge" style="margin-left:6px;background:' + (tone === 'ok' ? '#dcfce7' : tone === 'warn' ? '#fef3c7' : '#f1f5f9') + ';color:#0f172a">' + esc(txt) + '</span>';
       const dueLabel = d => {
@@ -1061,13 +1066,19 @@ const App = {
         (sub ? '<div class="muted" style="font-size:.82rem">' + esc(sub) + '</div>' : '') + '</div>' +
         (right || '') + (action || '') + '</div>';
       let html = '';
-      if (!hw.length && !exams.length && !reading.length) {
-        html = '<p class="muted">Nothing due right now — homework, quizzes and reading appear here the moment your tutor assigns them to you or your group. 🎉</p>';
+      if (myEngagements.length) {
+        html += '<div style="margin-bottom:10px"><b>🏫 My classes</b>' +
+          myEngagements.map(e => '<span class="badge" style="margin-left:6px;background:#eef2ff;color:#3730a3">' +
+            esc(e.name) + (e.kind && KIND_LABEL[e.kind] ? ' · ' + KIND_LABEL[e.kind] : '') + (e.subject ? ' · ' + esc(e.subject) : '') + '</span>').join('') +
+          '</div>';
+      }
+      if (!hw.length && !exams.length && !reading.length && !library.length) {
+        html += '<p class="muted">Nothing due right now — homework, quizzes, reading and class library items appear here the moment your tutor assigns them to you or your class. 🎉</p>';
       } else {
         if (hw.length) {
           html += '<div style="margin-bottom:10px"><b>📝 Homework</b>' + chip(hw.length + ' to do', 'warn') + '</div>' +
-            hw.slice(0, 8).map(a => row('📝', a.title,
-              (a.engagement || '') + (a.group ? ' · whole group' : ' · set for you'),
+            hw.slice(0, 8).map(a => row(a.mode === 'physical' ? '📄' : '📝', a.title,
+              (a.engagement || '') + (a.group ? ' · whole class' : ' · set for you') + (a.mode === 'physical' ? ' · 📄 hand in on paper' : ''),
               a.due ? '<div style="font-size:.82rem;text-align:right"><b>' + esc(dueLabel(a.due)) + '</b><br><span class="muted">' + esc(String(a.due).slice(0, 10)) + '</span></div>' : '',
               '<span class="badge">' + esc(a.status || 'set') + '</span>')).join('');
         }
@@ -1083,6 +1094,14 @@ const App = {
             reading.slice(0, 5).map(r => row('📖', r.title, r.engagement || '',
               r.due ? '<div style="font-size:.82rem"><b>' + esc(dueLabel(r.due)) + '</b></div>' : '',
               '<a class="btn btn-outline btn-sm" href="reading.html">Open</a>')).join('');
+        }
+        if (library.length) {
+          const KIND_ICON = { book: '📚', paper: '📃', video: '🎬', worksheet: '✍️', other: '🔗' };
+          html += '<div style="margin-bottom:10px;margin-top:14px"><b>📚 Class library</b>' + chip(library.length + ' for your class') + '</div>' +
+            library.slice(0, 8).map(x => row(KIND_ICON[x.kind] || '🔗', x.title,
+              (x.engagement || '') + (x.subject ? ' · ' + esc(x.subject) : '') + (x.source === 'eresource' ? ' · e-resource' : ''),
+              '',
+              '<a class="btn btn-primary btn-sm" href="' + esc(x.url || '#') + '" target="_blank" rel="noopener">Open ➜</a>')).join('');
         }
       }
       if (data.next_class && data.next_class.starts) {

@@ -51,7 +51,7 @@ const CRUD = {
     ]},
     engagements: { table: 'engagements', title: 'Engagement', cols: [
       { key: 'name', label: 'Name', type: 'text', required: true, help: 'e.g. Ama — IGCSE Maths 1:1, or SAT Weekend Group' },
-      { key: 'kind', label: 'Kind', type: 'select', options: ['one_on_one','group'], required: true },
+      { key: 'kind', label: 'Kind', type: 'select', options: ['one_on_one','group','cohort'], required: true, help: '1:1 = one student · group = a small class · cohort = a whole class / year arm (e.g. JSS 2 Gold)' },
       { key: 'subject', label: 'Subject', type: 'ref', refTable: 'subjects', refValue: 'name' },
       { key: 'exam_board', label: 'Exam board / target', type: 'text', help: 'WAEC, IGCSE, SAT, none…' },
       { key: 'methodology_id', label: 'Methodology', type: 'ref', refTable: 'methodologies', refValue: 'name', refStore: 'id' },
@@ -81,9 +81,9 @@ const CRUD = {
       { key: 'photo_url', label: 'Photo (Drive link)', type: 'text' },
       { key: 'status', label: 'Status', type: 'select', options: ['active','paused','alumni'] }
     ]},
-    groups: { table: 'engagements', title: 'Group', defaultFilters: { kind: 'group' }, cols: [
-      { key: 'name', label: 'Group name', type: 'text', required: true },
-      { key: 'kind', label: 'Kind', type: 'select', options: ['group'] },
+    groups: { table: 'engagements', title: 'Group / cohort', defaultFilters: { kind: 'group' }, cols: [
+      { key: 'name', label: 'Group / cohort name', type: 'text', required: true },
+      { key: 'kind', label: 'Kind', type: 'select', options: ['group','cohort'], help: 'group = small class · cohort = whole class / year arm' },
       { key: 'subject', label: 'Subject', type: 'lookup', lookupTable: 'subjects', lookupValue: 'name', help: 'Pick a subject you teach.' },
       { key: 'capacity', label: 'Capacity', type: 'number' },
       { key: 'status', label: 'Status', type: 'select', options: ['active','paused','completed'] }
@@ -231,9 +231,10 @@ const CRUD = {
       { key: 'covered', label: 'Covered', type: 'checkbox' }
     ]},
     assignments: { table: 'assignments', title: 'Homework', cols: [
-      { key: 'engagement_id', label: 'Engagement', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id', required: true },
-      { key: 'learner_id', label: 'Learner (blank = whole group)', type: 'ref', refTable: 'learners', refValue: 'full_name', refStore: 'id' },
+      { key: 'engagement_id', label: 'Class / group / cohort', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id', required: true, help: 'Every active student in this class sees the homework on their dashboard automatically.' },
+      { key: 'learner_id', label: 'Learner (blank = whole class)', type: 'ref', refTable: 'learners', refValue: 'full_name', refStore: 'id' },
       { key: 'title', label: 'Title', type: 'text', required: true },
+      { key: 'mode', label: 'How it is done', type: 'select', options: ['digital','physical'], help: 'digital = student submits a link online · physical = handed in on paper, you record the score only' },
       { key: 'due_on', label: 'Due', type: 'date' },
       { key: 'max_score', label: 'Max score', type: 'number' },
       { key: 'score', label: 'Score', type: 'number' },
@@ -456,13 +457,15 @@ const CRUD = {
       { key: 'author', label: 'Author / source', type: 'text' },
       { key: 'url', label: 'Drive / web link', type: 'text', required: true },
       { key: 'subject', label: 'Subject', type: 'lookup', lookupTable: 'subjects', lookupValue: 'name', help: 'Pick a subject you teach.' },
-      { key: 'kind', label: 'Kind', type: 'select', options: ['book','paper','video','worksheet','other'] }
+      { key: 'kind', label: 'Kind', type: 'select', options: ['book','paper','video','worksheet','other'] },
+      { key: 'engagement_id', label: 'Class / group / cohort (who sees it)', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id', help: 'Leave blank for the studio-wide public shelf. Pick a class and ONLY its students see this item on their dashboard — students in other classes never do. Only you (and the admin) can edit it afterwards.' }
     ]},
     eresources: { table: 'eresources', title: 'E-resource', cols: [
       { key: 'title', label: 'Title', type: 'text', required: true },
       { key: 'subject', label: 'Subject', type: 'lookup', lookupTable: 'subjects', lookupValue: 'name', help: 'Pick a subject you teach.' },
       { key: 'url', label: 'Link', type: 'text', required: true },
-      { key: 'notes', label: 'Notes', type: 'textarea' }
+      { key: 'notes', label: 'Notes', type: 'textarea' },
+      { key: 'engagement_id', label: 'Class / group / cohort (who sees it)', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id', help: 'Leave blank for the studio-wide shelf. Pick a class and only its students see it.' }
     ]},
     lms: { table: 'lms_lessons', title: 'LMS lesson', cols: [
       { key: 'engagement_id', label: 'Engagement', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id' },
