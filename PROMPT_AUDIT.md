@@ -151,3 +151,61 @@ jittered poll vs a fixed 31s wait) was de-flaked to wait for the outcome.
 **Deployment note:** the fixes live in the workspace + ZIPs. The live
 site only changes after the new build is uploaded and redeployed — a
 device that still shows the old behaviour is serving the old snapshot.
+
+
+---
+
+# ROUND 7 — root causes found by research, not guesswork (classdeck v13.2)
+
+The same two symptoms survived two rounds of fixes, so this round started
+with research instead of code. Web verification (2026-10-01) found the
+REAL causes — both were outside anything the earlier rounds touched.
+
+## Item 1 & 2 — hotspot students blocked, with AND without the Cloudflare relay
+
+| Root cause (verified) | Evidence | Fix | Verified by |
+|---|---|---|---|
+| **The free OpenRelay TURN servers are dead.** OpenRelay now requires an account + API key; the shared `openrelayproject` credentials baked in since v13 answer 401. Five dead relays poisoned every join's ICE gathering with handshake timeouts. | dev.to OpenRelay list (Jun 2026): "to prevent abuse you need to create an account"; metered.ca's own pages now route TURN through signup | Removed all five dead entries. Built-ins are now three free STUN servers (Google · Cloudflare · metered) — honest, keyless, fast-gathering | RELAY C1–C2 |
+| **Cloudflare's response contains port-53 URLs that browsers REFUSE.** Every student behind a configured Cloudflare relay paid a TURN-gathering timeout per :53 URL — "relay set up, students blocked". | Cloudflare Realtime docs (Sep 2026): "The alternate port 53 is known to be blocked by web browsers… filter out the URL with port 53" | `cdStripPort53()` + a `:53` filter in the normaliser — no path can store or run one (5349 stays) | RELAY A1–A5, B1, E2, F3 |
+| **Cloudflare credentials EXPIRE (ttl ≤ 24 h) and nothing renewed them.** The teacher had to "come back and press Generate again"; nobody does, so every relay student 401s the next day. | Cloudflare docs: credentials are short-lived by design | **Auto-renewal**: the generator now stores the key, token and expiry; `maybeRenewCloudflareRelay()` renews on studio load + hourly + whenever <2 h of life remains. One-time setup, zero maintenance | RELAY F1–F10 |
+| Expired credentials sat first in the ICE list even when dead | — | Runtime skip: an expired stored relay is dropped (with a teacher warning toast); manual pastes (no stored expiry) are always trusted | RELAY C5–C6, F7 |
+| `credentialType` (a type descriptor) was used as the TURN password | — | Normaliser only reads `credential`/`password` | RELAY B2–B3 |
+| The student-side promise "tries TCP/TLS routes" was only true with a live relay | — | Lobby + doctor messages now state exactly what helps: the free 2-minute Cloudflare relay, auto-renewed forever | HOTSPOT suite wording |
+
+**What "no relay setup" now means (the honest engineering position):**
+zero-signup public TURN no longer exists in 2026. Direct paths (STUN) work
+for mobile-data students; hotspot students need ONE relay somewhere. The
+self-contained answer shipped: the teacher's one-time 2-minute Cloudflare
+setup (free, 1 TB/mo) which the studio now maintains by itself — after
+that, hotspot students join first-try via Cloudflare's tcp:80 / turns:443
+routes (DPI/hotspot-proof), with transport memory (v13.1) making those
+routes lead on devices that ever needed them.
+
+## Item 3 — the top bar
+
+After three field reports, the fixed-position chip approach is ABOLISHED:
+**no fixed top bar exists anywhere in the deck any more.**
+
+| Page | What students/teachers get now | Why it cannot block the top icons | Verified by |
+|---|---|---|---|
+| join.html (students) | NOTHING injected, every path variant (`join.html`, `.htm`, `/join/`, `/join`, `?query`, `#joinGate` pages) | Nothing exists to block | CHIP C1 |
+| teach.html / classroom.html | An INLINE "← Studio" link appended inside the page's own `<header class="topbar">` | Participates in layout flow — inline elements cannot cover other controls | CHIP C2 |
+| other staff pages | A dismissible pill pinned to the BOTTOM-right corner, safe-area aware | A bottom-anchored element physically cannot block the top of the screen | CHIP C3 |
+
+## Item 4 — every file, both repos
+
+classdeck **v13.2.0** (pages `?v=47`, sw cache bumped, `portal-bridge.js`
+added to the offline shell): rtc.js, join.js, teach.js, portal-bridge.js,
+all 11 HTML pages, version.json, sw.js — byte-identical in both repos.
+
+## Round-7 QA tally (per repo, both repos green)
+
+    v11 regression  24 ✓   v12 features    34 ✓   captains/scale  21 ✓
+    settings        23 ✓   blog V44        48 ✓   roster console  15 ✓
+    work board      16 ✓   hotspot         19 ✓   relay v13.2     38 ✓
+    chip v13.2      20 ✓   ─────────────────────────────────────────────
+                          258/258 per repo × 2 repos
+
+**Deployment note (unchanged, and now critical):** these fixes exist in
+the workspace + ZIPs. A device still showing the old bar or the old join
+behaviour is serving an old snapshot — upload the new build and redeploy.
