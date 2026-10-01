@@ -8,7 +8,7 @@
    requests, making the site feel native on repeat visits.
    Bump CACHE_VERSION whenever you deploy changes.
    ============================================================ */
-const CACHE_VERSION = "hmg-classdeck-v13.1.0-transport-memory-chip-safearea";  /* bumped: v13.1 device remembers the TCP/TLS route that worked (hotspot Wi-Fi); chip respects the notch; faster first retry */
+const CACHE_VERSION = "hmg-classdeck-v13.2.0-dead-relay-removed-cf-autorenew-chip-gone";  /* bumped: v13.2 removed the dead OpenRelay TURN entries, auto-renews Cloudflare credentials, filters port-53 URLs, and replaced the fixed top chip with an inline/bottom studio link */
 
 const SHELL = [
   "./",
@@ -37,6 +37,7 @@ const SHELL = [
   "./js/security-config.js",
   "./js/auth.js",
   "./js/join.js",
+  "./js/portal-bridge.js",
   "./js/enhancements.js",
   "./js/generator.js",
   "./js/config.js",

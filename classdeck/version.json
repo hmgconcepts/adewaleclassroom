@@ -1,6 +1,6 @@
 {
-  "version": "13.1.0",
-  "build": 14,
+  "version": "13.2.0",
+  "build": 16,
   "channel": "stable",
   "released": "2026-09-30",
   "features": [
@@ -44,6 +44,11 @@
     "v13.1-faster-tcp-escalation-2s",
     "v13.1-rejoin-adaptive-tcp",
     "v13.1-chip-safe-area-notch",
-    "v13.1-chip-mobile-compact"
+    "v13.1-chip-mobile-compact",
+    "v13.2-dead-openrelay-entries-removed",
+    "v13.2-cloudflare-credentials-auto-renewal",
+    "v13.2-port-53-ice-urls-filtered",
+    "v13.2-expired-relay-runtime-skip",
+    "v13.2-top-chip-replaced-by-inline-or-bottom-link"
   ]
 }

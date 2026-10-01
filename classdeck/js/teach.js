@@ -2379,6 +2379,12 @@ on("#btnSettings", "click", () => {
   /* v11: relay servers (advanced) — prefill the raw JSON */
   const rl = $("#setRelay");
   if (rl) rl.value = Store.get("relay_servers", "") || "";
+  /* v13.2: prefill the Cloudflare key box too — after the one-time setup
+     the teacher never needs it again, but if they open Settings it should
+     show what the studio already has (and auto-renewal keeps it alive). */
+  const cfk = $("#setCfKey"), cft = $("#setCfToken");
+  if (cfk) cfk.value = Store.get("cf_key", "") || "";
+  if (cft) cft.value = Store.get("cf_token", "") || "";
   /* v12: large-class card state */
   const msEl2 = $("#setMaxStudents");
   if (msEl2) msEl2.value = Store.get("max_students", 300);
@@ -2399,7 +2405,7 @@ function updateRelayPreview() {
   const rl = $("#setRelay");
   const raw = rl ? rl.value.trim() : "";
   if (!raw) {
-    box.innerHTML = '<span style="opacity:.75">Using the built-in free servers (Google + Cloudflare STUN, OpenRelay TURN best-effort). Paste Cloudflare or metered.ca credentials above for a guaranteed relay.</span>';
+    box.innerHTML = '<span style="opacity:.75">Built-ins right now: free STUN (Google · Cloudflare · metered) — direct paths, which is what mobile-data students use. For a GUARANTEED route through Wi-Fi-hotspot blocks, generate Cloudflare TURN credentials below (free, 2 minutes, one time only — the studio renews them automatically afterwards and never lets them expire).</span>';
     return;
   }
   const p = cdParseRelayInput(raw);
@@ -2408,6 +2414,14 @@ function updateRelayPreview() {
     return;
   }
   let html = '<span style="color:#31c48d">✅ ' + escapeHtml(p.summary) + ' will be used by you and every student.</span>';
+  /* v13.2: show the credential's remaining life — expired relays 401 every
+     student behind them (the "Cloudflare set up but students blocked" bug). */
+  const exp = Number(Store.get("relay_expiry", 0)) || 0;
+  if (exp && raw === (Store.get("cf_generated_raw", "") || "").trim()) {
+    const left = exp - Date.now();
+    if (left <= 0) html += '<br><span style="color:var(--warn)">⚠ EXPIRED — this relay would block students. It renews automatically while the studio is open; or press Generate now.</span>';
+    else html += '<br><span style="opacity:.75">⏳ Valid for another ' + Math.max(1, Math.round(left / 3600000)) + ' h — the studio auto-renews it before it expires, so you never have to think about this again.</span>';
+  }
   for (const w of p.warnings) html += '<br><span style="color:var(--warn)">⚠ ' + escapeHtml(w) + '</span>';
   html += '<br><span style="opacity:.7">Servers: ' + p.servers.map((s) => escapeHtml(s.urls.join(", "))).join(" · ") + '</span>';
   box.innerHTML = html;
@@ -2438,17 +2452,69 @@ on("#btnCfGen", "click", async () => {
       throw new Error("Cloudflare said " + r.status + extra);
     }
     const data = await r.json();
-    const servers = data && data.iceServers ? data.iceServers : data;
-    $("#setRelay").value = JSON.stringify(servers, null, 1);
+    let servers = data && data.iceServers ? data.iceServers : data;
+    /* v13.2: Cloudflare's response includes port-53 alternates that
+       browsers REFUSE (their own docs say to filter them) — each one cost
+       every student a TURN-gathering timeout. Strip before storing. */
+    servers = cdStripPort53(servers);
+    const raw = JSON.stringify(servers, null, 1);
+    $("#setRelay").value = raw;
+    /* v13.2: remember everything needed for AUTO-RENEWAL. Cloudflare
+       credentials expire (ttl); until now the teacher had to come back and
+       press Generate again, and in the meantime every relay student was
+       401-blocked. From now on the studio renews them by itself. */
+    Store.set("cf_generated_raw", raw);
+    Store.set("relay_expiry", Date.now() + ttl * 1000);
+    Store.set("cf_key", keyId);
+    Store.set("cf_token", token);
     updateRelayPreview();
     const hrs = Math.round(ttl / 3600);
-    toast("✅ Cloudflare TURN credentials generated (" + hrs + "h). They are in the relay box — press Save. When they expire after " + hrs + "h, come back and press Generate again.", "ok", 12000);
+    toast("✅ Cloudflare TURN credentials generated (" + hrs + "h) — press Save. From now on the studio RENEWS them automatically before they expire, so you only ever do this once.", "ok", 12000);
   } catch (e) {
     toast("Could not generate (" + (e.message || "network blocked") + "). Fallback: open the guide (⚙ → “Relay setup guide”), run the curl command there, and paste its response into the relay box.", "err", 14000);
   } finally {
     btn.disabled = false; btn.textContent = old;
   }
 });
+
+/* v13.2: ZERO-MAINTENANCE Cloudflare relay. Credentials expire (ttl) and
+   an expired relay 401s every student behind it — the exact "relay set
+   up but hotspot students blocked" report. If the teacher generated
+   credentials here even once, the studio now renews them BY ITSELF:
+   on load, and again whenever fewer than two hours of life remain.
+   The stored set keeps working until a renewal succeeds, so an offline
+   day never leaves students stranded. */
+async function maybeRenewCloudflareRelay(verbose) {
+  try {
+    const keyId = Store.get("cf_key", "") || "";
+    const token = Store.get("cf_token", "") || "";
+    if (!keyId || !token) return;
+    const exp = Number(Store.get("relay_expiry", 0)) || 0;
+    const ttl = 86400;                                   /* 24 h — the max Cloudflare allows */
+    if (!verbose && exp && exp - Date.now() > 2 * 60 * 60 * 1000) return;   /* plenty left */
+    const r = await fetch("https://rtc.live.cloudflare.com/v1/turn/keys/" + encodeURIComponent(keyId) + "/credentials/generate-ice-servers", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify({ ttl: ttl })
+    });
+    if (!r.ok) {
+      if ((r.status === 401 || r.status === 403) && exp && Date.now() > exp) {
+        toast("⚠️ The Cloudflare relay expired and its key was refused — students on strict networks may be blocked until you paste a fresh API token in ⚙ Settings → Relay.", "err", 14000);
+      }
+      return;
+    }
+    const data = await r.json();
+    let servers = data && data.iceServers ? data.iceServers : data;
+    servers = cdStripPort53(servers);
+    const raw = JSON.stringify(servers, null, 1);
+    Store.set("relay_servers", raw);
+    Store.set("cf_generated_raw", raw);
+    Store.set("relay_expiry", Date.now() + ttl * 1000);
+    if (verbose) toast("🔄 Cloudflare relay credentials renewed — hotspot students keep getting through.", "ok", 6000);
+  } catch (e) { /* offline / blocked: the stored set keeps serving until it expires */ }
+}
+maybeRenewCloudflareRelay(false);
+setInterval(() => maybeRenewCloudflareRelay(false), 60 * 60 * 1000);   /* re-check hourly while the studio is open */
 
 /* Real TURN test: gather RELAY-ONLY candidates. If this passes, students on
    even the strictest mobile network can get through. Runs entirely in the
@@ -2544,6 +2610,11 @@ on("#setSave", "click", () => {
         return;
       }
       Store.set("relay_servers", parsed.json);
+      /* v13.2: the expiry belongs ONLY to the credentials the generator
+         produced. If the teacher pasted something else (metered.ca, a
+         manual Cloudflare response), drop the stored expiry so the
+         runtime never skips a relay that may still be perfectly good. */
+      if (parsed.json !== Store.get("cf_generated_raw", "")) Store.set("relay_expiry", 0);
       let msg = "📶 Relay saved: " + parsed.summary + ". Used by you AND your students on their next join.";
       if (parsed.warnings.length) msg += " ⚠ " + parsed.warnings[0];
       toast(msg, "ok", 10000);

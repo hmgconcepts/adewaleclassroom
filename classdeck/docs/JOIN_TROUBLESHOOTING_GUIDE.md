@@ -1,4 +1,4 @@
-# ClassDeck — Join Troubleshooting & Relay Setup Guide (v13.1)
+# ClassDeck — Join Troubleshooting & Relay Setup Guide (v13.2)
 
 **Who this is for:** the teacher. Everything here is free. No servers to rent,
 no credit card, no command line required (one optional command is included for
@@ -198,3 +198,30 @@ struggles. v12 gives you the tools, all free:
 - Free tiers (as of Sep 2026): Cloudflare TURN **1,000 GB/month** · metered.ca
   **5 GB/month** · OpenRelay best-effort, no account.
 - Full feature/fix registry: `docs/PROMPT_AUDIT.md`.
+
+
+### v13.2 — why hotspot joins failed even with the fixes (and what changed)
+
+Research (Oct 2026) found the real culprits — none of them were in the
+earlier fixes:
+
+1. **The free OpenRelay TURN servers stopped being free.** They now need
+   an account + API key; the shared credentials we shipped answered 401.
+   Every join wasted time knocking on five dead relays. v13.2 removes
+   them: the built-ins are three reliable free STUN servers, nothing else.
+2. **Cloudflare hands out port-53 URLs that browsers refuse.** Their own
+   docs say to filter them. v13.2 filters port 53 everywhere (the
+   generator, the parser, the connector) — port 5349 TLS is kept.
+3. **Cloudflare credentials expire** (max 24 h) — and until now the
+   teacher had to press Generate again every day. **v13.2 renews them
+   automatically**: on studio load, hourly, and whenever less than two
+   hours of life remains. The 2-minute setup in section 2 is now strictly
+   one-time; the studio maintains the relay by itself forever after.
+
+Practical reading of the situation: there is no longer any zero-signup
+public TURN service (Cloudflare's requires generated credentials,
+metered.ca's requires an account). So "no relay at all" can only ever
+serve students whose networks allow a direct path — that is mobile data.
+For Wi-Fi-hotspot students, do the one-time Cloudflare setup in section 2;
+after that it is fully automatic and their phones join first-try through
+the tcp:80 / turns:443 routes that hotspot firewalls and DPI let through.

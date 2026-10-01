@@ -75,15 +75,45 @@ function cdNormalizeIceEntry(e) {
     // tolerate entries pasted without the stun:/turn: scheme by people
     // copying just "host:port" — turn: is the safe assumption for relays
     const withScheme = /^stun:|^turn:|^turns:/i.test(s) ? s : (/^[a-z0-9.-]+:[0-9]+/i.test(s) ? "turn:" + s : null);
+    /* v13.2: port-53 alternates (Cloudflare includes them) are REFUSED by
+       browsers — Cloudflare's own docs say to filter them. Each one cost
+       every student a TURN-gathering timeout. */
+    if (withScheme && /:53(\?|$)/.test(withScheme)) continue;
     if (withScheme) urls.push(withScheme);
   }
   if (!urls.length) return null;
   const out = { urls };
   const username = e.username || e.user || "";
-  const credential = e.credential || e.credentialType || e.password || "";
+  /* v13.2: `credentialType` is a TYPE DESCRIPTOR (e.g. "password" or
+     {type:"password"}) — never a secret. Treating it as one produced
+     "[object Object]" / "password" as the TURN password and 401s. */
+  const credential = e.credential || e.password || "";
   if (username) out.username = String(username);
   if (credential) out.credential = String(credential);
   return out;
+}
+
+/* v13.2: strip port-53 TURN/STUN alternates from ANY list. Cloudflare's
+   generate-ice-servers response includes them and CLOUDFLARE'S OWN DOCS
+   say browsers refuse port 53 — every student paid a gathering timeout
+   per :53 URL. Used by the generator, the parser output and the
+   collector, so no path can store or run one. */
+function cdStripPort53(list) {
+  const arr = Array.isArray(list) ? list : [list];
+  return arr
+    .map((e) => {
+      if (typeof e === "string")
+        return /:53(\?|$)/.test(e) ? null : e;    /* bare "turn:host:53" strings */
+      if (!e || typeof e !== "object") return e;
+      const raw = e.urls !== undefined ? e.urls : (e.url !== undefined ? e.url : null);
+      if (raw === null || raw === undefined) return e;
+      const keep = (Array.isArray(raw) ? raw : [raw]).filter((u) => !/:53(\?|$)/.test(String(u || "")));
+      const out2 = {};
+      for (const k of Object.keys(e)) out2[k] = e[k];
+      out2.urls = keep;
+      return out2;
+    })
+    .filter((e) => e === null ? false : (typeof e === "string" ? e.length > 0 : (e && typeof e === "object" && (e.urls === undefined || (Array.isArray(e.urls) ? e.urls.length > 0 : String(e.urls).length > 0)))));
 }
 
 /* v12: parse ANYTHING a teacher might paste into Settings → Relay.
@@ -212,8 +242,18 @@ function cdCollectIceServers() {
      time (v12 fix: urls-as-array used to be silently dropped HERE too). */
   const teacherRaw = Store.get("relay_servers", "");
   if (teacherRaw && teacherRaw.trim()) {
-    const parsed = cdParseRelayInput(teacherRaw);
-    if (parsed.ok) pushAll(parsed.servers, "teacher");
+    /* v13.2: Cloudflare TURN credentials EXPIRE (the ttl chosen when they
+       were generated). An expired set 401s every student that needs the
+       relay — worse than no relay at all, because it sits at the FRONT of
+       the list and burns TURN-handshake time before failing. The teach.js
+       generator stores the expiry alongside; honour it: expired → skip the
+       teacher relay entirely and fall back to the free built-ins below. */
+    const exp = Number(Store.get("relay_expiry", 0)) || 0;
+    const stillFresh = !exp || Date.now() < exp - 5 * 60 * 1000;   /* 5-min safety margin */
+    if (stillFresh) {
+      const parsed = cdParseRelayInput(teacherRaw);
+      if (parsed.ok) pushAll(parsed.servers, "teacher");
+    }
   }
   if (window.CD_RELAY) {
     if (Array.isArray(window.CD_RELAY.iceServers)) pushAll(window.CD_RELAY.iceServers, "config");
@@ -221,21 +261,23 @@ function cdCollectIceServers() {
   }
   pushAll([
     { urls: ["stun:stun.l.google.com:19302"] },
-    { urls: ["stun:stun1.l.google.com:19302"] },
     { urls: ["stun:stun.cloudflare.com:3478"] },
-    { urls: ["stun:stun.relay.metered.ca:80"] },   /* metered.ca: free unlimited STUN */
-    /* Free public TURN (OpenRelay) – best-effort fallback for restrictive
-       Wi-Fi / mobile data. v13 adds the TCP + TLS variants: hotspots that
-       block UDP (the "no mobile data, on someone's Wi-Fi" case) still pass
-       TCP :80, and turns: over 443 looks like ordinary HTTPS to hotspots
-       with deep-packet inspection. UDP entries first for speed on normal
-       networks; retries flip the order (see preferTcp below). */
-    { urls: "turn:openrelay.metered.ca:80", username: "openrelayproject", credential: "openrelayproject" },
-    { urls: "turn:openrelay.metered.ca:443", username: "openrelayproject", credential: "openrelayproject" },
-    { urls: "turn:openrelay.metered.ca:80?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
-    { urls: "turn:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" },
-    { urls: "turns:openrelay.metered.ca:443?transport=tcp", username: "openrelayproject", credential: "openrelayproject" }
+    { urls: ["stun:stun.relay.metered.ca:80"] }
   ], "builtin");
+  /* v13.2: the OpenRelay public TURN entries (openrelayproject /
+     openrelayproject @ openrelay.metered.ca) were REMOVED. OpenRelay now
+     requires an account + API key; the old shared credentials answer 401,
+     and five dead relays cost every join seconds of ICE-gathering
+     timeouts — the exact "hotspot student stuck without relay setup"
+     symptom. Zero-signup public TURN no longer exists in 2026 (Cloudflare
+     TURN needs generated credentials; metered.ca needs an account).
+     The honest self-contained stack is therefore:
+       • built-in free STUN above (direct paths, works on mobile data),
+       • the teacher's ONE-TIME Cloudflare relay (⚙ Settings → Relay) —
+         now AUTO-RENEWED by teach.js before it can ever expire — whose
+         tcp:80 / turns:443 entries pass hotspot and DPI blocks,
+       • transport memory (v13.1) so hotspot devices lead with the
+         TCP/TLS route of whatever relay IS present. */
   /* v13 ADAPTIVE TRANSPORT: the student join loop sets window.__cdPreferTcp
      once the first attempt fails — every retry then puts TCP/TLS relays at
      the TOP of the list, so a UDP-blocking hotspot gets a TCP path on the

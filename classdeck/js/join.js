@@ -190,7 +190,7 @@ function lobbyReasonText(why, code) {
   if (/Class not found|not be live|peer-unavailable/i.test(w))
     return "The class room " + code + " is not live right now (or the code is wrong). If your teacher has started, check the code with them. This page keeps retrying automatically.";
   if (/Could not reach|closed before admission|Could not connect|signalling|classroom service/i.test(w))
-    return "Your network could not reach the teacher's device directly — this usually happens on Wi-Fi hotspots that block the direct path (mobile data almost always works). If you are inside WhatsApp/Facebook/Instagram, tap the “Open in browser” button below and reload. This page keeps retrying automatically, now over TCP/TLS ports that pass hotspot blocks — and once a route works, this device remembers it for every future class.";
+    return "Your network could not reach the teacher's device directly — this usually happens on Wi-Fi hotspots that block the direct path (mobile data almost always works). If you are inside WhatsApp/Facebook/Instagram, tap the “Open in browser” button below and reload. This page keeps retrying automatically, and once a route works this device remembers it for every future class. If it keeps failing, ask your teacher to switch on the free Cloudflare relay (⚙ Settings → Relay — two minutes, one time): that route passes hotspot blocks.";
   return "The class hasn't started yet — this page will join you automatically the moment your teacher goes live. Keep it open.";
 }
 function lobbyStatusLine(code) {
@@ -325,10 +325,10 @@ function runConnectionDoctor() {
         verdict = "❌ This network blocks WebRTC completely (no candidates at all). Switch to mobile data or another Wi-Fi network, or open the link in Chrome/Safari instead of an in-app browser.";
         color = "var(--warn)";
       } else if (found.srflx === 0 && found.relay === 0) {
-        verdict = "⚠️ Only local candidates found — this network is very restrictive and direct classroom connections will usually fail. Use mobile data, or ask your teacher to add a TURN relay in Settings → Relay.";
+        verdict = "⚠️ Only local candidates found — this network is very restrictive and direct classroom connections will usually fail. Use mobile data, or ask your teacher to switch on the free Cloudflare relay (Settings → Relay — two minutes, one time; the studio renews it automatically afterwards).";
         color = "var(--warn)";
       } else if (found.relay === 0) {
-        verdict = "ℹ️ Your network can connect directly (" + found.srflx + " public candidate(s) found). If joining still fails, the block is on the teacher's network — ask them to add a TURN relay in Settings → Relay.";
+        verdict = "ℹ️ Your network can connect directly (" + found.srflx + " public candidate(s) found). If joining still fails, the block is on the teacher's network — ask them to switch on the free Cloudflare relay (Settings → Relay).";
       } else {
         verdict = "✅ Your network supports classroom connections, including the relay (" + found.relay + " relay candidate(s)). If joining still fails, ask your teacher to check their connection or share a fresh link.";
       }

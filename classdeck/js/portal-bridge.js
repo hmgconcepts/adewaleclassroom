@@ -88,80 +88,68 @@
     return false;
   }
 
-  function installChip() {
-    if (d.getElementById('acd-portal-chip')) return;
+  /* v13.2: the chip is GONE. Three rounds of field reports showed a fixed
+     top bar — however carefully positioned — eventually covering something
+     on some device. The studio link now lives where it can NEVER cover
+     anything: inline inside the page's own topbar (it participates in the
+     layout), or as a small pill anchored to the BOTTOM corner on pages
+     without a topbar. A bottom-anchored element cannot block the top
+     icons, on any device, with or without a notch. Students get nothing
+     at all (isStudentJoinPage below). */
+  function installBackLink() {
     if (isStudentJoinPage()) return;              /* never on the student page */
     try {
-      if (w.sessionStorage && w.sessionStorage.getItem('acd-chip-dismissed')) return;
+      if (w.sessionStorage && w.sessionStorage.getItem('acd-back-dismissed')) return;
     } catch (e) {}
     var b = (w.CLASSDECK && w.CLASSDECK.BRAND) || {};
     var p = readPractice() || {};
     var studio = p.name || b.studioName || 'ADEWALE CLASSROOM';
-    var chip = d.createElement('div');
-    chip.id = 'acd-portal-chip';
-    // CRITICAL: do not cover the top toolbar. Place as a slim bar ABOVE the
-    // studio by growing --toolbar offset, with pointer-events only on links.
-    chip.innerHTML =
-      '<a href="../class-deck.html" style="color:#fff;text-decoration:none;font-weight:700">← ' + studio + '</a>' +
-      '<span style="opacity:.85">· Classroom Deck</span>' +
-      (hasSbSession() ? '<span style="color:#bbf7d0;margin-left:6px">· signed in</span>' : '') +
-      '<span style="flex:1"></span>' +
-      '<a href="../sessions.html" class="acd-chip-sess" style="color:#e0e7ff;text-decoration:none;font-size:11px">Sessions</a>' +
-      /* v13: dismissible — a bar that cannot be dismissed can always end up
-         covering something on some odd device. One tap hides it for the
-         session; teachers get it back on the next visit. */
-      '<button id="acd-chip-x" title="Hide this bar (it comes back next visit)" aria-label="Hide bar" ' +
-      'style="background:none;border:0;color:#fff;opacity:.75;font:700 14px/1 system-ui,sans-serif;cursor:pointer;padding:2px 6px">✕</button>';
-    chip.setAttribute('role', 'navigation');
-    /* v13.1: safe-area aware — on notched phones the bar must sit BELOW the
-       OS status bar/notch (env(safe-area-inset-top)), never on top of it,
-       and the pushed-down studio must be offset by the same amount. */
-    chip.style.cssText = [
-      'position:fixed', 'left:0', 'right:0', 'top:0',
-      'height:calc(28px + env(safe-area-inset-top,0px))', 'z-index:5000',
-      'display:flex', 'align-items:center', 'gap:8px', 'flex-wrap:nowrap',
-      'padding:0 10px', 'padding-top:env(safe-area-inset-top,0px)',
+
+    /* 1) teach.html / classroom.html have a real <header class="topbar">:
+          append an INLINE link — layout flow, zero coverage risk. */
+    var bar = null;
+    try { bar = d.querySelector('header.topbar') || d.querySelector('.topbar'); } catch (e) {}
+    if (bar) {
+      if (d.getElementById('acd-back-link')) return;
+      var a = d.createElement('a');
+      a.id = 'acd-back-link';
+      a.href = '../class-deck.html';
+      a.textContent = '\u2190 Studio';
+      a.title = studio + ' \u2014 back to the studio';
+      a.setAttribute('style', 'margin-left:auto;flex:0 0 auto;color:inherit;opacity:.85;text-decoration:none;font:700 12px/1 system-ui,sans-serif;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.10);white-space:nowrap');
+      try { bar.appendChild(a); } catch (e) {}
+      return;
+    }
+
+    /* 2) every other staff page: a dismissible pill pinned to the BOTTOM
+          corner \u2014 physically unable to block the top of the screen. */
+    if (d.getElementById('acd-back-pill')) return;
+    var pill = d.createElement('div');
+    pill.id = 'acd-back-pill';
+    pill.setAttribute('role', 'navigation');
+    pill.innerHTML =
+      '<a href="../class-deck.html" style="color:#fff;text-decoration:none;font-weight:700">\u2190 ' + studio + '</a>' +
+      '<button id="acd-back-x" title="Hide (it comes back next visit)" aria-label="Hide bar" ' +
+      'style="background:none;border:0;color:#fff;opacity:.75;font:700 14px/1 system-ui,sans-serif;cursor:pointer;padding:0 2px">\u2715</button>';
+    pill.style.cssText = [
+      'position:fixed', 'right:12px',
+      'bottom:calc(12px + env(safe-area-inset-bottom,0px))',
+      'z-index:4000',
+      'display:flex', 'align-items:center', 'gap:8px',
+      'padding:9px 14px', 'border-radius:999px',
       'background:linear-gradient(135deg,#0506ae,#964eec)',
-      'color:#fff', 'font:600 12px/28px system-ui,sans-serif',
-      'box-shadow:0 2px 10px rgba(5,6,174,.3)',
-      'pointer-events:auto', 'box-sizing:border-box'
+      'color:#fff', 'font:600 12px system-ui,sans-serif',
+      'box-shadow:0 4px 14px rgba(5,6,174,.35)',
+      'pointer-events:auto', 'box-sizing:border-box', 'max-width:70vw',
+      'white-space:nowrap', 'overflow:hidden', 'text-overflow:ellipsis'
     ].join(';');
-    d.body.appendChild(chip);
+    d.body.appendChild(pill);
     try {
-      d.getElementById('acd-chip-x').onclick = function (ev) {
+      d.getElementById('acd-back-x').onclick = function (ev) {
         ev.preventDefault(); ev.stopPropagation();
-        try { w.sessionStorage.setItem('acd-chip-dismissed', '1'); } catch (e) {}
-        var st = d.getElementById('acd-chip-style');
-        if (st) st.remove();
-        chip.remove();
-        try { d.documentElement.style.removeProperty('--acd-chip-h'); } catch (e) {}
-        try { d.body.style.paddingTop = ''; } catch (e) {}
+        try { w.sessionStorage.setItem('acd-back-dismissed', '1'); } catch (e) {}
+        pill.remove();
       };
-    } catch (e) {}
-    // Push the whole studio down so topbar buttons stay clickable
-    try {
-      d.documentElement.style.setProperty('--acd-chip-h', 'calc(28px + env(safe-area-inset-top,0px))');
-      var st = d.getElementById('acd-chip-style');
-      if (!st) {
-        st = d.createElement('style');
-        st.id = 'acd-chip-style';
-        st.textContent = [
-          'body{padding-top:calc(28px + env(safe-area-inset-top,0px)) !important; box-sizing:border-box;}',
-          '.studio{height:calc(100dvh - 28px - env(safe-area-inset-top,0px)) !important;}',
-          /* ensure topbar stays above workspace, below chip only */
-          '.topbar{position:relative;z-index:20;}',
-          '.topbar .btn{pointer-events:auto !important; position:relative; z-index:21;}',
-          '#authGate,.auth-gate{display:none !important; pointer-events:none !important;}',
-          /* v13.1: compact on phones — smaller type, tighter gaps, and the
-             secondary Sessions link folds away so the brand + ✕ never
-             crowd or wrap over the topbar controls below. */
-          '@media (max-width:520px){',
-          '  #acd-portal-chip{font-size:11px;line-height:24px;gap:6px;}',
-          '  #acd-portal-chip .acd-chip-sess{display:none;}',
-          '}'
-        ].join('\n');
-        d.head.appendChild(st);
-      }
     } catch (e) {}
   }
 
@@ -180,7 +168,7 @@
   function boot() {
     killAuthGate();
     applyTheme(readPractice());
-    installChip();
+    installBackLink();
     // Re-apply after late scripts
     setTimeout(function () { killAuthGate(); applyTheme(readPractice()); }, 100);
     setTimeout(killAuthGate, 800);
