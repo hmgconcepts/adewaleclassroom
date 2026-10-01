@@ -1,77 +1,166 @@
-# 🚑 ClassDeck — "Students stuck in the lobby" troubleshooting guide (v11)
+# ClassDeck — Join Troubleshooting & Relay Setup Guide (v12)
 
-## The symptom
+**Who this is for:** the teacher. Everything here is free. No servers to rent,
+no credit card, no command line required (one optional command is included for
+completeness).
 
-Students open your class link and are held in the lobby with
-**"The class hasn't started yet"** — while your teacher screen says you are
-LIVE and your own laptop/phone (on the same Wi-Fi/hotspot) join fine.
+---
 
-## Why it happens (verified diagnosis)
+## 1. Why a student can be stuck while you are LIVE
 
-The classroom is **peer-to-peer (WebRTC)**. There is no server in the middle.
+ClassDeck is **peer-to-peer**: every student's device connects directly to
+yours. Two devices on the *same Wi-Fi/hotspot* always find each other (that is
+why your own tests worked). A student on **mobile data or another network**
+must cross their carrier's NAT — and some mobile networks simply have no
+direct path. The fix is a **TURN relay**: a neutral server both sides can
+reach, which passes the class through.
 
-| Who joins | Path used | Result |
-|---|---|---|
-| Your own devices **on the same hotspot** as the teacher tablet | direct local-network connection | ✅ always works |
-| Students **on the internet** | must cross the mobile carrier's NAT | ⚠️ needs a working STUN/TURN path |
+Since v11 the student's screen tells the **truth** ("your network could not
+reach the teacher's device…") instead of the false "class hasn't started", and
+you get a "📶 n blocked" badge + toast on the teacher screen. Since v12 you can
+also **test the relay before class** (section 5) and **generate Cloudflare
+credentials inside the app** (section 3).
 
-Phone/tablet hotspots (MTN, Airtel, Glo, 9mobile) sit behind carrier-grade
-NAT. When a direct path does not exist, the student's join attempt times out
-and the join page used to report it as *"the class hasn't started"* — which
-was **untrue**. **v11 fixes the reporting and adds a configurable relay.**
+> Even with **no relay at all**, most students join fine: ClassDeck tries four
+> free STUN servers + three OpenRelay TURN ports, retries automatically with
+> jittered timing, and the connection doctor runs after two failed attempts.
+> A relay is the *guarantee* for the strictest networks, not a requirement.
 
-## What v11 changed
+---
 
-1. **Honest lobby messages.** The join page now shows the REAL reason
-   (room not live / wrong code vs. *network could not reach the teacher*) plus
-   an attempt counter.
-2. **🔎 Connection doctor.** After two failed attempts the student's device
-   tests its own network (gathers ICE candidates) and says whether the block
-   is on their side, and what to do (leave WhatsApp's in-app browser, switch
-   to mobile data, …).
-3. **Teacher-side alerts.** When a student's connection dies before it opens,
-   the teacher sees a toast and a **📶 blocked** counter — stranded students
-   are never silent again.
-4. **Configurable TURN relay.** ⚙ Settings → **Relay servers**.
+## 2. The 60-second setup (recommended: Cloudflare)
 
-## Fixing it for real — add a free TURN relay (10 minutes, once)
+Cloudflare's TURN free tier is **1,000 GB per month** — enough for months of
+teaching, because only the students whose networks block the direct path use
+it. STUN is unlimited and free.
 
-TURN is the WebRTC "relay taxi": when no direct path exists, both sides
-connect to the relay instead. Free options:
+1. **Create the key (one time, ~2 minutes).**
+   - Go to <https://dash.cloudflare.com> and log in (create a free account if needed).
+   - In the left rail open **Realtime** (or *Calls* → *TURN*; the dashboard
+     renames it occasionally — search "TURN" in the dashboard search box).
+   - Open **TURN** → **Create TURN key**. Name it `classdeck`.
+   - You now see a **TURN Token ID** (long hex) and an **API token**.
+     *That pair is a KEY — it is NOT a username/password and pasting it will
+     not work.* This is exactly the trap in the old guide; v12 handles it:
+2. **Generate credentials inside ClassDeck (no command line).**
+   - Teacher screen → **⚙ Settings → Relay servers** → open
+     **“⚡ Have a Cloudflare TURN key?”**.
+   - Paste the **TURN Token ID** and the **API token**, pick a validity
+     (24 hours is the sweet spot), press **⚡ Generate & fill**.
+   - ClassDeck calls Cloudflare from your browser (the endpoint allows
+     browser calls — verified) and fills the relay box with real
+     credentials. Press **Save**.
+3. **Prove it works:** press **🧪 Test relay** (section 5). Green means
+   students on the strictest networks can get through.
+4. **Expiry:** the credentials die after the validity you chose. When joins
+   start failing again after a day/week, reopen Settings and press
+   **Generate & fill → Save** again. Keep the API token secret.
 
-**Option A — Cloudflare TURN (free, no credit card)**
-1. Create a free account at <https://dash.cloudflare.com>.
-2. Go to **Realtime / TURN** and create a TURN app ("one-click").
-3. Copy the generated `url`, `username` and `credential`
-   (time-limited credentials regenerate — create fresh ones when they expire,
-   or use the static-credentials option).
-4. In ClassDeck: **teach.html → ⚙ Settings → Relay servers**, paste:
+**Manual fallback** (if your network blocks the generator): run this once and
+paste the whole response into the relay box — it is already in a format
+ClassDeck understands:
 
-```json
-[ { "urls": "turn:turn.cloudflare.com:443?transport=tcp", "username": "PASTE", "credential": "PASTE" } ]
+```bash
+curl https://rtc.live.cloudflare.com/v1/turn/keys/PASTE_TOKEN_ID_HERE/credentials/generate-ice-servers \
+  --header "Authorization: Bearer PASTE_API_TOKEN_HERE" \
+  --header "Content-Type: application/json" \
+  --data '{"ttl": 86400}'
 ```
 
-5. Save → start your class → have a student on another network join.
+---
 
-**Option B — metered.ca (free plan)**
-1. Sign up at <https://www.metered.ca> (free tier includes TURN bandwidth).
-2. Tools → TURN credentials → copy the RTCConfiguration JSON.
-3. Paste the `iceServers` array into Settings → Relay servers.
+## 3. Backup option: metered.ca (free 5 GB/month)
 
-The relay is used by **you and every student** on their next connection —
-no redeploy needed. (Deployments can also bake one into `js/config.js` via
-`window.CD_RELAY`.)
+Useful as a second relay or if you dislike Cloudflare:
 
-## Quick checklist when a student cannot join
+1. Go to <https://metered.ca/stun-turn> → **Get Started** (free account).
+2. Dashboard → **“Click here to generate your first credential”**.
+3. Click **Instructions** — you get a JSON block like:
 
-1. **Are they inside WhatsApp/Facebook/Instagram?** Those in-app browsers
-   break WebRTC. The join page detects this and shows an **Open in browser**
-   button — they must use Chrome (Android) or Safari (iPhone).
-2. **Wrong room code / class not actually live?** The lobby now says so
-   explicitly — the message is truthful, trust it.
-3. **School/office network?** Many block WebRTC entirely. Mobile data is the
-   fastest test.
-4. **Your network?** If your own second device joins only while on your
-   hotspot, your hotspot is the restricting side → add the TURN relay above.
-5. Still failing? Ask the student to read out the **🔎 Connection doctor**
-   verdict — it names the blocked side precisely.
+```json
+{ "urls": ["turn:standard.relay.metered.ca:80", "turn:standard.relay.metered.ca:443"],
+  "username": "e8f4…", "credential": "kY9…" }
+```
+
+4. Paste that **whole block** into ⚙ Settings → Relay servers → **Save**.
+   v12 accepts it exactly as copied — no editing, no reformatting.
+5. 5 GB covers roughly 8–10 hours of *relayed* video (only blocked students
+   use it), so watch the usage meter on their dashboard in a heavy month.
+
+---
+
+## 4. What you can paste into the relay box (v12 accepts ALL of these)
+
+| You pasted | Accepted? |
+|---|---|
+| `[ {"urls":"turn:host:443","username":"a","credential":"b"} ]` | ✅ classic array |
+| `[ {"urls":["turn:host:443","turns:host:443"],"username":"a","credential":"b"} ]` | ✅ urls as array |
+| `{ "urls":["turn:host:443"], "username":"a", "credential":"b" }` | ✅ metered.ca single object |
+| `{ "iceServers":[ … ] }` | ✅ Cloudflare response / config.js style |
+| `[ {"url":"turn:host:443"} ]` | ✅ legacy `url` key |
+| `turn:host:443\|user\|pass` (one per line, or comma-separated) | ✅ plain text |
+| `stun:host:3478` alone | ✅ (but STUN alone cannot beat strict NATs) |
+| `{"tokenId":"…","apiToken":"…"}` | ⚠ recognised as a **Cloudflare key** — use the generator (section 2) |
+| anything else | ❌ refused with an explanation, nothing is saved |
+
+The box gives **live feedback as you type** (server count, provider detected,
+warnings), so you know it is right *before* saving.
+
+---
+
+## 5. Test relay — prove it before class
+
+⚙ Settings → Relay servers → **🧪 Test relay**. ClassDeck opens a
+relay-only WebRTC connection using **only your pasted servers** and tries to
+gather relay candidates for up to 8 seconds:
+
+- **✅ RELAY WORKS — n candidates gathered** → you are covered. Save.
+- **❌ NO relay candidates** → wrong/expired credentials, or your current
+  network blocks TURN: regenerate (Cloudflare) or re-copy (metered.ca),
+  then test again — ideally from the network you actually teach from.
+
+---
+
+## 6. Teaching hundreds of students
+
+A browser-to-browser star grows with every student: past ~12 video students a
+phone/tablet uplink starts to strain, and past ~300 connections any browser
+struggles. v12 gives you the tools, all free:
+
+1. **🛡 Class relay (captains)** — ⚙ Settings → “Large classes”. ClassDeck
+   auto-picks your best-connected students (measured, via health pings 📶)
+   as *captains*; each captain's device re-delivers the video to a small
+   group. Your upload stays at captain-count streams whether 20 or 200
+   students are watching. Chat, polls, boards and hands still flow directly
+   from you. Captains see a thank-you badge; if a captain leaves, their
+   group is re-homed automatically in seconds.
+2. **Maximum students** — an honest cap (default 300). Student 301 sees
+   “The class is full — a place frees up when someone leaves”, and their
+   page auto-joins the moment a seat opens. No silent failures.
+3. **Join jitter** — when a whole class opens the link at once, retries are
+   spread ±15% so 200 students never hit the signalling server as one wave.
+4. For 300+ cohorts, run two rooms (e.g. `MATH101A` / `MATH101B`) — one
+   teacher device per room.
+
+---
+
+## 7. Student-side fixes (what to tell them)
+
+| Student sees | Cause | Fix |
+|---|---|---|
+| “Your network could not reach the teacher's device…” | in-app browser / strict NAT | Tap **🌐 Open in browser** on that screen; or switch to mobile data / another Wi-Fi |
+| “not live right now (or the code is wrong)” | class truly not live / typo | Check the room code with the teacher; page keeps retrying |
+| “The class is full” | room at its cap | Keep the page open — auto-joins when a seat frees |
+| 🔎 Connection doctor box appears | 2 failed attempts | Read the verdict — it names which side is blocked and the exact fix |
+| Joined but no video after a captain left | captain re-homing (takes seconds) | Wait ~10s; the page reconnects automatically |
+
+---
+
+## 8. Quick reference
+
+- Relay priority: **teacher's Settings → Relay** → `window.CD_RELAY`
+  (js/config.js) → built-in free servers (Google STUN ×2, Cloudflare STUN,
+  metered STUN, OpenRelay TURN ×3).
+- Free tiers (as of Sep 2026): Cloudflare TURN **1,000 GB/month** · metered.ca
+  **5 GB/month** · OpenRelay best-effort, no account.
+- Full feature/fix registry: `docs/PROMPT_AUDIT.md`.

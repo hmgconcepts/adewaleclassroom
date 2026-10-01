@@ -43,4 +43,8 @@ window.HMG_OWNER = {
    deployment (the teacher can still override it per-studio in
    Settings → Relay). Free TURN: Cloudflare dashboard → TURN, or
    metered.ca (free plan). Leave empty to use the built-in servers. */
+/* v12: deployment-level relay. Accepts ANY shape the Settings box accepts:
+   [ {urls|url: "turn:…" | ["turn:…",…], username, credential}, … ],
+   { iceServers: [ … ] }, a single metered.ca object, or plain
+   turn:host:443|user|pass lines — see cdParseRelayInput() in js/rtc.js. */
 window.CD_RELAY = { iceServers: [] };

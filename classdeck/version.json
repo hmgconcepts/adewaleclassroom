@@ -1,6 +1,6 @@
 {
-  "version": "11.4.0",
-  "build": 11,
+  "version": "12.0.0",
+  "build": 12,
   "channel": "stable",
   "released": "2026-09-30",
   "features": [
@@ -23,6 +23,17 @@
     "v11-teacher-join-blocked-alerts",
     "v11-configurable-turn-relay",
     "v11-owner-account-restored",
-    "v11-branded-intro-synced-both-repos"
+    "v11-branded-intro-synced-both-repos",
+    "v12-universal-relay-parser",
+    "v12-cloudflare-key-generator",
+    "v12-relay-connectivity-test",
+    "v12-class-captains-large-classes",
+    "v12-class-full-guard",
+    "v12-empty-personal-boards",
+    "v12-camera-flip-front-back",
+    "v12-student-self-view",
+    "v12-join-jitter-storm-protection",
+    "v12-roster-throttle-rtt-badges",
+    "v12-stun-diversity"
   ]
 }

@@ -1490,6 +1490,9 @@ async function goLive() {
     /* Join-issue fix: students now join directly by default unless the teacher explicitly enables the waiting room. */
     room.setWaitingRoom(Store.get("waitroom", false));
     room.autoAdmitRejoin = Store.get("wasLive", false); // resume fix: previously admitted students bypass waiting room
+    /* v12: large-class settings from ⚙ Settings */
+    room.maxStudents = Math.max(1, Math.min(500, Math.floor(Number(Store.get("max_students", 300)) || 300)));
+    if (Store.get("captains", false) && room.students.size) room.setRelayMode(true);   // toggled live later via Settings
     syncWaitingRoomUI(room.waitingRoom);
     refreshPendingBadge();
     /* v5 bug-fix: PIN applied atomically
@@ -1683,11 +1686,32 @@ function handleJoinBlocked(p) {
     if (el) { el.textContent = "📶 " + joinBlockedCount + " blocked"; el.classList.remove("hide"); }
   } catch {}
 }
+let relaySuggestShown = false;   /* v12: one-time large-class suggestion */
 function onRoomEvent(type, p) {
   if (type === "join-blocked") handleJoinBlocked(p);
   switch (type) {
     case "student-joined":
       toast("👋 " + p.name + " joined", "ok");
+      renderRoster();
+      /* v12: at >12 direct video students a phone/tablet uplink starts to
+         struggle — offer the captain relay ONCE, never nag. */
+      if (room && !room.relayMode && !relaySuggestShown && room.students.size > 12) {
+        relaySuggestShown = true;
+        toast("👥 " + room.students.size + " students now. For classes above ~12, turn ON ⚙ Settings → “Class relay (captains)” so a few strong student connections help carry the video — it keeps your data low and the class smooth.", "", 12000);
+      }
+      break;
+    case "class-full":
+      toast("🚧 " + p.name + " tried to join but the class is full (" + p.max + "). Raise the limit in ⚙ Settings if this was not intended.", "err", 9000);
+      break;
+    case "captain-promoted":
+      audit("captain", p.name + " promoted to class captain #" + p.captainId);
+      toast("🛡 " + p.name + " is now a class captain — their device helps deliver the video to a small group.", "ok", 7000);
+      renderRoster();
+      break;
+    case "captain-assign":
+      renderRoster();
+      break;
+    case "relay-mode":
       renderRoster();
       break;
     case "student-left":
@@ -1732,13 +1756,31 @@ function onRoomEvent(type, p) {
   refreshPendingBadge();
 }
 
+let _rosterRenderTimer = null;   /* v12: batch renders during join storms */
 function renderRoster() {
+  /* With hundreds of students, every join/leave/hand would rebuild the whole
+     list synchronously. Coalesce bursts into one render per 250ms. */
+  if (_rosterRenderTimer) return;
+  _rosterRenderTimer = setTimeout(() => {
+    _rosterRenderTimer = null;
+    renderRosterNow();
+  }, 250);
+}
+function rttBadge(stu) {
+  /* v12: measured round-trip → honest connectivity badge (drives captain choice too) */
+  if (typeof stu.rtt !== "number") return "";
+  if (stu.rtt <= 250) return '<span title="strong connection (' + stu.rtt + 'ms)">📶</span>';
+  if (stu.rtt <= 700) return '<span title="fair connection (' + stu.rtt + 'ms)">📶</span>';
+  return '<span title="weak connection (' + stu.rtt + 'ms)">📉</span>';
+}
+function renderRosterNow() {
   const list = $("#rosterList");
   const dataRoom = room || lastEndedRoom;
   if (!dataRoom || dataRoom.students.size === 0) {
     list.innerHTML = '<p style="color:var(--text-dim);font-size:13px">No students yet. Share the room link.</p>';
     return;
   }
+  const isCaptain = (pid) => !!(dataRoom.captains && dataRoom.captains.has(pid));
   list.innerHTML = "";
   for (const [pid, stu] of dataRoom.students) {
     const row = document.createElement("div");
@@ -1746,7 +1788,7 @@ function renderRoster() {
     row.dataset.peerId = pid;
     row.innerHTML = `
       <span class="hand">${stu.hand ? "✋" : ""}</span>
-      <span class="name">${escapeHtml(stu.name)}</span>` +
+      <span class="name">${escapeHtml(stu.name)}${isCaptain(pid) ? ' <span title="class captain — helps carry the video">🛡</span>' : ""}</span>${rttBadge(stu)}` +
       (room ? `
       <button class="btn small" data-act="cam" title="Ask/stop camera">📷</button>
       <button class="btn small" data-act="scr" title="Ask student to share their screen">🖥</button>
@@ -2337,9 +2379,121 @@ on("#btnSettings", "click", () => {
   /* v11: relay servers (advanced) — prefill the raw JSON */
   const rl = $("#setRelay");
   if (rl) rl.value = Store.get("relay_servers", "") || "";
+  /* v12: large-class card state */
+  const msEl2 = $("#setMaxStudents");
+  if (msEl2) msEl2.value = Store.get("max_students", 300);
+  const rmEl2 = $("#setRelayMode");
+  if (rmEl2) rmEl2.checked = Store.get("captains", false) || (room && room.relayMode) || false;
+  updateRelayPreview();
   $("#setNewRoom").checked = false;
   openModal("#mSettings");
 });
+
+/* ============================================================
+   v12 RELAY WORKBENCH — live preview, Cloudflare key generator,
+   and a real TURN connectivity test.
+   ============================================================ */
+function updateRelayPreview() {
+  const box = $("#setRelayPreview");
+  if (!box) return;
+  const rl = $("#setRelay");
+  const raw = rl ? rl.value.trim() : "";
+  if (!raw) {
+    box.innerHTML = '<span style="opacity:.75">Using the built-in free servers (Google + Cloudflare STUN, OpenRelay TURN best-effort). Paste Cloudflare or metered.ca credentials above for a guaranteed relay.</span>';
+    return;
+  }
+  const p = cdParseRelayInput(raw);
+  if (!p.ok) {
+    box.innerHTML = '<span style="color:var(--warn)">❌ ' + escapeHtml(p.note) + '</span>';
+    return;
+  }
+  let html = '<span style="color:#31c48d">✅ ' + escapeHtml(p.summary) + ' will be used by you and every student.</span>';
+  for (const w of p.warnings) html += '<br><span style="color:var(--warn)">⚠ ' + escapeHtml(w) + '</span>';
+  html += '<br><span style="opacity:.7">Servers: ' + p.servers.map((s) => escapeHtml(s.urls.join(", "))).join(" · ") + '</span>';
+  box.innerHTML = html;
+}
+on("#setRelay", "input", () => updateRelayPreview());
+
+/* Cloudflare TURN key → real credentials, straight from the teacher's
+   browser (the endpoint sends CORS headers — verified). Response format
+   is the exact iceServers JSON the relay box understands. */
+on("#btnCfGen", "click", async () => {
+  const keyId = ($("#setCfKey") && $("#setCfKey").value.trim()) || "";
+  const token = ($("#setCfToken") && $("#setCfToken").value.trim()) || "";
+  if (!keyId || !token) { toast("Paste BOTH the TURN Token ID and the API token from Cloudflare → Realtime → TURN", "err", 8000); return; }
+  const ttl = Number(($("#setCfTtl") && $("#setCfTtl").value) || 86400);
+  const btn = $("#btnCfGen");
+  const old = btn.textContent;
+  btn.disabled = true; btn.textContent = "Generating…";
+  try {
+    const r = await fetch("https://rtc.live.cloudflare.com/v1/turn/keys/" + encodeURIComponent(keyId) + "/credentials/generate-ice-servers", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json" },
+      body: JSON.stringify({ ttl: ttl })
+    });
+    if (!r.ok) {
+      let extra = "";
+      if (r.status === 401 || r.status === 403) extra = " — the API token is wrong or lacks TURN permission";
+      if (r.status === 404) extra = " — the TURN Token ID does not match this account";
+      throw new Error("Cloudflare said " + r.status + extra);
+    }
+    const data = await r.json();
+    const servers = data && data.iceServers ? data.iceServers : data;
+    $("#setRelay").value = JSON.stringify(servers, null, 1);
+    updateRelayPreview();
+    const hrs = Math.round(ttl / 3600);
+    toast("✅ Cloudflare TURN credentials generated (" + hrs + "h). They are in the relay box — press Save. When they expire after " + hrs + "h, come back and press Generate again.", "ok", 12000);
+  } catch (e) {
+    toast("Could not generate (" + (e.message || "network blocked") + "). Fallback: open the guide (⚙ → “Relay setup guide”), run the curl command there, and paste its response into the relay box.", "err", 14000);
+  } finally {
+    btn.disabled = false; btn.textContent = old;
+  }
+});
+
+/* Real TURN test: gather RELAY-ONLY candidates. If this passes, students on
+   even the strictest mobile network can get through. Runs entirely in the
+   teacher's browser — no third-party test page. */
+async function runRelayTest() {
+  const box = $("#setRelayPreview");
+  const rl = $("#setRelay");
+  const raw = rl ? rl.value.trim() : "";
+  const p = raw ? cdParseRelayInput(raw) : { ok: false, servers: [] };
+  const turnServers = (p.ok ? p.servers : []).filter((s) => s.urls.some((u) => /^turn/i.test(u)));
+  if (!turnServers.length) {
+    if (box) box.innerHTML = '<span style="color:var(--warn)">⚠ No TURN server to test — STUN alone cannot get through strict mobile networks. Generate Cloudflare credentials or paste metered.ca credentials first.</span>';
+    return;
+  }
+  if (typeof RTCPeerConnection === "undefined") { toast("This browser cannot run the relay test.", "err"); return; }
+  const btn = $("#btnTestRelay");
+  const old = btn ? btn.textContent : "";
+  if (btn) { btn.disabled = true; btn.textContent = "Testing…"; }
+  if (box) box.innerHTML = '<span style="opacity:.75">🧪 Testing relay — gathering candidates for up to 8 seconds…</span>';
+  const results = await new Promise((resolve) => {
+    const found = [];
+    let pc = null;
+    try {
+      pc = new RTCPeerConnection({ iceServers: turnServers, iceTransportPolicy: "relay" });
+    } catch (e) { resolve({ error: e.message }); return; }
+    const done = setTimeout(() => { try { pc.close(); } catch {} resolve({ found }); }, 8000);
+    pc.onicecandidate = (ev) => {
+      if (!ev.candidate) { clearTimeout(done); try { pc.close(); } catch {} resolve({ found }); return; }
+      const c = ev.candidate.candidate || "";
+      if (/typ relay/i.test(c)) {
+        const m = c.match(/typ relay (?:raddr [^ ]+ rport [0-9]+ )?/i);
+        found.push(String(ev.candidate.candidate).slice(0, 160));
+      }
+    };
+    pc.createDataChannel("relaytest");
+    pc.createOffer().then((o) => pc.setLocalDescription(o)).catch((e) => { clearTimeout(done); resolve({ error: e.message }); });
+  });
+  if (btn) { btn.disabled = false; btn.textContent = old; }
+  if (box) {
+    if (results.error) box.innerHTML = '<span style="color:var(--warn)">⚠ Test could not run: ' + escapeHtml(results.error) + '</span>';
+    else if (results.found.length) box.innerHTML = '<span style="color:#31c48d">✅ RELAY WORKS — ' + results.found.length + ' relay candidate' + (results.found.length > 1 ? "s" : "") + ' gathered. Students on strict mobile networks will get through. Press Save to keep these servers.</span>';
+    else box.innerHTML = '<span style="color:var(--warn)">❌ NO relay candidates — the credentials are wrong/expired or this network blocks TURN. Regenerate (Cloudflare) or check the username/credential (metered.ca).</span>';
+  }
+}
+on("#btnTestRelay", "click", () => runRelayTest());
 on("#setSave", "click", () => {
   Store.set("teachername", $("#setName").value.trim());
   Store.set("roomname", $("#setRoomName").value.trim());
@@ -2373,28 +2527,46 @@ on("#setSave", "click", () => {
     const lbl = $("#roomCodeLbl");
     if (lbl) lbl.textContent = currentRoomCode();
   }
-  /* v11: relay servers (advanced). Accepts a JSON array of
-     {urls, username, credential} entries (what Cloudflare/metered.ca
-     give you). Bad JSON is refused with a clear message — never saved
-     silently, because a broken relay list would break every join. */
+  /* v12: relay servers — accept EXACTLY what the provider gives you.
+     The v11 validator only accepted [ {urls:"…"} ] with urls as a plain
+     string, so the REAL outputs of metered.ca (single object, urls array)
+     and Cloudflare ({iceServers:[…]}) were both refused with a confusing
+     error — the exact bug the teacher hit. One tolerant parser now runs
+     in the Settings box, at connect time, and in the tester. */
   const rl = $("#setRelay");
   if (rl) {
     const raw = rl.value.trim();
     if (raw) {
-      let parsed = null;
-      try { parsed = JSON.parse(raw); } catch (e) {
-        toast("Relay setting not saved — it must be a JSON array like: [ {\"urls\":\"turn:turn.example.com:443\",\"username\":\"abc\",\"credential\":\"xyz\"} ]", "err", 10000);
+      const parsed = cdParseRelayInput(raw);
+      if (!parsed.ok) {
+        toast("Relay not saved — " + parsed.note, "err", 12000);
+        updateRelayPreview();
         return;
       }
-      if (!Array.isArray(parsed) || !parsed.every((s) => s && typeof s.urls === "string")) {
-        toast("Relay setting not saved — every entry needs a \"urls\" string (turn: or turns:).", "err", 10000);
-        return;
-      }
-      Store.set("relay_servers", JSON.stringify(parsed));
-      toast("📶 Relay saved — it will be used by you AND your students on new connections. Test with a student on another network.", "ok", 8000);
+      Store.set("relay_servers", parsed.json);
+      let msg = "📶 Relay saved: " + parsed.summary + ". Used by you AND your students on their next join.";
+      if (parsed.warnings.length) msg += " ⚠ " + parsed.warnings[0];
+      toast(msg, "ok", 10000);
     } else if (Store.get("relay_servers", "")) {
       Store.set("relay_servers", "");
       toast("Relay cleared — the built-in free servers are used again.", "ok");
+    }
+    updateRelayPreview();
+  }
+  /* v12: large-class settings */
+  const msEl = $("#setMaxStudents");
+  if (msEl) {
+    const ms = Math.max(1, Math.min(500, Math.floor(Number(msEl.value) || 300)));
+    Store.set("max_students", ms);
+    if (room) room.maxStudents = ms;
+  }
+  const rmEl = $("#setRelayMode");
+  if (rmEl) {
+    const want = !!rmEl.checked;
+    Store.set("captains", want);
+    if (room && room.relayMode !== want && (room.students.size || want)) {
+      const n = room.setRelayMode(want);
+      toast(want ? ("🛡 Class relay ON — " + n + " captain(s) now help carry the video to everyone. Your data (uplink) stays low.") : "Class relay OFF — you are now calling every student directly.", "ok", 7000);
     }
   }
   setQuality($("#setQuality").value);
@@ -3884,10 +4056,15 @@ on("#btnBoards", "click", () => toggleDrawer("#drawerBoards"));
 
 on("#boardsStart", "click", () => {
   if (!room) { toast("Go live first (▶ Go Live)", "err"); return; }
-  room.startBoards(currentBoardPNG());
+  /* v12 FIX (user blueprint): personal boards start EMPTY. v8 used to push a
+     snapshot of the teacher's current board as every student's background, so
+     everything already written on the teacher board appeared on the students'
+     boards the moment boards were enabled. A background is now something the
+     teacher sends DELIBERATELY with "Send my board as their background". */
+  room.startBoards(null);
   $("#boardsStart").classList.add("hide");
   $("#boardsStop").classList.remove("hide");
-  toast("🎨 Student boards ON — answers appear below as they draw", "ok", 5000);
+  toast("🎨 Student boards ON — every student board starts EMPTY. Use “📤 Send my board as their background” if you WANT them to see your board.", "ok", 6000);
 });
 on("#boardsStop", "click", () => {
   if (room) room.stopBoards();
@@ -3899,7 +4076,14 @@ on("#boardsStop", "click", () => {
 on("#boardsPush", "click", () => {
   if (!room || !room.boardsOn) { toast("Start boards first"); return; }
   const png = currentBoardPNG();
-  if (png) { room.pushBoardBg(png); toast("📤 Your board pushed to all students", "ok"); }
+  if (png) { room.pushBoardBg(png); toast("📤 Your board sent to every student as their board's background", "ok"); }
+});
+/* v12: teacher reset — every student board wiped back to blank (their own
+   writing AND any background the teacher sent). */
+on("#boardsClear", "click", () => {
+  if (!room || !room.boardsOn) { toast("Start boards first"); return; }
+  room.clearBoards();
+  toast("🧽 All student boards cleared", "ok");
 });
 
 function currentBoardPNG() {

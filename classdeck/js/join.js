@@ -152,6 +152,8 @@ function showWaitingState(code, name) {
    "stuck in the lobby" complaint). Classify the real cause instead. */
 function lobbyReasonText(why, code) {
   const w = String(why || "");
+  if (/class is full/i.test(w))
+    return "The class is full right now — a place frees up the moment someone leaves. This page keeps checking automatically every 30 seconds; keep it open.";
   if (/Class not found|not be live|peer-unavailable/i.test(w))
     return "The class room " + code + " is not live right now (or the code is wrong). If your teacher has started, check the code with them. This page keeps retrying automatically.";
   if (/Could not reach|closed before admission|Could not connect|signalling|classroom service/i.test(w))
@@ -218,7 +220,13 @@ function startLobby(code, name, why) {
          silently repeat a false "class hasn't started". */
       $("#joinStatus").innerHTML = escapeHtml(lobbyReasonText(e && e.message, code)) + "<br><span style=\"opacity:.75;font-size:.92em\">" + escapeHtml(lobbyStatusLine(code)) + "</span>";
       if (lobbyAttempt >= 2 && !window._doctorRan) { window._doctorRan = true; runConnectionDoctor(); }
-      lobbyTimer = setTimeout(tick, Math.min(12000, 4000 + lobbyAttempt * 2000));
+      /* v12: class-full → slow 30s polling; everything else → capped backoff
+         WITH jitter. When 200 students all retry in lockstep after a teacher
+         start, a fixed interval is a thundering herd against the signalling
+         server — ±15% jitter spreads them out. */
+      const isFull = /class is full/i.test(String(e && e.message || ""));
+      const base = isFull ? 30000 : Math.min(12000, 4000 + lobbyAttempt * 2000);
+      lobbyTimer = setTimeout(tick, Math.round(base * (0.85 + Math.random() * 0.3)));
     }
   }, 4000);
 }
@@ -577,17 +585,58 @@ $("#sBtnCam").addEventListener("click", toggleMyCam);
 async function toggleMyCam() {
   try {
     if (!myCamOn) {
-      await sRoom.shareCamera(true);
+      const stream = await sRoom.shareCamera(true);
       myCamOn = true;
+      myScreenIsCamView = false;
       $("#sBtnCam").classList.add("active");
+      showSelfView(stream, sRoom && sRoom._facing === "environment");
       toast("📷 Your camera is on — the teacher can see you", "ok");
     } else {
       await sRoom.shareCamera(false);
       myCamOn = false;
       $("#sBtnCam").classList.remove("active");
+      hideSelfView();
       toast("Camera off");
     }
+    refreshFlipButton();
   } catch { toast("Camera blocked. Allow camera in browser settings.", "err"); }
+}
+
+/* ---------- v12: front/back camera switch + self view ---------- */
+let myScreenIsCamView = false;    /* true when “show my work” uses the camera */
+function refreshFlipButton() {
+  const btn = $("#sBtnFlip");
+  if (!btn) return;
+  const canFlip = (myCamOn && sRoom && sRoom._camStream) || (myScreenOn && myScreenIsCamView);
+  btn.classList.toggle("hide", !canFlip);
+  if (canFlip && sRoom) {
+    btn.title = sRoom._facing === "environment" ? "Switch to FRONT camera" : "Switch to BACK camera";
+    btn.textContent = sRoom._facing === "environment" ? "🤳" : "📷";
+  }
+}
+async function flipMyCamera() {
+  try {
+    const r = await sRoom.flipCamera();
+    showSelfView(r.stream, r.facing === "environment");
+    refreshFlipButton();
+    toast(r.facing === "environment" ? "🔄 Back camera — point it at your work" : "🔄 Front camera", "ok");
+  } catch (e) {
+    toast(e.message || "Could not switch camera on this device", "err", 6000);
+  }
+}
+$("#sBtnFlip") && $("#sBtnFlip").addEventListener("click", flipMyCamera);
+function showSelfView(stream, isBack) {
+  const pip = $("#sSelfView"), v = $("#sSelfViewVideo");
+  if (!pip || !v) return;
+  try { v.srcObject = stream || null; v.pause && v.pause(); v.play && v.play().catch(() => {}); } catch {}
+  v.style.transform = isBack ? "none" : "scaleX(-1)";   /* mirror the front camera like every camera app */
+  pip.classList.remove("hide");
+}
+function hideSelfView() {
+  const pip = $("#sSelfView"), v = $("#sSelfViewVideo");
+  if (!pip) return;
+  try { if (v) v.srcObject = null; } catch {}
+  pip.classList.add("hide");
 }
 
 function handleCamRequest(on) {
@@ -607,6 +656,7 @@ async function toggleMyScreen() {
     if (!myScreenOn) {
       await sRoom.shareScreen(true);
       myScreenOn = true;
+      myScreenIsCamView = false;
       $("#sBtnScreen").classList.add("active");
       toast("🖥 You are sharing your screen with the teacher", "ok", 5000);
     } else {
@@ -629,17 +679,23 @@ async function toggleMyScreen() {
 function stopMyScreenShare() {
   /* Stops BOTH real screen shares and camera-view fallbacks. */
   myScreenOn = false;
+  myScreenIsCamView = false;
   $("#sBtnScreen").classList.remove("active");
   try { sRoom && sRoom.shareScreen(false); } catch {}
+  hideSelfView();
+  refreshFlipButton();
   toast("Sharing stopped");
 }
 async function startCameraView() {
   try {
-    await sRoom.shareCameraView();
+    const stream = await sRoom.shareCameraView();
     myScreenOn = true;
+    myScreenIsCamView = true;
     $("#sBtnScreen").classList.add("active");
+    showSelfView(stream, true);
+    refreshFlipButton();
     closeModal("#mScreenAsk");
-    toast("📷 Showing your work — point your camera at your book", "ok", 6000);
+    toast("📷 Showing your work — point your camera at your book. Tap 🔄 to switch front/back camera.", "ok", 7000);
   } catch (e) {
     toast(e.message || "Camera unavailable. Allow camera access and try again.", "err", 6000);
   }
@@ -842,6 +898,10 @@ function cleanupAndGate(message) {
   pendingStream = null;
   handUp = false;
   myCamOn = false; myMicOn = false; myScreenOn = false; micAllowed = false;
+  myScreenIsCamView = false;
+  hideSelfView();
+  refreshFlipButton();
+  const capB = $("#sCapBadge"); if (capB) capB.classList.add("hide");
   clearInterval(quizTimerInt);
   quizTimerInt = null;
   $("#stageVideo").pause(); $("#stageVideo").srcObject = null;
@@ -1049,6 +1109,26 @@ onEvent = function (type, p) {
       break;
     case "boardsBg":
       if (p.bg) { sbBg = new Image(); sbBg.src = p.bg; sbBg.onload = sbDraw; toast("📤 Teacher sent a new board background"); }
+      break;
+    case "boardsClear":    /* v12: teacher reset every student board */
+      sbStrokes = [];
+      sbBg = null;
+      try { sbDraw(); } catch {}
+      toast("🧽 Teacher cleared the boards — start fresh", "ok", 5000);
+      break;
+    case "relay-promote":   /* v12: you are now a class captain */
+      {
+        const b = $("#sCapBadge");
+        if (b) { b.textContent = "🛡 Class captain — your device is helping classmates see the class smoothly. Leave it plugged in if you can."; b.classList.remove("hide"); }
+        toast("🛡 You are now a class captain — thank you! Your connection is strong, so a few classmates receive the class through your device. Your data use stays small.", "ok", 10000);
+      }
+      break;
+    case "relayMode":
+      if (!p.on) { const b = $("#sCapBadge"); if (b) b.classList.add("hide"); }
+      break;
+    case "classfull":
+      /* handled by StudentRoom as a retryable failure — the lobby shows the
+         honest “class is full” text and polls slowly. */
       break;
     case "activity": showActivity(p); break;
     case "activityEnd": closeModal("#mActivity"); break;

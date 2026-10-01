@@ -160,3 +160,70 @@ caller open → receiver connection → receiver open) across both repos — 27/
 scenario + 12/12 doctor/settings, including the v10 no-eviction regression,
 stopLobby generation guard, relay merge order, and the verbatim teach.js relay
 validation handler. All classdeck JS passes `node --check`; HTML tags balanced.
+
+
+---
+
+## 6. ROUND 4 — v12.0.0 build 12 (2026-09-30): relay setup fixed, hundreds of students, camera flip, empty boards
+
+**User report (5 items):** (1) joins now work without a relay — make it even
+easier; (2) the relay JSON the guide told the teacher to enter is NOT what
+Cloudflare shows (TURN Token ID / API token) and what metered.ca shows was
+refused by the Settings box — "so I can't save the settings"; metered.ca setup
+unclear; the guide not detailed/comprehensive; (3) support hundreds of
+students; (4) student personal boards must start EMPTY (teacher board content
+must not appear); (5) students must switch front/back camera while showing
+work; (6) enhance every feature; (7) propagate across all repos.
+
+**Root causes found (verified, not assumed):**
+- Settings → Relay accepted ONLY `[ {urls:"string"} ]`. metered.ca's dashboard
+  JSON is a single object with `urls` as an ARRAY; Cloudflare's generated
+  credentials are `{iceServers:[…urls arrays…]}`; Cloudflare's dashboard shows
+  a TURN KEY (Token ID + API token) which is not a credential at all. All
+  refused. `cdCollectIceServers()` silently dropped array-urls at runtime too.
+- Personal boards: `startBoards(currentBoardPNG())` pushed a snapshot of the
+  teacher's live board (strokes included) as every student's board background.
+- No camera flip existed; no self-view; fixed-interval lobby retries (join
+  storms); roster broadcast per join = O(n²) messages; no class-size guard;
+  one teacher uplink cannot feed 100+ direct video streams.
+
+**v12 changes (both repos):**
+- `js/rtc.js` — `cdNormalizeIceEntry()` + `cdParseRelayInput()`: ONE tolerant
+  parser (classic array, array-urls, metered single object, `{iceServers:…}`,
+  Cloudflare API wrapper, legacy `url`, plain-text `turn:host|user|pass`,
+  scheme-less `host:port`, Cloudflare-key detection with guidance). Collector
+  uses the same parser + dedupe + metered free STUN added.
+- Class captains: `TeacherRoom.setRelayMode()` builds a relay tree — pool
+  size scales with the class (`ceil(n/8)+2`, ceiling 60), best-rtt selection,
+  failover on captain exit, `relay-refresh` on stream change; captains run a
+  `relayPeer` (StudentRoom.enableRelayNode) re-serving stage/teachercam to
+  ≤8 children each; fail-open to direct calls.
+- Class-full guard (`maxStudents`, default 300, setting 1–500): retryable
+  "classfull" message, 30s slow poll, attendance "class-full", teacher toast.
+- Health: staggered `tping`/`tpong` rtt sweep (25/8s) → 📶 roster badges.
+- Roster broadcast debounced 400ms; teacher render coalesced 250ms.
+- `flipCamera()`: replaceTrack on the live call (no blink) with re-call
+  fallback; facing tracked for stucam + work-view; self-view PiP mirrored.
+- `boardsClear` message + teacher button; `startBoards(null)` — boards start
+  EMPTY (push-my-board is now the explicit template action).
+- Join jitter ±15% + 30s class-full polling.
+- `js/teach.js` — relay workbench: live paste preview, 🧪 relay-only ICE
+  tester, ⚡ Cloudflare key generator (calls
+  rtc.live.cloudflare.com/v1/turn/keys/…/generate-ice-servers from the
+  teacher's browser — CORS verified open), Large-classes card (captains
+  toggle + max students), roster 🛡/📶, auto-suggest at >12 students.
+- `teach.html`/`join.html` — new cards, flip button, self-view, captain
+  badge, boards buttons; script cache-busters ?v=43→?v=44.
+- `docs/JOIN_TROUBLESHOOTING_GUIDE.md` — full rewrite: Cloudflare step-by-step
+  (1,000 GB/mo free), metered.ca step-by-step (5 GB/mo), accepted-formats
+  table, test button, large-class guide, student fixes, curl fallback.
+- `version.json` 12.0.0 build 11 new feature keys; `sw.js` cache bump;
+  `js/config.js` CD_RELAY docs.
+
+**Verification:** 102-check VM harness (mock PeerJS incl. media calls):
+24/24 v11 regression + 34/34 parser/flip/boards/class-full + 21/21
+captains & 200-student storm (roster throttle 4 vs ~100; 25 captains × 8 =
+200 capacity; teacher direct calls = captain count) + 23/23 settings
+workbench (verbatim handlers: metered save, Cloudflare verbatim save, KEY
+refusal, generator 401 path, relay tester verdicts, preview states).
+All JS `node --check`; HTML tags balanced; both repos byte-identical.

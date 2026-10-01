@@ -599,7 +599,8 @@
     <div class="row" style="display:flex;gap:6px;flex-wrap:wrap">
       <button class="btn primary" id="boardsStart">▶ Start boards</button>
       <button class="btn danger hide" id="boardsStop">⏹ Stop</button>
-      <button class="btn small" id="boardsPush" title="Send your current whiteboard page to all student boards as a background">📤 Push my board</button>
+      <button class="btn small" id="boardsPush" title="Send your current whiteboard page to every student board as a background — students keep their own writing on top">📤 Send my board as their background</button>
+      <button class="btn small" id="boardsClear" title="Wipe every student board back to blank">🧽 Clear all student boards</button>
     </div>
     <div id="boardsGrid" class="cam-grid" style="margin-top:8px"></div>
   </div>
@@ -785,9 +786,37 @@ Not sure</textarea>
     <hr class="sep" />
     <label>🔑 Class PIN (optional — students must enter it to join; leave empty for none)</label>
     <input class="input" id="setPin" placeholder="e.g. 2468" maxlength="8" inputmode="numeric" />
-      <label style="margin-top:14px;display:block"><b>📶 Relay servers (advanced — fixes "students stuck in the lobby")</b></label>
-      <div style="font-size:.82em;opacity:.75;margin:4px 0 6px">If students on other networks see "the class hasn't started" while you are LIVE, your hotspot/network is blocking their direct connection. Get free TURN credentials (Cloudflare dashboard → TURN, or metered.ca free plan) and paste the JSON array here — it is used by you and every student on their next join.<br>Format: <code>[ {"urls":"turn:turn.example.com:443","username":"abc","credential":"xyz"} ]</code></div>
-      <textarea class="input" id="setRelay" rows="3" placeholder='[ {"urls":"turn:your-turn-server:443","username":"...","credential":"..."} ]' style="font-family:monospace;font-size:.85em"></textarea>
+      <label style="margin-top:14px;display:block"><b>📶 Relay servers (fixes "students stuck in the lobby")</b></label>
+      <div style="font-size:.82em;opacity:.75;margin:4px 0 6px">If students on other networks see "the class hasn't started" while you are LIVE, your hotspot/network is blocking their direct connection. A TURN relay fixes it. <b>Paste below EXACTLY what your provider gives you</b> — Cloudflare's <code>{ "iceServers": … }</code>, metered.ca's <code>{ "urls": [...], username, credential }</code>, a classic JSON array, or plain <code>turn:host:443|user|pass</code> lines — all are understood and checked live as you type.</div>
+      <textarea class="input" id="setRelay" rows="4" placeholder='Paste anything from Cloudflare or metered.ca — or plain  turn:host:443|user|pass  lines' style="font-family:monospace;font-size:.85em"></textarea>
+      <div id="setRelayPreview" class="sub" style="text-align:left;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:11.8px;margin-top:6px"></div>
+      <div class="row" style="margin-top:6px">
+        <button class="btn small" id="btnTestRelay" title="Gather relay-only ICE candidates — proves the credentials actually work before class">🧪 Test relay</button>
+      </div>
+      <details style="margin-top:10px">
+        <summary style="cursor:pointer;font-size:.85em"><b>⚡ Have a Cloudflare TURN key (Token ID + API token)? Generate credentials here</b></summary>
+        <div style="font-size:.8em;opacity:.75;margin:6px 0">Cloudflare → Realtime → TURN gives you a <i>TURN key</i>, which is NOT itself a username/password. Fill both fields and press Generate — ClassDeck calls Cloudflare for you and fills the relay box with real credentials (free tier: 1,000&nbsp;GB/month). Keep the API token secret.</div>
+        <input class="input" id="setCfKey" placeholder="TURN Token ID (long hex)" style="font-family:monospace;font-size:.85em;margin-bottom:4px" />
+        <input class="input" id="setCfToken" placeholder="API token" type="password" style="font-family:monospace;font-size:.85em;margin-bottom:4px" />
+        <div class="row">
+          <select class="input" id="setCfTtl" style="max-width:170px">
+            <option value="21600">Valid 6 hours</option>
+            <option value="86400" selected>Valid 24 hours</option>
+            <option value="604800">Valid 7 days</option>
+          </select>
+          <button class="btn small primary" id="btnCfGen">⚡ Generate &amp; fill</button>
+        </div>
+      </details>
+      <hr class="sep" />
+      <label style="display:block"><b>👥 Large classes (hundreds of students)</b></label>
+      <div style="font-size:.82em;opacity:.75;margin:4px 0 6px">Browser-to-browser video grows with every student. With <b>Class relay (captains)</b> ON, a few well-connected students automatically help deliver the video to small groups — your data stays low and the class stays smooth even with 100+ students. Chat, polls and boards always flow directly from you.</div>
+      <label style="display:flex;gap:8px;align-items:flex-start;font-size:.85em;margin:6px 0">
+        <input type="checkbox" id="setRelayMode" style="margin-top:3px" />
+        <span>🛡 Class relay (captains) — auto-picks the best-connected students as captains</span>
+      </label>
+      <label style="font-size:.85em;margin-top:6px">Maximum students in this room (1–500)</label>
+      <input class="input" id="setMaxStudents" type="number" min="1" max="500" value="300" style="max-width:140px" />
+      <div style="font-size:.78em;opacity:.65;margin-top:4px">Above ~300 live connections one browser starts struggling — for very large cohorts, split into two rooms or keep the limit honest. Extra students see a clear "class full" message and auto-join when a place frees.</div>
     <hr class="sep" />
     <label>🎨 Branding — academy name (shows on the broadcast watermark &amp; student welcome)</label>
     <input class="input" id="setBrand" placeholder="e.g. ADEWALE CLASSROOM" />
@@ -860,24 +889,24 @@ Not sure</textarea>
 
 <!-- v6: full-screen teacher auth gate (signup / login / license) -->
 <!-- authGate removed: ADEWALE CLASSROOM DECK uses portal session only -->
-<script src="vendor/peerjs.min.js?v=43"></script>
-<script src="vendor/pdf.min.js?v=43"></script>
-<script src="vendor/qrcode.min.js?v=43"></script>
-<script src="js/common.js?v=43"></script>
-<script src="js/config.js?v=43"></script>
-<script src="js/portal-bridge.js?v=43"></script>
-<script src="js/license.js?v=43"></script>
-<script src="js/whiteboard.js?v=43"></script>
-<script src="js/webcast.js?v=43"></script>
-<script src="js/toolkit.js?v=43"></script>
-<script src="js/toolkit-data.js?v=43"></script>
-<script src="js/toolkit-data2.js?v=43"></script>
-<script src="js/toolkit-data3.js?v=43"></script>
-<script src="js/toolkit-ext.js?v=43"></script>
-<script src="js/security-config.js?v=43"></script>
-<script src="js/auth.js?v=43"></script>
-<script src="js/rtc.js?v=43"></script>
-<script src="js/teach-toolbar-fix.js?v=43"></script>
+<script src="vendor/peerjs.min.js?v=44"></script>
+<script src="vendor/pdf.min.js?v=44"></script>
+<script src="vendor/qrcode.min.js?v=44"></script>
+<script src="js/common.js?v=44"></script>
+<script src="js/config.js?v=44"></script>
+<script src="js/portal-bridge.js?v=44"></script>
+<script src="js/license.js?v=44"></script>
+<script src="js/whiteboard.js?v=44"></script>
+<script src="js/webcast.js?v=44"></script>
+<script src="js/toolkit.js?v=44"></script>
+<script src="js/toolkit-data.js?v=44"></script>
+<script src="js/toolkit-data2.js?v=44"></script>
+<script src="js/toolkit-data3.js?v=44"></script>
+<script src="js/toolkit-ext.js?v=44"></script>
+<script src="js/security-config.js?v=44"></script>
+<script src="js/auth.js?v=44"></script>
+<script src="js/rtc.js?v=44"></script>
+<script src="js/teach-toolbar-fix.js?v=44"></script>
 <div id="mTimer" class="modal-back">
   <div class="modal" style="max-width:360px">
     <h3 style="margin:0 0 10px">⏱ Class countdown</h3>
@@ -1125,11 +1154,11 @@ Not sure</textarea>
     </div>
   </div>
 </div>
-<script src="js/fix-webm-duration.js?v=43"></script>
-<script src="js/teach.js?v=43"></script>
-<script src="js/enhancements.js?v=43"></script>
-<script src="js/ecosystem-branding.js?v=43"></script>
-<script src="js/enterprise-enhanced.js?v=43"></script>
+<script src="js/fix-webm-duration.js?v=44"></script>
+<script src="js/teach.js?v=44"></script>
+<script src="js/enhancements.js?v=44"></script>
+<script src="js/ecosystem-branding.js?v=44"></script>
+<script src="js/enterprise-enhanced.js?v=44"></script>
 <div id="hmgEcosystemFooterCompact" style="max-width:100%;padding:0 14px"></div>
 </body>
 </html>

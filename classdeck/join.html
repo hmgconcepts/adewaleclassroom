@@ -71,6 +71,14 @@
 <!-- teacher camera picture-in-picture (draggable) -->
 <div class="teacher-pip" id="teacherPip"><video id="teacherVideo" autoplay playsinline></video></div>
 
+<!-- v12: student self-view (aim your camera; mirrors front camera like a camera app) -->
+<div id="sSelfView" class="hide" style="position:fixed;right:12px;bottom:86px;width:112px;height:150px;background:#000;border-radius:12px;overflow:hidden;z-index:55;box-shadow:0 4px 14px rgba(0,0,0,.45);border:2px solid rgba(255,255,255,.25)">
+  <video id="sSelfViewVideo" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover"></video>
+</div>
+
+<!-- v12: class captain badge -->
+<div id="sCapBadge" class="badge hide" style="position:fixed;top:10px;left:50%;transform:translateX(-50%);z-index:60;max-width:92vw;white-space:normal;font-size:12px"></div>
+
 <!-- status chips -->
 <div class="stage-status hide" id="stageStatus">
   <span class="badge live">● LIVE</span>
@@ -94,6 +102,7 @@
   <button class="btn icon" id="sBtnChat" title="Chat">💬</button>
   <button class="btn icon" id="sBtnCam" title="My camera">📷</button>
   <button class="btn icon" id="sBtnScreen" title="Share my screen with the teacher">🖥</button>
+  <button class="btn icon hide" id="sBtnFlip" title="Switch front/back camera">🔄</button>
   <button class="btn icon" id="sBtnMic" title="My mic (teacher must allow)" disabled>🎙</button>
   <button class="btn icon" id="sBtnFull" title="Fullscreen">⛶</button>
   <button class="btn icon danger" id="sBtnLeave" title="Leave">🚪</button>
@@ -239,13 +248,13 @@
   </div>
 </div>
 
-<script src="vendor/peerjs.min.js?v=43"></script>
-<script src="js/common.js?v=43"></script>
-<script src="js/config.js?v=43"></script>
-<script src="js/portal-bridge.js?v=43"></script>
-<script src="js/license.js?v=43"></script>
-<script src="js/rtc.js?v=43"></script>
-<script src="js/join.js?v=43"></script>
+<script src="vendor/peerjs.min.js?v=44"></script>
+<script src="js/common.js?v=44"></script>
+<script src="js/config.js?v=44"></script>
+<script src="js/portal-bridge.js?v=44"></script>
+<script src="js/license.js?v=44"></script>
+<script src="js/rtc.js?v=44"></script>
+<script src="js/join.js?v=44"></script>
 <script>
 /* Issue #9: force install banner on the join page (re-appears until installed). */
 function joinInstall() {
