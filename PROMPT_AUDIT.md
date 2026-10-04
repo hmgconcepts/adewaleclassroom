@@ -209,3 +209,134 @@ all 11 HTML pages, version.json, sw.js — byte-identical in both repos.
 **Deployment note (unchanged, and now critical):** these fixes exist in
 the workspace + ZIPs. A device still showing the old bar or the old join
 behaviour is serving an old snapshot — upload the new build and redeploy.
+
+# ROUND 8 — enterprise features from Google Classroom & the big meeting platforms (classdeck v14.0.0 / portal V44)
+
+Requested: (1) understudy Google Classroom and implement its enterprise
+features; (2) understudy Google Meet / Zoom / Teams / FreeConference / Zoho
+and implement their enterprise features on the ClassDeck; (3) navigate
+WITHIN a whiteboard page (scroll up/down), not only page-to-page; (4) PDF
+zoom with proper scrollbars; (5) students/parents must be able to message
+the tutor/admin; (6) teacher can enable a participant as assistant tutor;
+(7) every file updated across both repos.
+
+## Item 3 — scroll INSIDE a whiteboard page (whiteboard.js)
+
+A page used to be exactly one screen: `_clampView` pinned `y` to
+`[1-s, 0]` — anything drawn off-screen was unreachable. Now every page is
+a **long board, 3 screens tall** (1–8, clamped), with strokes still stored
+in board coordinates so old saved decks and live sync remain 100%
+compatible (legacy pages normalise to h=3; nothing moves).
+
+| Gesture | What it does now | Verified by |
+|---|---|---|
+| wheel / trackpad | scrolls down/up the long page (delta-mode aware) | W6 |
+| shift + wheel | pans sideways | W7 |
+| ctrl/⌘ + wheel | zoom anchored at the cursor (the point under the cursor never moves) | W8 |
+| middle mouse | grab-and-pan | W14 |
+| overlay scrollbars | always visible while there is somewhere to go; draggable thumbs | W10–W13 |
+| pinch (existing) | unchanged two-finger zoom/pan | (r5/v12 suites) |
+| PNG / PDF export | exports the WHOLE scrollable page, not just the visible window | W15–W17 |
+
+The PDF annotation overlay is exempt — it stays one screen so it remains
+glued to the PDF page underneath (W3), and its wheel is never hijacked
+(W9).
+
+## Item 4 — PDF zoom navigation (teach.js + style.css)
+
+Two real bugs: `.pdf-scroll` used flex `justify-content:center`, which
+pushes the left overflow of an oversized page **out of reach**, and the
+scrollbars were invisible. Fixed:
+
+- `.pdf-pagewrap { margin: 14px auto }` + `flex-start` — centred when it
+  fits, fully scrollable edge-to-edge when zoomed (P1–P2);
+- fat, always-visible scrollbars (WebKit + Firefox `scrollbar-color`) (P3);
+- `zoomTo()` re-anchors every zoom (buttons, pinch AND ctrl-wheel) to the
+  viewport centre instead of the page corner (P4–P6);
+- plain wheel keeps scrolling natively — no preventDefault without
+  ctrl/⌘ (P7–P8); arrows / PgUp / PgDn / Home / End when focused (P9);
+- the broadcast viewport (`getViewportRegion`) still follows the teacher's
+  scroll — the class sees exactly what the teacher sees (P10).
+
+## Item 6 — assistant tutor / co-host (rtc.js, teach.js, join.js)
+
+Zoom-style: the teacher taps 👑 on any admitted student.
+
+- `TeacherRoom.setCoHost(pid, on)` — registry `coHosts`, roster broadcasts
+  carry the flag, every change logged to attendance (A3–A5);
+- the promoted student gets a floating **Assistant tutor** panel: admit
+  all, mute all, lower hands, lock/unlock (A6, A16);
+- actions travel as `cohostAction` and are honoured **only** from
+  promoted peers — impersonation is ignored (A7, A21);
+- a co-host can kick but never themselves (A18–A19);
+- demotion is instant and total (A20).
+
+## Item 2 — meeting-platform enterprise gaps (deck)
+
+Research verdict: waiting room, lock, per-student mic/cam/screen, kick,
+polls, quizzes, hand raise, reactions, recording, captions, spotlight and
+the captain relay already existed. The true gaps, now closed:
+
+- **mute all** — one tap silences every student mic (A8);
+- **lower all hands** — class-wide, students' local hand state drops too
+  via `handSync` (A10–A13);
+- **attendance report** — the pre-existing CSV export is upgraded:
+  null-safe fields (no more `"undefined"` cells), CRLF line endings so
+  Excel opens it cleanly (A22–A24).
+
+## Item 5 — students/parents messaging the tutor/admin (V44)
+
+Before: `messages` was a one-way `to_role` note drop and the Messaging
+page was a staff-only WhatsApp/email link helper — a learner could not
+actually message anyone. Now:
+
+- `database/v44-messaging.sql`: `recipient` / `sender_name` / `read_at`
+  columns + pair/unread indexes + five security-definer RPCs —
+  `tc_message_directory/send/threads/thread/unread` (M1–M4, M9);
+- routing rules enforced IN THE DATABASE: families write to staff only
+  (M5); tutors reach staff + their own engagements' families, or anyone
+  with an existing thread (M6); admins reach everyone;
+- every send raises a notification row for the recipient (M8);
+- opening a thread marks it read — ✓ sent / ✓✓ read receipts (M7);
+- `messages.html` rebuilt as a two-pane Messages Center (threads,
+  directory picker, composer, Ctrl+Enter send) — `messages-center.js`
+  (MC1–MC13), XSS-escaped bodies (MC7);
+- **Messages is now for every signed-in role** — nav V26, aud `user`
+  (V4); unread badge on the nav link polls on every page via
+  notifications.js (V5, MC14);
+- the old WA/email/SMS capability survives as the directory's deep links.
+
+## Item 1 — Google Classroom enterprise features (portal)
+
+Already present from earlier rounds: rubrics, assignments, announcements,
+scoresheet/gradebook, originality-friendly CBT, analytics dashboards.
+Added this round:
+
+- **comment bank** (Google Classroom's most-loved grading feature): 💾
+  saves any phrase while marking, 💬 inserts one into any per-question or
+  overall comment; stored locally, works offline (C1–C6) — and a
+  save-handler shadowing bug was caught and fixed by the new tests;
+- **to-do bar**: the learner work board now computes what is due TODAY
+  (homework + quizzes + reading) plus an overdue count, with a one-tap
+  "Ask your tutor / admin" route into messages (C7–C8).
+
+## Item 7 — every file, both repos
+
+classdeck **v14.0.0** (build 17, pages `?v=48`, sw cache
+`hmg-classdeck-v14.0.0-cohost-scrolling-boards-pdf-nav`): whiteboard.js,
+teach.js, rtc.js, join.js, style.css, teach.html, all HTML pages,
+version.json, sw.js.
+Portal **V44** (pages `?v=45`, shell cache `tc-shell-v13-20261004`):
+v44-messaging.sql + complete-schema.sql, messages-center.js (new),
+messages.html, notifications.js, nav-model.js/.json (V26), app.js,
+cbt-marking.js, sw.js.
+All of it byte-identical in both repos (V8).
+
+## Round-8 QA tally (per repo, both repos green)
+
+    12 suites — 365/365 per repo × 2 repos
+    (258 pre-existing + 65 test_r8_deck + 42 test_r8_portal; nothing regressed)
+
+**Deployment note:** run `database/v44-messaging.sql` once on existing
+projects (idempotent). Devices still seeing single-screen boards or the
+old Messaging page are serving stale caches — upload the new build.
