@@ -544,8 +544,25 @@ function initPdf(side, inst) {
   });
   $(".pdf-prev", el).addEventListener("click", () => { if (doc && pageNum > 1) { pageNum--; renderPage(); } });
   $(".pdf-next", el).addEventListener("click", () => { if (doc && pageNum < doc.numPages) { pageNum++; renderPage(); } });
-  $(".pdf-zoomin", el).addEventListener("click", () => { fitMode = false; scale = Math.min(4, scale * 1.2); renderPage(); });
-  $(".pdf-zoomout", el).addEventListener("click", () => { fitMode = false; scale = Math.max(0.3, scale / 1.2); renderPage(); });
+  /* v14 (round-8 item 4): zoom that KEEPS THE VIEWPORT CENTRED on the same
+     spot of the page — before, zooming re-anchored to the top-left and the
+     flex centring made the left edge of an oversized page unreachable. */
+  async function zoomTo(ns) {
+    if (!doc) return;
+    const scroll = $(".pdf-scroll", el);
+    const oldW = parseFloat(canvas.style.width) || scroll.clientWidth || 1;
+    const oldH = parseFloat(canvas.style.height) || scroll.clientHeight || 1;
+    const cx = (scroll.scrollLeft + scroll.clientWidth / 2) / oldW;    // 0..1 across the page
+    const cy = (scroll.scrollTop + scroll.clientHeight / 2) / oldH;    // 0..1 down the page
+    fitMode = false;
+    scale = Math.max(0.3, Math.min(5, ns));
+    await renderPage();
+    const nW = parseFloat(canvas.style.width) || 1, nH = parseFloat(canvas.style.height) || 1;
+    scroll.scrollLeft = Math.max(0, cx * nW - scroll.clientWidth / 2);
+    scroll.scrollTop = Math.max(0, cy * nH - scroll.clientHeight / 2);
+  }
+  $(".pdf-zoomin", el).addEventListener("click", () => zoomTo(scale * 1.2));
+  $(".pdf-zoomout", el).addEventListener("click", () => zoomTo(scale / 1.2));
   $(".pdf-fit", el).addEventListener("click", () => { fitMode = true; renderPage(); });
   $(".pdf-goto", el).addEventListener("change", (e) => {
     const n = Number(e.target.value);
@@ -574,7 +591,7 @@ function initPdf(side, inst) {
         const d = Math.hypot(a.x - b.x, a.y - b.y) || 1;
         const ns = Math.min(5, Math.max(0.3, pin.s0 * (d / pin.d0)));
         if (Math.abs(ns - scale) / scale > 0.04) {  // re-render only on meaningful change
-          fitMode = false; scale = ns; renderPage();
+          zoomTo(ns);
         }
       }
     }, { passive: false });
@@ -582,6 +599,33 @@ function initPdf(side, inst) {
     scroll.addEventListener("pointerup", end);
     scroll.addEventListener("pointercancel", end);
     scroll.style.touchAction = "pan-x pan-y";   // one finger scrolls, two fingers pinch
+  })();
+
+  /* ----- v14 (round-8 item 4): desktop wheel zoom + keyboard scrolling -----
+     Plain wheel/trackpad = native scrolling of the pane (visible fat
+     scrollbars come from the v14 CSS). ctrl/⌘ + wheel = zoom. The pane is
+     also focusable: arrows / PgUp / PgDn / Home / End walk the page. */
+  (function pdfDesktopNav() {
+    const scroll = $(".pdf-scroll", el);
+    scroll.addEventListener("wheel", (e) => {
+      if (!doc || !(e.ctrlKey || e.metaKey)) return;   // plain wheel scrolls natively
+      e.preventDefault();
+      zoomTo(scale * (e.deltaY < 0 ? 1.12 : 1 / 1.12));
+    }, { passive: false });
+    scroll.tabIndex = 0;
+    scroll.addEventListener("keydown", (e) => {
+      const map = {
+        ArrowDown: () => scroll.scrollTop += 80,   ArrowUp: () => scroll.scrollTop -= 80,
+        ArrowRight: () => scroll.scrollLeft += 80,  ArrowLeft: () => scroll.scrollLeft -= 80,
+        PageDown: () => scroll.scrollTop += scroll.clientHeight * 0.9,
+        PageUp: () => scroll.scrollTop -= scroll.clientHeight * 0.9,
+        Home: () => { scroll.scrollTop = 0; scroll.scrollLeft = 0; },
+        End: () => scroll.scrollTop = scroll.scrollHeight
+      };
+      const fn = map[e.key];
+      if (!fn) return;
+      e.preventDefault(); fn();
+    });
   })();
 
   /* ----- v2: annotate on top of the PDF page ----- */
@@ -1722,6 +1766,16 @@ function onRoomEvent(type, p) {
       renderRoster();
       break;
     case "roster": renderRoster(); break;
+    case "cohost":
+      renderRoster();
+      if (p && p.on !== undefined) toast(p.on ? ("👑 " + p.name + " is now an assistant tutor") : (p.name + " is no longer an assistant tutor"), "ok", 5000);
+      break;
+    case "cohost-action":
+      audit("cohost", (p && p.name) + " → " + (p && p.action));
+      renderRoster(); renderWaiting();
+      break;
+    case "mute-all": toast("🔇 All student mics muted"); break;
+    case "hands-lowered": renderRoster(); if (p && p.count) toast("✋ Lowered " + p.count + " hand(s)"); break;
     case "hand":
       if (p.up) toast("✋ " + p.name + " raised a hand", "", 4500);
       renderRoster();
@@ -1793,6 +1847,7 @@ function renderRosterNow() {
       <button class="btn small" data-act="cam" title="Ask/stop camera">📷</button>
       <button class="btn small" data-act="scr" title="Ask student to share their screen">🖥</button>
       <button class="btn small" data-act="mic" title="Allow/revoke mic">🎙</button>
+      <button class="btn small" data-act="cohost" title="Make assistant tutor (co-host): can admit, mute all, kick and lock">👑</button>
       <button class="btn small danger" data-act="kick" title="Remove">✕</button>` : "");
     if (room) {
       /* v9: reflect the real state (permission memory + live calls) instead of
@@ -1802,6 +1857,8 @@ function renderRosterNow() {
       const camB = row.querySelector('[data-act="cam"]');
       const scrB = row.querySelector('[data-act="scr"]');
       if (micB) micB.classList.toggle("active", !!stu.micAllowed);
+      const chB = row.querySelector('[data-act="cohost"]');
+      if (chB) chB.classList.toggle("active", !!stu.coHost);
       if (camB) camB.classList.toggle("active", stu.mediaCalls.some((c) => c._hmgKind === "stucam"));
       if (scrB) scrB.classList.toggle("active", stu.mediaCalls.some((c) => c._hmgKind === "stuscreen"));
       row.querySelector('[data-act="cam"]').addEventListener("click", (e) => {
@@ -1827,6 +1884,13 @@ function renderRosterNow() {
       });
       row.querySelector('[data-act="kick"]').addEventListener("click", () => {
         if (confirm("Remove " + stu.name + " from the class?")) room.kick(pid);
+      });
+      if (chB) chB.addEventListener("click", () => {
+        room.setCoHost(pid, !stu.coHost);
+        toast(!stu.coHost
+          ? "👑 " + stu.name + " is now an assistant tutor — they can admit the waiting room, mute all, lower hands, kick and lock."
+          : stu.name + " is no longer an assistant tutor", "ok", 6000);
+        renderRoster();
       });
     }
     list.appendChild(row);
@@ -1922,6 +1986,9 @@ on("#btnAnnounce", "click", () => {
 });
 
 /* ---- students drawer extras ---- */
+/* v14 (round 8): moderation bar — Zoom-style whole-class controls */
+on("#btnMuteAll", "click", () => { if (!room) return; room.muteAll(); toast("🔇 All student mics muted — students can ask to speak again."); });
+on("#btnLowerHands", "click", () => { if (!room) return; room.lowerAllHands(); });
 on("#btnLock", "click", (e) => {
   if (!room) { toast("Go live first"); return; }
   room.setLocked(!room.locked);

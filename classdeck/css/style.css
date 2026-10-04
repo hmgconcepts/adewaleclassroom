@@ -190,7 +190,11 @@ hr.sep { border: none; border-top: 1px solid var(--line); margin: 10px 0; }
 /* pdf pane */
 .pdf-bar { flex: 0 0 auto; display: flex; gap: 6px; align-items: center; padding: 6px 8px; background: var(--bg-2);
   border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: thin; }
-.pdf-scroll { flex: 1; overflow: auto; display: flex; align-items: flex-start; justify-content: center; background: #383d52; }
+.pdf-scroll { flex: 1; overflow: auto; display: flex; align-items: flex-start; justify-content: flex-start; background: #383d52; -webkit-overflow-scrolling: touch; scrollbar-width: auto; scrollbar-color: #8b93b8 rgba(255,255,255,.08); }
+/* v14 (round-8 item 4): auto side-margins centre the page only when it FITS —
+   when zoomed past the pane the full page is scrollable edge-to-edge
+   (justify-content:center used to push the left overflow out of reach). */
+.pdf-scroll > .pdf-pagewrap { margin: 14px auto; }
 #pdfCanvas { background: #fff; box-shadow: var(--shadow); margin: 14px; max-width: none; }
 .drop-hint { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px; align-items: center;
   justify-content: center; color: var(--text-dim); text-align: center; padding: 24px; pointer-events: none; }
@@ -335,6 +339,14 @@ hr.sep { border: none; border-top: 1px solid var(--line); margin: 10px 0; }
 
 /* v2 — PDF annotation overlay */
 .pdf-annot-stage.armed { display: block !important; }
+/* v14 (round-8 item 4): always-visible fat scrollbars so panning a zoomed
+   PDF is discoverable on desktop; the bars double as grab handles. */
+.pdf-scroll::-webkit-scrollbar { width: 14px; height: 14px; visibility: visible; }
+.pdf-scroll::-webkit-scrollbar-track { background: rgba(255,255,255,.08); border-radius: 8px; }
+.pdf-scroll::-webkit-scrollbar-thumb { background: #8b93b8; border-radius: 8px; border: 3px solid #383d52; }
+.pdf-scroll::-webkit-scrollbar-thumb:hover { background: #a8b0d0; }
+.pdf-scroll::-webkit-scrollbar-corner { background: transparent; }
+.pdf-scroll:focus { outline: none; }
 .pdf-annot-stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
 .pdf-annot.active { outline: 2px solid var(--accent); }
 

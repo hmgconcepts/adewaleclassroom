@@ -8,7 +8,7 @@
    requests, making the site feel native on repeat visits.
    Bump CACHE_VERSION whenever you deploy changes.
    ============================================================ */
-const CACHE_VERSION = "hmg-classdeck-v13.2.0-dead-relay-removed-cf-autorenew-chip-gone";  /* bumped: v13.2 removed the dead OpenRelay TURN entries, auto-renews Cloudflare credentials, filters port-53 URLs, and replaced the fixed top chip with an inline/bottom studio link */
+const CACHE_VERSION = "hmg-classdeck-v14.0.0-cohost-scrolling-boards-pdf-nav";  /* bumped: v14 adds assistant tutors (co-hosts), mute-all/lower-hands/attendance CSV, scrollable zoomable whiteboard pages and PDF anchored zoom with visible scrollbars */
 
 const SHELL = [
   "./",

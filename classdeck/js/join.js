@@ -295,6 +295,47 @@ function restoreJoinButton() {
 }
 $("#btnLeaveWaiting")?.addEventListener("click", stopLobby);
 
+/* ---------- v14 (round 8): assistant-tutor panel ----------
+   Shown ONLY while the teacher has promoted this device (👑). The panel
+   talks to the teacher through StudentRoom.coHostAction() — the teacher's
+   TeacherRoom verifies the promotion before honouring anything, so a
+   non-promoted student sending these messages is simply ignored. */
+let coHostOn = false, coLockOn = false, coHostPanelEl = null;
+function handleCoHost(d) {
+  coHostOn = !!d.on;
+  if (!coHostOn) {
+    if (coHostPanelEl) { try { coHostPanelEl.remove(); } catch (e) {} coHostPanelEl = null; }
+    if (d.on === false) toast("You are no longer an assistant tutor.");
+    return;
+  }
+  if (coHostPanelEl) return;
+  const panel = document.createElement("div");
+  panel.id = "cohostPanel";
+  panel.style.cssText = "position:fixed;left:12px;bottom:calc(70px + env(safe-area-inset-bottom,0px));z-index:6000;background:rgba(15,18,40,.93);border:1px solid #4f6ef7;border-radius:14px;padding:10px 12px;display:flex;gap:8px;flex-wrap:wrap;max-width:86vw";
+  const title = document.createElement("b");
+  title.style.cssText = "color:#ffd166;font-size:12px;width:100%";
+  title.textContent = "👑 Assistant tutor";
+  panel.appendChild(title);
+  const mk = (label, titleText, fn) => {
+    const b = document.createElement("button");
+    b.className = "btn small"; b.textContent = label; b.title = titleText;
+    b.addEventListener("click", fn);
+    panel.appendChild(b);
+  };
+  mk("🚪 Admit all", "Admit everyone waiting in the waiting room", () => { if (sRoom) sRoom.coHostAction("admitAll"); });
+  mk("🔇 Mute all", "Mute every student microphone", () => { if (sRoom) sRoom.coHostAction("muteAll"); });
+  mk("✋ Lower hands", "Lower all raised hands", () => { if (sRoom) sRoom.coHostAction("lowerHands"); });
+  mk("🔒 Lock / unlock", "Lock the class against new joins (or unlock)", () => {
+    if (!sRoom) return;
+    coLockOn = !coLockOn;
+    sRoom.coHostAction("lock", null, { on: coLockOn });
+    toast(coLockOn ? "Class locked — no new students can join" : "Class unlocked");
+  });
+  document.body.appendChild(panel);
+  coHostPanelEl = panel;
+  toast("👑 You are now an assistant tutor — you can admit, mute, lower hands and lock the class.", "ok", 6000);
+}
+
 /* ---------- v11: connection doctor ----------
    After repeated join failures, prove (not guess) whether this device's
    network can do WebRTC at all: gather ICE candidates with the same
@@ -372,6 +413,10 @@ function onEvent(type, p) {
       $("#roomNameChip").textContent = p.roomName || "";
       $("#countChip").textContent = "👥 " + (p.count || 1);
       toast(p.rejoined ? "Reconnected — waiting for the teacher's screen…" : "Joined! Waiting for the teacher's screen…", "ok");
+      break;
+    case "cohost": handleCoHost(p); break;                      /* v14: assistant tutor */
+    case "handSync":
+      if (!p.up) { handUp = false; const hb = $("#sBtnHand"); if (hb) hb.classList.remove("active"); }
       break;
     case "roster":
       $("#countChip").textContent = "👥 " + (p.count || 0);
@@ -939,6 +984,8 @@ async function attemptRejoin() {
 
 function cleanupAndGate(message) {
   lobbyOn = false;
+  coHostOn = false; coLockOn = false;
+  if (coHostPanelEl) { try { coHostPanelEl.remove(); } catch (e) {} coHostPanelEl = null; }
   clearTimeout(lobbyTimer);
   lobbyTimer = null;
   const oldRoom = sRoom;

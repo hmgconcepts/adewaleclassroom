@@ -321,6 +321,7 @@ class TeacherRoom {
     this.activePoll = null;
     this.peer = null;
     this.locked = false;
+    this.coHosts = new Set();                        // v14: assistant tutors (Zoom-style co-hosts)
     this.waitingRoom = false;                         // v4: Zoom-style waiting room
     this.autoAdmitRejoin = false;                    // enterprise: let previously admitted students re-enter after teacher resume
     this.pending = new Map();                         // v4: peers awaiting admission
@@ -564,6 +565,43 @@ class TeacherRoom {
     this._admit(p.conn, p.name);
   }
   admitAll() { for (const pid of [...this.pending.keys()]) this.admit(pid); }
+
+  /* ---------------- v14: assistant tutor (co-host) + moderation suite ----------------
+     The teacher can promote any admitted student to assistant tutor for the
+     session (Zoom "co-host"). A promoted peer may admit/deny the waiting
+     room, mute everyone, lower hands, kick and lock — every action is
+     verified server-of-truth-wise HERE (only promoted peers' actions are
+     honoured) and stamped into the attendance log. */
+  setCoHost(peerId, on) {
+    const stu = this.students.get(peerId);
+    if (!stu) return;
+    stu.coHost = !!on;
+    if (on) this.coHosts.add(peerId); else this.coHosts.delete(peerId);
+    try { stu.conn.send({ t: "cohost", on: !!on }); } catch {}
+    this.attendance.push({ name: stu.name, event: on ? "cohost-on" : "cohost-off", time: nowStamp() });
+    this.onEvent("cohost", { peerId, name: stu.name, on: !!on });
+    this._broadcastRoster();
+  }
+  muteAll() {
+    for (const [pid, stu] of this.students) {
+      if (stu.micAllowed) this.allowMic(pid, false);
+      else { try { stu.conn.send({ t: "micAllow", on: false }); } catch {} }
+    }
+    this.attendance.push({ name: "(class)", event: "mute-all", time: nowStamp() });
+    this.onEvent("mute-all", {});
+  }
+  lowerAllHands() {
+    let n = 0;
+    for (const [pid, stu] of this.students) {
+      if (!stu.hand) continue;
+      stu.hand = false; n++;
+      try { stu.conn.send({ t: "handSync", up: false }); } catch {}
+    }
+    this.attendance.push({ name: "(class)", event: "lower-hands", time: nowStamp() });
+    this.onEvent("hands-lowered", { count: n });
+    this._broadcastRoster();
+  }
+
   deny(peerId) {
     const p = this.pending.get(peerId);
     if (!p) return;
@@ -649,6 +687,21 @@ class TeacherRoom {
           }
         }
         break;
+      case "cohostAction": {   /* v14: honoured ONLY from promoted assistant tutors */
+        if (!this.coHosts.has(conn.peer)) break;
+        const by = stu.name;
+        switch (d.action) {
+          case "admit":      if (d.target && this.pending.has(d.target)) { this.admit(d.target); this.attendance.push({ name: by, event: "cohost-admit", time: nowStamp() }); } break;
+          case "admitAll":   this.admitAll(); this.attendance.push({ name: by, event: "cohost-admit-all", time: nowStamp() }); break;
+          case "deny":       if (d.target && this.pending.has(d.target)) this.deny(d.target); break;
+          case "kick":       if (d.target && this.students.has(d.target) && d.target !== conn.peer) { this.kick(d.target); this.attendance.push({ name: by, event: "cohost-kick", time: nowStamp() }); } break;
+          case "muteAll":    this.muteAll(); break;
+          case "lowerHands": this.lowerAllHands(); break;
+          case "lock":       this.setLocked(!!d.on); this.attendance.push({ name: by, event: d.on ? "cohost-lock" : "cohost-unlock", time: nowStamp() }); break;
+        }
+        this.onEvent("cohost-action", { name: by, action: d.action });
+        break;
+      }
       case "ping":
         conn.send({ t: "pong", time: Date.now() });
         break;
@@ -889,7 +942,7 @@ class TeacherRoom {
     }
   }
   _broadcastRoster() {
-    const roster = Array.from(this.students.values()).map((s) => ({ name: s.name, hand: s.hand }));
+    const roster = Array.from(this.students.values()).map((s) => ({ name: s.name, hand: s.hand, coHost: !!s.coHost }));
     this.onEvent("roster", roster);           // local UI immediately…
     /* v12: …but throttle the NETWORK broadcast. With 200 students joining
        in two minutes the old per-join broadcast was O(n²) messages and
@@ -1164,8 +1217,9 @@ class TeacherRoom {
 
   /* ----- attendance ----- */
   attendanceCSV() {
-    const rows = [["Name", "Event", "Time"], ...this.attendance.map((a) => [a.name, a.event, a.time])];
-    return rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    /* v14: null-safe fields (never "undefined") + CRLF so Excel opens it cleanly */
+    const rows = [["Name", "Event", "Time"], ...this.attendance.map((a) => [a.name || "", a.event || "", a.time || ""])];
+    return rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\r\n");
   }
 
   end() {
@@ -1364,6 +1418,8 @@ class StudentRoom {
       case "boardsClear":             // v12: teacher reset student boards
         this.onEvent("boardsClear", d);
         break;
+      case "cohost":    this.coHost = !!d.on; this.onEvent("cohost", d); break;   // v14: assistant tutor
+      case "handSync":  this.onEvent("handSync", d); break;                       // v14: teacher lowered my hand
       case "reaction":  this.onEvent("reaction", d); break;        // v4
       case "spotlight": this.onEvent("spotlight", d); break;       // v4
       case "boards":    this.onEvent("boards", d); break;            // v8
@@ -1380,6 +1436,7 @@ class StudentRoom {
   send(msg) { try { this.conn && this.conn.send(msg); } catch {} }
   sendChat(text)      { this.send({ t: "chat", text }); }
   raiseHand(up)       { this.send({ t: "hand", up }); }
+  coHostAction(action, target, extra) { this.send(Object.assign({ t: "cohostAction", action, target: target || null }, extra || {})); }   // v14
   answerPoll(index)   { this.send({ t: "pollAnswer", index }); }
   answerQuiz(qIndex, answer) { this.send({ t: "quizAnswer", qIndex, answer }); } // v3
   sendReaction(emoji) { this.send({ t: "reaction", emoji }); }                   // v4

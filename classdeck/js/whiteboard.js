@@ -3,6 +3,12 @@
    Multi-page, vector-stroke based (crisp at any size),
    pen / highlighter / eraser / shapes / text, undo-redo,
    autosave to localStorage, PNG export.
+   v14 (round-8 item 3): every page is a LONG scrolling board —
+   wheel / scrollbar / middle-mouse navigation, pinch + ctrl-wheel
+   zoom anchored at the cursor, visible overlay scrollbars, and
+   full-page PNG / PDF export (the whole scrollable page, not just
+   the visible window). Strokes keep living in board coordinates,
+   so old saved boards and live sync remain 100% compatible.
    ========================================================= */
 "use strict";
 
@@ -40,11 +46,17 @@ class Whiteboard {
     this.cur = null; // current stroke
 
     this._bindPointer();
+    if (!this.transparent) this._makeScrollbars();   /* v14 */
     this._observeResize();
     this.resize();
   }
 
-  _newPage() { return { strokes: [] }; }
+  /* v14: a page is worldH screens tall (default 3 — a long notebook page you
+     scroll through). The PDF annotation overlay is locked to 1 (it must stay
+     glued to the PDF page underneath). Existing saved pages without `h`
+     normalise to 3 — their content simply sits in the top screen. */
+  _newPage() { return { strokes: [], h: this.transparent ? 1 : 3 }; }
+  get worldH() { return this.transparent ? 1 : Math.max(1, Math.min(8, Number(this.page && this.page.h) || 3)); }
   _normalisePages(value) {
     if (!Array.isArray(value) || !value.length) return null;
     const tools = new Set(["pen", "highlight", "eraser", "line", "arrow", "rect", "ellipse", "triangle", "diamond", "star", "text", "laser", "image"]);
@@ -73,7 +85,8 @@ class Whiteboard {
         }
         return out;
       }).filter(Boolean) : [];
-      return { strokes };
+      const h = this.transparent ? 1 : Math.max(1, Math.min(8, Number(page.h) || 3));
+      return { strokes, h };
     }).filter(Boolean);
     return pages.length ? pages : null;
   }
@@ -96,7 +109,7 @@ class Whiteboard {
     this.redraw();
   }
 
-  /* ---------- pointer handling (v4: pinch zoom/pan + palm rejection) ---------- */
+  /* ---------- pointer handling (v4: pinch zoom/pan + palm rejection, v14: wheel + middle-mouse) ---------- */
   _bindPointer() {
     const el = this.overlay;
     el.style.touchAction = "none";
@@ -105,6 +118,31 @@ class Whiteboard {
     el.addEventListener("pointerup",   (e) => this._up(e));
     el.addEventListener("pointercancel", (e) => this._up(e));
     el.addEventListener("pointerleave", (e) => { if (this.drawing) this._up(e); });
+    /* v14: mouse wheel / trackpad = scroll the board (the round-8 ask).
+       ctrl/⌘ + wheel = zoom anchored at the cursor. shift + wheel = sideways. */
+    el.addEventListener("wheel", (e) => this._wheel(e), { passive: false });
+  }
+  _wheel(e) {
+    if (this.transparent) return;        /* PDF annotation overlay: the PDF scroller owns the wheel */
+    e.preventDefault();
+    const v = this.view;
+    const n = this._scr(e);
+    if (e.ctrlKey || e.metaKey) {
+      const oldS = v.s;
+      const ns = Math.min(6, Math.max(1, oldS * (e.deltaY < 0 ? 1.12 : 1 / 1.12)));
+      const wx = (n.x - v.x) / oldS, wy = (n.y - v.y) / oldS;   /* keep the point under the cursor still */
+      v.s = ns; v.x = n.x - wx * ns; v.y = n.y - wy * ns;
+    } else {
+      const r = this.overlay.getBoundingClientRect();
+      const unit = (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? r.height : 1) / Math.max(1, r.height);
+      /* rolling DOWN reveals content further down the long page (view.y is
+         negative-going), exactly like every document scroller. */
+      v.x -= (e.shiftKey ? e.deltaY : (e.deltaX || 0)) * unit;
+      v.y -= (e.shiftKey ? 0 : e.deltaY) * unit;
+    }
+    this._clampView();
+    this.redraw();
+    if (this.onViewChange) this.onViewChange(this.view);
   }
   /* screen-normalised position (0..1 of the visible stage) */
   _scr(e) {
@@ -121,7 +159,7 @@ class Whiteboard {
     const v = this.view;
     v.s = Math.min(6, Math.max(1, v.s));
     v.x = Math.min(0, Math.max(1 - v.s, v.x));
-    v.y = Math.min(0, Math.max(1 - v.s, v.y));
+    v.y = Math.min(0, Math.max(1 - v.s * this.worldH, v.y));   /* v14: scroll the whole page */
   }
   resetView() {
     this.view = { s: 1, x: 0, y: 0 };
@@ -132,6 +170,12 @@ class Whiteboard {
     e.preventDefault();
     this.overlay.setPointerCapture(e.pointerId);
     this._pointers.set(e.pointerId, { n: this._scr(e), type: e.pointerType });
+
+    /* v14: middle mouse = grab-and-pan (the desktop equivalent of finger pan) */
+    if (e.button === 1) {
+      this._pan = { n0: this._scr(e), v0: { ...this.view } };
+      return;
+    }
 
     /* two fingers down → pinch zoom/pan THIS board only */
     if (this._pointers.size === 2) {
@@ -258,6 +302,67 @@ class Whiteboard {
     this.onChange();
   }
 
+  /* ---------- v14: overlay scrollbars (visible, draggable) ----------
+     The board canvas is fixed-size, so native scrollbars cannot exist.
+     These two slim tracks show WHERE you are on the long page and can be
+     dragged directly. They sit above the ink layer only at the very edges. */
+  _makeScrollbars() {
+    try { if (!getComputedStyle(this.stage).position || getComputedStyle(this.stage).position === "static") this.stage.style.position = "relative"; } catch (e) { try { this.stage.style.position = "relative"; } catch (e2) {} }
+    const mk = (vert) => {
+      const track = document.createElement("div");
+      track.className = "wb-sb " + (vert ? "wb-sbv" : "wb-sbh");
+      track.style.cssText = vert
+        ? "position:absolute;top:4px;bottom:16px;right:4px;width:10px;z-index:30;border-radius:8px;background:rgba(120,130,170,.20);touch-action:none"
+        : "position:absolute;left:4px;right:16px;bottom:4px;height:10px;z-index:30;border-radius:8px;background:rgba(120,130,170,.20);touch-action:none";
+      const thumb = document.createElement("div");
+      thumb.style.cssText = "position:absolute;border-radius:8px;background:rgba(90,105,180,.60);cursor:pointer;touch-action:none";
+      if (vert) thumb.style.width = "100%"; else thumb.style.height = "100%";
+      track.appendChild(thumb);
+      this.stage.appendChild(track);
+      thumb.addEventListener("pointerdown", (e) => {
+        e.preventDefault(); e.stopPropagation();
+        try { thumb.setPointerCapture(e.pointerId); } catch (err) {}
+        const start = vert ? e.clientY : e.clientX;
+        const v0 = { ...this.view };
+        const span = vert ? this.worldH : 1;
+        const move = (ev) => {
+          const r = this.overlay.getBoundingClientRect();
+          const trackPx = Math.max(40, (vert ? r.height : r.width));
+          const d = ((vert ? ev.clientY - start : ev.clientX - start) / trackPx) * span * this.view.s;
+          if (vert) this.view.y = v0.y - d; else this.view.x = v0.x - d;
+          this._clampView(); this.redraw();
+          if (this.onViewChange) this.onViewChange(this.view);
+        };
+        const up = () => { thumb.removeEventListener("pointermove", move); thumb.removeEventListener("pointerup", up); };
+        thumb.addEventListener("pointermove", move);
+        thumb.addEventListener("pointerup", up);
+      });
+      return { track, thumb, vert };
+    };
+    this._sbv = mk(true);
+    this._sbh = mk(false);
+  }
+  _updateScrollbars() {
+    if (!this._sbv) return;
+    const v = this.view, wh = this.worldH;
+    const showV = wh > 1 && v.s * wh > 1.001;
+    const showH = v.s > 1.001;
+    this._sbv.track.style.display = showV ? "block" : "none";
+    this._sbh.track.style.display = showH ? "block" : "none";
+    if (showV) {
+      const frac = Math.max(0.08, Math.min(1, 1 / (v.s * wh)));
+      const top = Math.min(1 - frac, Math.max(0, (-v.y / v.s) / wh));
+      this._sbv.thumb.style.height = (frac * 100) + "%";
+      this._sbv.thumb.style.top = (top * 100) + "%";
+    }
+    if (showH) {
+      const frac = Math.max(0.08, Math.min(1, 1 / v.s));
+      const left = Math.min(1 - frac, Math.max(0, -v.x / v.s));
+      this._sbh.thumb.style.width = (frac * 100) + "%";
+      this._sbh.thumb.style.left = (left * 100) + "%";
+    }
+  }
+
   /* ---------- rendering ---------- */
   _styleFor(ctx, s) {
     ctx.lineCap = "round"; ctx.lineJoin = "round";
@@ -270,8 +375,8 @@ class Whiteboard {
                : s.tool === "laser" ? Math.max(4, s.size) : s.size;
     ctx.lineWidth = base * this.dpr;
   }
-  _drawStroke(ctx, s) {
-    const W = this.canvas.width, H = this.canvas.height;
+  _drawStroke(ctx, s, W, H) {
+    W = W || this.canvas.width; H = H || this.canvas.height;
     const v = this.view || { s: 1, x: 0, y: 0 };
     const X = (p) => (p.x * v.s + v.x) * W, Y = (p) => (p.y * v.s + v.y) * H;
     this._styleFor(ctx, s);
@@ -356,8 +461,8 @@ class Whiteboard {
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = "source-over";
   }
-  _drawBackground(ctx) {
-    const W = this.canvas.width, H = this.canvas.height;
+  _drawBackground(ctx, W, H) {
+    W = W || this.canvas.width; H = H || this.canvas.height;
     if (this.transparent || this.bgStyle === "none") {       // v2: annotation overlay
       ctx.clearRect(0, 0, W, H);
       return;
@@ -402,8 +507,25 @@ class Whiteboard {
     }
   }
   redraw() {
-    this._drawBackground(this.ctx);
+    this._drawBackground(this.ctx, this.canvas.width, this.canvas.height);
     for (const s of this.page.strokes) this._drawStroke(this.ctx, s);
+    this._updateScrollbars();   /* v14 */
+  }
+  /* v14: render the ENTIRE scrollable page (all worldH screens) onto an
+     offscreen canvas — used by PNG/PDF export so the whole page is captured,
+     not just the visible window. */
+  _renderPageFull(pageObj) {
+    const W = this.canvas.width, H = Math.round(this.canvas.height * Math.max(1, Math.min(8, Number(pageObj.h) || 3)));
+    const tmp = document.createElement("canvas");
+    tmp.width = W; tmp.height = H;
+    const tctx = tmp.getContext("2d");
+    const keepIdx = this.pageIndex, keepView = { ...this.view };
+    this.pageIndex = this.pages.indexOf(pageObj);
+    this.view = { s: 1, x: 0, y: 0 };
+    this._drawBackground(tctx, W, H);
+    for (const s of pageObj.strokes) this._drawStroke(tctx, s, W, H);
+    this.pageIndex = keepIdx; this.view = keepView;
+    return tmp;
   }
   _drawPreview() {
     this.octx.clearRect(0, 0, this.overlay.width, this.overlay.height);
@@ -460,12 +582,11 @@ class Whiteboard {
     this._save();
   }
   exportPNG() {
-    const keep = { ...this.view };
-    this.view = { s: 1, x: 0, y: 0 }; this.redraw();
-    this.canvas.toBlob((b) => {
+    /* v14: exports the WHOLE scrollable page */
+    const tmp = this._renderPageFull(this.page);
+    tmp.toBlob((b) => {
       if (b) downloadBlob(b, `whiteboard-page${this.pageIndex + 1}-${Date.now()}.png`);
       else toast("Could not export this board as an image", "err");
-      this.view = keep; this.redraw();
     });
   }
   setPenOnly(v) { this.penOnly = v; Store.set("wb_penonly", v); }
@@ -512,21 +633,13 @@ class Whiteboard {
 
   /* ---------- v3: export the whole deck as a PDF ---------- */
   async exportDeckPDF(filename) {
-    const keepIndex = this.pageIndex;
-    const keepView = { ...this.view };
-    this.view = { s: 1, x: 0, y: 0 };
+    /* v14: every page exported at full scrollable height */
     const jpegs = [];
     for (let i = 0; i < this.pages.length; i++) {
-      this.pageIndex = i;
-      this.redraw();
+      const tmp = this._renderPageFull(this.pages[i]);
       await new Promise((r) => setTimeout(r, 30)); // allow image stamps to paint
-      jpegs.push({
-        dataUrl: this.canvas.toDataURL("image/jpeg", 0.85),
-        width: this.canvas.width, height: this.canvas.height
-      });
+      jpegs.push({ dataUrl: tmp.toDataURL("image/jpeg", 0.85), width: tmp.width, height: tmp.height });
     }
-    this.pageIndex = keepIndex;
-    this.view = keepView;
     this.redraw();
     downloadBlob(jpegsToPdf(jpegs), filename || `whiteboard-deck-${Date.now()}.pdf`);
   }

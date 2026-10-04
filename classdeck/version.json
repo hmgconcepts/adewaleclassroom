@@ -1,8 +1,8 @@
 {
-  "version": "13.2.0",
-  "build": 16,
+  "version": "14.0.0",
+  "build": 17,
   "channel": "stable",
-  "released": "2026-09-30",
+  "released": "2026-10-04",
   "features": [
     "custom-room-codes",
     "two-folder-generator",
@@ -49,6 +49,15 @@
     "v13.2-cloudflare-credentials-auto-renewal",
     "v13.2-port-53-ice-urls-filtered",
     "v13.2-expired-relay-runtime-skip",
-    "v13.2-top-chip-replaced-by-inline-or-bottom-link"
+    "v13.2-top-chip-replaced-by-inline-or-bottom-link",
+    "v14-cohost-assistant-tutor",
+    "v14-mute-all-lower-all-hands",
+    "v14-attendance-csv-export",
+    "v14-whiteboard-scroll-within-page",
+    "v14-whiteboard-zoom-at-cursor",
+    "v14-whiteboard-fullpage-export",
+    "v14-pdf-anchored-zoom",
+    "v14-pdf-visible-scrollbars",
+    "v14-pdf-keyboard-scrolling"
   ]
 }
