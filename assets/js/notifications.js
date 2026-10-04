@@ -237,8 +237,35 @@ const Notifications = {
     } catch (e) { return true; }
   },
 
+  /* v44 (round-8 item 5): unread MESSAGE badge — runs on every page so the
+     “Messages” nav link shows pending conversations, not just notifications. */
+  async refreshMessageBadge() {
+    try {
+      if (!this.sb || !this.sb.rpc) return;
+      const { data, error } = await this.sb.rpc('tc_message_unread');
+      if (error) return;
+      const n = Number(data) || 0;
+      document.querySelectorAll('a[href="messages.html"]').forEach((a) => {
+        let b = a.querySelector('.mc-nav-badge');
+        if (n > 0) {
+          if (!b) {
+            b = document.createElement('span'); b.className = 'mc-nav-badge';
+            const st = document.getElementById('mc-badge-styles') || (() => {
+              const s = document.createElement('style'); s.id = 'mc-badge-styles';
+              s.textContent = '.mc-nav-badge{margin-left:6px;background:#dc2626;color:#fff;border-radius:999px;font-size:.66rem;font-weight:800;padding:1px 6px;display:inline-block}';
+              document.head.appendChild(s); return s;
+            })();
+            void st; a.appendChild(b);
+          }
+          b.textContent = n > 99 ? '99+' : String(n);
+        } else if (b) b.remove();
+      });
+    } catch (_) {}
+  },
+
   async refreshUnreadCount() {
     const badge = document.getElementById('notif-badge');
+    this.refreshMessageBadge().catch(() => {});
     if (!badge) return;
     if (!this.sb) { badge.style.display = 'none'; await this.renderPageList(); return; }
     let items, user;

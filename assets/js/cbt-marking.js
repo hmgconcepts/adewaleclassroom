@@ -1,4 +1,5 @@
 /* ============================================================================
+
    cbt-marking.js — the tutor's marking desk          (reported item 7)
    ----------------------------------------------------------------------------
    "For CBT, there are some question types that will require the oversight of
@@ -34,6 +35,80 @@
    Marking is deliberately NOT anonymous and deliberately NOT reversible in
    silence: tc_cbt_award_marks() stamps marked_by and marked_at every time.
    ========================================================================== */
+/* ═════ v44 (round-8 item 1): COMMENT BANK ═════
+   Google-Classroom-style reusable feedback: save the phrases you keep
+   writing while marking ("Excellent working — watch the units", "Show
+   your substitution step", …) and insert them into any per-question or
+   overall comment with one tap. Stored locally on this device
+   (localStorage `cbt_comment_bank_v1`) — nothing sensitive ever leaves
+   it, and it works offline. */
+var COMMENT_BANK = (function () {
+  var KEY = 'cbt_comment_bank_v1';
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } }
+  function persist(list) { try { localStorage.setItem(KEY, JSON.stringify(list.slice(0, 60))); } catch (e) {} }
+  function esc_(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  /* Attach a 💾 save button + 💬 quick-pick to any comment field. */
+  function decorate(field) {
+    if (!field || field.dataset.bankBound) return;
+    field.dataset.bankBound = '1';
+    field.style.paddingRight = '76px';
+    var wrap = document.createElement('span');
+    wrap.style.cssText = 'position:absolute;right:6px;top:6px;display:flex;gap:4px';
+    var save = document.createElement('button');
+    save.type = 'button'; save.className = 'btn btn-sm btn-outline'; save.title = 'Save this comment to your comment bank';
+    save.textContent = '💾';
+    var pick = document.createElement('button');
+    pick.type = 'button'; pick.className = 'btn btn-sm btn-outline'; pick.title = 'Insert from your comment bank';
+    pick.textContent = '💬';
+    save.addEventListener('click', function () {
+      var v = (field.value || '').trim();
+      if (!v) { pick.focus(); return; }
+      var list = load();
+      if (list.indexOf(v) === -1) { list.unshift(v); persist(list); }
+      save.animate ? save.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.35)' }, { transform: 'scale(1)' }], { duration: 220 }) : null;
+      save.title = 'Saved to your bank ✓';
+      setTimeout(function () { save.title = 'Save this comment to your comment bank'; }, 1400);
+    });
+    pick.addEventListener('click', function () {
+      var list = load();
+      var old = document.querySelector('.cbt-bank-pop');
+      if (old) { old.remove(); return; }
+      if (!list.length) { pick.title = 'Bank is empty — write a comment and tap 💾'; return; }
+      var pop = document.createElement('div');
+      pop.className = 'cbt-bank-pop';
+      pop.style.cssText = 'position:absolute;z-index:70;right:0;top:34px;width:320px;max-height:240px;overflow:auto;' +
+        'background:#fff;border:1px solid #cbd5e1;border-radius:10px;box-shadow:0 14px 34px rgba(15,23,42,.18);padding:6px';
+      list.forEach(function (t) {
+        var it = document.createElement('button');
+        it.type = 'button';
+        it.style.cssText = 'display:block;width:100%;text-align:left;background:none;border:0;border-radius:7px;padding:7px 9px;cursor:pointer;font:inherit;font-size:.85rem';
+        it.textContent = t;
+        it.addEventListener('click', function () {
+          field.value = field.value ? (field.value.replace(/\s+$/, '') + '\n' + t) : t;
+          pop.remove(); field.focus();
+        });
+        pop.appendChild(it);
+      });
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.style.cssText = 'display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid #e2e8f0;border-radius:0 0 7px 7px;padding:7px 9px;cursor:pointer;color:#b91c1c;font-size:.8rem';
+      del.textContent = '🗑 Remove last saved';
+      del.addEventListener('click', function () { var l = load(); l.shift(); persist(l); pop.remove(); });
+      pop.appendChild(del);
+      field.parentElement.appendChild(pop);
+      setTimeout(function () {
+        document.addEventListener('click', function h(ev) {
+          if (!pop.contains(ev.target) && ev.target !== pick) { pop.remove(); document.removeEventListener('click', h); }
+        });
+      }, 10);
+    });
+    wrap.appendChild(save); wrap.appendChild(pick);
+    if (getComputedStyle(field.parentElement || field).position === 'static' && field.parentElement) field.parentElement.style.position = 'relative';
+    (field.parentElement || field).appendChild(wrap);
+  }
+  return { decorate: decorate };
+})();
 (function (w) {
   'use strict';
 
@@ -311,6 +386,9 @@
         if (!isFinite(v)) { missing.push(i + 1); return; }
         marks.push({ i: i, mark: v, comment: c ? c.value : '' });
       });
+
+      /* v44: bind the comment bank to every comment field in this marking box */
+      box.querySelectorAll('[data-mk-comment], #mk-overall').forEach(function (f) { try { COMMENT_BANK.decorate(f); } catch (e) {} });
 
       if (release && missing.length) {
         return show('Question ' + missing.join(', ') + ' still ' +

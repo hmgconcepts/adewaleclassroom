@@ -58,9 +58,10 @@
       {
         "id": "messages",
         "href": "messages.html",
-        "label": "Messaging (WA / Email / SMS)",
+        "label": "Messages",
+        "title": "Messages",
         "icon": "💬",
-        "aud": "staff"
+        "aud": "user"
       },
       {
         "id": "change_password",
@@ -1072,5 +1073,5 @@
     ]
   }
 ];
-  w.TC_NAV_MODEL_VERSION = 'V25';
+  w.TC_NAV_MODEL_VERSION = 'V26';
 })(window);
