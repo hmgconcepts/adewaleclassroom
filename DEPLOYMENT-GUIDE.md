@@ -326,3 +326,37 @@ strictly one-time. The fixed top chip is gone: an inline studio link on
 topbar pages, a bottom-corner pill elsewhere, nothing on student pages). The blog
 (`assets/js/blog.js` V44) is white-label — it reads the practice name from
 `[data-practice-name]`, so the same file serves both products.
+
+## V44 — real two-way messaging + ClassDeck v14.0.0 (round 8)
+
+`complete-schema.sql` now ends with **V44**. On an existing project, run
+`database/v44-messaging.sql` once (idempotent — `add column if not
+exists` / `create or replace` throughout). It adds real person-to-person
+message threads: `messages.recipient/sender_name/read_at`, five
+security-definer RPCs (`tc_message_directory/send/threads/thread/unread`),
+role-scoped routing (families → tutors/admins; tutors → staff + their own
+classes' families; admins → everyone), read receipts and automatic
+notification rows.
+
+Platform pages now load `?v=45` (shell cache `tc-shell-v13-20261004`,
+nav V26 — **Messages is available to every signed-in role** and shows an
+unread badge). New front-end files: `assets/js/messages-center.js`;
+rebuilt: `messages.html`, `notifications.js`, `app.js` (work-board to-do
+bar), `cbt-marking.js` (comment bank).
+
+The ClassDeck ships **v13.2 → v14.0.0** (pages `?v=48`, sw
+`hmg-classdeck-v14.0.0-cohost-scrolling-boards-pdf-nav`):
+
+- **Assistant tutors** — 👑 on any admitted student; promoted peers can
+  admit the waiting room, mute all, lower hands, kick and lock; the
+  teacher verifies every action server-of-truth-wise (TeacherRoom only
+  honours promoted peers).
+- **Whole-class moderation** — mute-all, lower-all-hands, and an
+  upgraded attendance CSV (null-safe, Excel-friendly CRLF).
+- **Scrollable whiteboard pages** — every board page is 3 screens tall
+  (1–8): wheel scrolls, ctrl/⌘+wheel zooms at the cursor, middle-mouse
+  pans, draggable overlay scrollbars; PNG/PDF export captures the whole
+  page. Old boards open unchanged.
+- **PDF navigation** — safe centring (zoomed pages scroll edge-to-edge),
+  always-visible scrollbars, zoom anchored to the viewport centre across
+  buttons/pinch/ctrl-wheel, keyboard scrolling.
