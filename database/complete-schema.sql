@@ -381,6 +381,21 @@ create table if not exists public.messages (
   read_at timestamptz,               -- v44: read receipt
   created_at timestamptz default now()
 );
+-- ──────────────────────────────────────────────────────────────────────
+-- UPGRADE-ORDER GUARD (round 9 field fix). On an EXISTING project the
+-- table above already exists in its pre-V44 shape, `create table if not
+-- exists` silently skips, and the two indexes below would then die with
+--    ERROR: 42703: column "recipient" does not exist
+-- — because the V44 section that adds these columns sits at the very end
+-- of this file. Adding them HERE, before their first use, makes this file
+-- safe to run on a fresh database AND on any older project in one pass.
+-- Idempotent (`if not exists`); the V44 section repeats them harmlessly.
+-- Guarded by tools/check_schema_order.py — keep every version-added
+-- column's ALTER above the first index/policy that references it.
+-- ──────────────────────────────────────────────────────────────────────
+alter table public.messages add column if not exists recipient   uuid;
+alter table public.messages add column if not exists sender_name text;
+alter table public.messages add column if not exists read_at     timestamptz;
 create index if not exists messages_pair_idx on public.messages (sender, recipient, created_at);
 create index if not exists messages_recipient_idx on public.messages (recipient, read_at);
 
@@ -7852,6 +7867,15 @@ create trigger tc_cbt_classify_marking_trg
 -- Everything a tutor still has to mark, scoped by V24/V25 tutor rules: a tutor
 -- sees only papers that are theirs, an administrator sees all of them.
 -- ---------------------------------------------------------------------------
+-- UPGRADE-ORDER GUARD (round 9 field fix): tc_cbt_marking_queue is a SQL-
+-- language function, so Postgres validates its column references the moment
+-- it is created. On a database that predates the cbt_results upgrade block
+-- (end of this file), candidate_name / pending_count / marking_status do not
+-- exist yet and this CREATE — plus the grants two lines below it — would die.
+-- Guaranteeing them here makes the file safe on fresh AND legacy databases.
+alter table if exists public.cbt_results add column if not exists candidate_name text;
+alter table if exists public.cbt_results add column if not exists pending_count  int default 0;
+alter table if exists public.cbt_results add column if not exists marking_status text default 'complete';
 create or replace function public.tc_cbt_marking_queue(p_exam uuid default null)
 returns table (
   result_id      uuid,
@@ -12902,6 +12926,7 @@ drop policy if exists eresources_admin on public.eresources;
 drop policy if exists library_read on public.library_items;
 drop policy if exists eres_read on public.eresources;
 
+drop policy if exists library_items_read on public.library_items;
 create policy library_items_read on public.library_items for select using (
   public.is_admin() or public.is_tutor()
   or engagement_id is null
@@ -12914,6 +12939,7 @@ create policy library_items_read on public.library_items for select using (
        and l.user_id = auth.uid()
   )
 );
+drop policy if exists eresources_read on public.eresources;
 create policy eresources_read on public.eresources for select using (
   public.is_admin() or public.is_tutor()
   or engagement_id is null
@@ -12926,26 +12952,32 @@ create policy eresources_read on public.eresources for select using (
        and l.user_id = auth.uid()
   )
 );
+drop policy if exists library_items_insert on public.library_items;
 create policy library_items_insert on public.library_items for insert with check (public.is_admin() or public.is_tutor());
+drop policy if exists library_items_update on public.library_items;
 create policy library_items_update on public.library_items for update using (
   public.is_admin()
   or tutor_id is null                                  -- legacy / studio-shared rows
   or tutor_id = public.tc_my_tutor_id()
   or exists (select 1 from public.engagements e where e.id = library_items.engagement_id and e.tutor_id = public.tc_my_tutor_id())
 );
+drop policy if exists library_items_delete on public.library_items;
 create policy library_items_delete on public.library_items for delete using (
   public.is_admin()
   or tutor_id is null
   or tutor_id = public.tc_my_tutor_id()
   or exists (select 1 from public.engagements e where e.id = library_items.engagement_id and e.tutor_id = public.tc_my_tutor_id())
 );
+drop policy if exists eresources_insert on public.eresources;
 create policy eresources_insert on public.eresources for insert with check (public.is_admin() or public.is_tutor());
+drop policy if exists eresources_update on public.eresources;
 create policy eresources_update on public.eresources for update using (
   public.is_admin()
   or tutor_id is null
   or tutor_id = public.tc_my_tutor_id()
   or exists (select 1 from public.engagements e where e.id = eresources.engagement_id and e.tutor_id = public.tc_my_tutor_id())
 );
+drop policy if exists eresources_delete on public.eresources;
 create policy eresources_delete on public.eresources for delete using (
   public.is_admin()
   or tutor_id is null
@@ -13170,7 +13202,9 @@ create table if not exists public.tc_blog_comments (
 alter table public.tc_blog_comments enable row level security;
 create index if not exists tc_blog_comments_post_idx on public.tc_blog_comments (post_id, created_at desc);
 
+drop policy if exists tc_blog_comments_read on public.tc_blog_comments;
 create policy tc_blog_comments_read on public.tc_blog_comments for select using (status = 'visible');
+drop policy if exists tc_blog_comments_staff on public.tc_blog_comments;
 create policy tc_blog_comments_staff on public.tc_blog_comments for all
   using (public.is_admin() or public.is_tutor())
   with check (public.is_admin() or public.is_tutor());
@@ -13810,6 +13844,14 @@ revoke all on function public.tc_keepalive_layers() from public, anon;
 -- Negative marking (HMG Academy CBT System parity: wrong answers deduct a
 -- configurable fraction, score clamped at zero — set on the paper).
 alter table if exists public.cbt_exams   add column if not exists negative_mark numeric default 0;
+-- (guard set mirrors v45-health-cbt.sql so both files stay identical;
+--  complete-schema.sql already guarantees these columns earlier — these
+--  are idempotent no-ops here and self-sufficiency there)
+alter table if exists public.cbt_exams   add column if not exists is_open        boolean default true;
+alter table if exists public.cbt_exams   add column if not exists engagement_id  uuid;
+alter table if exists public.cbt_exams   add column if not exists quiz_kind      text default 'graded';
+alter table if exists public.cbt_exams   add column if not exists close_at       timestamptz;
+alter table if exists public.cbt_exams   add column if not exists start_at       timestamptz;
 -- Verifiable submission receipt: every graded sitting carries a code the
 -- candidate can keep and the studio can check against the results audit.
 alter table if exists public.cbt_results add column if not exists cert_code text;

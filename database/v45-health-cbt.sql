@@ -121,6 +121,17 @@ revoke all on function public.tc_keepalive_layers() from public, anon;
 -- Negative marking (HMG Academy CBT System parity: wrong answers deduct a
 -- configurable fraction, score clamped at zero — set on the paper).
 alter table if exists public.cbt_exams   add column if not exists negative_mark numeric default 0;
+-- UPGRADE-ORDER GUARD (round 9 field fix): the assignment-sync trigger below
+-- lists status, is_open, engagement_id, quiz_kind, title, close_at and
+-- questions in its UPDATE OF clause — every one of them must exist at
+-- CREATE TRIGGER time. Complete-schema.sql adds them early, but this
+-- migration must be safe to run standalone on an older project too, so it
+-- guarantees the version-added ones itself. Types mirror complete-schema.
+alter table if exists public.cbt_exams   add column if not exists is_open        boolean default true;
+alter table if exists public.cbt_exams   add column if not exists engagement_id  uuid;
+alter table if exists public.cbt_exams   add column if not exists quiz_kind      text default 'graded';
+alter table if exists public.cbt_exams   add column if not exists close_at       timestamptz;
+alter table if exists public.cbt_exams   add column if not exists start_at       timestamptz;
 -- Verifiable submission receipt: every graded sitting carries a code the
 -- candidate can keep and the studio can check against the results audit.
 alter table if exists public.cbt_results add column if not exists cert_code text;
