@@ -40,6 +40,14 @@
         "title": "Messages"
       },
       {
+        "id": "my_quizzes",
+        "href": "my-quizzes.html",
+        "label": "My quizzes",
+        "title": "My quizzes & CBTs",
+        "icon": "🧪",
+        "aud": "user"
+      },
+      {
         "id": "change_password",
         "href": "change-password.html",
         "label": "Change password",

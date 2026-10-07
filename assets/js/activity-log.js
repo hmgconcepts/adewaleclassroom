@@ -1,292 +1,141 @@
-/* ============================================================================
-   activity-log.js — the audit trail UI (V27, report item 4)
-   ----------------------------------------------------------------------------
-   Mounts into #activity-root on activity-log.html. Reads public.activity_log
-   (actor, action, table_name, row_id, created_at) plus the actor's profile
-   name. Filter by person, table, action and date range; export the filtered
-   view to CSV. Rows are immutable — there is deliberately no edit or delete.
-   Admin-only by RBAC and by the page's role guard.
-   ========================================================================== */
-(function (w, d) {
+/* ═══════════════════════════════════════════════════════════════════════
+   ADEWALE CLASSROOM — Activity log console (V45 / round 9, item 3)
+   DramaConnect audit-rebuild pattern applied to our immutable log:
+     • KPI snapshot (total events, today, distinct actors, deletes)
+     • Filters: actor / table / action / date range / free text — pushed to
+       the database so a big log never has to be downloaded whole
+     • CSV export of the FILTERED view for external auditors
+     • Read-only by design: the console never issues insert/update/delete
+       against activity_log. Rows load oldest-agnostic (newest first) and
+       are capped at 500 for the browser; exports raise that to 5000.
+   ═══════════════════════════════════════════════════════════════════════ */
+window.ActivityLog = (function () {
   'use strict';
+  var PAGE = 500, EXPORT_CAP = 5000, rows = [];
 
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+  function esc(t) {
+    return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
-  function when(ts) {
-    if (!ts) return '—';
-    try { return new Date(ts).toLocaleString(); } catch (_) { return String(ts); }
+
+  function kpi(label, value, tone) {
+    return '<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;min-width:120px">' +
+      '<div style="font-size:.7rem;text-transform:uppercase;font-weight:800;color:#64748b">' + esc(label) + '</div>' +
+      '<div style="font-size:1.35rem;font-weight:900;color:' + (tone || '#0f172a') + '">' + esc(value) + '</div></div>';
   }
 
-  var Log = {
-    async mount() {
-      var root = d.getElementById('activity-root');
-      if (!root) return;
-      var self = this;
-      root.innerHTML =
-        '<div class="card" style="padding:12px 16px;margin-bottom:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">' +
-          '<button class="btn btn-sm btn-primary" type="button" id="al-tab-activity">📝 Activity log</button>' +
-          '<button class="btn btn-sm btn-outline" type="button" id="al-tab-logins">🔑 Sign-in audit</button>' +
-          '<span class="muted" style="font-size:.82rem">Sign-in audit lists every login attempt with email, IP and device — the "who logged in" view.</span>' +
-        '</div>' +
-        '<div class="card" style="padding:16px;margin-bottom:14px">' +
-          '<div class="grid grid-2" style="gap:10px">' +
-            '<div class="form-group" style="margin:0"><label>Search (actor, table, action, row)</label><input class="form-input" id="al-q" placeholder="e.g. learner, delete, TC-0001"></div>' +
-            '<div class="form-group" style="margin:0"><label>Table</label><select class="form-select" id="al-table"><option value="">All tables</option></select></div>' +
-            '<div class="form-group" style="margin:0"><label>From</label><input class="form-input" id="al-from" type="date"></div>' +
-            '<div class="form-group" style="margin:0"><label>To</label><input class="form-input" id="al-to" type="date"></div>' +
-          '</div>' +
-          '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">' +
-            '<button class="btn btn-primary btn-sm" type="button" id="al-run">🔍 Apply filters</button>' +
-            '<button class="btn btn-outline btn-sm" type="button" id="al-csv">⬇ Export CSV</button>' +
-            '<button class="btn btn-outline btn-sm" type="button" id="al-pdf">📄 Print / PDF</button>' +
-            '<button class="btn btn-ghost btn-sm" type="button" id="al-clear">Clear</button>' +
-            '<span class="muted" id="al-count" style="align-self:center;font-size:.82rem"></span>' +
-          '</div>' +
-        '</div>' +
-        '<div class="card" style="padding:16px;margin-bottom:14px;border:2px solid rgba(239,68,68,.35)" id="alp-card">' +
-          '<h3 style="margin-top:0">🕰️ Retention &amp; Purge (owner only)</h3>' +
-          '<p class="muted" style="margin-top:0">Audit rows older than your retention policy can be exported then purged to free database space. Nothing is auto-deleted; you choose the table and the age.</p>' +
-          '<div class="grid grid-3" style="gap:10px">' +
-            '<div class="form-group" style="margin:0"><label>Table</label><select class="form-select" id="alp-table">' +
-              '<option value="activity_log">activity_log (audit trail)</option>' +
-              '<option value="login_audit">login_audit (login history)</option>' +
-            '</select></div>' +
-            '<div class="form-group" style="margin:0"><label>Older than (days)</label><input class="form-input" id="alp-days" type="number" value="180" min="7" max="730"></div>' +
-            '<div class="form-group" style="margin:0"><label>&nbsp;</label><div style="display:flex;gap:8px;flex-wrap:wrap">' +
-              '<button class="btn btn-outline btn-sm" type="button" id="alp-export">⬇ Export first (portable JSON)</button>' +
-              '<button class="btn btn-sm btn-outline" style="color:#b42318;border-color:#b42318" type="button" id="alp-purge">🗑 Purge old rows</button>' +
-            '</div></div>' +
-          '</div>' +
-          '<p class="muted" style="margin:8px 0 0;font-size:.78rem">Purge runs the owner-gated <code>purge_old</code> RPC from <code>database/v11-enterprise-pack.sql</code> and logs itself to the activity trail.</p>' +
-        '</div>' +
-        '<div class="card" style="padding:14px 16px;margin-bottom:14px;display:flex;gap:14px;flex-wrap:wrap" id="al-stats"></div>' +
-        '<div class="card" style="padding:0;overflow:hidden"><div class="table-wrap"><table style="min-width:820px">' +
-          '<thead><tr id="al-head"><th style="padding:12px 14px;text-align:left">When</th><th style="padding:12px 14px;text-align:left">Who</th><th style="padding:12px 14px;text-align:left">Action</th><th style="padding:12px 14px;text-align:left">Table</th><th style="padding:12px 14px;text-align:left">Row</th></tr></thead>' +
-          '<tbody id="al-body"><tr><td colspan="5" style="padding:26px;text-align:center" class="muted">Loading…</td></tr></tbody>' +
-        '</table></div></div>';
-      this._cache = null;
-      this._mode = 'activity';
-      this._loadTables();
-      d.getElementById('al-tab-activity').onclick = function () { self._tab('activity'); };
-      d.getElementById('al-tab-logins').onclick = function () { self._tab('logins'); };
-      d.getElementById('al-pdf').onclick = function () { window.print(); };
-      var alpPurge = d.getElementById('alp-purge');
-      if (alpPurge) alpPurge.onclick = function () { self._purge(); };
-      var alpExport = d.getElementById('alp-export');
-      if (alpExport) alpExport.onclick = function () { self._exportFirst(); };
-      ['al-run', 'al-clear'].forEach(function (id) {
-        var el = d.getElementById(id);
-        if (el) el.onclick = function () { self._run(); };
-      });
-      var q = d.getElementById('al-q');
-      q.addEventListener('keydown', function (e) { if (e.key === 'Enter') self._run(); });
-      d.getElementById('al-csv').onclick = function () { self._csv(); };
-      this._run();
-    },
+  function buildQuery(cap) {
+    var q = window.sb.from('activity_log')
+      .select('id,created_at,actor,action,table_name,row_id,detail')
+      .order('created_at', { ascending: false })
+      .limit(cap);
+    var who = document.getElementById('al-who').value.trim();
+    var tbl = document.getElementById('al-table').value.trim();
+    var act = document.getElementById('al-action').value;
+    var from = document.getElementById('al-from').value;
+    var to = document.getElementById('al-to').value;
+    if (who) q = q.ilike('actor', '%' + who + '%');
+    if (tbl) q = q.ilike('table_name', '%' + tbl + '%');
+    if (act) q = q.eq('action', act);
+    if (from) q = q.gte('created_at', from + 'T00:00:00');
+    if (to) q = q.lte('created_at', to + 'T23:59:59');
+    return q;
+  }
 
-    _tab(mode) {
-      this._mode = mode;
-      var bA = d.getElementById('al-tab-activity'), bL = d.getElementById('al-tab-logins');
-      bA.className = 'btn btn-sm ' + (mode === 'activity' ? 'btn-primary' : 'btn-outline');
-      bL.className = 'btn btn-sm ' + (mode === 'logins' ? 'btn-primary' : 'btn-outline');
-      var head = d.getElementById('al-head');
-      if (head) head.innerHTML = mode === 'activity'
-        ? '<th style="padding:12px 14px;text-align:left">When</th><th style="padding:12px 14px;text-align:left">Who</th><th style="padding:12px 14px;text-align:left">Action</th><th style="padding:12px 14px;text-align:left">Table</th><th style="padding:12px 14px;text-align:left">Row</th>'
-        : '<th style="padding:12px 14px;text-align:left">When</th><th style="padding:12px 14px;text-align:left">Email</th><th style="padding:12px 14px;text-align:left">Event</th><th style="padding:12px 14px;text-align:left">IP</th><th style="padding:12px 14px;text-align:left">Device</th>';
-      this._run();
-    },
+  function localFilter(r) {
+    var q = document.getElementById('al-q').value.trim().toLowerCase();
+    if (!q) return true;
+    return (r.actor + ' ' + r.action + ' ' + r.table_name + ' ' + (r.detail || '') + ' ' + (r.row_id || '')).toLowerCase().indexOf(q) > -1;
+  }
 
-    async _fetchLogins() {
-      if (!w.sb) return [];
-      var q = w.sb.from('login_audit').select('user_id,email,event,ip,user_agent,created_at,profiles(full_name)')
-                 .order('created_at', { ascending: false }).limit(500);
-      var qv = (d.getElementById('al-q').value || '').trim();
-      if (qv) q = q.or('email.ilike.%' + qv + '%,event.ilike.%' + qv + '%,ip.ilike.%' + qv + '%');
-      var from = d.getElementById('al-from').value;
-      var to = d.getElementById('al-to').value;
-      if (from) q = q.gte('created_at', from + 'T00:00:00');
-      if (to) q = q.lte('created_at', to + 'T23:59:59');
-      var r = await q;
-      if (r.error) throw r.error;
-      return r.data || [];
-    },
+  function render() {
+    var wrap = document.getElementById('al-table-wrap');
+    var kp = document.getElementById('al-kpis');
+    if (!wrap) return;
+    if (!window.sb) { wrap.innerHTML = '<p class="muted">Connect Supabase in assets/js/config.js to read the audit log.</p>'; return; }
 
-    async _renderLogins() {
-      var body = d.getElementById('al-body');
-      var count = d.getElementById('al-count');
-      try {
-        var rows = await this._fetchLogins();
-        this._rows = rows.map(function (r) {
-          return { created_at: r.created_at, actor_name: (r.profiles && r.profiles.full_name) || r.email,
-                   action: r.event || 'login', table_name: r.ip || '', row_id: String(r.user_agent || 'unknown device').slice(0, 60) };
-        });
-        count.textContent = rows.length + ' sign-in event(s) shown (latest 500).';
-        if (!rows.length) {
-          body.innerHTML = '<tr><td colspan="5" style="padding:26px;text-align:center" class="muted">No sign-ins recorded yet. The v11 pack adds the IP column; the auth callback writes every login.</td></tr>';
-          return;
-        }
-        body.innerHTML = rows.map(function (r) {
-          var ok = /login|success/i.test(r.event || '');
-          return '<tr>' +
-            '<td style="padding:10px 14px;white-space:nowrap;font-size:.82rem">' + esc(when(r.created_at)) + '</td>' +
-            '<td style="padding:10px 14px">' + esc((r.profiles && r.profiles.full_name) || r.email || 'unknown') + (r.email ? '<div class="muted" style="font-size:.72rem">' + esc(r.email) + '</div>' : '') + '</td>' +
-            '<td style="padding:10px 14px"><span style="background:' + (ok ? '#d1fae5' : '#fee2e2') + ';border-radius:8px;padding:2px 8px;font-size:.78rem;font-weight:700">' + esc(r.event || 'login') + '</span></td>' +
-            '<td style="padding:10px 14px"><code style="font-size:.78rem">' + esc(r.ip || '—') + '</code></td>' +
-            '<td style="padding:10px 14px;font-size:.78rem" title="' + esc(r.user_agent || '') + '">' + esc(String(r.user_agent || 'unknown device').slice(0, 60)) + '</td>' +
-          '</tr>';
-        }).join('');
-        this._stats(this._rows);
-      } catch (e) {
-        body.innerHTML = '<tr><td colspan="5" style="padding:26px;text-align:center;color:#b42318">Heads up. Could not load sign-ins: ' + esc(e && e.message || e) + '</td></tr>';
-      }
-    },
+    var today = new Date().toISOString().slice(0, 10);
+    var k = {
+      total: rows.length,
+      today: rows.filter(function (r) { return String(r.created_at || '').slice(0, 10) === today; }).length,
+      actors: Object.keys(rows.reduce(function (a, r) { if (r.actor) a[r.actor] = 1; return a; }, {})).length,
+      deletes: rows.filter(function (r) { return String(r.action) === 'delete'; }).length
+    };
+    if (kp) kp.innerHTML =
+      kpi('Events shown', k.total) + kpi('Today', k.today, '#1d4ed8') +
+      kpi('Distinct actors', k.actors) + kpi('Deletes', k.deletes, '#b42318') +
+      '<div style="margin-left:auto;align-self:center" class="muted" id="al-shown"></div>';
 
-    async _exportFirst() {
-      var table = d.getElementById('alp-table').value;
-      if (w.DataPortability && w.DataPortability.exportTable) {
-        try { await w.DataPortability.exportTable(table); return; } catch (_) { /* fall through */ }
-      }
-      if (!w.sb) { toast('Connect to the database first.', 'warning'); return; }
-      var r = await w.sb.from(table).select('*').order('created_at', { ascending: false }).limit(50000);
-      var blob = new Blob([JSON.stringify({ table: table, exported_at: new Date().toISOString(), rows: r.data || [] }, null, 2)], { type: 'application/json' });
-      var a = d.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = table + '-before-purge-' + new Date().toISOString().slice(0, 10) + '.json';
-      d.body.appendChild(a); a.click(); a.remove();
-      toast('📥 Exported ' + (r.data || []).length + ' rows. Keep this file safe before purging.', 'success');
-    },
+    var shown = 0;
+    var body = rows.filter(function (r) { return localFilter(r); }).slice(0, PAGE);
+    shown = body.length;
+    wrap.innerHTML = !body.length
+      ? '<p class="muted">No events match these filters.</p>'
+      : '<div class="table-wrap"><table style="width:100%;font-size:.82rem"><thead><tr>' +
+        '<th style="text-align:left;padding:6px 8px">When</th><th style="text-align:left;padding:6px 8px">Who</th>' +
+        '<th style="text-align:left;padding:6px 8px">Action</th><th style="text-align:left;padding:6px 8px">Table</th>' +
+        '<th style="text-align:left;padding:6px 8px">Row</th><th style="text-align:left;padding:6px 8px">Change</th></tr></thead><tbody>' +
+        body.map(function (r) {
+          var tone = { insert: '#166534', update: '#1e40af', delete: '#991b1b', signin: '#6d28d9' }[r.action] || '#334155';
+          return '<tr style="border-bottom:1px solid #f1f5f9">' +
+            '<td style="padding:6px 8px;white-space:nowrap">' + esc(String(r.created_at || '').replace('T', ' ').slice(0, 16)) + '</td>' +
+            '<td style="padding:6px 8px">' + esc(r.actor || '—') + '</td>' +
+            '<td style="padding:6px 8px"><span class="badge" style="background:' + tone + '1a;color:' + tone + '">' + esc(r.action || '') + '</span></td>' +
+            '<td style="padding:6px 8px">' + esc(r.table_name || '') + '</td>' +
+            '<td style="padding:6px 8px">' + esc(r.row_id || '') + '</td>' +
+            '<td style="padding:6px 8px;color:#475569">' + esc(String(r.detail || '').slice(0, 140)) + '</td></tr>';
+        }).join('') + '</tbody></table></div>' +
+        (rows.length > PAGE ? '<p class="muted" style="font-size:.78rem;margin-top:6px">Showing first ' + PAGE + ' matching events of ' + rows.length + ' loaded — narrow the filters or export the CSV for the full picture.</p>' : '');
+    var note = document.getElementById('al-shown');
+    if (note) note.textContent = body.length + ' shown of ' + rows.length + ' loaded';
+  }
 
-    async _purge() {
-      var table = d.getElementById('alp-table').value;
-      var days = Number(d.getElementById('alp-days').value || 180);
-      if (!w.sb) { toast('Connect to the database first.', 'warning'); return; }
-      if (!confirm('PURGE rows from "' + table + '" older than ' + days + ' days?\n\nThis frees database space but cannot be undone from the app. Export first (button beside this one) if you might need them.')) return;
-      try {
-        var r = await w.sb.rpc('purge_old', { p_table: table, p_days: days });
-        if (r.error) throw r.error;
-        toast('🗑 Purged ' + (r.data || 0) + ' row(s) from ' + table + '.', 'success', 7000);
-        this._run();
-      } catch (e) {
-        var msg = e && e.message || String(e);
-        if (/function .* does not exist|PGRST202/i.test(msg)) {
-          toast('The purge_old function is not installed yet — run database/v11-enterprise-pack.sql in the Supabase SQL Editor.', 'danger', 9000);
-        } else {
-          toast('Purge failed: ' + msg, 'danger');
-        }
-      }
-    },
-
-    async _loadTables() {
-      if (!w.sb) return;
-      try {
-        var { data } = await w.sb.from('activity_log').select('table_name').limit(1000);
-        var set = {};
-        (data || []).forEach(function (r) { if (r.table_name) set[r.table_name] = 1; });
-        var sel = d.getElementById('al-table');
-        if (!sel) return;
-        Object.keys(set).sort().forEach(function (t) {
-          var o = d.createElement('option');
-          o.value = t; o.textContent = t;
-          sel.appendChild(o);
-        });
-      } catch (_) {}
-    },
-
-    async _fetch() {
-      if (w.sb) {
-        var q = w.sb.from('activity_log').select('*, profiles(full_name)').order('created_at', { ascending: false }).limit(500);
-        var qv = (d.getElementById('al-q').value || '').trim();
-        var tbl = d.getElementById('al-table').value;
-        var from = d.getElementById('al-from').value;
-        var to = d.getElementById('al-to').value;
-        if (tbl) q = q.eq('table_name', tbl);
-        if (qv) q = q.or('action.ilike.%' + qv + '%,table_name.ilike.%' + qv + '%,row_id.ilike.%' + qv + '%');
-        if (from) q = q.gte('created_at', from + 'T00:00:00');
-        if (to) q = q.lte('created_at', to + 'T23:59:59');
-        var { data, error } = await q;
-        if (error) throw error;
-        return (data || []).map(function (r) {
-          return { created_at: r.created_at, actor: r.actor,
-                   actor_name: (r.profiles && r.profiles.full_name) || null,
-                   action: r.action, table_name: r.table_name, row_id: r.row_id };
-        });
-      }
-      return (w.DEMO && Array.isArray(w.DEMO.activity_log)) ? w.DEMO.activity_log.slice(0, 200) : [];
-    },
-
-    async _run() {
-      var body = d.getElementById('al-body');
-      var count = d.getElementById('al-count');
-      if (!body) return;
-      if (this._mode === 'logins') return this._renderLogins();
-      body.innerHTML = '<tr><td colspan="5" style="padding:26px;text-align:center" class="muted">Loading…</td></tr>';
-      try {
-        var rows = await this._fetch();
-        this._rows = rows;
-        count.textContent = rows.length + ' event(s) shown (latest 500).';
-        this._stats(rows);
-        if (!rows.length) {
-          body.innerHTML = '<tr><td colspan="5" style="padding:26px;text-align:center" class="muted">No activity matches those filters.</td></tr>';
-          return;
-        }
-        body.innerHTML = rows.map(function (r) {
-          var who = r.actor_name || (r.actor ? String(r.actor).slice(0, 8) + '…' : 'system');
-          var badge = /delete/i.test(r.action || '') ? '#fee2e2'
-                    : /insert|create|add/i.test(r.action || '') ? '#d1fae5'
-                    : /sign/i.test(r.action || '') ? '#dbeafe' : '#f1f5f9';
-          return '<tr>' +
-            '<td style="padding:10px 14px;white-space:nowrap;font-size:.82rem">' + esc(when(r.created_at)) + '</td>' +
-            '<td style="padding:10px 14px">' + esc(who) + '</td>' +
-            '<td style="padding:10px 14px"><span style="background:' + badge + ';border-radius:8px;padding:2px 8px;font-size:.78rem;font-weight:700">' + esc(r.action || '—') + '</span></td>' +
-            '<td style="padding:10px 14px"><code style="font-size:.78rem">' + esc(r.table_name || '—') + '</code></td>' +
-            '<td style="padding:10px 14px;font-size:.8rem">' + esc(r.row_id || '—') + '</td>' +
-          '</tr>';
-        }).join('');
-      } catch (e) {
-        body.innerHTML = '<tr><td colspan="5" style="padding:26px;text-align:center;color:#b42318">Heads up. Could not load entries: ' + esc(e && e.message || e) + '</td></tr>';
-      }
-    },
-
-    _stats(rows) {
-      var box = d.getElementById('al-stats');
-      if (!box) return;
-      var tables = {};
-      var byDay = {};
-      rows.forEach(function (r) {
-        tables[r.table_name || '—'] = (tables[r.table_name || '—'] || 0) + 1;
-        var day = r.created_at ? String(r.created_at).slice(0, 10) : '—';
-        byDay[day] = (byDay[day] || 0) + 1;
-      });
-      var top = Object.keys(tables).sort(function (a, b) { return tables[b] - tables[a]; }).slice(0, 4);
-      box.innerHTML =
-        '<div style="min-width:120px"><div class="stat-value" style="font-size:1.4rem">' + rows.length + '</div><div class="stat-label">Events</div></div>' +
-        '<div style="min-width:120px"><div class="stat-value" style="font-size:1.4rem">' + Object.keys(tables).length + '</div><div class="stat-label">Tables touched</div></div>' +
-        '<div style="min-width:140px"><div class="stat-value" style="font-size:1rem">' + top.map(function (t) { return '<span style="display:inline-block;background:#f1f5f9;border-radius:8px;padding:2px 8px;margin:2px;font-size:.78rem">' + esc(t) + ' · ' + tables[t] + '</span>'; }).join(' ') + '</div><div class="stat-label">Top tables</div></div>' +
-        '<div style="min-width:120px"><div class="stat-value" style="font-size:1rem">' + esc(Object.keys(byDay).slice(0, 2).join(' · ') || '—') + '</div><div class="stat-label">Latest days</div></div>';
-    },
-
-    _csv() {
-      var rows = this._rows || [];
-      var head = 'when,who,action,table,row';
-      var lines = rows.map(function (r) {
-        return '"' + String(r.created_at || '').replace(/"/g, '""') + '","' +
-               String(r.actor_name || r.actor || '').replace(/"/g, '""') + '","' +
-               String(r.action || '').replace(/"/g, '""') + '","' +
-               String(r.table_name || '').replace(/"/g, '""') + '","' +
-               String(r.row_id || '').replace(/"/g, '""') + '"';
-      });
-      var blob = new Blob([head + '\n' + lines.join('\n')], { type: 'text/csv' });
-      var a = d.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'activity-log-' + new Date().toISOString().slice(0, 10) + '.csv';
-      d.body.appendChild(a); a.click(); a.remove();
+  async function load() {
+    var wrap = document.getElementById('al-table-wrap');
+    if (!wrap) return;
+    try {
+      var r = await buildQuery(EXPORT_CAP);
+      if (r.error) throw new Error(r.error.message);
+      rows = r.data || [];
+      render();
+    } catch (e) {
+      wrap.innerHTML = '<p class="muted" style="color:#b42318">Could not read the activity log: ' + esc(e.message) + '</p>';
     }
-  };
+  }
 
-  w.ActivityLog = Log;
-  if (d.readyState === 'loading') d.addEventListener('DOMContentLoaded', function () { Log.mount(); });
-  else Log.mount();
-})(window, document);
+  function exportCsv() {
+    var data = rows.filter(localFilter);
+    if (!data.length) return alert('Nothing to export under these filters.');
+    var head = ['created_at', 'actor', 'action', 'table_name', 'row_id', 'detail'];
+    var lines = [head.join(',')].concat(data.map(function (r) {
+      return head.map(function (h) {
+        var v = r[h] == null ? '' : String(r[h]);
+        return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+      }).join(',');
+    }));
+    var blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'activity-log-' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+  }
+
+  function init() {
+    ['al-who', 'al-table', 'al-from', 'al-to'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.addEventListener('change', load);
+    });
+    var go = document.getElementById('al-go'); if (go) go.onclick = load;
+    var ex = document.getElementById('al-export'); if (ex) ex.onclick = exportCsv;
+    var q = document.getElementById('al-q');
+    if (q) q.addEventListener('input', function () { clearTimeout(window.__alT); window.__alT = setTimeout(render, 200); });
+    load();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+
+  return { load: load, exportCsv: exportCsv };
+})();

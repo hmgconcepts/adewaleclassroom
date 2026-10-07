@@ -550,7 +550,13 @@
       ],
       columns: ['learner_id', 'period_label', 'attendance_pct', 'homework_pct', 'effort', 'status'],
       rowActions: function (row) {
-        return [{ label: '🖨 Print', act: 'print-report' }];
+        return [
+          { label: '🖨 Print', act: 'print-report' },
+          /* V45 (round 9, item 4): collate every graded CBT score for this
+             learner cumulatively and pull the averages into the subject rows
+             of this report card. */
+          { label: '🧮 Pull CBT marks', act: 'pull-cbt' }
+        ];
       },
       summary: function (rows) {
         return [
@@ -1107,6 +1113,13 @@
           if (row) self._printReport(st, row);
         });
       });
+
+      host.querySelectorAll('[data-desk-act="pull-cbt"]').forEach(function (b) {
+        b.addEventListener('click', async function () {
+          var row = st.rows.filter(function (r) { return String(r.id) === b.getAttribute('data-id'); })[0];
+          if (row) await self._pullCbt(st, row);
+        });
+      });
     },
 
     /* ---- Form <-> row -------------------------------------------------- */
@@ -1266,6 +1279,63 @@
       var box = st.host.querySelector('.desk-subject-rows');
       if (box) this._subjectRow(box, {});
     },
+    /* ---- V45 (round 9, item 4): cumulative CBT collation → report card ----
+       Reads every graded-CBT score the database has already filed on the
+       scoresheet for this learner (overall + one row per subject, so
+       multi-subject papers contribute per subject), averages them over the
+       report period, and merges the result into this report's subject rows:
+       matching subjects get their score + an honest collation comment;
+       subjects with CBT history but no row yet are appended. The report
+       stays a draft — publishing remains a human decision. */
+    async _pullCbt(st, row) {
+      var s = sb();
+      if (!s) return toast('Not connected to the database.', 'warning');
+      if (!row.learner_id) return toast('This report has no learner set.', 'warning');
+      var btn = d.querySelector('[data-desk-act="pull-cbt"][data-id="' + row.id + '"]');
+      if (btn) { btn.disabled = true; btn.textContent = 'Collating…'; }
+      try {
+        var r = await s.rpc('tc_cbt_cumulative', {
+          p_learner_id: row.learner_id,
+          p_from: row.period_start || null,
+          p_to: row.period_end || null
+        });
+        if (r.error) throw new Error(r.error.message);
+        var data = r.data || {};
+        var subs = Array.isArray(data.subjects) ? data.subjects : [];
+        if (!subs.length) {
+          toast('No graded CBT scores on the scoresheet for this learner' +
+                (row.period_start ? ' in this period' : '') + ' yet.', 'warning', 7000);
+          return;
+        }
+        var subjects = Array.isArray(row.subjects) ? row.subjects.slice() : [];
+        var touched = 0, added = 0;
+        subs.forEach(function (c) {
+          var hit = subjects.filter(function (sr) {
+            return String(sr.subject || '').trim().toLowerCase() === String(c.subject || '').trim().toLowerCase();
+          })[0];
+          var comment = 'Collated from ' + c.count + ' CBT' + (c.count === 1 ? '' : 's') +
+                        ' — avg ' + c.avg + '%, best ' + c.best + '% (last ' + c.last + '%)';
+          if (hit) {
+            hit.score = c.avg;
+            hit.comment = comment;
+            touched++;
+          } else {
+            subjects.push({ subject: c.subject, score: c.avg, grade: '', effort: '', comment: comment });
+            added++;
+          }
+        });
+        var u = await s.from(st.cfg.table).update({ subjects: subjects }).eq('id', row.id);
+        if (u.error) throw new Error(u.error.message);
+        toast('✅ Pulled CBT marks for ' + touched + ' subject row(s), added ' + added +
+              ' new — overall avg ' + ((data.overall && data.overall.avg) != null ? data.overall.avg : '—') + '%.', 'success', 9000);
+        self.reload(st.key);
+      } catch (e) {
+        toast('CBT pull failed: ' + (e.message || e), 'danger', 9000);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '🧮 Pull CBT marks'; }
+      }
+    },
+
     _subjectRow(box, v) {
       v = v || {};
       var subs = Lookups._cache['subjects'] || [];

@@ -231,6 +231,8 @@ const CRUD = {
       { key: 'covered', label: 'Covered', type: 'checkbox' }
     ]},
     assignments: { table: 'assignments', title: 'Homework', cols: [
+      { key: 'kind', label: 'Nature', type: 'select', options: ['homework','cbt'],
+        help: 'homework = normal work with a link/score · cbt = a computer-based test. CBT rows are created AUTOMATICALLY when you publish a Graded CBT to this class (they appear here and on every learner work board at that moment) — do not create them by hand.' },
       { key: 'engagement_id', label: 'Class / group / cohort', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id', required: true, help: 'Every active student in this class sees the homework on their dashboard automatically.' },
       { key: 'learner_id', label: 'Learner (blank = whole class)', type: 'ref', refTable: 'learners', refValue: 'full_name', refStore: 'id' },
       { key: 'title', label: 'Title', type: 'text', required: true },
@@ -354,6 +356,9 @@ const CRUD = {
     complaints: { table: 'complaints', title: 'Complaint', cols: [
       { key: 'title', label: 'Title', type: 'text', required: true },
       { key: 'body', label: 'Details', type: 'textarea' },
+      { key: 'category', label: 'Category', type: 'select', options: ['suggestion','complaint','question','praise'],
+        help: 'Suggestion box (DramaConnect pattern): members can submit ideas and complaints — anonymously if they prefer — and staff triage them through the status column.' },
+      { key: 'anonymous', label: 'Anonymous', type: 'checkbox', help: 'Tick to submit without linking your account. Staff see the message but never who sent it.' },
       { key: 'priority', label: 'Priority', type: 'select', options: ['low','normal','high','urgent'] },
       { key: 'assignee', label: 'Assignee', type: 'text' },
       { key: 'status', label: 'Status', type: 'select', options: ['open','investigating','resolved','closed'] },

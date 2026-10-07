@@ -420,25 +420,39 @@ const CBT = {
     return { ok, mark: ok ? q.mark : 0, pending: false };
   },
 
-  grade(questions, answers) {
-    let got = 0, max = 0, correct = 0, pending = 0;
+  grade(questions, answers, opts) {
+    /* V45 (round 9): opts.negative_mark — HMG Academy CBT System parity.
+       Every WRONG (non-blank) answer deducts the configured marks; blanks
+       are never penalised and the total is clamped at zero so a paper can
+       never grade negative. Per-subject scores are clamped the same way. */
+    const neg = Number((opts && opts.negative_mark) || 0) || 0;
+    let got = 0, max = 0, correct = 0, pending = 0, wrong = 0, deducted = 0;
     const detail = questions.map((q, i) => {
       max += q.mark;
       const g = answers[q.id] ?? answers[i];
       const r = this.gradeOne(q, g);
       if (r.pending) pending += 1;
-      else { got += r.mark; if (r.ok) correct += 1; }
+      else {
+        got += r.mark;
+        if (r.ok) correct += 1;
+        else if (!r.blank) {
+          wrong += 1;
+          if (neg > 0) { const d = Math.min(neg, got); got -= d; deducted += d; r.mark -= d; }
+        }
+      }
       return { id: q.id, type: q.type, subject: q.subject, question: q.question, given: g, correct: q.answer, explanation: q.explanation, ok: r.ok, mark: r.mark, max: q.mark, pending: r.pending, options: q.options, passage: q.passage, media_url: q.media_url };
     });
+    if (got < 0) got = 0;
     const subjects = {};
     detail.forEach(d => {
       const s = d.subject || 'General';
       subjects[s] = subjects[s] || { score: 0, total: 0, correct: 0 };
       subjects[s].total += d.max;
       subjects[s].score += d.mark;
+      if (subjects[s].score < 0) subjects[s].score = 0;
       if (d.ok) subjects[s].correct += 1;
     });
-    return { got, max, pct: max ? Math.round(got / max * 1000) / 10 : 0, correct, pending, detail, subject_scores: subjects };
+    return { got, max, pct: max ? Math.round(got / max * 1000) / 10 : 0, correct, pending, wrong, negative_mark: neg, deducted, detail, subject_scores: subjects };
   },
 
   /* ---------------------------------------------------------------------

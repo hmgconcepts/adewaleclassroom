@@ -64,6 +64,14 @@
         "aud": "user"
       },
       {
+        "id": "my_quizzes",
+        "href": "my-quizzes.html",
+        "label": "My quizzes",
+        "title": "My quizzes & CBTs",
+        "icon": "🧪",
+        "aud": "user"
+      },
+      {
         "id": "change_password",
         "href": "change-password.html",
         "label": "Change password",
@@ -1073,5 +1081,5 @@
     ]
   }
 ];
-  w.TC_NAV_MODEL_VERSION = 'V26';
+  w.TC_NAV_MODEL_VERSION = 'V27';
 })(window);
