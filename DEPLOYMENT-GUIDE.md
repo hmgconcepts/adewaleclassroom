@@ -402,5 +402,28 @@ re-declared (V45b) to ALSO upsert the ledger, so legacy fleet pings show in
 the matrix. Deploy the workflows or the layer matrix will report the
 workflows as stale.
 
-**QA:** 13 suites, 453/453 per repo × 2 repos (365 round-8 baseline +
-88 round-9). Round-9 traceability: `PROMPT_AUDIT.md` (round 9 section).
+**QA:** 14 suites, 469/469 per repo × 2 repos (365 round-8 baseline +
+88 round-9 + 16 schema-safety). Round-9 traceability: `PROMPT_AUDIT.md`
+(round 9 section + round-9 field fix).
+
+## V45 field fix — running complete-schema.sql on an EXISTING project
+
+A field report showed `ERROR: 42703: column "recipient" does not exist`
+when applying complete-schema.sql to a live project: `create table if not
+exists` skips on existing databases, and the messages indexes referenced
+V44 columns before the ALTER that adds them ran. That whole bug class is
+now closed — see PROMPT_AUDIT.md "ROUND 9 FIELD FIX" for the four fixes
+(messages guard, cbt_results/marking-queue guard, 201 drop-policy guards,
+v45 self-sufficiency) and the tooling that locks it:
+
+- `python3 tools/check_schema_order.py` — fails if any index, policy,
+  SQL-function body or view references a version-added column before its
+  ALTER runs. Part of the QA battery.
+- `bash tools/verify_schema_pg.sh` — optional, needs a local PostgreSQL:
+  replays the real schema against fresh, worst-case-legacy, re-run and
+  standalone-migration databases (all must report 0 errors; skips with
+  exit 77 where pg is absent).
+
+**Action for existing projects: re-run the new complete-schema.sql from
+the top.** It is upgrade-safe and idempotent — no cleanup of a previous
+half-applied run is needed.
