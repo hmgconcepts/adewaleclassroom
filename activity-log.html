@@ -118,7 +118,28 @@
         <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access.</li><li><b>Tutor:</b> No access — this page controls money, audit or configuration.</li><li><b>Parent:</b> No access.</li><li><b>Learner:</b> No access.</li></ul></details>
         <p class="page-intro-rel"><b>Related:</b> <a href="documents.html">documents</a> · <a href="policies.html">policies</a> · <a href="compliance.html">compliance</a> · <a href="safeguarding.html">safeguarding</a> · <a href="security-centre.html">security centre</a> · <a href="approvals.html">approvals</a></p>
       </section>
+      <!-- V45 (round 9, item 3): AUDIT CONSOLE REBUILD (DramaConnect pattern) —
+           KPI snapshot, server-side-friendly filters (person / table / action /
+           date range / free-text), CSV export for external auditors. The log
+           itself stays immutable; this layer only reads it. -->
+      <section class="card">
+        <h3 style="margin-top:0">Audit console</h3>
+        <div id="al-kpis" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;margin-bottom:12px">
+          <div class="form-group" style="margin:0"><label style="font-size:.78rem">Person</label><input class="form-input" id="al-who" placeholder="who" style="min-width:140px"></div>
+          <div class="form-group" style="margin:0"><label style="font-size:.78rem">Table</label><input class="form-input" id="al-table" placeholder="table" style="min-width:120px"></div>
+          <div class="form-group" style="margin:0"><label style="font-size:.78rem">Action</label>
+            <select class="form-input" id="al-action"><option value="">all</option><option>insert</option><option>update</option><option>delete</option><option>signin</option><option>signout</option></select></div>
+          <div class="form-group" style="margin:0"><label style="font-size:.78rem">From</label><input class="form-input" type="date" id="al-from"></div>
+          <div class="form-group" style="margin:0"><label style="font-size:.78rem">To</label><input class="form-input" type="date" id="al-to"></div>
+          <div class="form-group" style="margin:0;flex:1;min-width:160px"><label style="font-size:.78rem">Search change</label><input class="form-input" id="al-q" placeholder="search…"></div>
+          <button class="btn btn-primary btn-sm" type="button" id="al-go">Apply</button>
+          <button class="btn btn-outline btn-sm" type="button" id="al-export">⬇ CSV</button>
+        </div>
+        <div id="al-table-wrap"><p class="muted">Loading…</p></div>
+      </section>
       <div id="activity-root"></div>
+      <script src="assets/js/activity-log.js?v=45"></script>
     </main>
   </div>
 </div>

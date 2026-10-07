@@ -177,6 +177,33 @@ document.getElementById('lookup').onclick = async () => {
   hint.innerHTML = state.identity_mode === 'registered'
     ? '<b>Registered paper.</b> Only enrolled learners. Name is official and read-only.'
     : '<b>Open paper.</b> Guests and registered learners may sit.';
+  /* V45 (round 9): HMG Academy CBT parity — warn before the learner starts,
+     not after they have already lost marks to it. */
+  if (Number(state.exam.negative_mark) > 0) {
+    hint.innerHTML += '<div style="margin-top:8px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:8px 12px;color:#991b1b"><b>⚠️ Negative marking:</b> every wrong answer deducts ' + Number(state.exam.negative_mark) + ' mark(s). Unanswered questions are not penalised — skip rather than guess blindly.</div>';
+  }
+  /* V45 (round 9): draft auto-save recovery. If this device has an
+     unfinished attempt at THIS paper (same code + student), offer to
+     resume it — answers, flags and the original start time (so a refresh
+     can never reset the exam clock). */
+  try {
+    const dkey = 'tc-cbt-draft:' + String(state.exam.code || '').toUpperCase() + ':' + (sid || 'anon');
+    const draft = JSON.parse(localStorage.getItem(dkey) || 'null');
+    if (draft && draft.answers && Object.keys(draft.answers).length && Date.now() - (draft.at || 0) < 86400000) {
+      const bar = document.createElement('div');
+      bar.id = 'draft-resume';
+      bar.style.cssText = 'margin-top:10px;background:#eff6ff;border:1px solid #93c5fd;border-radius:12px;padding:12px 14px';
+      bar.innerHTML = '<b style="color:#1e3a8a">♻️ Unfinished attempt found on this device</b>' +
+        '<p style="margin:6px 0;font-size:.9rem">You answered ' + Object.keys(draft.answers).length + ' question(s) ' +
+        Math.round((Date.now() - draft.at) / 60000) + ' minutes ago. Resume keeps your answers, flags and the original timer.</p>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        '<button class="btn btn-primary btn-sm" type="button" id="draft-yes">♻️ Resume attempt</button>' +
+        '<button class="btn btn-outline btn-sm" type="button" id="draft-no">Start fresh</button></div>';
+      hint.appendChild(bar);
+      document.getElementById('draft-yes').onclick = () => { state._resumeDraft = draft; document.getElementById('start').click(); };
+      document.getElementById('draft-no').onclick = () => { try { localStorage.removeItem(dkey); } catch(_){} bar.remove(); };
+    }
+  } catch (_) {}
   if (state.identity_mode === 'registered' && !(cand && cand.id)) {
     toast('Enter a valid student ID for this registered paper.', 'warning');
     return;
@@ -246,8 +273,24 @@ document.getElementById('start').onclick = async () => {
   const root = document.getElementById('exam');
   root.hidden = false;
   const mins = Number(exam.duration_min || 30);
-  state.started = Date.now();
   state.flags = {};
+  /* V45: resume an unfinished attempt — answers ride in a sidecar map (the
+     DOM widgets of exotic question types cannot all be re-filled safely),
+     the timer continues from the ORIGINAL start so a refresh never resets
+     the clock, and everything the learner re-edits in the DOM wins. */
+  state.draft = null;
+  if (state._resumeDraft && state._resumeDraft.answers) {
+    state.draft = { answers: state._resumeDraft.answers };
+    state.started = Number(state._resumeDraft.started) || Date.now();
+    state.flags = state._resumeDraft.flags || {};
+    state.current = Number(state._resumeDraft.current) || 0;
+    state._resumeDraft = null;
+    const rb = document.getElementById('draft-resume'); if (rb) rb.remove();
+  } else {
+    state.started = Date.now();
+  }
+  state._draftKey = 'tc-cbt-draft:' + String(exam.code || '').toUpperCase() + ':' +
+    ((state.learner && state.learner.student_no) || new URLSearchParams(location.search).get('reg') || 'anon');
   const bySub = CBT.groupBySubject(state.questions);
   const tabs = Object.keys(bySub).length > 1
     ? '<div id="sub-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">' +
@@ -322,7 +365,17 @@ document.getElementById('start').onclick = async () => {
   })();
 
   // Item 20 — numbered question tabs, so a candidate can jump anywhere.
-  const answersNow = () => CBT.collectAnswers(document.getElementById('qbox'));
+  /* V45: the DOM is the source of truth for anything the learner touched;
+     the draft sidecar fills in whatever the widgets could not re-display. */
+  const answersNow = () => Object.assign({}, (state.draft && state.draft.answers) || {}, CBT.collectAnswers(document.getElementById('qbox')));
+  const saveDraft = () => {
+    try {
+      localStorage.setItem(state._draftKey, JSON.stringify({
+        answers: answersNow(), flags: state.flags, current: state.current,
+        started: state.started, at: Date.now()
+      }));
+    } catch (_) {}
+  };
   const cards = () => document.querySelectorAll('#qbox .cbt-q');
   state.current = 0;
   /* Which questions belong to the subject tab currently on screen.
@@ -562,19 +615,63 @@ document.getElementById('start').onclick = async () => {
     if (gi != null) updatePassageCount(state.groups[gi]);
   });
 
-  /* Keyboard navigation. Arrow keys are ignored while the candidate is
+  /* Keyboard navigation (V45: full JAMB-style shortcut set, ported from the
+     HMG Academy CBT System). Arrow keys are ignored while the candidate is
      typing into a short-answer box, or they could not use the arrows to
-     edit their own text. */
+     edit their own text.
+       A–E or 1–5 … pick option 1–5 of the current question
+       N / →  … next question      P / ← … previous question
+       R      … flag for review    S … open the submit button            */
   document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
     const t = e.target;
     if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && t.type !== 'radio' && t.type !== 'checkbox') return;
-    if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); step(1); }
-    if (e.key === 'ArrowLeft'  || e.key === 'PageUp')   { e.preventDefault(); step(-1); }
+    const k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === 'n' || k === 'N') { e.preventDefault(); step(1); return; }
+    if (k === 'ArrowLeft'  || k === 'PageUp'   || k === 'p' || k === 'P') { e.preventDefault(); step(-1); return; }
+    if (k === 'r' || k === 'R') { e.preventDefault(); state.flags[state.current] = !state.flags[state.current]; saveDraft(); paint(); return; }
+    if (k === 's' || k === 'S') { e.preventDefault(); const sb = document.getElementById('submit'); if (sb) sb.click(); return; }
+    /* option picking: letters a–e / digits 1–5 on the CURRENT question */
+    let pick = -1;
+    if (/^[a-eA-E]$/.test(k)) pick = k.toLowerCase().charCodeAt(0) - 97;
+    else if (/^[1-5]$/.test(k)) pick = Number(k) - 1;
+    if (pick >= 0) {
+      const card = document.querySelectorAll('#qbox .cbt-q')[state.visible ? state.visible().indexOf(state.current) : state.current];
+      const inputs = card ? card.querySelectorAll('input[type=radio][name^="q_"], input[type=checkbox][name^="q_"]') : [];
+      const target = inputs[pick];
+      if (target) { e.preventDefault(); target.checked = true; target.dispatchEvent(new Event('change', { bubbles: true })); }
+    }
   });
 
+  /* V45: best-effort visual restore — radios, checkboxes, plain text and
+     indexed fields are re-filled from the sidecar so the learner SEES their
+     earlier answers; anything the widget cannot show still counts via
+     answersNow(). */
+  try {
+    if (state.draft && state.draft.answers) {
+      Object.entries(state.draft.answers).forEach(([qid, val]) => {
+        if (val == null) return;
+        if (Array.isArray(val)) {
+          val.forEach((v, i) => {
+            if (v == null) return;
+            document.querySelectorAll('[name="q_' + qid + '__' + i + '"]').forEach(el => {
+              if (el.type === 'radio' || el.type === 'checkbox') el.checked = String(el.value) === String(v);
+              else el.value = v;
+            });
+          });
+        } else if (typeof val === 'string') {
+          document.querySelectorAll('[name="q_' + qid + '"], [type=hidden][name="q_' + qid + '"]').forEach(el => {
+            if (el.type === 'radio' || el.type === 'checkbox') el.checked = String(el.value) === String(val);
+            else if (el.type !== 'hidden' || val.charAt(0) === '{' || val.charAt(0) === '[') el.value = val;
+          });
+        }
+      });
+      paint();
+    }
+  } catch (_) {}
   paint();
-  document.getElementById('qbox').addEventListener('input', () => paint());
-  document.getElementById('qbox').addEventListener('change', () => paint());
+  document.getElementById('qbox').addEventListener('input', () => { paint(); saveDraft(); });
+  document.getElementById('qbox').addEventListener('change', () => { paint(); saveDraft(); });
   document.getElementById('flagq').onclick = () => {
     state.flags[state.current] = !state.flags[state.current];
     paint();
@@ -615,8 +712,11 @@ async function finish() {
   clearTimeout(state._t);
   Proctor.stop();
   const kitViolations = (window.ExamKit && ExamKit.stopAntiCheat()) || [];
-  const answers = CBT.collectAnswers(document.getElementById('qbox'));
-  const result = CBT.grade(state.questions, answers);
+  /* V45: the draft sidecar rides along (anything the refreshed widgets could
+     not re-display), and negative marking is applied exactly as configured
+     on the paper. */
+  const answers = Object.assign({}, (state.draft && state.draft.answers) || {}, CBT.collectAnswers(document.getElementById('qbox')));
+  const result = CBT.grade(state.questions, answers, { negative_mark: Number(state.exam.negative_mark) || 0 });
   const displayName = document.getElementById('dname').value.trim() || (state.learner && state.learner.full_name) || 'Guest';
   const meta = {
     title: state.exam.title,
@@ -633,9 +733,15 @@ async function finish() {
        empty default instead of `review`). All of it is sent now. */
     const finishedAt = new Date();
     const startedAt = new Date(state.started);
+    /* V45: verifiable submission receipt (HMG Academy parity). Generated on
+       the device, stored on the row, shown to the candidate — the studio can
+       check it against the results audit when a family disputes a loss. */
+    const certCode = 'CBT-' + (state.exam.code || 'X').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4) + '-' +
+      Date.now().toString(36).toUpperCase().slice(-4) + '-' + Math.random().toString(36).toUpperCase().slice(2, 6);
     const payload = {
       exam_id: state.exam.id,
       exam_code: state.exam.code || null,
+      cert_code: certCode,
       learner_id: (state.learner && state.learner.id) || null,
       student_no: meta.student_no,
       candidate_name: displayName,
@@ -680,6 +786,8 @@ async function finish() {
     
     if (savedSuccessfully) {
       state.saved = true;
+      state.certCode = certCode;
+      try { localStorage.removeItem(state._draftKey); } catch (_) {}
     } else {
       throw lastError;
     }
@@ -772,7 +880,16 @@ async function finish() {
          <p class="muted" style="margin:6px 0 0;font-size:.8rem">Reason: ${TC.esc(state.saveError || 'unknown')}</p>
        </div>`
     : '';
-  rev.innerHTML = (typeof eligHTML !== 'undefined' ? eligHTML : '') + (typeof gameHTML !== 'undefined' ? gameHTML : '') + banner + (show ? CBT.reviewHTML(result, meta) : `<div class="card"><h2>Submitted</h2><p>Your tutor will release the review.</p></div>`) +
+  const receiptHTML = state.certCode
+    ? '<div class="card" style="background:#f0fdf4;border:1px solid #bbf7d0;margin-bottom:12px"><b style="color:#166534">🧾 Submission receipt</b>' +
+      '<p style="margin:6px 0 2px;font-family:ui-monospace,monospace;font-size:1.05rem;font-weight:800">' + TC.esc(state.certCode) + '</p>' +
+      '<p class="muted" style="margin:2px 0 0;font-size:.8rem">Keep this code — the studio can verify your submission against it at any time.</p></div>'
+    : '';
+  const negHTML = (Number(state.exam.negative_mark) > 0)
+    ? '<div class="card" style="background:#fffbeb;border:1px solid #fde68a;margin-bottom:12px;font-size:.9rem"><b>⚠️ Negative marking applied:</b> ' +
+      (result.wrong || 0) + ' wrong answer(s) × −' + Number(state.exam.negative_mark) + ' = −' + (result.deducted || 0) + ' marks. Final score ' + result.got + '/' + result.max + '.</div>'
+    : '';
+  rev.innerHTML = (typeof eligHTML !== 'undefined' ? eligHTML : '') + (typeof gameHTML !== 'undefined' ? gameHTML : '') + banner + receiptHTML + negHTML + (show ? CBT.reviewHTML(result, meta) : `<div class="card"><h2>Submitted</h2><p>Your tutor will release the review.</p></div>`) +
     `<p style="margin-top:12px"><button class="btn btn-accent" type="button" onclick="CBT.printReview()">Save / print PDF</button>
      <a class="btn btn-ghost" href="scoresheet.html">Open scoresheet</a></p>`;
   if (state.saved === false) {

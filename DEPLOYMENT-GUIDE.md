@@ -360,3 +360,47 @@ The ClassDeck ships **v13.2 → v14.0.0** (pages `?v=48`, sw
 - **PDF navigation** — safe centring (zoomed pages scroll edge-to-edge),
   always-visible scrollbars, zoom anchored to the viewport centre across
   buttons/pinch/ctrl-wheel, keyboard scrolling.
+
+
+## V45 — platform-health layer matrix + advanced CBT (round 9)
+
+`complete-schema.sql` now ends with **V45 + the V45b fleet bridge**. On an
+existing project, run `database/v45-health-cbt.sql` once (idempotent). It
+adds:
+
+- `tc_keepalive_layers()` — the health RPC behind the Platform Health
+  keep-alive layer matrix (per-source ledger + heartbeat in one call).
+- `trg_cbt_assignment_sync` — publishing a **Graded** CBT to an engagement
+  automatically files a homework row (`kind='cbt'`, `cbt_exam_id`), so it
+  appears on the assignment page and every learner work board instantly.
+- `tc_my_quizzes(p_learner_id?)` — the dedicated learner/parent page feed
+  (graded vs practice, windows, attempts, best/last score).
+- `tc_cbt_cumulative(p_learner_id, p_from, p_to)` — per-subject CBT
+  averages over a period, consumed by the **🧮 Pull CBT marks** action on
+  every progress report.
+- `tc_absentee_followup` (table + RPC) — the attendance care list.
+- `assignments.kind/cbt_exam_id`, `complaints.anonymous/submitted_by/
+  category` columns.
+
+Platform pages stay at `?v=45` but the shell cache bumps to
+`tc-shell-v14-20261007` (nav **V27** — new **My quizzes** page for every
+signed-in role). New front-end files: `assets/js/keepalive-layers.js`,
+`assets/js/my-quizzes.js`, `assets/js/activity-log.js`. Rebuilt:
+`platform-health.html` (keep-alive layer matrix card), `cbt-exam.html`
+(negative marking + draft autosave/resume + JAMB shortcuts + submission
+receipts), `cbt-multi.html` (combine published papers + negative marking),
+`practice.html` (negative marking), `complaints.html` (anonymous suggestion
+box), `attendance.html` (care list), `activity-log.html` (audit console with
+filters + CSV export), `my-children.html` (per-child quizzes link),
+`crud.js`, `desk-kit.js`, `app.js`, `cbt.js`.
+
+**IMPORTANT — workflows:** the three files under `.github/workflows/` are
+part of this release. The keep-alive workflows now ping through
+`tc_keep_alive` (honest per-source ledger), `db-backup.yml` gained a
+soft-fail `keepalive-heartbeat` job, and the `sc_keep_alive` fleet shim is
+re-declared (V45b) to ALSO upsert the ledger, so legacy fleet pings show in
+the matrix. Deploy the workflows or the layer matrix will report the
+workflows as stale.
+
+**QA:** 13 suites, 453/453 per repo × 2 repos (365 round-8 baseline +
+88 round-9). Round-9 traceability: `PROMPT_AUDIT.md` (round 9 section).

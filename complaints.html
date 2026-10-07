@@ -111,14 +111,77 @@
       <section class="help-card page-intro">
         <div class="page-intro-head"><strong>Complaints</strong><span class="page-intro-badge" style="background:#334155">🎓 Staff only</span></div>
         <p class="page-intro-what">The formal route for a concern, from the moment it is raised to the moment it is closed. A parent or learner submits it, the studio routes it to an owner, and every step is timestamped. Evidence is attached as a Drive or web link rather than an upload. The audit trail matters more than the form: it is what you produce when a complaint escalates. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.</p>
-        <p class="page-intro-who"><b>Who it is for.</b> Owner and admin. This is configuration and governance, not day-to-day teaching.</p>
+        <p class="page-intro-who"><b>Who it is for.</b> Families: the suggestion &amp; complaint form below (anonymous if you prefer — round 9). Staff: the triage table. Owner and admin. This is configuration and governance, not day-to-day teaching.</p>
         <p class="page-intro-why"><b>Why it matters.</b> Configuration decides who can see what. A mistake here is a privacy incident, so every change is written to the activity log.</p>
         <details class="page-intro-how"><summary>How to use this page</summary><ol><li>Only an owner or admin should change anything on this page.</li><li>Read the note beside each setting before you touch it.</li><li>Save, then reload any normal page to confirm the change took effect.</li><li>If something looks wrong afterwards, the activity log records who changed what and when.</li></ol></details>
         <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access.</li><li><b>Tutor:</b> Full access for the learners and groups assigned to them, and nothing else.</li><li><b>Parent:</b> No access.</li><li><b>Learner:</b> No access.</li></ul></details>
         <p class="page-intro-rel"><b>Related:</b> <a href="announcements.html">announcements</a> · <a href="broadcasts.html">broadcasts</a> · <a href="forum.html">forum</a> · <a href="polls.html">polls</a> · <a href="voting.html">voting</a> · <a href="surveys.html">surveys</a></p>
       </section>
+      <!-- V45 (round 9, item 7): SUGGESTION BOX (DramaConnect pattern) — any
+           signed-in member can raise a suggestion or complaint, anonymously
+           if they prefer. Anonymous rows never store the account id; staff
+           see the message but not who sent it. -->
+      <section class="card" style="margin-bottom:14px">
+        <h3 style="margin-top:0">📣 Raise a suggestion or complaint</h3>
+        <div class="grid grid-2" style="gap:10px">
+          <div class="form-group"><label>Category</label>
+            <select class="form-input" id="sb-cat">
+              <option value="suggestion">💡 Suggestion</option>
+              <option value="complaint">🙁 Complaint</option>
+              <option value="question">❓ Question</option>
+              <option value="praise">🎉 Praise</option>
+            </select></div>
+          <div class="form-group"><label>Title</label>
+            <input class="form-input" id="sb-title" maxlength="120" placeholder="One line — what is this about?"></div>
+          <div class="form-group" style="grid-column:1/-1"><label>Details</label>
+            <textarea class="form-input" id="sb-body" rows="3" placeholder="Say what happened, what you expected, and what you would like done. Attach links to any evidence."></textarea></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px">
+          <label style="display:flex;gap:7px;align-items:center"><input type="checkbox" id="sb-anon">
+            <span>Submit anonymously <span class="muted" style="font-size:.78rem">(staff see the message, never who sent it)</span></span></label>
+          <button class="btn btn-primary btn-sm" type="button" id="sb-send" style="margin-left:auto">Send to the studio</button>
+        </div>
+        <div id="sb-note" style="margin-top:8px"></div>
+      </section>
+
       <div id="crud-root"></div>
       <script>document.addEventListener('DOMContentLoaded',()=>{ if(window.CRUD) CRUD.renderList('complaints'); });</script>
+      <script>
+      (function () {
+        var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+        var btn = document.getElementById('sb-send');
+        if (!btn) return;
+        btn.addEventListener('click', async function () {
+          var note = document.getElementById('sb-note');
+          var title = document.getElementById('sb-title').value.trim();
+          var body = document.getElementById('sb-body').value.trim();
+          var cat = document.getElementById('sb-cat').value;
+          var anon = document.getElementById('sb-anon').checked;
+          if (!title) { note.innerHTML = '<span style="color:#b42318">Give it a title first.</span>'; return; }
+          if (!window.sb) { note.innerHTML = '<span style="color:#b42318">Sign in to send.</span>'; return; }
+          btn.disabled = true; btn.textContent = 'Sending…';
+          var me = null;
+          try { me = (await window.sb.auth.getUser()).data && (await window.sb.auth.getUser()).data.user; } catch (_) {}
+          var row = {
+            title: title,
+            body: body,
+            category: cat,
+            anonymous: !!anon,
+            submitted_by: anon ? 'anonymous' : (me && me.email) || 'portal user',
+            status: 'open',
+            priority: cat === 'complaint' ? 'normal' : 'low'
+          };
+          var r = await window.sb.from('complaints').insert(row);
+          btn.disabled = false; btn.textContent = 'Send to the studio';
+          if (r.error) { note.innerHTML = '<span style="color:#b42318">Could not send: ' + esc(r.error.message) + '</span>'; return; }
+          document.getElementById('sb-title').value = '';
+          document.getElementById('sb-body').value = '';
+          document.getElementById('sb-anon').checked = false;
+          note.innerHTML = '<span style="color:#166534">✅ Sent' + (anon ? ' anonymously' : '') + '. The studio triages every message; complaints are answered within one working day.</span>';
+          if (window.CRUD && CRUD.renderList) { try { CRUD.renderList('complaints'); } catch (_) {} }
+        });
+      })();
+      </script>
     </main>
   </div>
 </div>

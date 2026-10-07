@@ -99,6 +99,9 @@
         </select></div>
       <div class="form-group"><label>Total duration (minutes)</label>
         <input class="form-input" type="number" id="mm-mins" value="90" min="5"></div>
+      <div class="form-group"><label>Negative marking per wrong answer (0 = off)</label>
+        <input class="form-input" type="number" id="mm-neg" value="0" min="0" step="0.25">
+        <span class="muted" style="font-size:.78rem;display:block;margin-top:4px">UTME-style: each WRONG answer deducts this many marks. Blanks are never penalised and the score cannot go below zero.</span></div>
       <div class="form-group"><label>Questions per subject (0 = all)</label>
         <input class="form-input" type="number" id="mm-sel" value="0" min="0"></div>
       <div class="form-group"><label>Engagement (optional)</label>
@@ -157,6 +160,21 @@
     <p class="muted" style="font-size:.9rem">One block per subject. Paste that subject's CSV
       (headers: <code>question,type,a,b,c,d,answer,explanation,mark</code>) or upload a .csv file.
       Need question sets? Open <a href="cbt-prompts.html">Question prompt packs</a> — free, no AI API.</p>
+    <!-- V45 (round 9, item 4): COMBINE PUBLISHED PAPERS — pull the questions
+         of papers that already exist into this multi-subject sitting, one
+         subject block per source paper. No copy-pasting, no re-uploading,
+         no question loss: the rows come straight from the database with
+         their types, marks, explanations and media intact. -->
+    <details id="mm-combine" style="margin:12px 0;border:1px dashed var(--accent,#4f46e5);border-radius:12px;padding:10px 14px">
+      <summary style="cursor:pointer;font-weight:700">🧩 Combine published papers into this sitting</summary>
+      <p class="muted" style="font-size:.85rem;margin:8px 0">Tick the papers to merge — each becomes one subject block (rename it if you like). This is the one-tap way to build a UTME-style mock from papers that already exist.</p>
+      <div id="mm-combine-list"><p class="muted">Loading papers…</p></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn btn-primary btn-sm" type="button" id="mm-combine-add">🧩 Add selected as subject blocks</button>
+        <span class="muted" id="mm-combine-note" style="font-size:.8rem;align-self:center"></span>
+      </div>
+    </details>
+
     <div id="mm-subjects"></div>
     <button class="btn btn-outline" type="button" id="mm-add">＋ Add subject</button>
   </section>
@@ -207,7 +225,7 @@ const MM = {
   n: 0,
   esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); },
 
-  addSubject(name){
+  addSubject(name, preloaded){
     const i = ++this.n;
     const box = document.createElement('div');
     box.className = 'card';
@@ -229,6 +247,16 @@ const MM = {
         '<span class="mm-count muted" style="font-size:.85rem">0 questions</span></div>';
     document.getElementById('mm-subjects').appendChild(box);
 
+    /* V45: when the block was filled by COMBINE, the questions live in
+       _mmPre and the textarea just describes them. Editing the textarea
+       switches the block back to CSV mode (author overrides the import). */
+    if (Array.isArray(preloaded) && preloaded.length) {
+      box._mmPre = preloaded;
+      const ta0 = box.querySelector('.mm-csv');
+      ta0.value = '⟨ ' + preloaded.length + ' questions imported from an existing paper — type here to replace them with a CSV ⟩';
+      ta0.addEventListener('input', function once() { delete box._mmPre; ta0.removeEventListener('input', once); }, { once: true });
+      const c0 = box.querySelector('.mm-count'); if (c0) c0.textContent = preloaded.length + ' questions (imported)';
+    }
     box.querySelector('[data-mm-del]').onclick = () => { box.remove(); MM.blueprint(); };
     const ta = box.querySelector('.mm-csv');
     ta.addEventListener('input', () => MM.blueprint());
@@ -270,7 +298,13 @@ const MM = {
         err = err || ('Duplicate subject name: ' + name); return;
       }
       let qs = [];
-      try { qs = CBT.parseCSV(csv) || []; } catch (e) { err = err || ('CSV error in ' + name + ': ' + e.message); return; }
+      if (Array.isArray(b._mmPre) && b._mmPre.length) {
+        /* V45: combined block — the questions are already normalised rows
+           from the database; clone them so this paper owns its copies. */
+        qs = b._mmPre.map((q, j) => CBT.normalizeQuestion(JSON.parse(JSON.stringify(q)), j));
+      } else {
+        try { qs = CBT.parseCSV(csv) || []; } catch (e) { err = err || ('CSV error in ' + name + ': ' + e.message); return; }
+      }
       if (!qs.length) { err = err || ('No rows parsed for ' + name + '.'); return; }
 
       /* V39 — the build-time Math.random() shuffle is gone. Shuffling here
@@ -333,6 +367,7 @@ const MM = {
     const row = {
       title, code, quiz_kind: kind,
       duration_min: Number(document.getElementById('mm-mins').value || 90),
+      negative_mark: Math.max(0, Number(document.getElementById('mm-neg') && document.getElementById('mm-neg').value) || 0),
       subject: subjects.join(' · '),
       engagement_id: document.getElementById('mm-eng').value || null,
       questions,
@@ -368,6 +403,57 @@ const MM = {
     say('✅ Saved <b>' + this.esc(title) + '</b> — ' + subjects.length + ' subjects, ' + questions.length +
         ' questions.<br>Share this link:<br><code>' + this.esc(url) + '</code>');
     this.list();
+  },
+
+  /* ---------- V45: combine published papers ---------- */
+  async loadCombineList() {
+    const host = document.getElementById('mm-combine-list');
+    if (!host) return;
+    if (!window.sb) { host.innerHTML = '<p class="muted">Connect Supabase in assets/js/config.js to combine papers.</p>'; return; }
+    const { data, error } = await sb.from('cbt_exams')
+      .select('id,title,code,subject,quiz_kind,duration_min,created_at')
+      .or('status.eq.published,status.eq.open,status.eq.live,is_open.eq.true')
+      .order('created_at', { ascending: false }).limit(200);
+    if (error) { host.innerHTML = '<p class="muted" style="color:#b42318">Could not load papers: ' + this.esc(error.message) + '</p>'; return; }
+    if (!data || !data.length) { host.innerHTML = '<p class="muted">No published papers yet — build one first on the Quizzes page.</p>'; return; }
+    window.__mmPapers = data;
+    host.innerHTML = '<div class="table-wrap"><table style="width:100%;font-size:.85rem"><thead><tr>' +
+      '<th></th><th style="text-align:left;padding:6px 8px">Paper</th><th style="text-align:left;padding:6px 8px">Code</th>' +
+      '<th style="text-align:left;padding:6px 8px">Kind</th><th style="text-align:left;padding:6px 8px">Subject name for this sitting</th>' +
+      '</tr></thead><tbody>' +
+      data.map((p, i) => '<tr style="border-bottom:1px solid #f1f5f9">' +
+        '<td style="padding:6px 8px"><input type="checkbox" data-mmc="' + i + '"></td>' +
+        '<td style="padding:6px 8px"><b>' + this.esc(p.title) + '</b></td>' +
+        '<td style="padding:6px 8px"><code>' + this.esc(p.code || '') + '</code></td>' +
+        '<td style="padding:6px 8px">' + this.esc(p.quiz_kind || 'graded') + '</td>' +
+        '<td style="padding:6px 8px"><input class="form-input" style="max-width:220px" data-mmcname="' + i + '" value="' + this.esc(p.subject || p.title) + '"></td>' +
+        '</tr>').join('') + '</tbody></table></div>';
+  },
+
+  async combineSelected() {
+    const note = document.getElementById('mm-combine-note');
+    const boxes = [...document.querySelectorAll('[data-mmc]:checked')];
+    if (!boxes.length) { if (note) note.textContent = 'Tick at least one paper first.'; return; }
+    const idxs = boxes.map((b) => Number(b.getAttribute('data-mmc')));
+    const papers = (window.__mmPapers || []).filter((_, i) => idxs.includes(i));
+    if (note) note.textContent = 'Loading questions…';
+    const { data, error } = await sb.from('cbt_exams')
+      .select('id,title,subject,questions')
+      .in('id', papers.map((p) => p.id));
+    if (error || !data) { if (note) note.textContent = 'Could not load the questions: ' + this.esc(error ? error.message : 'unknown'); return; }
+    let added = 0, totalQ = 0;
+    data.forEach((row) => {
+      const i = papers.findIndex((p) => p.id === row.id);
+      const nameEl = document.querySelector('[data-mmcname="' + idxs[i] + '"]');
+      const name = (nameEl && nameEl.value.trim()) || row.subject || row.title;
+      const qs = Array.isArray(row.questions) ? row.questions : [];
+      if (!qs.length) return;
+      this.addSubject(name, qs);
+      added++; totalQ += qs.length;
+    });
+    if (note) note.textContent = added ? ('✅ Added ' + added + ' paper(s) — ' + totalQ + ' questions — as subject blocks below.') : 'The selected papers have no questions.';
+    this.blueprint();
+    if (added) document.getElementById('mm-subjects').scrollIntoView({ behavior: 'smooth' });
   },
 
   /* V16 — the paper list is now the shared data workbench, not a
@@ -711,6 +797,15 @@ const MM = {
 
   init(){
     document.getElementById('mm-add').onclick = () => this.addSubject();
+    /* V45: combine published papers → subject blocks. The list loads lazily
+       (first open), the questions load only for the papers actually ticked. */
+    var combineLoaded = false;
+    var combineList = document.getElementById('mm-combine');
+    if (combineList) combineList.addEventListener('toggle', function () {
+      if (combineList.open && !combineLoaded) { combineLoaded = true; MM.loadCombineList(); }
+    });
+    var combineBtn = document.getElementById('mm-combine-add');
+    if (combineBtn) combineBtn.onclick = () => MM.combineSelected();
     document.getElementById('mm-save').onclick = () => this.save();
     document.getElementById('mm-gen').onclick = () => {
       document.getElementById('mm-code').value =

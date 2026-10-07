@@ -117,8 +117,73 @@
         <details class="page-intro-roles"><summary>What each role sees here</summary><ul><li><b>Owner:</b> Full access.</li><li><b>Tutor:</b> Full access for the learners and groups assigned to them, and nothing else.</li><li><b>Parent:</b> No access.</li><li><b>Learner:</b> No access.</li></ul></details>
         <p class="page-intro-rel"><b>Related:</b> <a href="calendar.html">calendar</a> · <a href="sessions.html">sessions</a> · <a href="bookings.html">bookings</a> · <a href="public-book.html">public book</a> · <a href="availability.html">availability</a> · <a href="session-complete.html">session complete</a></p>
       </section>
+      <!-- V45 (round 9, item 7): CARE LIST — absentee follow-up. The database
+           already detects consecutive absences; this card surfaces who needs
+           a phone call before the pattern becomes a dropout. -->
+      <section class="card" style="margin-bottom:14px">
+        <h3 style="margin-top:0">🫂 Care list — absentee follow-up</h3>
+        <p class="muted" style="font-size:.85rem">Learners with consecutive absences, straight from the database's absentee detection. Call early — a family that has stopped showing up is a family deciding whether to stay.</p>
+        <div id="followup-root"><p class="muted">Loading…</p></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <button class="btn btn-outline btn-sm" type="button" id="fu-refresh">↻ Refresh</button>
+          <button class="btn btn-outline btn-sm" type="button" id="fu-add">＋ Log a follow-up on a learner</button>
+        </div>
+      </section>
+
       <div id="crud-root"></div>
       <script>document.addEventListener('DOMContentLoaded',()=>{ if(window.CRUD) CRUD.renderList('attendance'); });</script>
+      <script>
+      (function () {
+        var esc = function (t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+        async function loadFollowups() {
+          var root = document.getElementById('followup-root');
+          if (!root) return;
+          if (!window.sb) { root.innerHTML = '<p class="muted">Connect Supabase to see the care list.</p>'; return; }
+          var r = await window.sb.rpc('tc_absentee_followup', {});
+          if (r.error) { root.innerHTML = '<p class="muted" style="color:#b42318">Care list unavailable: ' + esc(r.error.message) + '</p>'; return; }
+          var data = r.data || [];
+          if (!data.length) { root.innerHTML = '<p class="muted">Nobody is on the care list right now — no consecutive absences detected. 🎉</p>'; return; }
+          root.innerHTML = '<div class="table-wrap"><table style="width:100%;font-size:.88rem"><thead><tr>' +
+            '<th style="text-align:left;padding:6px 8px">Learner</th><th style="text-align:left;padding:6px 8px">Class</th>' +
+            '<th style="padding:6px 8px">Absent</th><th style="text-align:left;padding:6px 8px">Last seen</th>' +
+            '<th style="text-align:left;padding:6px 8px">Open follow-ups</th><th></th></tr></thead><tbody>' +
+            data.map(function (x) {
+              return '<tr style="border-bottom:1px solid #f1f5f9">' +
+                '<td style="padding:6px 8px"><b>' + esc(x.learner) + '</b></td>' +
+                '<td style="padding:6px 8px">' + esc(x.engagement || '—') + '</td>' +
+                '<td style="padding:6px 8px;text-align:center"><span class="badge" style="background:#fee2e2;color:#991b1b">' + (x.absent_count || 0) + ' in a row</span></td>' +
+                '<td style="padding:6px 8px">' + esc(x.last_seen ? String(x.last_seen).slice(0, 10) : 'never') + '</td>' +
+                '<td style="padding:6px 8px">' + (x.open_followups ? '<span class="badge" style="background:#fef3c7;color:#92400e">' + x.open_followups + ' open</span>' : '<span class="muted">none yet</span>') + '</td>' +
+                '<td style="padding:6px 8px"><button class="btn btn-outline btn-sm" type="button" data-fu-learner="' + esc(x.learner_id || '') + '" data-fu-name="' + esc(x.learner) + '">Log call / note</button></td></tr>';
+            }).join('') + '</tbody></table></div>';
+          root.querySelectorAll('[data-fu-learner]').forEach(function (b) {
+            b.addEventListener('click', async function () {
+              var note = prompt('Follow-up note for ' + b.getAttribute('data-fu-name') + ' (call made, parent response, next step):');
+              if (!note) return;
+              var ins = await window.sb.from('tc_absentee_followup').insert({
+                learner_id: b.getAttribute('data-fu-learner'),
+                note: note, status: 'new'
+              });
+              if (ins.error) alert('Could not save: ' + ins.error.message);
+              else loadFollowups();
+            });
+          });
+        }
+        document.addEventListener('DOMContentLoaded', loadFollowups);
+        var rf = document.getElementById('fu-refresh'); if (rf) rf.onclick = loadFollowups;
+        var ad = document.getElementById('fu-add');
+        if (ad) ad.onclick = async function () {
+          if (!window.sb) return;
+          var lr = await window.sb.from('learners').select('id,name').order('name').limit(500);
+          if (lr.error || !lr.data) return alert('Could not load learners.');
+          var msg = 'Which learner? Type the number:\n' + lr.data.map(function (l, i) { return (i + 1) + '. ' + l.name; }).join('\n');
+          var pick = Number(prompt(msg)); if (!(pick >= 1 && pick <= lr.data.length)) return;
+          var note = prompt('Follow-up note:'); if (!note) return;
+          var ins = await window.sb.from('tc_absentee_followup').insert({ learner_id: lr.data[pick - 1].id, note: note, status: 'new' });
+          if (ins.error) alert('Could not save: ' + ins.error.message); else loadFollowups();
+        };
+      })();
+      </script>
     </main>
   </div>
 </div>
