@@ -340,3 +340,148 @@ All of it byte-identical in both repos (V8).
 **Deployment note:** run `database/v44-messaging.sql` once on existing
 projects (idempotent). Devices still seeing single-screen boards or the
 old Messaging page are serving stale caches — upload the new build.
+
+
+---
+
+# ROUND 9 — platform health layers, advanced CBT, dedicated quiz pages
+
+Prompt (8 items, abridged): understudy gosaportal + hmgconcepts/gosaportal +
+schoolconnectdemo (per-layer keep-alive monitoring on Platform Health);
+understudy hmgacademycbtsystem + cbtgen (advanced CBT features); understudy
+lp25-dramaconnect (same); understudy gosa + CBT pages + Assignment page —
+explicitly: combining pre-existing CBTs into multi-subject CBTs, cumulative
+CBT score collation pushable to the report card, CBT assignments created in
+CBT pages that automatically appear on the assignment page; CBTs for an
+engagement must appear on DEDICATED pages by nature; only relevant features;
+expert sweep of every page/process; update every file across all repos.
+
+## Item 1 — per-layer keep-alive monitoring (GOSA parity)
+
+**The bug under the feature:** the workflows called `sc_keep_alive` — the
+fleet-compat shim — which wrote `sc_keepalive` + `tc_heartbeat` but BYPASSED
+the per-source ledger `tc_keepalive_sources`, so Platform Health could never
+say where the last ping came from. Fix is two-sided: (a) all three workflows
+now call `tc_keep_alive` with honest sources (`keep-supabase-alive.yml` ×4,
+`supabase-auto-restore.yml`, and `db-backup.yml` gained a soft-fail
+`keepalive-heartbeat` job, source `db-backup` — GOSA Layer-10 parity);
+(b) `sc_keep_alive` is re-declared (V45b bridge, appended at the very END of
+complete-schema.sql after the V45 status line — function re-declarations must
+come after earlier definitions) to ALSO upsert `tc_keepalive_sources`, so
+legacy fleet pings are visible in the matrix without breaking the Fleet
+Console contract. No `sc_keep_alive` reference remains under `.github/`.
+
+**The matrix itself:** new `assets/js/keepalive-layers.js` — a 14-layer
+catalog (`pg-cron, site-visit, github-actions, vercel-cron,
+google-apps-script, cron-job-org, edge-ping, manual-health-page,
+auto-restore-watchdog, db-backup, watchdog-selfheal, browser-recovery,
+fleet-console, external`), each with a plain-English fix hint. Freshness
+window 72 h, Supabase pause window 168 h, quorum ≥3 fresh sources. A
+`SOURCE_ALIASES` map canonicalises legacy source strings
+(fleet/hmg-fleet-console/fleet-actions→fleet-console, manual→manual-health-page,
+github-action→github-actions, apps-script→google-apps-script,
+uptime-robot→edge-ping, cron-job→cron-job-org) and the merge loop groups by
+canonical source (newest last_ping + summed counts). Health reads the
+`tc_keepalive_layers` RPC and merges alias rows. `platform-health.html` gets
+the layers card: KPI grid (last ping age, source, total pings, pause
+countdown, quorum) + a 14-row matrix — every layer shows, including
+never-run ones (⚪ Never), each with its fix. The manual-ping caption now
+names the canonical source `manual-health-page`.
+
+## Item 2 — advanced CBT (HMG Academy parity)
+
+- **Negative marking** (`assets/js/cbt.js`): `grade(questions, answers,
+  opts)` accepts `opts.negative_mark`; every WRONG non-blank answer deducts,
+  blanks are never penalised, total AND per-subject scores clamp at zero.
+  Returns `wrong`, `negative_mark`, `deducted`. Authored on both builders
+  (`practice.html` #neg, `cbt-multi.html` #mm-neg). The runner warns the
+  candidate BEFORE starting and shows a deduction line on completion.
+- **Draft autosave + resume** (`cbt-exam.html`): every input/change writes a
+  sidecar draft to `localStorage` (`tc-cbt-draft:CODE:student`, 24 h). On
+  reopen the runner offers Resume / Start fresh; resuming adopts the answers,
+  flags and position, and KEEPS the original started time so refresh can
+  never reset the clock. Visual restore pass re-selects radios/checkboxes.
+- **JAMB shortcuts:** N/→/PageDown next, P/←/PageUp prev, R flag, S submit,
+  A–E or 1–5 pick option (guarded on the visible set).
+- **Submission receipts** (cert_code, HMG parity): generated on-device
+  (`CBT-XXXX-XXXX-XXXX`), stored on the result row, shown on the completion
+  screen with a keep-this-code note — verifiable against the results audit.
+- **Combined answers at finish:** the draft sidecar merges with a fresh DOM
+  collect, so a widget that failed to re-render can never cost marks.
+
+## Item 3 — DramaConnect parity (suggestion box, care list, audit console)
+
+- **complaints.html** gains a suggestion box any signed-in member can use:
+  category (suggestion/complaint/question/praise) + optional anonymous flag —
+  anonymous rows store `submitted_by='anonymous'`, never the account id.
+  Staff triage (crud.js) gains the category + anonymous columns on top of the
+  existing priority/assignee/status flow. Schema columns ship in V45.
+- **attendance.html** gains the Care list card: `tc_absentee_followup` RPC
+  surfaces consecutive-absence learners with class, streak, last seen and
+  open follow-ups; staff log calls/notes from the row (or pick any learner).
+- **activity-log.html** rebuilt as an audit console: KPI snapshot (events
+  shown, today, distinct actors, deletes), db-side filters (actor / table /
+  action / date range) + client free-text, capped loads (500 shown, 5000
+  export), CSV export for external auditors. Read-only by design — the log
+  stays immutable.
+
+## Item 4 — combine CBTs, cumulative scores, auto-assignments
+
+- **Combine published papers** (cbt-multi.html): the 🧩 panel lists published
+  papers; ticked ones load straight from the database (`.in('id', ids)`) and
+  become subject blocks with their question objects intact — no CSV
+  round-trip, no copy-paste, no question loss. Renaming per sitting; editing
+  the textarea reverts that block to CSV mode (author override).
+- **Cumulative collation → report card** (desk-kit.js): every progress report
+  row gets **🧮 Pull CBT marks** — calls `tc_cbt_cumulative(learner, from,
+  to)`, merges per-subject averages into matching subject rows (score +
+  honest collation comment), appends subjects with CBT history but no row.
+  The report stays a draft; publishing stays a human decision.
+- **CBT → assignment automation (database):** trigger `trg_cbt_assignment_sync`
+  files a homework row (kind `cbt`, linked `cbt_exam_id`) the moment a Graded
+  CBT is published to an engagement. The assignments table (crud.js) shows
+  the kind column with an explainer; the learner work board (app.js) renders
+  CBT rows with a CBT chip, score when present, and a direct Start link.
+
+## Item 5 — CBTs on DEDICATED pages by nature
+
+New **my-quizzes.html** + `assets/js/my-quizzes.js` (nav V27, user audience,
+also linked from the work board and from each child card on my-children.html
+via `?learner=`): graded papers (incl. UTME-style multi-subject sittings)
+with windows/countdowns, attempts, best/last %, negative-marking badges and
+Start/Retake links — and practice/review papers in their own never-graded
+section. Data from the `tc_my_quizzes` security-definer RPC (attempts matched
+by learner id OR student number; parents verified database-side). KPI strip:
+graded / open now / practice / attempted.
+
+## Items 6–7 — relevance filter + expert sweep
+
+Only portable, self-contained patterns were taken (no paywalled APIs, no
+external services): layer matrix + auto-restore hygiene, negative marking,
+drafts, receipts, JAMB keys, combine-papers, cumulative collation, suggestion
+box, care list, audit console. Rejected as not portable or not ours:
+adaptive difficulty engines, camera proctoring backends, psychometric
+reporting, paper/OMR export. Sweep fixes shipped this round: workflow source
+ledger bypass (V45b), resume clock integrity, receipt persistence, twin
+parity on all touched surfaces, parse checks on every edited page/script.
+
+## Item 8 — every file, both repos
+
+Portal **V45** (pages `?v=45`, shell cache `tc-shell-v14-20261007`,
+nav V27): database/v45-health-cbt.sql + complete-schema.sql (incl. V45b
+bridge), 3 workflows, keepalive-layers.js (new), my-quizzes.js (new),
+activity-log.js (new), cbt.js, crud.js, desk-kit.js, app.js,
+nav-model.js/.json, sw.js, platform-health.html, cbt-exam.html,
+cbt-multi.html, practice.html, complaints.html, attendance.html,
+activity-log.html, my-children.html, my-quizzes.html (new). All touched
+surfaces byte-identical in both repos.
+
+## Round-9 QA tally (per repo, both repos green)
+
+    13 suites — 453/453 per repo × 2 repos
+    (365 round-8 baseline + 88 test_r9_portal; nothing regressed)
+
+**Deployment note:** run `database/v45-health-cbt.sql` once on existing
+projects (idempotent; complete-schema.sql already carries it for fresh
+installs). Re-deploy BOTH the workflows and the site — the keep-alive fix
+only takes effect when GitHub Actions runs the new workflow files.

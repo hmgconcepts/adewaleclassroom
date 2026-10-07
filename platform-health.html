@@ -87,6 +87,28 @@
 <script src="assets/js/legibility.js?v=45" defer></script>
 <script src="assets/js/ux-enhance.js?v=45" defer></script>
 <script src="assets/js/ops-desk.js?v=45"></script>
+<script src="assets/js/keepalive-layers.js?v=45"></script>
+<script>
+/* V45: boot the 14-layer monitor; the ping button refreshes it too. */
+document.addEventListener("DOMContentLoaded", function () {
+  function bootKa() {
+    if (window.KeepAliveLayers) KeepAliveLayers.render().catch(function(){});
+    var r = document.getElementById("ka-refresh");
+    if (r && !r.dataset.bound) { r.dataset.bound = "1"; r.addEventListener("click", function () { if (window.KeepAliveLayers) KeepAliveLayers.render().catch(function(){}); }); }
+    var p = document.getElementById("ka-ping");
+    if (p && !p.dataset.bound) {
+      p.dataset.bound = "1";
+      p.addEventListener("click", async function () {
+        p.disabled = true; p.textContent = "Pinging…";
+        try { await KeepAliveLayers.ping("manual-health-page"); } catch (e) { alert("Heartbeat failed: " + (e.message || e)); }
+        p.disabled = false; p.textContent = "💓 Send keep-alive heartbeat NOW";
+        KeepAliveLayers.render().catch(function(){});
+      });
+    }
+  }
+  setTimeout(bootKa, 400);
+});
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style id="tc-brand">:root{--primary:#0506ae;--primary-dark:#0506ae;--primary-light:#964eec;--accent:#964eec;--gradient:linear-gradient(135deg,#0506ae,#964eec);--gradient-dark:linear-gradient(135deg,#0506ae,#964eec);--font:'Plus Jakarta Sans',system-ui,sans-serif;--sc-primary:#0506ae;--sc-accent:#964eec}</style>
 </head>
@@ -134,7 +156,7 @@
             <button class="btn btn-primary" type="button" id="ping">💓 Ping now (manual heartbeat)</button>
             <a class="btn btn-outline" href="database/keep-alive.sql" download>⬇ keep-alive.sql</a>
           </div>
-          <p class="muted" style="font-size:.78rem;margin:8px 0 0">The ping writes through <code>sc_keep_alive('manual')</code> — the same endpoint the Fleet Console uses — so both consoles agree on one heartbeat.</p>
+          <p class="muted" style="font-size:.78rem;margin:8px 0 0">The ping writes through <code>tc_keep_alive('manual-health-page')</code> — the same endpoint every layer below uses — so the console and the database always agree on one heartbeat.</p>
         </article>
 
         <article class="card" id="fleet-card" style="border:2px solid rgba(79,70,229,.35)">
@@ -148,6 +170,30 @@
           </ol>
         </article>
       </div>
+
+      <!-- V45 (round 9): 14-layer keep-alive monitoring — GOSA / DramaConnect parity.
+           Every layer listed, including never-run, with per-source last ping,
+           counts, pause countdown, quorum detection and the specific fix. -->
+      <article class="card" id="ka-layers-card" style="margin-top:16px;border:2px solid rgba(16,185,129,.45)">
+        <h3 style="margin-top:0">🫀 Keep-alive layers — who protected the project, and when</h3>
+        <p class="muted" style="margin-top:0">Supabase pauses a free project after ~7 days with no database activity. Ten-plus layers guard against that; until now only the <em>last</em> ping was visible. This panel reports <b>every layer</b> — including ones that have never run — straight from the per-source ledger (<code>tc_keepalive_sources</code>), so you can see each layer carrying out its function, and exactly how to start any that is stale.</p>
+        <div class="dc-kpi-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:12px 0">
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px"><div style="font-size:.70rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:800">Last ping age</div><div id="ka-age" style="font-size:1.3rem;font-weight:900;color:#0f172a;margin:4px 0">—</div><div id="ka-at" class="muted" style="font-size:.75rem">—</div></div>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px"><div style="font-size:.70rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:800">Came from</div><div id="ka-source" style="font-size:1.05rem;font-weight:900;color:#0f172a;margin:4px 0">—</div><div class="muted" style="font-size:.75rem">the layer that sent the most recent heartbeat</div></div>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px"><div style="font-size:.70rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:800">Total pings</div><div id="ka-total" style="font-size:1.3rem;font-weight:900;color:#0f172a;margin:4px 0">—</div><div class="muted" style="font-size:.75rem">across every layer</div></div>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px"><div style="font-size:.70rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:800">Pause countdown</div><div id="ka-countdown" style="font-size:1.3rem;font-weight:900;color:#0f172a;margin:4px 0">—</div><div id="ka-countdown-note" class="muted" style="font-size:.75rem">of the 7-day window</div></div>
+          <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px"><div style="font-size:.70rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;font-weight:800">Quorum</div><div id="ka-quorum" style="font-size:1.05rem;font-weight:900;margin:4px 0">—</div><div id="ka-quorum-note" class="muted" style="font-size:.75rem">—</div></div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+          <button class="btn btn-outline" type="button" id="ka-refresh">🔄 Refresh layers</button>
+          <button class="btn btn-primary" type="button" id="ka-ping">💓 Send keep-alive heartbeat NOW</button>
+        </div>
+        <div id="ka-layers"><p class="muted">Reading the per-source ledger…</p></div>
+        <style>
+        .ph-badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.78rem;font-weight:700}
+        .phb-ok{background:#dcfce7;color:#166534}.phb-warn{background:#fef3c7;color:#92400e}.phb-never{background:#f1f5f9;color:#64748b}
+        </style>
+      </article>
 
       <article class="card" id="doctor-card" style="margin-top:16px;border:2px solid rgba(245,158,11,.35)">
         <h3 style="margin-top:0">🩺 Schema Doctor — is every SQL pack installed?</h3>
