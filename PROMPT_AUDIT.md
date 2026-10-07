@@ -485,3 +485,66 @@ surfaces byte-identical in both repos.
 projects (idempotent; complete-schema.sql already carries it for fresh
 installs). Re-deploy BOTH the workflows and the site — the keep-alive fix
 only takes effect when GitHub Actions runs the new workflow files.
+
+
+---
+
+# ROUND 9 FIELD FIX — "ERROR: 42703: column \"recipient\" does not exist"
+
+Field report: running complete-schema.sql on an existing project aborts
+with `column "recipient" does not exist`. Root cause class: the schema
+creates tables with `create table if not exists`, so on an EXISTING
+database the CREATE is skipped and the table keeps its OLD shape — any
+index, policy or SQL-language function body that references a
+version-added column BEFORE the `alter table ... add column if not exists`
+that upgrades it kills the whole run (Supabase's SQL editor aborts on the
+first error). Fresh installs never see it; upgrades always did.
+
+## Fixes (complete-schema.sql + v45-health-cbt.sql)
+
+1. **messages upgrade-order guard** — the V44 columns (recipient,
+   sender_name, read_at) are now ALTERed in immediately after the base
+   create table, BEFORE the two indexes that reference them (the field
+   report). The V44 section's own alters stay (idempotent no-ops).
+2. **cbt_results guard before tc_cbt_marking_queue** — that function is
+   `language sql`, so Postgres validates its column references at CREATE
+   time; candidate_name / pending_count / marking_status are now
+   guaranteed before it (previously only guaranteed 1,300 lines later).
+3. **Ten drop-policy guards** — library_items (4), eresources (4) and
+   tc_blog_comments (2) had `create policy` without `drop policy if
+   exists`, so RE-RUNNING the schema aborted with "policy already
+   exists". All 201 create-policy statements are now drop-guarded.
+4. **v45-health-cbt.sql self-sufficiency** — the assignment-sync trigger
+   lists status/is_open/engagement_id/quiz_kind/title/close_at/questions
+   in `UPDATE OF`, which requires every column to exist at CREATE TRIGGER
+   time. The migration now guarantees the version-added ones itself
+   (complete-schema.sql already did, earlier in the file).
+
+## New permanent tooling (both repos)
+
+- **tools/check_schema_order.py** — static upgrade-order checker. A real
+  SQL tokenizer (comments, $$-bodies, string literals all handled) tracks
+  which columns each table is guaranteed to have at every point in the
+  file, then verifies every index, policy, SQL-function body and view
+  only references columns that are ALTER-guaranteed BEFORE that point.
+  Version-added columns (proven by the file itself carrying a later
+  ALTER) are the flag condition. Catches the exact field-report class;
+  negative control (guards stripped) proves it fires.
+- **tools/pg_stubs.sql + tools/gen_legacy_shape.py +
+  tools/verify_schema_pg.sh** — empirical harness: runs the REAL
+  complete-schema.sql against a local PostgreSQL in four scenarios —
+  FRESH (empty db), LEGACY (146 tables pre-created in their old shapes:
+  every version-added column removed), RE-RUN (twice, idempotency), and
+  MIGRATIONS (v44 + v45 standalone on legacy). All four report 0 errors
+  on both repos. Exits 77 (skip) where PostgreSQL is unavailable.
+- **Battery: test_r9_schema (16 checks)** — checker passes + negative
+  control fires + guards present and positioned + all 201 policies
+  drop-guarded + the four pg scenarios. 469/469 per repo.
+
+## What the reporter should do
+
+Re-run the NEW complete-schema.sql on the project that errored — it is
+now safe on legacy databases AND re-runnable (idempotent). No manual
+cleanup of the half-applied run is needed: every statement is
+`if not exists` / `create or replace` / drop-guarded, so re-running from
+the top converges.
