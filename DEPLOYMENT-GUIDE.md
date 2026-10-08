@@ -452,3 +452,27 @@ Assets: portal pages `?v=46` (shell cache `tc-shell-v15-20261008`),
 deck pages `?v=49` (sw `hmg-classdeck-v14.1.0-micdoctor-cbt-console-homework`).
 QA: 16 suites, 564/564 per repo × 2 repos; PostgreSQL harness 5/5 scenarios
 (including V46 behavioral assertions).
+
+
+## V47 — cloud credentials, Drive backup fix, streaming hardening (round 11)
+
+On an existing project run `database/v47-cloud-credentials.sql` once
+(idempotent). It creates `school_settings` (fixes the Google Drive backup
+card's "A table is missing" error — and pre-seeds the school's OAuth
+Client ID) and `user_settings`, the owner-only roaming store behind
+credential sync: sign in to the portal on any device and ClassDeck pulls
+the TURN key, relay credentials and streaming destinations automatically.
+
+Also in this round: students and parents can message tutors and admins
+again (the round-9 V27 RBAC sweep had wrongly denied the messages page to
+families — now FAMILY_WRITE), the Quizzes page renders the CBT console
+(round-10 shipped it with a render() crash that left the page blank —
+fixed and now covered by a runtime smoke suite), and social streaming is
+reworked end-to-end: platform presets (paste only the key), preflight
+validation, timeouts on every relay call, auto-reconnect with backoff, a
+live clock, an fps selector, and cloud sync of the gateway and keys.
+
+Assets: portal pages `?v=47` (shell cache `tc-shell-v16-20261008`),
+deck pages `?v=50` (sw `hmg-classdeck-v14.2.0-cloudcreds-streamkit`).
+QA: 19 suites, 666/666 per repo × 2 repos; PostgreSQL harness 6/6
+scenarios (V47 behavior exercised as the authenticated role).
