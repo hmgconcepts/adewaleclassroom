@@ -4343,11 +4343,46 @@ if ($("#tlSaveSettings")) on("#tlSaveSettings", "click", () => {
     toast("💾 Streaming settings saved on this device." + (n ? "" : " (No destinations yet.)"), "ok", 6000);
   }
 });
-if ($("#tlStart")) on("#tlStart", "click", startTabletSocialLive);
-if ($("#tlStop")) on("#tlStop", "click", () => stopTabletSocialLive(false));
+if ($("#tlStart")) on("#tlStart", "click", startTabletSocialLive);if ($("#tlStop")) on("#tlStop", "click", () => stopTabletSocialLive(false));
 if ($("#tlAddDest")) on("#tlAddDest", "click", () => tlAddDestRow("custom", "", ""));
 if ($("#tlFormat")) on("#tlFormat", "change", tlSyncBitrateHint);
 if ($("#tlFps")) on("#tlFps", "change", tlSyncBitrateHint);
+
+/* ── V49 (round 13, item 1): RESTORE — the one-tap fallback ──────────
+   Login already pulls credentials automatically (auth.js hook + the
+   pull on studio open). These buttons pull ON DEMAND for the times the
+   automatic path raced the Settings panel opening, the first sync hit
+   an offline blip, or the teacher simply wants to be sure. */
+async function restoreCredsFromCloud() {
+  if (!window.CloudCreds) { toast("Cloud sync is not available in this build.", "err"); return; }
+  if (!CloudCreds.signedIn()) {
+    toast("Not linked yet — sign in with your ADEWALE CLASSROOM email and password (it links automatically when both use the same credentials), or use Settings → ☁️ Cloud sync → Link account.", "err", 12000);
+    return;
+  }
+  toast("☁️ Pulling your credentials from the cloud…", "ok", 4000);
+  const ok = await CloudCreds.pull();
+  const st = CloudCreds.status();
+  if (!ok || st.missing) {
+    toast("Restore problem: " + (st.reason || "unknown"), "err", 10000);
+    return;
+  }
+  /* refresh every credential surface right now */
+  try { updateRelayPreview(); } catch (e) {}
+  try {
+    const cfk = $("#setCfKey"), cft = $("#setCfToken");
+    if (cfk) cfk.value = Store.get("cf_key", "") || "";
+    if (cft) cft.value = Store.get("cf_token", "") || "";
+  } catch (e) {}
+  try { tlLoadSettings(); } catch (e) {}
+  try { renderCloudSyncCard(); } catch (e) {}
+  const bits = [];
+  if (Store.get("cf_key", "")) bits.push("TURN key ✓");
+  if ((Store.get("tablet_live", {}) || {}).gateway) bits.push("streaming gateway ✓");
+  toast("☁️ Restored from your account" + (bits.length ? " — " + bits.join(" · ") : " (nothing saved there yet — save once and every future device gets it)."), "ok", 10000);
+}
+if ($("#tlRestore")) on("#tlRestore", "click", restoreCredsFromCloud);
+if ($("#btnRestoreCreds")) on("#btnRestoreCreds", "click", restoreCredsFromCloud);
+
 /* V47: never let a live social stream die silently with a closed tab */
 window.addEventListener("beforeunload", (e) => {
   if (tabletLive && tabletLive.pc) { e.preventDefault(); e.returnValue = ""; }

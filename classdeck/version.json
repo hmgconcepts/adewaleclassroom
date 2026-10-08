@@ -1,8 +1,8 @@
 {
-  "version": "14.3.0",
-  "build": 17,
+  "version": "14.4.0",
+  "build": 18,
   "channel": "stable",
-  "released": "2026-10-04",
+  "released": "2026-10-08",
   "features": [
     "custom-room-codes",
     "two-folder-generator",
@@ -58,6 +58,11 @@
     "v14-whiteboard-fullpage-export",
     "v14-pdf-anchored-zoom",
     "v14-pdf-visible-scrollbars",
-    "v14-pdf-keyboard-scrolling"
+    "v14-pdf-keyboard-scrolling",
+    "v14.4-restore-creds-buttons",
+    "v14.4-login-restore-toast",
+    "v14.4-stream-page-field-guide",
+    "v14.4-family-library-access-v49-db",
+    "v14.4-gosa-toolbars-portal-side"
   ]
 }

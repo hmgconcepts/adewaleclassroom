@@ -188,7 +188,17 @@ async function loginTeacher() {
      locally; the Settings → Relay card offers a one-time link instead. */
   try {
     if (window.CloudCreds && !CloudCreds.signedIn()) {
-      CloudCreds.signIn(emailRaw, pw).then(function (ok) { if (ok) return CloudCreds.pull(); }).catch(function () {});
+      CloudCreds.signIn(emailRaw, pw).then(function (ok) {
+        if (!ok) return null;
+        /* V49 (round 13, item 1): make the roaming VISIBLE — the teacher
+           must know the TURN/streaming keys are already on this device,
+           not wonder why the settings are empty a minute later. */
+        return CloudCreds.pull().then(function (pulled) {
+          if (pulled && typeof toast === "function") {
+            toast("☁️ Credentials restored from your ADEWALE CLASSROOM account — TURN and streaming keys are ready on this device.", "ok", 9000);
+          }
+        });
+      }).catch(function () {});
     }
   } catch (e) {}
   sessionStorage.setItem("hmg_session", "1");
