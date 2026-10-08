@@ -137,6 +137,18 @@
        conservative.
        --------------------------------------------------------------------- */
     level: function (item, role) {
+      /* V46: pages marked aud:'family' are personal learner/parent pages
+         (My quizzes, the homework view). They stay OPEN to any role that
+         types the URL (RBAC still decides access) but they never belong in
+         a tutor's or admin's menu — a reported point of confusion: staff
+         saw "My quizzes" and had no use for it, while the families it was
+         built for did not. */
+      if (item && item.aud === 'family') {
+        var r0 = String(role || '').toLowerCase();
+        if (r0 === 'student' || r0 === 'learner' || r0 === 'parent') return 'write';
+        return 'none';
+      }
+
       // Administrators and the owner see everything, always. This is the
       // guarantee the report asked for in item 21: "Admin has full access to
       // everything without restrictions."

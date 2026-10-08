@@ -1112,7 +1112,8 @@ const App = {
         }
         if (exams.length) {
           html += '<div style="margin-bottom:10px;margin-top:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b>🧪 Quizzes & CBT papers</b>' + chip(exams.length + ' assigned') +
-            '<a href="my-quizzes.html" style="margin-left:auto;font-size:.82rem;font-weight:700">See all on My quizzes ➜</a></div>' +
+            '<a href="assignments.html" style="margin-left:auto;font-size:.82rem;font-weight:700">Homework page ➜</a>' +
+            '<a href="my-quizzes.html" style="font-size:.82rem;font-weight:700">My quizzes ➜</a></div>' +
             exams.slice(0, 8).map(x => row('🧪', x.title,
               (x.subject || x.kind || 'quiz') + ' · ' + (x.minutes || 40) + ' minutes',
               '',

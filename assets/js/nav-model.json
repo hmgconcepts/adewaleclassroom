@@ -45,7 +45,7 @@
         "label": "My quizzes",
         "title": "My quizzes & CBTs",
         "icon": "🧪",
-        "aud": "user"
+        "aud": "family"
       },
       {
         "id": "change_password",

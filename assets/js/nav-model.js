@@ -69,7 +69,7 @@
         "label": "My quizzes",
         "title": "My quizzes & CBTs",
         "icon": "🧪",
-        "aud": "user"
+        "aud": "family"
       },
       {
         "id": "change_password",
@@ -1081,5 +1081,5 @@
     ]
   }
 ];
-  w.TC_NAV_MODEL_VERSION = 'V27';
+  w.TC_NAV_MODEL_VERSION = 'V28';
 })(window);

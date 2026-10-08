@@ -55,8 +55,9 @@
     'goals',               // goals & learning plans
     'attendance',
     'mastery',             // topic mastery
-    'assignments',         // homework
+    'assignments',         // homework (V46: family view = homework + CBTs together)
     'reading',             // reading assignments
+    'my-quizzes',          // V46: the learner/parent CBT page — attempts, best scores
     'classwork',
     'stream',              // class stream
     'scoresheet',
