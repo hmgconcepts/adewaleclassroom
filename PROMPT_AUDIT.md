@@ -861,3 +861,100 @@ save button), join.html, version.json, sw.js.
      plus pin updates; includes runtime DOM/VM tests and a PostgreSQL
      harness with 7 scenarios, two of them behavioral as the
      authenticated role)
+
+---
+
+# ROUND 13 AUDIT (2026-10-08)
+
+Every binding item from the round-13 brief, traced to the exact files that
+implement it and the exact test that proves it. Battery: 22 suites,
+829/829 per repo × 2 repos; PostgreSQL harness 8/8.
+
+## Item 1 — stream/TURN token visible on a new device + Restore button
+
+| Piece | Where | Verified by |
+|---|---|---|
+| Auto-restore on login, visible confirmation | classdeck/js/auth.js (signIn→pull→toast) | test_r13_portal §classdeck |
+| ☁️ Restore from cloud (Tablet Live) | classdeck/teach.html #tlRestore + teach.js restoreCredsFromCloud | test_r13_portal §classdeck |
+| ☁️ Restore TURN key (relay card) | classdeck/teach.html #btnRestoreCreds | test_r13_portal §classdeck |
+
+## Item 2 — stream.html (Tablet Live) unambiguous
+
+Field-by-field table with examples (gateway URL/WHIP pattern, secret,
+stream name, format, fps, platform/key/server, smart paste, save/restore,
+remember, start/stop/check) + 5-step quick start + dry-run warning +
+downloadable field checklist: classdeck/stream.html §2. Verified:
+test_r13_portal (11 field checks + examples).
+
+## Item 3 — admin-data "–" stat cards
+
+Root cause: cards only filled after a manual scan. Fix: autoHeadCount()
+on load (head-count only), "x / total" semantics, skipped tables named,
+TABLES list grown (lms_lessons, reading_*, user_settings,
+push_subscriptions, stream_posts, gallery). Verified: test_r13_portal
+§admin-data (4 checks).
+
+## Item 4 — expert audit of stream + documents etc.
+
+stream.html: governance copy-paste replaced (intro, who, why, how, roles),
+staff-only posting gate, scheduled posts hidden from families, empty-state
+copy. documents.html: roles now state family read access. 18 further pages
+carrying the same governance boilerplate rewritten page-accurately
+(announcements, birthdays, broadcasts, complaints, directory, forum,
+gallery, helpdesk, inbox, leave, notifications, parent-meetings, polls,
+profile, rooms, substitutions, surveys, voting). Verified: test_r13_portal
+§stream/documents + grep sweeps.
+
+## Item 5 — classwork tutor UX
+
+KPI chips, filter toolbar, kind icons, due-date colours, skills chips,
+points badges, Export CSV (filtered) / Export PDF, staff-only posting card
+with family note, collapsible intro. classwork.html (rewritten around
+RecordActions). Verified: test_r13_portal §classwork (5 checks).
+
+## Items 6–9 — shelves: "unlinked" fixed + student visibility + GOSA parity
+
+DB (v49): is_tutor() NULL-status fix (the Unlinked root cause);
+tc_family_reads_engagement(); eresources/library family read widened,
+lms_lessons/resources family read created (published-only for LMS);
+tc_my_work() v2 returns library/eresources/resources/lms. UI: crud.js
+honest ref labels + ⚠ banner + form keep-value + refresh()/importCSV();
+schema labels "Class / group / cohort (who sees it)"; GOSA toolbar +
+collapsible intro on all four pages. Verified: harness scenario 8
+(asserts 1–15, 24–29) + test_r13_portal §crud §workboard §GOSA (29 checks).
+
+## Item 10 — notifications clearable + auto-popup
+
+DB (v49): own-delete policy (recipient/created_by/user_id), notif_clear()
+RPC (delete-own / hide-shared), cleared_by column. UI: per-item ✕,
+Clear all in dropdown + page, fetchRecent filters cleared rows, bell
+auto-OPENS on first-seen notification, push re-subscribe on init.
+Verified: harness scenario 8 (asserts 16–23) + test_r13_portal
+§notifications (12 checks).
+
+## Item 11 — reading links visible + tickable
+
+DB (v49): reading_items/reading_progress family read; learner own-write
+progress. UI: reading.html renders items as Open ↗ links with ✓ I read
+this (upsert reading_progress), staff-only setter card, collapsible intro.
+Verified: harness scenario 8 (asserts 8–9, 14–15) + test_r13_portal
+§reading (4 checks).
+
+## Item 12 — every file, both repos
+
+Portal V49 (pages ?v=49, shell tc-shell-v18-20261008): crud.js,
+notifications.js, app.js, classwork/reading/stream/documents + 4 shelf
+pages + admin-data.html + 18 intro rewrites, database/v49 (new) +
+complete-schema.sql, tools/v49_behavior.sql (new) + harness scenario 8.
+ClassDeck v14.4.0 (pages ?v=52, sw
+hmg-classdeck-v14.4.0-restore-family-library-gosa): teach.js, teach.html,
+auth.js, stream.html, version.json, sw.js. Twin synced (generator mirror +
+identity re-bake + SEO); suites re-whitelisted for the new versions;
+test_v27/v28 rot repaired to test intent. ZIPs rebuilt.
+
+## Round-13 QA tally (per repo, both repos green)
+
+    22 suites — 829/829 per repo × 2 repos
+    (+94 round-13 portal checks, plus pin updates; includes runtime
+     DOM/VM tests and a PostgreSQL harness with 8 scenarios, one of them
+     a 29-assertion behavioral run as the authenticated role)
