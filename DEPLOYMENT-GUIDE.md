@@ -427,3 +427,28 @@ v45 self-sufficiency) and the tooling that locks it:
 **Action for existing projects: re-run the new complete-schema.sql from
 the top.** It is upgrade-safe and idempotent — no cleanup of a previous
 half-applied run is needed.
+
+
+## V46 — laptop mic fix, CBT console, role-aware homework (round 10)
+
+On an existing project run `database/v46-cbt-automation.sql` once
+(idempotent). It upgrades the CBT→assignment trigger to a full lifecycle
+sync (publish/rename/archive/restore/delete all keep the homework mirror
+truthful, with a one-click sit link) and enriches `tc_my_work` with the
+windows/multi-subject/negative-marking fields the new learner homework
+page arranges papers by.
+
+Front-of-house: the **Quizzes** page gains the GOSA-parity CBT console
+(filters, sort, papers grouped by nature, 🗃️ Archive Recovery Center with
+restore/undo/export/import). The **Homework** page is role-aware —
+learners and parents see homework and CBT papers together (Due next / by
+nature / marked), staff keep the workbench. **My quizzes** becomes a
+family-only nav item (nav V28). The **ClassDeck** ships v14.1.0 with
+MicDoctor: a constraint ladder that ends the laptop mic failures
+(channelCount:1 exact-constraint rejections), insecure-context detection,
+and a silence watchdog with a Fix-mic banner for hardware-muted mics.
+
+Assets: portal pages `?v=46` (shell cache `tc-shell-v15-20261008`),
+deck pages `?v=49` (sw `hmg-classdeck-v14.1.0-micdoctor-cbt-console-homework`).
+QA: 16 suites, 564/564 per repo × 2 repos; PostgreSQL harness 5/5 scenarios
+(including V46 behavioral assertions).
