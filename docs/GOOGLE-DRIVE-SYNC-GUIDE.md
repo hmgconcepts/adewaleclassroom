@@ -94,6 +94,15 @@ You need a free Google Cloud project. No billing, no card.
 2. Go to **Admin data** (`admin-data.html`).
 3. Scroll to the **☁️ Google Drive backup** panel.
 4. Paste the **Client ID**.
+
+> **Already done for you (round 11):** this deployment's Client ID —
+> `1051552536424-epf577d73iq03lkkthokkj2kp7n2f1qr.apps.googleusercontent.com` —
+> ships pre-seeded in the database (V47 seeds `school_settings` row 1).
+> In Google Cloud Console, make sure **Authorized JavaScript origins** for
+> this OAuth client includes your deployed origin (for example
+> `https://your-portal.vercel.app`), or Google will refuse the authorisation
+> popup. Then just open **Admin → Data & backup → Google Drive** and press
+> **Connect Google Drive** — no pasting needed on a fresh install.
 5. Choose a frequency (7 days suits most studios).
 6. Set **Automatic backups** to *On*.
 7. **💾 Save settings**.
