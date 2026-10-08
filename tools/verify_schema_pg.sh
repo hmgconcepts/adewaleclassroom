@@ -45,6 +45,7 @@ STUBS="$REPO/tools/pg_stubs.sql"
 SCHEMA="$REPO/database/complete-schema.sql"
 V44="$REPO/database/v44-messaging.sql"
 V45="$REPO/database/v45-health-cbt.sql"
+V46="$REPO/database/v46-cbt-automation.sql"
 
 # The worst-case LEGACY shape, generated mechanically from the schema
 # itself: every table that carries a later `alter table add column` is
@@ -80,11 +81,17 @@ echo "═══ verify_schema_pg: $REPO ═══"
 scenario "1. FRESH  (empty database)"                 tcv_fresh  "$STUBS" "$SCHEMA"
 scenario "2. LEGACY (pre-upgrade table shapes)"        tcv_legacy "$STUBS" __LEGACY__ "$SCHEMA"
 scenario "3. RE-RUN (same schema twice)"               tcv_rerun  "$STUBS" "$SCHEMA" "$SCHEMA"
-scenario "4. MIGRATIONS standalone on LEGACY"          tcv_migr   "$STUBS" __LEGACY__ "$V44" "$V45"
+scenario "4. MIGRATIONS standalone on LEGACY"          tcv_migr   "$STUBS" __LEGACY__ "$V44" "$V45" "$V46"
+
+# 5. V46 CBT→assignment automation, behaviorally: the mirror must appear on
+#    publish (with sit link + max score), follow edits, vanish on archive,
+#    return on restore, and never orphan on delete. Asserts via RAISE, so
+#    any broken expectation surfaces as an ERROR and fails the scenario.
+scenario "5. V46 assignment automation behavior"       tcv_v46    "$STUBS" "$SCHEMA" "$V46" "$REPO/tools/v46_behavior.sql"
 
 if [ "$fails" = "0" ]; then
   echo "═══ ALL SCENARIOS CLEAN ═══"
-  dropdb tcv_fresh; dropdb tcv_legacy; dropdb tcv_rerun; dropdb tcv_migr
+  dropdb tcv_fresh; dropdb tcv_legacy; dropdb tcv_rerun; dropdb tcv_migr; dropdb tcv_v46
   exit 0
 else
   echo "═══ $fails SCENARIO(S) FAILED — logs in /tmp/pgverify_* ═══"
