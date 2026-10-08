@@ -164,18 +164,29 @@ const Notifications = {
         list.innerHTML = '<div class="toast-msg" style="padding:24px;text-align:center">No notifications yet.</div>';
         return;
       }
-      list.innerHTML = items.map(n => `
-        <div class="notif-item" data-id="${this._esc(n.id)}" data-url="${this._esc(n.url || '')}" tabindex="0" role="button">
-          <div class="notif-item-title">${(typeof esc==='function'?esc:this._esc)(n.title)}</div>
+      /* V48: every notification is clickable and LEADS SOMEWHERE. New rows
+         carry a url column; older rows may carry a link column; anything
+         older still gets a destination derived from its title, so no bell
+         item is ever a dead end again (round-12 item 3). */
+      const uid = (window.TC_PROFILE && TC_PROFILE.id) || '';
+      list.innerHTML = items.map(n => {
+        const target = this.linkFor(n);
+        const unread = !(n.read_by || []).includes(uid);
+        return `
+        <div class="notif-item${unread ? ' notif-unread' : ''}" data-id="${this._esc(n.id)}" data-url="${this._esc(target)}" tabindex="0" role="button" title="${target ? 'Open' : 'Notification centre'}">
+          <div class="notif-item-title">${unread ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#dc2626;margin-right:6px;vertical-align:1px"></span>' : ''}${(typeof esc==='function'?esc:this._esc)(n.title)}</div>
           <div class="notif-item-msg">${(typeof esc==='function'?esc:this._esc)(n.body || '')}</div>
-          <div class="notif-item-time">${timeAgo(n.created_at)}</div>
-        </div>`).join('');
+          <div class="notif-item-time">${timeAgo(n.created_at)}${target ? ' · tap to open ' + this.linkIcon(target) : ''}</div>
+        </div>`;
+      }).join('');
       // Wire up the click handlers (more reliable than inline onclick)
       list.querySelectorAll('.notif-item').forEach(el => {
         el.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          this.openItem(el.getAttribute('data-id'), el.getAttribute('data-url'));
+          const id = el.getAttribute('data-id');
+          this._lastClicked = items.find((x) => String(x.id) === String(id)) || null;
+          this.openItem(id, el.getAttribute('data-url'));
         });
       });
     } catch (err) {
@@ -200,8 +211,39 @@ const Notifications = {
     } catch(e) {}
     this.closeDropdown();
     this.refreshUnreadCount().catch(()=>{});
-    const target = String(url || '').trim();
+    let target = String(url || '').trim();
+    if (!target || !/^[a-z0-9-]+\.html/i.test(target)) target = this.linkFor(this._lastClicked || null) || target;
     if (target) location.href = target;
+  },
+
+  /* V48: where does this notification lead? url column → link column →
+     derived from the title. Returns '' only when there is genuinely no
+     sensible destination (the notification centre is the fallback UI). */
+  linkFor(n) {
+    const t = (x) => String(x == null ? '' : x).trim();
+    if (n && t(n.url)) return t(n.url);
+    if (n && t(n.link)) return t(n.link);
+    const title = n ? t(n.title).toLowerCase() : '';
+    if (!title) return '';
+    if (/^new message from|message|reply/.test(title)) return 'messages.html';
+    if (/cbt submitted|quiz submitted|scored/.test(title)) return 'cbt-results.html';
+    if (/invoice|payment|receipt|fee/.test(title)) return 'invoices.html';
+    if (/booking|session|class (starting|reminder)|reminder/.test(title)) return 'sessions.html';
+    if (/homework|assignment/.test(title)) return 'assignments.html';
+    if (/complaint|concern/.test(title)) return 'complaints.html';
+    if (/suggestion/.test(title)) return 'suggestions.html';
+    if (/birthday/.test(title)) return 'birthdays.html';
+    return 'notifications.html';
+  },
+
+  linkIcon(href) {
+    const h = String(href || '');
+    if (h.startsWith('messages.html')) return '💬';
+    if (h.startsWith('cbt-results')) return '🧪';
+    if (h.startsWith('invoices')) return '🧾';
+    if (h.startsWith('sessions')) return '📅';
+    if (h.startsWith('assignments')) return '📚';
+    return '➜';
   },
 
   async fetchRecent(limit = 20) {
