@@ -2637,6 +2637,7 @@ on("#btnCfGen", "click", async () => {
     Store.set("relay_expiry", Date.now() + ttl * 1000);
     Store.set("cf_key", keyId);
     Store.set("cf_token", token);
+    if (window.CloudCreds && CloudCreds.signedIn()) CloudCreds.push("cd-turn");   /* V47: roam */
     updateRelayPreview();
     const hrs = Math.round(ttl / 3600);
     toast("✅ Cloudflare TURN credentials generated (" + hrs + "h) — press Save. From now on the studio RENEWS them automatically before they expire, so you only ever do this once.", "ok", 12000);
@@ -2680,11 +2681,35 @@ async function maybeRenewCloudflareRelay(verbose) {
     Store.set("relay_servers", raw);
     Store.set("cf_generated_raw", raw);
     Store.set("relay_expiry", Date.now() + ttl * 1000);
+    if (window.CloudCreds && CloudCreds.signedIn()) CloudCreds.push("cd-turn");   /* V47: renewed creds roam to every device */
     if (verbose) toast("🔄 Cloudflare relay credentials renewed — hotspot students keep getting through.", "ok", 6000);
   } catch (e) { /* offline / blocked: the stored set keeps serving until it expires */ }
 }
 maybeRenewCloudflareRelay(false);
 setInterval(() => maybeRenewCloudflareRelay(false), 60 * 60 * 1000);   /* re-check hourly while the studio is open */
+
+/* ── V47 (round 11, item 1): CREDENTIALS FOLLOW THE LOGIN ───────────
+   The teacher's TURN key, generated relay credentials and streaming
+   destinations live in the portal account's user_settings (owner-only)
+   once saved. On studio open, if this browser is signed in to ADEWALE
+   CLASSROOM (same origin), they are pulled down and merged — so a new
+   laptop needs nothing but the login. */
+if (window.CloudCreds && CloudCreds.signedIn()) {
+  CloudCreds.onApply((applied) => {
+    /* credentials arrived from the cloud — refresh every surface */
+    try { updateRelayPreview(); } catch (e) {}
+    try {
+      const cfk = $("#setCfKey"), cft = $("#setCfToken");
+      if (cfk) cfk.value = Store.get("cf_key", "") || "";
+      if (cft) cft.value = Store.get("cf_token", "") || "";
+    } catch (e) {}
+    try { if ($("#mTabletLive") && $("#mTabletLive").classList.contains("show")) tlLoadSettings(); } catch (e) {}
+    /* freshly-arrived credentials may be near expiry or better than none:
+     let the zero-maintenance renewal judge them */
+    maybeRenewCloudflareRelay(false);
+  });
+  CloudCreds.pull().then((ok) => { if (!ok) { /* portal unreachable / signed out — local credentials keep working */ } });
+}
 
 /* Real TURN test: gather RELAY-ONLY candidates. If this passes, students on
    even the strictest mobile network can get through. Runs entirely in the
@@ -2785,11 +2810,15 @@ on("#setSave", "click", () => {
          manual Cloudflare response), drop the stored expiry so the
          runtime never skips a relay that may still be perfectly good. */
       if (parsed.json !== Store.get("cf_generated_raw", "")) Store.set("relay_expiry", 0);
+      if (window.CloudCreds && CloudCreds.signedIn()) CloudCreds.push("cd-turn");   /* V47: roam */
       let msg = "📶 Relay saved: " + parsed.summary + ". Used by you AND your students on their next join.";
       if (parsed.warnings.length) msg += " ⚠ " + parsed.warnings[0];
       toast(msg, "ok", 10000);
     } else if (Store.get("relay_servers", "")) {
       Store.set("relay_servers", "");
+      /* V47: push the CLEAR too — otherwise the next pull on any device
+         would resurrect credentials the teacher deliberately removed. */
+      if (window.CloudCreds && CloudCreds.signedIn()) CloudCreds.push("cd-turn", true);
       toast("Relay cleared — the built-in free servers are used again.", "ok");
     }
     updateRelayPreview();
@@ -3749,7 +3778,8 @@ function obsSetupText() {
     "   • Instagram Live Producer: use the RTMP URL/key shown in Instagram Live Producer (account access required).",
     "",
     "Security:",
-    "   • Never paste stream keys into ClassDeck. Keep them in OBS/platform dashboards only.",
+    "   • This studio (📱 Tablet Live) can stream direct without OBS: pick a platform, paste only the STREAM KEY — the server URL is filled in for you, keys stay masked, and (signed in to ADEWALE CLASSROOM) they follow you to every device.",
+    "   • Keys never leave your account: device storage + your own portal database (owner-only policy). Nothing is sent to any third party.",
     "   • For minors, confirm parental/school consent before public social streaming.",
   ].join("\n");
 }
@@ -3848,27 +3878,124 @@ function normaliseGateway(u) {
     return parsed.href.replace(/\/+$/, "");
   } catch { return ""; }
 }
+/* V47 (round 11): destinations are now built from StreamKit presets —
+   the teacher picks a platform and pastes ONLY its key; the correct
+   RTMP/RTMPS server is filled in. Rows are rebuilt from saved settings
+   (legacy full-URL destinations are parsed back in, so nothing saved
+   before this version is lost). */
+function tlDestRow(platform, key, server) {
+  const row = document.createElement("div");
+  row.style.cssText = "display:grid;grid-template-columns:1.1fr 1.4fr 1.4fr auto;gap:6px;align-items:center";
+  const sel = document.createElement("select");
+  sel.className = "input tl-plat"; sel.style.margin = "0";
+  Object.keys(StreamKit.PLATFORMS).forEach((id) => {
+    const o = document.createElement("option");
+    o.value = id; o.textContent = StreamKit.PLATFORMS[id].label;
+    sel.appendChild(o);
+  });
+  sel.value = platform || "custom";
+  const srv = document.createElement("input");
+  srv.className = "input tl-srv"; srv.style.margin = "0"; srv.placeholder = "rtmp:// server (from preset)";
+  srv.value = server || (StreamKit.PLATFORMS[sel.value] || {}).server || "";
+  const keyIn = document.createElement("input");
+  keyIn.className = "input tl-key"; keyIn.type = "password"; keyIn.style.margin = "0";
+  keyIn.placeholder = (StreamKit.PLATFORMS[sel.value] || {}).keyHint || "stream key";
+  keyIn.value = key || "";
+  const del = document.createElement("button");
+  del.type = "button"; del.className = "btn ghost"; del.textContent = "✕"; del.title = "Remove destination";
+  del.onclick = () => { row.remove(); tlSyncBitrateHint(); };
+  const applyPreset = () => {
+    const p = StreamKit.PLATFORMS[sel.value] || StreamKit.PLATFORMS.custom;
+    if (sel.value === "custom") { srv.value = ""; srv.placeholder = "full rtmp(s):// server URL"; }
+    else srv.value = p.server;
+    keyIn.placeholder = p.keyHint;
+    tlSetPlatformNote(p);
+  };
+  sel.onchange = applyPreset;
+  row.appendChild(sel); row.appendChild(srv); row.appendChild(keyIn); row.appendChild(del);
+  return row;
+}
+function tlPlatformNoteEl() {
+  let el = document.getElementById("tlPlatformNote");
+  if (!el && $("#tlDests")) {
+    el = document.createElement("div");
+    el.id = "tlPlatformNote"; el.style.cssText = "font-size:11.5px;color:var(--text-dim);margin:-2px 0 6px";
+    $("#tlDests").after(el);
+  }
+  return el;
+}
+function tlSetPlatformNote(p) {
+  const el = tlPlatformNoteEl();
+  if (el && p) el.textContent = p.note || "";
+}
+function tlAddDestRow(platform, key, server) {
+  const host = $("#tlDests");
+  if (!host) return;
+  host.appendChild(tlDestRow(platform, key, server));
+  tlSyncBitrateHint();
+}
+function tlSyncBitrateHint() {
+  const el = $("#tlBitrateHint");
+  const fpsSel = $("#tlFps");
+  if (el && fpsSel && window.StreamKit) el.textContent = StreamKit.bitrateHint($("#tlFormat").value, fpsSel.value);
+}
 function tlLoadSettings() {
-  const saved = Store.get("tablet_live", {});
+  const saved = Store.get("tablet_live", {}) || {};
   $("#tlGateway").value = saved.gateway || "";
   $("#tlSecret").value = saved.secret || "";
   $("#tlStream").value = saved.stream || ("classdeck-" + currentRoomCode().toLowerCase());
   $("#tlFormat").value = saved.format || "landscape";
-  $$(".tlDest").forEach((inp) => { inp.value = (saved.destinations && saved.destinations[inp.dataset.name]) || ""; });
+  if ($("#tlFps")) $("#tlFps").value = String(saved.fps || 15);
+  const host = $("#tlDests");
+  if (host) host.innerHTML = "";
+  const dests = saved.destinations || {};
+  const rows = Object.keys(dests).map((name) => {
+    const url = String(dests[name] || "");
+    const parsed = (window.StreamKit && StreamKit.parseUrl(url)) || null;
+    if (parsed) return parsed;                        /* preset or legacy full URL */
+    return { platform: "custom", server: "", key: url }; /* raw key saved alone */
+  });
+  if (!rows.length) rows.push({ platform: "youtube", server: "", key: "" });
+  rows.forEach((r) => tlAddDestRow(r.platform, r.key, r.server));
+  tlSyncBitrateHint();
+  tlUpdateCloudNote();
 }
 function tlReadSettings() {
   const destinations = {};
-  $$(".tlDest").forEach((inp) => { if (inp.value.trim()) destinations[inp.dataset.name] = inp.value.trim(); });
+  const seen = {};
+  $$("#tlDests .tl-plat").forEach((sel) => {
+    const row = sel.closest("div");
+    const srv = row.querySelector(".tl-srv");
+    const keyIn = row.querySelector(".tl-key");
+    let name = sel.value || "custom";
+    if (seen[name]) name = name + "-" + (seen[name] + 1);
+    seen[sel.value] = (seen[sel.value] || 0) + 1;
+    const url = StreamKit.buildUrl(sel.value, keyIn.value, srv.value);
+    if (url) destinations[name] = url;
+  });
   const out = {
     gateway: normaliseGateway($("#tlGateway").value),
     secret: $("#tlSecret").value.trim(),
     stream: ($("#tlStream").value.trim() || ("classdeck-" + currentRoomCode().toLowerCase())).replace(/[^a-zA-Z0-9_-]/g, "-"),
     format: $("#tlFormat").value,
+    fps: Number(($("#tlFps") || {}).value || 15),
     destinations
   };
+  /* Remember = this device. The cloud copy (V47) is pushed separately so
+     credentials follow the teacher's ADEWALE CLASSROOM login to every
+     device — with or without this checkbox. */
   if ($("#tlRemember") && $("#tlRemember").checked) Store.set("tablet_live", out);
-  else Store.set("tablet_live", { gateway: out.gateway, stream: out.stream, format: out.format });
+  else Store.set("tablet_live", { gateway: out.gateway, stream: out.stream, format: out.format, fps: out.fps });
   return out;
+}
+function tlUpdateCloudNote() {
+  const el = $("#tlCloudNote");
+  if (!el) return;
+  if (window.CloudCreds && CloudCreds.signedIn()) {
+    el.textContent = "☁️ Synced to your ADEWALE CLASSROOM account — the gateway, secret and keys follow you to every device you sign in from.";
+  } else {
+    el.textContent = "Sign in to ADEWALE CLASSROOM in this browser to sync the gateway and keys across your devices (they stay local for now).";
+  }
 }
 function ensureCompositeForSocial() {
   if (!COMP.raf) {
@@ -3911,9 +4038,11 @@ function createVerticalSocialStream(fps) {
   draw();
   return tabletLive.canvas.captureStream(fps);
 }
-async function buildTabletLiveStream(format) {
+async function buildTabletLiveStream(format, fpsWanted) {
   ensureCompositeForSocial();
-  const fps = Math.max(10, COMP.fps || 10);
+  /* V47: the frame-rate selector is honest — it feeds the encoder here,
+     not just a hint. Clamped to the range the canvas path can sustain. */
+  const fps = Math.max(10, Math.min(30, Number(fpsWanted) || COMP.fps || 15));
   let videoStream;
   if (format === "vertical") videoStream = createVerticalSocialStream(fps);
   else {
@@ -3945,7 +4074,7 @@ async function publishWhip(stream, gateway, streamName) {
     await pc.setLocalDescription(await pc.createOffer());
     await waitForIceComplete(pc);
     if (!pc.localDescription || !pc.localDescription.sdp) throw new Error("Could not create a relay offer.");
-    const res = await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/sdp" }, body: pc.localDescription.sdp });
+    const res = await StreamKit.fetchWithTimeout(endpoint, { method: "POST", headers: { "Content-Type": "application/sdp" }, body: pc.localDescription.sdp }, 12000);
     if (!res.ok) throw new Error("WHIP publish failed (" + res.status + "). Check relay HTTPS/CORS and SRS status.");
     const answer = await res.text();
     if (!answer.trim()) throw new Error("The relay returned an empty WebRTC answer.");
@@ -3960,37 +4089,112 @@ async function publishWhip(stream, gateway, streamName) {
 }
 async function relayStart(settings) {
   const dest = Object.entries(settings.destinations || {}).map(([name, url]) => ({ name, publishUrl: url }));
-  if (!dest.length) throw new Error("Add at least one social RTMP/RTMPS destination.");
-  const res = await fetch(settings.gateway + "/api/start", {
+  if (!dest.length) throw new Error("Add at least one social destination with its stream key.");
+  /* V47: fetch can no longer hang — every relay call carries a timeout,
+     and the relay's own error detail is surfaced instead of a bare code. */
+  const res = await StreamKit.fetchWithTimeout(settings.gateway + "/api/start", {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-relay-secret": settings.secret || "" },
-    body: JSON.stringify({ stream: settings.stream, format: settings.format, destinations: dest })
-  });
-  if (!res.ok) throw new Error("Relay destination start failed (" + res.status + ")");
+    body: JSON.stringify({ stream: settings.stream, format: settings.format, fps: settings.fps || 15, destinations: dest })
+  }, 15000);
+  if (!res.ok) {
+    let detail = "";
+    try { detail = (await res.text()).slice(0, 160); } catch {}
+    throw new Error("Relay destination start failed (" + res.status + (detail ? " — " + detail : "") + ")");
+  }
 }
 async function relayStop() {
   if (!tabletLive.gateway) return;
   try {
     const secret = ($("#tlSecret") && $("#tlSecret").value.trim()) || (Store.get("tablet_live", {}).secret || "");
-    await fetch(tabletLive.gateway + "/api/stop", { method: "POST", headers: { "Content-Type": "application/json", "x-relay-secret": secret }, body: JSON.stringify({ stream: tabletLive.streamName }) });
+    await StreamKit.fetchWithTimeout(tabletLive.gateway + "/api/stop", { method: "POST", headers: { "Content-Type": "application/json", "x-relay-secret": secret }, body: JSON.stringify({ stream: tabletLive.streamName }) }, 10000);
   } catch {}
+}
+async function tlPreflight(settings) {
+  /* V47: validate before a single byte leaves the device. Errors block
+     the start; warnings ask. */
+  const rows = $$("#tlDests .tl-plat").map((sel) => {
+    const row = sel.closest("div");
+    return { platform: sel.value, server: row.querySelector(".tl-srv").value, key: row.querySelector(".tl-key").value };
+  });
+  const issues = StreamKit.validateDestinations(rows, {
+    pageSecure: location.protocol === "https:",
+    gateway: settings.gateway,
+    format: settings.format
+  });
+  const errs = issues.filter((i) => i.level === "error");
+  const warns = issues.filter((i) => i.level !== "error");
+  if (errs.length) { toast("Fix before going live: " + errs[0].msg, "err", 9000); return false; }
+  if (warns.length && !confirm(warns.map((w) => w.msg).join("\n") + "\n\nStart anyway?")) return false;
+  /* quick relay probe — an unreachable gateway should fail in seconds,
+     not after the class has started */
+  tlSetStatus("Checking the relay…");
+  const probe = await StreamKit.probeHealth(settings.gateway, settings.secret, 6000);
+  if (!probe.ok && !confirm("Relay health check failed (" + probe.text + ").\n\nStart anyway?")) return false;
+  return true;
+}
+let tlWatchdog = { attempts: 0, stopped: false, timer: null, reconnects: 0 };
+function tlTick() {
+  if (!tabletLive.pc) return;
+  tlSetStatus("🔴 LIVE " + StreamKit.elapsed(tlWatchdog.startedAt) + " · " + tabletLive.streamName +
+    " → " + Object.keys(Store.get("tablet_live", {}).destinations || {}).join(", ") +
+    (tlWatchdog.reconnects ? " · auto-reconnected ×" + tlWatchdog.reconnects : ""), true);
+}
+function tlWatchPc(pc, settings) {
+  tlWatchdog = { attempts: 0, stopped: false, timer: null, reconnects: 0, startedAt: Date.now() };
+  tlWatchdog.timer = setInterval(tlTick, 1000);
+  pc.addEventListener("connectionstatechange", async () => {
+    if (tlWatchdog.stopped || !tabletLive.pc) return;
+    const st = pc.connectionState;
+    if (st === "connected") { tlWatchdog.attempts = 0; tlTick(); return; }
+    if (st === "failed" || st === "disconnected") {
+      if (tlWatchdog.attempts >= 5) {
+        toast("⚠️ The relay connection kept dropping — social live stopped. Check the gateway and restart.", "err", 10000);
+        await stopTabletSocialLive(false);
+        return;
+      }
+      const wait = StreamKit.reconnectDelay(tlWatchdog.attempts);
+      tlWatchdog.attempts++; tlWatchdog.reconnects++;
+      tlSetStatus("⚠️ Relay " + st + " — reconnecting (attempt " + tlWatchdog.attempts + " of 5, " + Math.round(wait / 1000) + "s)…");
+      setTimeout(() => { if (!tlWatchdog.stopped && tabletLive.stream) tlReconnect(settings); }, wait);
+    }
+  });
+}
+async function tlReconnect(settings) {
+  try {
+    try { tabletLive.pc && tabletLive.pc.close(); } catch {}
+    tabletLive.pc = await publishWhip(tabletLive.stream, settings.gateway, settings.stream);
+    if (tlWatchdog.attempts >= 2) await relayStart(settings);   /* escalate: some relays restart destinations too */
+    tlWatchPc(tabletLive.pc, settings);
+    tlWatchdog.attempts = 0;
+    tlTick();
+  } catch (e) {
+    if (tlWatchdog.attempts >= 5) {
+      toast("⚠️ Could not re-reach the relay (" + e.message + ") — social live stopped.", "err", 10000);
+      await stopTabletSocialLive(false);
+    }
+  }
 }
 async function startTabletSocialLive() {
   if (typeof authEnforce === "function" && !authEnforce()) return;
   const settings = tlReadSettings();
   if (!settings.gateway) { toast("Enter a valid http(s) relay gateway URL first", "err"); return; }
-  if (!Object.keys(settings.destinations).length) { toast("Add at least one social RTMP/RTMPS destination first", "err"); return; }
+  if (!Object.keys(settings.destinations).length) { toast("Add at least one social destination (platform + stream key) first", "err"); return; }
   if (tabletLive.pc) { toast("Tablet social live is already running"); return; }
+  if (!(await tlPreflight(settings))) return;
   try {
     tlSetStatus("Preparing ClassDeck stream from this tablet…");
     tabletLive.gateway = settings.gateway; tabletLive.streamName = settings.stream; tabletLive.format = settings.format;
-    tabletLive.stream = await buildTabletLiveStream(settings.format);
+    tabletLive.stream = await buildTabletLiveStream(settings.format, settings.fps);
     tlSetStatus("Connecting to WebRTC relay…");
     tabletLive.pc = await publishWhip(tabletLive.stream, settings.gateway, settings.stream);
     tlSetStatus("Starting social destinations…");
     await relayStart(settings);
+    tlWatchPc(tabletLive.pc, settings);
     $("#tlStart").classList.add("active");
-    tlSetStatus("LIVE through relay: " + settings.stream + " → " + Object.keys(settings.destinations).join(", "), true);
+    tlTick();
+    /* credentials roam with the account (round-11 item 1) */
+    if (window.CloudCreds && CloudCreds.signedIn()) CloudCreds.push("cd-stream");
     toast("📡 Tablet Social Live started — no OBS", "ok", 7000);
   } catch (e) {
     await stopTabletSocialLive(true);
@@ -3999,6 +4203,8 @@ async function startTabletSocialLive() {
   }
 }
 async function stopTabletSocialLive(silent) {
+  tlWatchdog.stopped = true;
+  if (tlWatchdog.timer) { clearInterval(tlWatchdog.timer); tlWatchdog.timer = null; }
   await relayStop();
   try {
     if (tabletLive.resource) await fetch(tabletLive.resource, { method: "DELETE" });
@@ -4019,12 +4225,10 @@ async function stopTabletSocialLive(silent) {
 async function checkRelayHealth() {
   const settings = tlReadSettings();
   if (!settings.gateway) { toast("Enter gateway URL first", "err"); return; }
-  try {
-    const res = await fetch(settings.gateway + "/health", { headers: { "x-relay-secret": settings.secret || "" } });
-    const text = await res.text();
-    tlSetStatus(res.ok ? ("Relay OK: " + text.slice(0, 120)) : ("Relay replied " + res.status));
-    toast(res.ok ? "Relay is reachable" : "Relay health check failed", res.ok ? "ok" : "err");
-  } catch (e) { tlSetStatus("Relay not reachable: " + e.message); toast("Relay not reachable", "err"); }
+  tlSetStatus("Checking relay…");
+  const probe = await StreamKit.probeHealth(settings.gateway, settings.secret, 8000);
+  if (probe.ok) { tlSetStatus("Relay OK: " + probe.text, true); toast("Relay is reachable", "ok"); }
+  else { tlSetStatus("Relay not reachable (" + probe.text + (probe.status ? " · HTTP " + probe.status : "") + ")"); toast("Relay not reachable", "err", 8000); }
 }
 async function tryFullTabletScreenShare() {
   if (typeof authEnforce === "function" && !authEnforce()) return;
@@ -4050,6 +4254,13 @@ if ($("#btnTabletLive")) on("#btnTabletLive", "click", () => {
 });
 if ($("#tlStart")) on("#tlStart", "click", startTabletSocialLive);
 if ($("#tlStop")) on("#tlStop", "click", () => stopTabletSocialLive(false));
+if ($("#tlAddDest")) on("#tlAddDest", "click", () => tlAddDestRow("custom", "", ""));
+if ($("#tlFormat")) on("#tlFormat", "change", tlSyncBitrateHint);
+if ($("#tlFps")) on("#tlFps", "change", tlSyncBitrateHint);
+/* V47: never let a live social stream die silently with a closed tab */
+window.addEventListener("beforeunload", (e) => {
+  if (tabletLive && tabletLive.pc) { e.preventDefault(); e.returnValue = ""; }
+});
 if ($("#tlHealth")) on("#tlHealth", "click", checkRelayHealth);
 if ($("#tlOpenCentre")) on("#tlOpenCentre", "click", openStreamCentre);
 if ($("#btnTryScreenShare")) on("#btnTryScreenShare", "click", tryFullTabletScreenShare);

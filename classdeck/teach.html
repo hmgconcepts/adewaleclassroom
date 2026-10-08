@@ -891,24 +891,24 @@ Not sure</textarea>
 
 <!-- v6: full-screen teacher auth gate (signup / login / license) -->
 <!-- authGate removed: ADEWALE CLASSROOM DECK uses portal session only -->
-<script src="vendor/peerjs.min.js?v=49"></script>
-<script src="vendor/pdf.min.js?v=49"></script>
-<script src="vendor/qrcode.min.js?v=49"></script>
-<script src="js/common.js?v=49"></script>
-<script src="js/config.js?v=49"></script>
-<script src="js/portal-bridge.js?v=49"></script>
-<script src="js/license.js?v=49"></script>
-<script src="js/whiteboard.js?v=49"></script>
-<script src="js/webcast.js?v=49"></script>
-<script src="js/toolkit.js?v=49"></script>
-<script src="js/toolkit-data.js?v=49"></script>
-<script src="js/toolkit-data2.js?v=49"></script>
-<script src="js/toolkit-data3.js?v=49"></script>
-<script src="js/toolkit-ext.js?v=49"></script>
-<script src="js/security-config.js?v=49"></script>
-<script src="js/auth.js?v=49"></script>
-<script src="js/rtc.js?v=49"></script>
-<script src="js/teach-toolbar-fix.js?v=49"></script>
+<script src="vendor/peerjs.min.js?v=50"></script>
+<script src="vendor/pdf.min.js?v=50"></script>
+<script src="vendor/qrcode.min.js?v=50"></script>
+<script src="js/common.js?v=50"></script>
+<script src="js/config.js?v=50"></script>
+<script src="js/portal-bridge.js?v=50"></script>
+<script src="js/license.js?v=50"></script>
+<script src="js/whiteboard.js?v=50"></script>
+<script src="js/webcast.js?v=50"></script>
+<script src="js/toolkit.js?v=50"></script>
+<script src="js/toolkit-data.js?v=50"></script>
+<script src="js/toolkit-data2.js?v=50"></script>
+<script src="js/toolkit-data3.js?v=50"></script>
+<script src="js/toolkit-ext.js?v=50"></script>
+<script src="js/security-config.js?v=50"></script>
+<script src="js/auth.js?v=50"></script>
+<script src="js/rtc.js?v=50"></script>
+<script src="js/teach-toolbar-fix.js?v=50"></script>
 <div id="mTimer" class="modal-back">
   <div class="modal" style="max-width:360px">
     <h3 style="margin:0 0 10px">⏱ Class countdown</h3>
@@ -1138,14 +1138,23 @@ Not sure</textarea>
       <option value="landscape">Landscape 16:9 — YouTube / Facebook</option>
       <option value="vertical">Vertical 9:16 — TikTok / Instagram</option>
     </select>
-    <label style="font-size:12px;color:var(--text-dim)">Destinations (RTMP URL + key)</label>
-    <input class="input tlDest" data-name="youtube"   placeholder="YouTube RTMP…"   style="margin:6px 0" />
-    <input class="input tlDest" data-name="facebook"  placeholder="Facebook RTMP…"  style="margin:6px 0" />
-    <input class="input tlDest" data-name="instagram" placeholder="Instagram RTMP…" style="margin:6px 0" />
-    <input class="input tlDest" data-name="tiktok"    placeholder="TikTok RTMP…"    style="margin:6px 0 10px" />
-    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:6px 0 10px">
-      <input type="checkbox" id="tlRemember" checked /> Remember the gateway secret and stream keys on this device
+    <label style="font-size:12px;color:var(--text-dim)">Frame rate</label>
+    <select class="input" id="tlFps" style="margin:6px 0 10px">
+      <option value="10">10 fps — weak / mobile upload</option>
+      <option value="15" selected>15 fps — balanced (recommended)</option>
+      <option value="24">24 fps — smooth</option>
+      <option value="30">30 fps — strong upload only</option>
+    </select>
+    <label style="font-size:12px;color:var(--text-dim)">Destinations — pick a platform, paste its stream key</label>
+    <div id="tlDests" style="margin:6px 0 8px;display:grid;gap:8px"></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+      <button type="button" class="btn ghost" id="tlAddDest" style="padding:5px 10px;font-size:12.5px">+ Add destination</button>
+      <span id="tlBitrateHint" style="font-size:11.5px;color:var(--text-dim)"></span>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:6px 0 4px">
+      <input type="checkbox" id="tlRemember" checked /> Remember on this device
     </label>
+    <div id="tlCloudNote" style="font-size:11.5px;color:var(--text-dim);margin:0 0 10px"></div>
     <div id="tlStatus" style="font-size:12.5px;color:var(--text-dim);margin-bottom:10px"></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button type="button" class="btn primary" id="tlStart">▶ Start social live</button>
@@ -1156,11 +1165,13 @@ Not sure</textarea>
     </div>
   </div>
 </div>
-<script src="js/fix-webm-duration.js?v=49"></script>
-<script src="js/teach.js?v=49"></script>
-<script src="js/enhancements.js?v=49"></script>
-<script src="js/ecosystem-branding.js?v=49"></script>
-<script src="js/enterprise-enhanced.js?v=49"></script>
+<script src="js/cloud-creds.js?v=50"></script>
+<script src="js/stream-kit.js?v=50"></script>
+<script src="js/fix-webm-duration.js?v=50"></script>
+<script src="js/teach.js?v=50"></script>
+<script src="js/enhancements.js?v=50"></script>
+<script src="js/ecosystem-branding.js?v=50"></script>
+<script src="js/enterprise-enhanced.js?v=50"></script>
 <div id="hmgEcosystemFooterCompact" style="max-width:100%;padding:0 14px"></div>
 </body>
 </html>
