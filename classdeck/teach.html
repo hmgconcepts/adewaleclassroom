@@ -809,6 +809,14 @@ Not sure</textarea>
           <button class="btn small primary" id="btnCfGen">⚡ Generate &amp; fill</button>
         </div>
       </details>
+      <!-- V48 (round 12): credential roaming status + one-time account link.
+           This is the visible half of cloud-creds.js — the teacher can SEE
+           whether the TURN key follows the login, link the portal account,
+           and sync right now. -->
+      <details style="margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--bg-2)">
+        <summary style="cursor:pointer;font-size:.85em"><b>☁️ Cloud sync — credentials on every device</b></summary>
+        <div id="cloudSyncCard" style="font-size:.82em;margin-top:8px"></div>
+      </details>
       <hr class="sep" />
       <label style="display:block"><b>👥 Large classes (hundreds of students)</b></label>
       <div style="font-size:.82em;opacity:.75;margin:4px 0 6px">Browser-to-browser video grows with every student. With <b>Class relay (captains)</b> ON, a few well-connected students automatically help deliver the video to small groups — your data stays low and the class stays smooth even with 100+ students. Chat, polls and boards always flow directly from you.</div>
@@ -891,24 +899,24 @@ Not sure</textarea>
 
 <!-- v6: full-screen teacher auth gate (signup / login / license) -->
 <!-- authGate removed: ADEWALE CLASSROOM DECK uses portal session only -->
-<script src="vendor/peerjs.min.js?v=50"></script>
-<script src="vendor/pdf.min.js?v=50"></script>
-<script src="vendor/qrcode.min.js?v=50"></script>
-<script src="js/common.js?v=50"></script>
-<script src="js/config.js?v=50"></script>
-<script src="js/portal-bridge.js?v=50"></script>
-<script src="js/license.js?v=50"></script>
-<script src="js/whiteboard.js?v=50"></script>
-<script src="js/webcast.js?v=50"></script>
-<script src="js/toolkit.js?v=50"></script>
-<script src="js/toolkit-data.js?v=50"></script>
-<script src="js/toolkit-data2.js?v=50"></script>
-<script src="js/toolkit-data3.js?v=50"></script>
-<script src="js/toolkit-ext.js?v=50"></script>
-<script src="js/security-config.js?v=50"></script>
-<script src="js/auth.js?v=50"></script>
-<script src="js/rtc.js?v=50"></script>
-<script src="js/teach-toolbar-fix.js?v=50"></script>
+<script src="vendor/peerjs.min.js?v=51"></script>
+<script src="vendor/pdf.min.js?v=51"></script>
+<script src="vendor/qrcode.min.js?v=51"></script>
+<script src="js/common.js?v=51"></script>
+<script src="js/config.js?v=51"></script>
+<script src="js/portal-bridge.js?v=51"></script>
+<script src="js/license.js?v=51"></script>
+<script src="js/whiteboard.js?v=51"></script>
+<script src="js/webcast.js?v=51"></script>
+<script src="js/toolkit.js?v=51"></script>
+<script src="js/toolkit-data.js?v=51"></script>
+<script src="js/toolkit-data2.js?v=51"></script>
+<script src="js/toolkit-data3.js?v=51"></script>
+<script src="js/toolkit-ext.js?v=51"></script>
+<script src="js/security-config.js?v=51"></script>
+<script src="js/auth.js?v=51"></script>
+<script src="js/rtc.js?v=51"></script>
+<script src="js/teach-toolbar-fix.js?v=51"></script>
 <div id="mTimer" class="modal-back">
   <div class="modal" style="max-width:360px">
     <h3 style="margin:0 0 10px">⏱ Class countdown</h3>
@@ -1145,10 +1153,16 @@ Not sure</textarea>
       <option value="24">24 fps — smooth</option>
       <option value="30">30 fps — strong upload only</option>
     </select>
-    <label style="font-size:12px;color:var(--text-dim)">Destinations — pick a platform, paste its stream key</label>
+    <label style="font-size:12px;color:var(--text-dim)">Destinations — paste anything below, or build rows by hand</label>
+    <div style="display:flex;gap:6px;margin:6px 0 8px;flex-wrap:wrap">
+      <input class="input" id="tlSmartPaste" placeholder="Paste a stream key, a full rtmp(s)://…/key URL, or anything from the platform" style="flex:1;min-width:200px;margin:0" />
+      <select class="input" id="tlSmartPlat" style="max-width:140px;margin:0" title="Used when what you paste is just a key"></select>
+      <button type="button" class="btn ghost" id="tlSmartAdd" style="padding:5px 10px;font-size:12.5px">⚡ Add</button>
+    </div>
     <div id="tlDests" style="margin:6px 0 8px;display:grid;gap:8px"></div>
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
       <button type="button" class="btn ghost" id="tlAddDest" style="padding:5px 10px;font-size:12.5px">+ Add destination</button>
+      <button type="button" class="btn ghost" id="tlSaveSettings" style="padding:5px 10px;font-size:12.5px">💾 Save settings</button>
       <span id="tlBitrateHint" style="font-size:11.5px;color:var(--text-dim)"></span>
     </div>
     <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:6px 0 4px">
@@ -1165,13 +1179,13 @@ Not sure</textarea>
     </div>
   </div>
 </div>
-<script src="js/cloud-creds.js?v=50"></script>
-<script src="js/stream-kit.js?v=50"></script>
-<script src="js/fix-webm-duration.js?v=50"></script>
-<script src="js/teach.js?v=50"></script>
-<script src="js/enhancements.js?v=50"></script>
-<script src="js/ecosystem-branding.js?v=50"></script>
-<script src="js/enterprise-enhanced.js?v=50"></script>
+<script src="js/cloud-creds.js?v=51"></script>
+<script src="js/stream-kit.js?v=51"></script>
+<script src="js/fix-webm-duration.js?v=51"></script>
+<script src="js/teach.js?v=51"></script>
+<script src="js/enhancements.js?v=51"></script>
+<script src="js/ecosystem-branding.js?v=51"></script>
+<script src="js/enterprise-enhanced.js?v=51"></script>
 <div id="hmgEcosystemFooterCompact" style="max-width:100%;padding:0 14px"></div>
 </body>
 </html>

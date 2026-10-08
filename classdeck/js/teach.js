@@ -2562,6 +2562,7 @@ on("#btnSettings", "click", () => {
   if (rmEl2) rmEl2.checked = Store.get("captains", false) || (room && room.relayMode) || false;
   updateRelayPreview();
   $("#setNewRoom").checked = false;
+  renderCloudSyncCard();          /* V48: roaming status + link card */
   openModal("#mSettings");
 });
 
@@ -2698,6 +2699,7 @@ if (window.CloudCreds && CloudCreds.signedIn()) {
   CloudCreds.onApply((applied) => {
     /* credentials arrived from the cloud — refresh every surface */
     try { updateRelayPreview(); } catch (e) {}
+    try { renderCloudSyncCard(); } catch (e) {}
     try {
       const cfk = $("#setCfKey"), cft = $("#setCfToken");
       if (cfk) cfk.value = Store.get("cf_key", "") || "";
@@ -3862,6 +3864,64 @@ drawComposite = function () { _drawCompositeBeforeNoise(); if (noiseOn) drawNois
 
 
 /* ------------------------------------------------------------
+   V48 (round 12): CLOUD SYNC CARD — the visible half of cloud-creds.js.
+   The teacher can SEE that the TURN key / streaming keys follow the
+   Adewale Classroom login, link the portal account once, sync on
+   demand, or unlink. Diagnoses the two real failure modes explicitly:
+   not signed in (link card) and database missing the V47 table
+   (run-the-migration instructions) — no more silent no-ops.
+   ------------------------------------------------------------ */
+function renderCloudSyncCard() {
+  const card = $("#cloudSyncCard");
+  const esc = (v) => escapeHtml(String(v == null ? "" : v));
+  if (!card || !window.CloudCreds) return;
+  if (CloudCreds.signedIn()) {
+    const st = CloudCreds.status();
+    const when = st.lastSync ? new Date(st.lastSync).toLocaleTimeString() : "not yet";
+    card.innerHTML =
+      '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
+      '<span>\u2601\ufe0f Synced with <b>' + esc(CloudCreds.sessionEmail() || "your ADEWALE CLASSROOM account") + '</b></span>' +
+      '<span class="sub">\u00b7 last sync ' + esc(when) + '</span>' +
+      '<button class="btn small" id="cloudSyncNow">🔄 Sync now</button>' +
+      '<button class="btn small ghost" id="cloudUnlink">Unlink</button>' +
+      "</div>" +
+      '<div class="sub" style="margin-top:6px">Your TURN key, relay credentials and streaming keys are pulled to every device you sign in from — and pushed back whenever they change.</div>' +
+      (st.reason ? '<div class="warn" style="margin-top:6px">⚠️ ' + esc(st.reason) + "</div>" : "");
+    $("#cloudSyncNow").onclick = async () => {
+      const ok = await CloudCreds.pull();
+      const st2 = CloudCreds.status();
+      toast(ok && !st2.missing ? "☁️ Synced — credentials on this device are current." : "Sync problem: " + (st2.reason || "unknown"), ok ? "ok" : "err", 8000);
+      renderCloudSyncCard();
+    };
+    $("#cloudUnlink").onclick = () => {
+      if (!confirm("Unlink cloud sync on this device? Your saved credentials stay; they just stop following your login.")) return;
+      CloudCreds.signOut();
+      renderCloudSyncCard();
+    };
+  } else {
+    card.innerHTML =
+      '<div style="margin-bottom:6px">Sign in with your <b>ADEWALE CLASSROOM account</b> once, and your TURN key, relay credentials and streaming keys will be available on every device you sign in from — no re-pasting.</div>' +
+      '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+      '<input class="input" id="cloudEmail" placeholder="Portal email" style="flex:1;min-width:150px" />' +
+      '<input class="input" id="cloudPw" type="password" placeholder="Portal password" style="flex:1;min-width:150px" />' +
+      '<button class="btn small primary" id="cloudLink">🔗 Link account</button>' +
+      "</div>" +
+      '<div class="sub" style="margin-top:6px">Tip: use the same email and password as your deck login and this happens automatically at sign-in.</div>';
+    $("#cloudLink").onclick = async () => {
+      const em = $("#cloudEmail").value.trim(), pw = $("#cloudPw").value;
+      if (!em || !pw) { toast("Enter the portal email and password.", "err"); return; }
+      const ok = await CloudCreds.signIn(em, pw);
+      if (!ok) { toast("The portal refused that email/password (or the portal is unreachable).", "err", 9000); return; }
+      await CloudCreds.pull();
+      const st = CloudCreds.status();
+      if (st.missing) toast("Signed in — but the database needs update V47. Run database/v47-cloud-credentials.sql in the Supabase SQL editor, then press Sync now.", "err", 14000);
+      else toast("☁️ Linked — credentials now follow your login.", "ok", 8000);
+      renderCloudSyncCard();
+    };
+  }
+}
+
+/* ------------------------------------------------------------
    v10 / ClassDesk v2: Direct tablet social live (NO OBS)
    Browser reality: RTMP/RTMPS cannot be opened directly from a static web page.
    This module publishes the ClassDeck composite MediaStream to a WebRTC WHIP
@@ -3941,6 +4001,15 @@ function tlSyncBitrateHint() {
 }
 function tlLoadSettings() {
   const saved = Store.get("tablet_live", {}) || {};
+  const smartPlat = $("#tlSmartPlat");
+  if (smartPlat && window.StreamKit && !smartPlat.options.length) {
+    Object.keys(StreamKit.PLATFORMS).forEach((id) => {
+      const o = document.createElement("option");
+      o.value = id; o.textContent = StreamKit.PLATFORMS[id].label;
+      smartPlat.appendChild(o);
+    });
+    smartPlat.value = "youtube";
+  }
   $("#tlGateway").value = saved.gateway || "";
   $("#tlSecret").value = saved.secret || "";
   $("#tlStream").value = saved.stream || ("classdeck-" + currentRoomCode().toLowerCase());
@@ -4251,6 +4320,28 @@ async function tryFullTabletScreenShare() {
 if ($("#btnTabletLive")) on("#btnTabletLive", "click", () => {
   if (typeof authEnforce === "function" && !authEnforce()) return;
   tlLoadSettings(); openModal("#mTabletLive");
+});
+if ($("#tlSmartAdd")) on("#tlSmartAdd", "click", () => {
+  /* V48: paste ANYTHING — a bare key, a full rtmp(s)://…/key URL, or text
+     from the platform — and StreamKit works out platform + server + key. */
+  const box = $("#tlSmartPaste");
+  const platSel = $("#tlSmartPlat");
+  if (!box || !window.StreamKit) return;
+  const parsed = StreamKit.smartParse(box.value, platSel ? platSel.value : "youtube");
+  if (!parsed) { toast("Paste a stream key or a full rtmp(s):// URL — that looks like neither.", "err", 7000); return; }
+  tlAddDestRow(parsed.platform, parsed.key, parsed.server);
+  box.value = "";
+  toast("Added " + (StreamKit.PLATFORMS[parsed.platform] || { label: parsed.platform }).label + (parsed.key ? " — key filled" : " — paste the key in the row") + ".", "ok", 6000);
+});
+if ($("#tlSaveSettings")) on("#tlSaveSettings", "click", () => {
+  const settings = tlReadSettings();
+  const n = Object.keys(settings.destinations).length;
+  if (window.CloudCreds && CloudCreds.signedIn()) {
+    CloudCreds.push("cd-stream").then((ok) =>
+      toast(ok ? "💾 Streaming settings saved — and synced to your account (every device)." : "Saved on this device; cloud sync failed (" + (CloudCreds.status().reason || "unknown") + ").", ok ? "ok" : "err", 9000));
+  } else {
+    toast("💾 Streaming settings saved on this device." + (n ? "" : " (No destinations yet.)"), "ok", 6000);
+  }
 });
 if ($("#tlStart")) on("#tlStart", "click", startTabletSocialLive);
 if ($("#tlStop")) on("#tlStop", "click", () => stopTabletSocialLive(false));

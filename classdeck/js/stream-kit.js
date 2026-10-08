@@ -89,6 +89,52 @@ window.StreamKit = (function () {
     return { platform: platform, server: server, key: plain };
   }
 
+  /* ── smart paste (round 12, item 2) ────────────────────────────────
+     Accept ANYTHING a teacher can copy from a platform dashboard and
+     return {platform, server, key}:
+       · a full URL  rtmp(s)://server/app/KEY  → split + platform matched
+       · a URL without a key rtmp(s)://server/app → server row, empty key
+       · a bare key  (no scheme, no slash)     → the chosen/keyword-guessed
+                                                  platform, preset server
+     Platform guess works on text that mentions the platform anywhere
+     (people paste the whole "Server URL: rtmp://… TikTok Live" block). */
+  function smartParse(text, fallbackPlatform) {
+    var t = String(text == null ? "" : trimKey(text)).trim();
+    if (!t) return null;
+    if (/^rtmps?:\/\//i.test(t)) {
+      var p = parseUrl(t);
+      if (p) return { platform: p.platform, server: p.platform === "custom" ? p.server : "", key: p.key };
+      /* URL with no key segment: rtmp://host/app or rtmp://host */
+      var m = t.match(/^(rtmps?:\/\/[^/]+(?:\/[a-z0-9_-]+)?)\/?$/i);
+      if (m) {
+        var plat2 = "custom";
+        Object.keys(PLATFORMS).forEach(function (id) {
+          if (id !== "custom" && PLATFORMS[id].server && PLATFORMS[id].server.replace(/\/+$/, "") === m[1]) plat2 = id;
+        });
+        return { platform: plat2, server: plat2 === "custom" ? m[1] : "", key: "" };
+      }
+      return null;
+    }
+    /* bare key: guess the platform from the text, else the fallback */
+    var lower = t.toLowerCase();
+    var guess = null;
+    if (/youtube|yt\.be|goo\.gl/.test(lower)) guess = "youtube";
+    else if (/facebook|fb\.live|meta/.test(lower)) guess = "facebook";
+    else if (/tiktok|ttlive/.test(lower)) guess = "tiktok";
+    else if (/instagram|insta/.test(lower)) guess = "instagram";
+    else if (/twitch/.test(lower)) guess = "twitch";
+    else if (/kick\.com/.test(lower)) guess = "kick";
+    if (guess && /\s/.test(t) && !/^[A-Za-z0-9_=-]+$/.test(t)) {
+      /* text mentions a platform but is not a clean key — probably pasted
+         instructions; give the platform with an empty key so the teacher
+         just fills the key in the row. */
+      return { platform: guess, server: "", key: "" };
+    }
+    var plat = guess || (PLATFORMS[fallbackPlatform] ? fallbackPlatform : "youtube");
+    if (/\s/.test(t)) return null;   /* multi-word junk is neither key nor URL */
+    return { platform: plat, server: "", key: t };
+  }
+
   function maskKey(k) {
     var v = trimKey(k);
     if (!v) return "";
@@ -117,6 +163,12 @@ window.StreamKit = (function () {
       }
       if (seen[p]) out.push({ level: "warn", platform: p, msg: (PLATFORMS[p] || {}).label + " is added twice — the relay will publish to the first URL only." });
       seen[p] = true;
+      /* key-shape heuristics: formats DO change, so warn, never block */
+      var k = trimKey(d.key);
+      if (p === "youtube" && !/^[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}$/i.test(k) && !/^rtmps?:/i.test(k))
+        out.push({ level: "warn", platform: p, msg: "YouTube stream keys look like xxxx-xxxx-xxxx-xxxx — double-check what you pasted." });
+      if ((p === "facebook" || p === "tiktok" || p === "instagram") && k.length > 0 && k.length < 16 && !/^rtmps?:/i.test(k))
+        out.push({ level: "warn", platform: p, msg: (PLATFORMS[p] || {}).label + " keys are usually long (20+ characters) — this one looks short." });
     });
     if (p_isTikTok(dests) && format === "landscape") {
       out.push({ level: "warn", platform: "tiktok", msg: "TikTok fills only the middle of a landscape frame — choose the Vertical format for TikTok." });
@@ -171,7 +223,7 @@ window.StreamKit = (function () {
   }
 
   return {
-    PLATFORMS: PLATFORMS, buildUrl: buildUrl, parseUrl: parseUrl,
+    PLATFORMS: PLATFORMS, buildUrl: buildUrl, parseUrl: parseUrl, smartParse: smartParse,
     maskKey: maskKey, validateDestinations: validateDestinations,
     fetchWithTimeout: fetchWithTimeout, probeHealth: probeHealth,
     reconnectDelay: reconnectDelay, bitrateHint: bitrateHint, elapsed: elapsed

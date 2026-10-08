@@ -20,6 +20,20 @@ window.CLASSDECK.BRAND = {
   requirePortalSession: false,
   studentJoinFree: true
 };
+
+/* ============================================================
+   V48 (round 12) — CREDENTIAL ROAMING ENDPOINT.
+   The portal this deck was generated from. cloud-creds.js uses it to
+   sync the TURN key, relay credentials and streaming keys through the
+   teacher's portal account (owner-only user_settings rows), so they are
+   available on EVERY device the teacher signs in from — no re-pasting.
+   Baked from this repo's assets/js/config.js.
+   ============================================================ */
+window.CLASSDECK.SUPABASE = {
+  url: 'https://yqwzbttehegvnvkrmxjz.supabase.co',
+  anon: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlxd3pidHRlaGVndm52a3JteGp6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY3MzY1NTUsImV4cCI6MjEwMjMxMjU1NX0.mUDfHCQmO3kyb9cwqTjhojh0C3qsLv11YOzc7iomVnw'
+};
+
 window.CD_CONFIG = Object.assign({}, window.CD_CONFIG || {}, window.CLASSDECK.BRAND);
 window.APP_NAME = window.CLASSDECK.BRAND.productName;
 window.SCHOOL_NAME = window.CLASSDECK.BRAND.studioName;

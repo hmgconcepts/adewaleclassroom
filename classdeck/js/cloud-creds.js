@@ -72,10 +72,23 @@ window.CloudCreds = (function () {
     return null;
   }
 
-  /* ── portal endpoint: read (not execute) ../assets/js/config.js ────
+  /* ── portal endpoint. Priority (round 12):
+     1. window.CLASSDECK.SUPABASE — baked into js/config.js when the deck
+        was generated (works even when the deck is deployed standalone,
+        where the old ../assets/js/config.js fetch 404'd and silently
+        disabled roaming — the persisting report);
+     2. the cached discovery from a previous run;
+     3. reading (not executing) ../assets/js/config.js on the same origin.
      Regexing instead of <script>-loading keeps the deck's own config
      (PRACTICE/branding) untouched while staying regeneration-safe. */
   async function endpoint() {
+    try {
+      var baked = (window.CLASSDECK && window.CLASSDECK.SUPABASE) || {};
+      if (/^https:\/\//.test(String(baked.url || "")) && baked.anon &&
+          String(baked.url).indexOf("YOUR_") < 0 && String(baked.anon).indexOf("YOUR_") < 0) {
+        return { url: String(baked.url).replace(/\/+$/, ""), anon: String(baked.anon) };
+      }
+    } catch (e) {}
     var cached = lsJSON(ENDPOINT_CACHE, null);
     if (cached && cached.url && cached.anon) return cached;
     if (state._endpointPromise) return state._endpointPromise;
@@ -93,6 +106,51 @@ window.CloudCreds = (function () {
       } finally { state._endpointPromise = null; }
     })();
     return state._endpointPromise;
+  }
+
+  /* ── session storage. The key matches what supabase-js uses on the
+     portal (sb-<project-ref>-auth-token): when deck and portal share an
+     origin they literally share ONE session, and when they don't, the
+     deck keeps its own — both stay alive through the refresh token. */
+  function sessionKey(ep) {
+    try {
+      var ref = String((ep || {}).url || "").replace(/^https:\/\//, "").split(".")[0];
+      return "sb-" + ref + "-auth-token";
+    } catch (e) { return "sb-classdeck-auth-token"; }
+  }
+
+  /* ── sign in to the portal from the deck (round 12, item 1).
+     Called with the teacher's Adewale Classroom email + password — from
+     the deck login (same credentials, fire-and-forget) or from the
+     Settings link card. Stores the session so pull()/push() work. */
+  async function signIn(email, password) {
+    try {
+      var ep = await endpoint();
+      var res = await fetch(ep.url + "/auth/v1/token?grant_type=password", {
+        method: "POST",
+        headers: { apikey: ep.anon, "Content-Type": "application/json" },
+        body: JSON.stringify({ email: String(email || "").trim(), password: String(password || "") })
+      });
+      if (!res.ok) return false;
+      var data = await res.json();
+      if (!data || !data.access_token) return false;
+      try { localStorage.setItem(sessionKey(ep), JSON.stringify(data)); } catch (e) {}
+      state.reason = "";
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function signOut() {
+    try {
+      [readSession()].forEach(function (s) { if (s && s._lsKey) localStorage.removeItem(s._lsKey); });
+    } catch (e) {}
+    var ep = lsJSON(ENDPOINT_CACHE, null);
+    try { if (ep) localStorage.removeItem(sessionKey(ep)); } catch (e) {}
+  }
+
+  function sessionEmail() {
+    var s = readSession();
+    return (s && s.user && s.user.email) || "";
   }
 
   /* ── token: refresh it ourselves if expired (supabase-js is not
@@ -140,6 +198,14 @@ window.CloudCreds = (function () {
     var ep = await endpoint();
     var res = await fetch(ep.url + "/rest/v1" + path, { method: "GET", headers: h });
     if (res.status === 401 || res.status === 403) { state.reason = "the portal refused the sync (signed in?)"; return null; }
+    if (res.status === 404) {
+      /* PostgREST 404 here means the user_settings TABLE is missing —
+         the database has not had the V47 update yet. Say so, precisely,
+         instead of a vague "unreachable" (round-12 fix). */
+      state.reason = "database update needed — run database/v47-cloud-credentials.sql";
+      state.missing = true;
+      return null;
+    }
     if (!res.ok) throw new Error("portal sync " + res.status);
     return res;
   }
@@ -215,13 +281,30 @@ window.CloudCreds = (function () {
       var rows = await res.json();
       if (!Array.isArray(rows)) return false;
       var applied = [];
+      var cloudKeys = {};
       rows.forEach(function (r) {
+        cloudKeys[r.key] = true;
         var ch = CHANNELS[r.key];
         if (ch && ch.apply(r.value)) applied.push(r.key);
         if (r.key) lsSet(SYNCED_AT + ":" + r.key, String(Date.now()));
       });
+      /* round-12: a device that has credentials the cloud has NOT seen
+         (saved before the V47 update ran, or created offline) publishes
+         them now — the working setup wins, so the NEXT device is covered.
+         This closes the "saved it on the tablet, still empty on the
+         laptop" hole for credentials saved before syncing existed.
+         Awaited so that when pull() resolves, the sync is actually done. */
+      var pushes = [];
+      Object.keys(CHANNELS).forEach(function (k) {
+        if (cloudKeys[k]) return;
+        var ch = CHANNELS[k];
+        if (ch && !ch.isEmpty()) pushes.push(push(k));
+      });
+      await Promise.all(pushes);
       state.ready = true;
       state.reason = "";
+      state.missing = false;
+      state.lastSync = Date.now();
       if (applied.length) notify(applied);
       return true;
     } catch (e) {
@@ -265,6 +348,12 @@ window.CloudCreds = (function () {
     turnSnapshot: function () { return CHANNELS["cd-turn"].snapshot(); },
     streamSnapshot: function () { return CHANNELS["cd-stream"].snapshot(); },
     signedIn: function () { return !!readSession(); },
-    status: function () { return { ready: state.ready, reason: state.reason, uid: state.uid }; }
+    signIn: signIn,
+    signOut: signOut,
+    sessionEmail: sessionEmail,
+    status: function () {
+      return { ready: state.ready, reason: state.reason, uid: state.uid,
+               missing: !!state.missing, lastSync: state.lastSync || 0 };
+    }
   };
 })();
