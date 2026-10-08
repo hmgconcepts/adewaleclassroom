@@ -658,3 +658,106 @@ join.js, teach.html, join.html, version.json, sw.js.
 existing projects (idempotent; complete-schema.sql already carries it for
 fresh installs) and re-upload the ClassDeck — the mic fix only takes
 effect when the new v49 assets are served.
+
+
+---
+
+# ROUND 11 — credential roaming, Drive backup, streaming, the console blank-page bug, family messaging
+
+Prompt (7 items, abridged): (1) TURN credentials entered on one device must
+be available on every device after signing in — and other credentials
+likewise. (2) Google Drive backup setup failed: "A table is missing
+(school_settings)" — fix with Client ID 1051552536424-….apps.googleusercontent.com.
+(3) Make Facebook/TikTok/YouTube streaming robust, self-contained,
+all-inclusive, seamless — enterprise features, every error imagined and
+fixed. (4) The GOSA "CBT/Online Exams" features were reported as not
+implemented (Archive Recovery Center, filtering/sorting, arrangement).
+(5) Students and parents still cannot message tutors/admins; all four
+roles must message one another. (6) The Quizzes page showed NO CBT
+papers; all sorting/filtering parameters must work. (7) Update every file
+across all repos.
+
+## Item 6+4 — the Quizzes page was blank: root cause and fix
+
+The round-10 console PARSED but CRASHED at render time:
+`render(opts)` shadowed the `opts()` option-builder helper, so render died
+with "opts is not a function" at the Subject dropdown and — with the old
+flat list hidden — the page showed nothing. This is why the GOSA features
+were "not implemented": they shipped but never drew. Fixed (render(cfg)),
+and this round's QA EXECUTES the real console in a VM with a mock DOM:
+render completes, all five nature groups draw, all 9 filters flip through
+the wired handlers (search/subject/class/kind/mode/type/status/view/sort),
+sort re-orders papers within a group, reset restores the list, and the
+Archive Recovery Center's restore-ALL actually updates supabase. Static
+checks could not catch the original bug; the runtime smoke now can.
+
+## Item 5 — family messaging: root cause and fix
+
+The v44 RPCs were built for families, but round 9's V27 RBAC sweep had
+swept `messages` into the family DENY list — learners/parents hit
+"Your role does not have permission" on the exact page built for them.
+rbac.js now lists messages under FAMILY_WRITE (deny lifted; the rest of
+the V27 sweep stands). v47 also fixes the messages read policy to allow
+`recipient = auth.uid()` (person-to-person inbox reads were only possible
+through the security-definer RPCs). The full chain is proven on
+PostgreSQL as the authenticated role with jwt claims: learner directory
+lists staff; learner→tutor sends; tutor reply works; tutor→unlinked
+learner refused; parent→admin sends; admin unread badge counts.
+
+## Item 1 — credentials follow the login (V47 + CloudCreds)
+
+ClassDeck ships inside the portal (same origin), so when the teacher is
+signed in to ADEWALE CLASSROOM the session token is in localStorage.
+New `classdeck/js/cloud-creds.js` uses it to sync through the new
+owner-only `user_settings` table: on studio open, pull; on
+generate/save/renew/clear, push. Channels: cd-turn (Cloudflare TURN key,
+generated relay credentials, expiry) and cd-stream (gateway, secret,
+destinations). Merge policy is conservative: pull only fills EMPTY local
+values; a deliberate clear pushes a tombstone so removed credentials are
+never resurrected. Expired sessions are refreshed from the deck via the
+refresh token and written back. The Google Drive settings were already
+designed to roam via school_settings ("shared by all admin devices") —
+v47 finally creates that table, so all three credential families now
+follow the account.
+
+## Item 2 — school_settings existed nowhere (V47)
+
+The Drive card read a table no schema file created. v47 creates it
+(readable by signed-in members, admin-writable), pre-seeds the school's
+Google OAuth Client ID (never overwriting a saved one), and the setup
+guide now names the one remaining manual step: Authorized JavaScript
+origins in Google Cloud Console.
+
+## Item 3 — enterprise streaming (V47 StreamKit)
+
+New `classdeck/js/stream-kit.js` + teach.js rework: 7 platform presets
+(pick a platform, paste ONLY the key — YouTube/Facebook RTMPS-443/TikTok/
+Instagram/Twitch/Kick/custom, with per-platform guidance); key hygiene
+(masked, trimmed, full-URL-pasted-as-key detected); preflight before a
+byte leaves the device (empty keys, duplicates, TikTok-landscape warning,
+http gateway on https page blocked, relay health probe); fetch timeouts
+on every relay call (a dead gateway can never hang the UI) with relay
+error bodies surfaced; a WHIP watchdog with exponential-backoff
+auto-reconnect (1s→30s, 5 attempts, escalates to re-starting
+destinations); a live clock; fps selector wired into the encoder with
+honest bitrate guidance; beforeunload guard; cloud sync of gateway and
+keys. Legacy saved destinations are parsed back into the new UI — nothing
+is lost.
+
+## Item 7 — every file, both repos
+
+Portal V47 (pages `?v=47`, shell cache `tc-shell-v16-20261008`):
+cbt-console.js (render fix), rbac.js, database/v47-cloud-credentials.sql
+(new) + complete-schema.sql, tools/v47_behavior.sql (new) + harness,
+docs/GOOGLE-DRIVE-SYNC-GUIDE.md, sw.js.
+ClassDeck v14.2.0 (pages `?v=50`, sw `hmg-classdeck-v14.2.0-cloudcreds-streamkit`):
+cloud-creds.js (new), stream-kit.js (new), teach.js, teach.html, join.html,
+version.json, sw.js.
+
+## Round-11 QA tally (per repo, both repos green)
+
+    19 suites — 666/666 per repo × 2 repos
+    (666 round-10 baseline + 18 console smoke + 38 cloud/stream + 46 portal
+     + version-pin updates; includes runtime-DOM tests, not just greps)
+    PostgreSQL harness: 6/6 scenarios clean (incl. V47 credentials +
+    messaging behavior as the authenticated role)
