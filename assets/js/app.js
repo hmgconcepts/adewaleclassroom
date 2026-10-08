@@ -1048,8 +1048,13 @@ const App = {
       const exams = data.exams || [];
       const reading = (data.reading || []).filter(x => String(x.status || 'open') === 'open');
       /* v43: the class library/e-resources aimed at this learner's classes,
-         and the learner's own class chips (kind shows group vs cohort). */
-      const library = (data.library || []).concat(data.resources || []);
+         and the learner's own class chips (kind shows group vs cohort).
+         V49 (round 13): the work-board RPC now also feeds e-resources and
+         resource-library items plus PUBLISHED LMS lessons for their
+         classes — before, lms/resources rows were invisible on the portal
+         even when assigned (no family read policy, no RPC section). */
+      const library = (data.library || []).concat(data.resources || [], data.eresources || []);
+      const lms = (data.lms || []);
       const myEngagements = data.engagements || [];
       const KIND_LABEL = { one_on_one: '1:1', group: 'group', cohort: 'cohort' };
       const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -1100,7 +1105,7 @@ const App = {
         (overdue ? '<span class="badge" style="background:#fee2e2;color:#991b1b">⏰ ' + overdue + ' overdue</span>' : '') +
         '<a class="btn btn-sm" href="messages.html" style="margin-left:auto">✉️ Ask your tutor / admin</a>' +
         '</div>';
-      if (!hw.length && !exams.length && !reading.length && !library.length) {
+      if (!hw.length && !exams.length && !reading.length && !library.length && !lms.length) {
         html += '<p class="muted">Nothing due right now — homework, quizzes, reading and class library items appear here the moment your tutor assigns them to you or your class. 🎉</p>';
       } else {
         if (hw.length) {
@@ -1125,11 +1130,18 @@ const App = {
               r.due ? '<div style="font-size:.82rem"><b>' + esc(dueLabel(r.due)) + '</b></div>' : '',
               '<a class="btn btn-outline btn-sm" href="reading.html">Open</a>')).join('');
         }
+        if (lms.length) {
+          html += '<div style="margin-bottom:10px;margin-top:14px"><b>🎓 Mini LMS — my lessons</b>' + chip(lms.length + ' published') + '</div>' +
+            lms.slice(0, 10).map(x => row('🎓', x.title,
+              (x.engagement || '') + (x.order ? ' · lesson ' + esc(x.order) : '') + ' · published by your tutor',
+              '',
+              '<a class="btn btn-primary btn-sm" href="' + esc(x.url || 'lms.html') + '" target="_blank" rel="noopener">Open lesson ➜</a>')).join('');
+        }
         if (library.length) {
           const KIND_ICON = { book: '📚', paper: '📃', video: '🎬', worksheet: '✍️', other: '🔗' };
-          html += '<div style="margin-bottom:10px;margin-top:14px"><b>📚 Class library</b>' + chip(library.length + ' for your class') + '</div>' +
-            library.slice(0, 8).map(x => row(KIND_ICON[x.kind] || '🔗', x.title,
-              (x.engagement || '') + (x.subject ? ' · ' + esc(x.subject) : '') + (x.source === 'eresource' ? ' · e-resource' : ''),
+          html += '<div style="margin-bottom:10px;margin-top:14px"><b>📚 Class library & resources</b>' + chip(library.length + ' for your class') + '</div>' +
+            library.slice(0, 10).map(x => row(KIND_ICON[x.kind] || '🔗', x.title,
+              (x.engagement || '') + (x.subject ? ' · ' + esc(x.subject) : '') + (x.source === 'eresource' ? ' · e-resource' : '') + (x.source === 'resource' ? ' · resource library' : ''),
               '',
               '<a class="btn btn-primary btn-sm" href="' + esc(x.url || '#') + '" target="_blank" rel="noopener">Open ➜</a>')).join('');
         }
@@ -1596,13 +1608,18 @@ const App = {
     const wrap = document.createElement('div');
     wrap.style.cssText = 'position:relative;margin-left:auto';
     wrap.innerHTML = '<button type="button" id="notif-bell" class="btn btn-sm btn-ghost" aria-label="Notifications" style="position:relative">🔔<span id="notif-badge" style="display:none;position:absolute;top:-4px;right:-4px;background:#dc2626;color:#fff;border-radius:99px;min-width:16px;height:16px;font-size:10px;align-items:center;justify-content:center;padding:0 4px"></span></button>' +
-      '<div id="notif-dropdown" class="notif-dropdown" style="display:none;position:absolute;right:0;top:40px;width:min(360px,90vw);max-height:420px;overflow:auto;background:#fff;color:#0f172a;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 16px 40px rgba(15,23,42,.18);z-index:2147483000"><div id="notif-list"></div><div style="padding:8px;text-align:center"><a href="notifications.html">Open notification centre</a></div></div>';
+      '<div id="notif-dropdown" class="notif-dropdown" style="display:none;position:absolute;right:0;top:40px;width:min(360px,90vw);max-height:420px;overflow:auto;background:#fff;color:#0f172a;border:1px solid #e2e8f0;border-radius:14px;box-shadow:0 16px 40px rgba(15,23,42,.18);z-index:2147483000"><div style="display:flex;gap:6px;padding:8px;border-bottom:1px solid #e2e8f0;position:sticky;top:0;background:#fff;z-index:1"><button type="button" id="notif-dd-markread" class="btn btn-sm btn-ghost" style="flex:1">✓ Mark all read</button><button type="button" id="notif-dd-clearall" class="btn btn-sm btn-ghost" style="flex:1">🗑 Clear all</button></div><div id="notif-list"></div><div style="padding:8px;text-align:center"><a href="notifications.html">Open notification centre</a></div></div>';
     bar.appendChild(wrap);
     const dd = wrap.querySelector('#notif-dropdown');
     const origAdd = dd.classList.add.bind(dd.classList);
     const origRm = dd.classList.remove.bind(dd.classList);
     dd.classList.add = function (c) { origAdd(c); if (c === 'show') dd.style.display = 'block'; };
     dd.classList.remove = function (c) { origRm(c); if (c === 'show') dd.style.display = 'none'; };
+    /* V49 (round 13, item 10): dropdown header actions. */
+    const markRead = wrap.querySelector('#notif-dd-markread');
+    if (markRead) markRead.onclick = (e) => { e.stopPropagation(); if (window.Notifications) Notifications.markAllRead(); };
+    const clearAll = wrap.querySelector('#notif-dd-clearall');
+    if (clearAll) clearAll.onclick = (e) => { e.stopPropagation(); if (window.Notifications) Notifications.clearAll(); };
   },
 
   async loadPageData() {

@@ -371,7 +371,7 @@ const CRUD = {
       { key: 'status', label: 'Status', type: 'select', options: ['open','closed'] }
     ]},
     resources: { table: 'resources', title: 'Resource', cols: [
-      { key: 'engagement_id', label: 'Engagement (blank = shared)', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id' },
+      { key: 'engagement_id', label: 'Class / group / cohort (who sees it)', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id', help: 'Leave blank for the studio-wide shared shelf. Pick a class and ONLY its students (and their parents) see this resource on their portal.' },
       { key: 'title', label: 'Title', type: 'text', required: true },
       { key: 'url', label: 'URL (Drive/YouTube)', type: 'text' },
       { key: 'kind', label: 'Kind', type: 'select', options: ['video','pdf','worksheet','link'] }
@@ -473,7 +473,7 @@ const CRUD = {
       { key: 'engagement_id', label: 'Class / group / cohort (who sees it)', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id', help: 'Leave blank for the studio-wide shelf. Pick a class and only its students see it.' }
     ]},
     lms: { table: 'lms_lessons', title: 'LMS lesson', cols: [
-      { key: 'engagement_id', label: 'Engagement', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id' },
+      { key: 'engagement_id', label: 'Class / group / cohort (who sees it)', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id', help: 'The class this lesson belongs to. Only ITS students (and their parents) see the lesson once it is published.' },
       { key: 'title', label: 'Lesson title', type: 'text', required: true },
       { key: 'url', label: 'Material link', type: 'text' },
       { key: 'order_no', label: 'Order', type: 'number' },
@@ -839,17 +839,29 @@ const CRUD = {
      round-trips on every repaint. This is the fix for the UUID bug. */
   async _refMaps(schema) {
     this._refCache = this._refCache || {};
+    this._refErrors = this._refErrors || {};
     const maps = {};
     for (const c of schema.cols) {
       if (c.type !== 'ref' || !c.refTable) continue;
       const key = c.refTable + '|' + (c.refStore || c.refValue) + '|' + c.refValue;
       if (!this._refCache[key]) {
         const m = {};
+        let ok = true;
         if (this.sb) {
           let data = [];
           let offset = 0;
           while (true) {
-            const { data: chunk } = await this.sb.from(c.refTable).select('*').range(offset, offset + 999);
+            const { data: chunk, error } = await this.sb.from(c.refTable).select('*').range(offset, offset + 999);
+            if (error) {
+              /* V13.1 — a ref table the current user cannot read (RLS) or
+                 that is missing must never silently turn every row into
+                 "name unavailable". Record it, warn, and DON'T cache the
+                 empty map so the next render retries. */
+              ok = false;
+              this._refErrors[c.refTable] = error.message || String(error);
+              console.warn('[crud] could not load link targets from "' + c.refTable + '":', this._refErrors[c.refTable]);
+              break;
+            }
             if (chunk && chunk.length) {
               data = data.concat(chunk);
               offset += 1000;
@@ -858,13 +870,18 @@ const CRUD = {
               break;
             }
           }
-          (data || []).forEach(d => { m[String(d[c.refStore || c.refValue])] = d[c.refValue] || d.email || d.name || d.title || 'Unnamed'; });
+          if (ok) (data || []).forEach(d => { m[String(d[c.refStore || c.refValue])] = d[c.refValue] || d.email || d.name || d.title || 'Unnamed'; });
         } else {
           ((window.DEMO && window.DEMO[c.refTable]) || []).forEach(d => { m[String(d[c.refStore || c.refValue])] = d[c.refValue] || d.email || d.name || d.title || 'Unnamed'; });
         }
-        this._refCache[key] = m;
+        if (ok) this._refCache[key] = m;
+        else {
+          m.__failed = true;
+          this._refFailed = this._refFailed || {};
+          this._refFailed[key] = m;
+        }
       }
-      maps[c.key] = this._refCache[key];
+      maps[c.key] = this._refCache[key] || (this._refFailed && this._refFailed[key]);
     }
     return maps;
   },
@@ -876,10 +893,23 @@ const CRUD = {
     const raw = row[col.key];
     if (raw === null || raw === undefined || raw === '') return '<span class="muted">—</span>';
     if (col.type === 'ref' && maps[col.key]) {
-      const label = maps[col.key][String(raw)];
-      return label
-        ? TC.esc(label)
-        : (maps[col.key].hasOwnProperty(String(raw)) ? '<span class="muted" title="' + TC.esc(String(raw)) + '">unnamed link</span>' :  ((String(raw).includes('@') ? TC.esc(String(raw)) : ((col.key === 'user_id' && String(raw).length > 20) ? '<span class="badge badge-success">Linked ✓</span>' : '<span class="muted" title="' + TC.esc(String(raw)) + '">Unlinked</span>'))));
+      /* V13.1 — three honest outcomes for a ref cell, replacing the old
+         misleading "Unlinked" label (the id IS set; only the NAME could
+         not be resolved — usually RLS scope or a deleted target row):
+           1. resolved  -> show the label
+           2. fetch failed table-wide -> warn, don't guess
+           3. id set but target not visible -> "linked · name unavailable" */
+      const map = maps[col.key];
+      const label = map[String(raw)];
+      if (label) return TC.esc(label);
+      if (map.hasOwnProperty(String(raw)))
+        return '<span class="muted" title="' + TC.esc(String(raw)) + '">unnamed link</span>';
+      if (map.__failed)
+        return '<span class="badge badge-warning" title="Names could not be loaded from ' + TC.esc(col.refTable || 'the linked table') + ' — usually a permissions issue on that table. The link itself is intact.">⚠ names unavailable</span>';
+      if (String(raw).includes('@')) return TC.esc(String(raw));
+      if (col.key === 'user_id' && String(raw).length > 20)
+        return '<span class="badge badge-success" title="Account ' + TC.esc(String(raw)) + '">Linked ✓</span>';
+      return '<span class="badge badge-muted" title="Linked to ' + TC.esc(String(raw)) + ' — the target record is outside your current access or was deleted. The link itself is intact.">linked · name unavailable</span>';
     }
     if (col.type === 'checkbox' || typeof raw === 'boolean') {
       return raw
@@ -1013,9 +1043,23 @@ const CRUD = {
       const pages = Math.max(1, Math.ceil(total / view.size));
       const saved = self._savedViews(moduleId);
       const activeFilters = Object.values(view.filters).filter(v => v !== '' && v != null).length;
+      /* V13.1 — if any link-target table failed to load, say so plainly
+         instead of leaving the user to wonder what "names unavailable" means. */
+      const failedRefs = schema.cols
+        .filter(c => c.type === 'ref' && c.refTable && self._refErrors && self._refErrors[c.refTable])
+        .map(c => c.refTable);
+      const uniqFailed = [...new Set(failedRefs)];
+      const refWarn = uniqFailed.length
+        ? '<div style="display:flex;gap:10px;align-items:flex-start;background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.45);border-radius:10px;padding:10px 14px;margin:0 0 12px;font-size:13px">'
+          + '<span style="font-size:16px;line-height:1.2">⚠️</span><div>'
+          + '<strong>Link names could not be loaded</strong> from ' + uniqFailed.map(t => '<code>' + TC.esc(t) + '</code>').join(', ')
+          + '. Rows are unaffected, but link columns show “⚠ names unavailable”. '
+          + 'This is usually a permissions setting on that table for your role — ask an administrator, or sign out and back in if your access was just upgraded.</div></div>'
+        : '';
 
       mount.innerHTML =
         '<div id="crud-kpis" class="crud-kpis"></div>' +
+        refWarn +
 
         '<div class="crud-toolbar">' +
           '<input class="form-input" id="crud-q" placeholder="Search this page…" value="' + TC.esc(view.q) + '" style="max-width:260px">' +
@@ -1470,9 +1514,20 @@ const CRUD = {
           '</datalist>';
       }
       else if (c.type === 'ref' && this.sb) {
-        const { data } = await this.sb.from(c.refTable).select('*').limit(200);
-        const opts = (data || []).map(d => `<option value="${d[c.refStore || c.refValue]}" ${String(row[c.key])===String(d[c.refStore || c.refValue])?'selected':''}>${TC.esc(d[c.refValue])}</option>`).join('');
-        control = `<select class="form-select" name="${c.key}"><option value=""></option>${opts}</select>`;
+        const { data, error } = await this.sb.from(c.refTable).select('*').limit(200);
+        const refKey = c.refStore || c.refValue;
+        const opts = (data || []).map(d => `<option value="${d[refKey]}" ${String(row[c.key])===String(d[refKey])?'selected':''}>${TC.esc(d[c.refValue])}</option>`).join('');
+        /* V13.1 — never lose the current value silently: if the saved id is
+           not among the options (RLS scope, deleted target, list >200), keep
+           it as an explicit "current value" option instead of blanking it. */
+        const curVal = row[c.key] != null && row[c.key] !== '' ? String(row[c.key]) : '';
+        const hasCur = curVal && (data || []).some(d => String(d[refKey]) === curVal);
+        const keepOpt = curVal && !hasCur ? `<option value="${TC.esc(curVal)}" selected>current value — keep (not in list)</option>` : '';
+        const placeholder = error
+          ? '⚠ could not load choices — check access'
+          : (data || []).length ? '— choose —' : '— none available yet —';
+        const errHelp = error ? `<div class="help" style="color:#b3261e">Could not load the list from “${TC.esc(c.refTable)}”: ${TC.esc(error.message || 'permission denied')}. Saving without changing this field keeps its current value.</div>` : '';
+        control = `<select class="form-select" name="${c.key}"><option value="">${placeholder}</option>${keepOpt}${opts}</select>${errHelp}`;
       } else control = `<input class="form-input" type="${c.type === 'number' ? 'number' : c.type === 'date' ? 'date' : c.type === 'email' ? 'email' : c.type === 'tel' ? 'tel' : c.type === 'datetime-local' ? 'datetime-local' : 'text'}" name="${c.key}" value="${TC.esc(row[c.key] || '')}">`;
       fields.push(`<div class="form-group"><label>${c.label}</label>${control}${c.help ? `<div class="help">${c.help}</div>` : ''}</div>`);
     }
@@ -1554,6 +1609,124 @@ const CRUD = {
       closeModal('crud-modal');
       this.renderList(moduleId);
     };
+  },
+
+  /* V49 (round 13): GOSA-parity page toolbars. Refresh purges the cached
+     link-name maps as well, so a permissions fix shows up without a hard
+     reload. importCSV() gives every CRUD page the same importer. */
+  refresh(moduleId) {
+    this._refCache = {};
+    this._refFailed = {};
+    this._refErrors = {};
+    this.renderList(moduleId);
+  },
+
+  async importCSV(moduleId) {
+    const schema = this.def(moduleId) || this.SCHEMA[moduleId];
+    if (!schema) return;
+    if (!this.sb) { toast('Preview mode — connect Supabase to import.', 'warning'); return; }
+    if (!this.canWrite(moduleId)) { toast('You do not have add rights on this page.', 'danger'); return; }
+    const expected = schema.cols.map(c => c.label || c.key);
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = '.csv,text/csv';
+    inp.onchange = async () => {
+      const file = inp.files && inp.files[0];
+      if (!file) return;
+      try {
+        const text = (await file.text()).replace(/^\uFEFF/, '');
+        /* RFC4180-ish parser: quoted fields, embedded commas/quotes, CRLF. */
+        const rows = []; let row = [], field = '', q = false;
+        for (let i = 0; i < text.length; i++) {
+          const ch = text[i];
+          if (q) {
+            if (ch === '"') { if (text[i + 1] === '"') { field += '"'; i++; } else q = false; }
+            else field += ch;
+          } else if (ch === '"') q = true;
+          else if (ch === ',') { row.push(field); field = ''; }
+          else if (ch === '\n' || ch === '\r') {
+            if (ch === '\r' && text[i + 1] === '\n') i++;
+            row.push(field); field = '';
+            if (row.length > 1 || row[0] !== '') rows.push(row);
+            row = [];
+          } else field += ch;
+        }
+        row.push(field);
+        if (row.length > 1 || row[0] !== '') rows.push(row);
+        if (rows.length < 2) { toast('That file has no data rows. Expected headers: ' + expected.join(', '), 'danger', 8000); return; }
+
+        /* Map CSV headers → schema columns (by key or label, any case). */
+        const headers = rows[0].map(h => String(h || '').trim().toLowerCase());
+        const colFor = {};
+        headers.forEach((h, idx) => {
+          if (!h) return;
+          const col = schema.cols.find(c => c.key.toLowerCase() === h || String(c.label || '').toLowerCase() === h);
+          if (col) colFor[idx] = col;
+        });
+        const matched = Object.keys(colFor).length;
+        if (!matched) {
+          toast('None of the CSV headers matched this page. Expected headers: ' + expected.join(', '), 'danger', 10000);
+          return;
+        }
+
+        /* Reverse maps for ref columns: label → id (case-insensitive). */
+        const refLookup = {};
+        for (const c of schema.cols) {
+          if (c.type !== 'ref' || !c.refTable) continue;
+          if (Object.values(colFor).some(x => x.key === c.key)) {
+            try {
+              const { data } = await this.sb.from(c.refTable).select('*').limit(1000);
+              const m = {};
+              (data || []).forEach(d => {
+                m[String(d[c.refValue] || '').toLowerCase()] = d[c.refStore || c.refValue];
+                m[String(d[c.refStore || c.refValue])] = d[c.refStore || c.refValue]; /* raw id pass-through */
+              });
+              refLookup[c.key] = m;
+            } catch (_) { refLookup[c.key] = {}; }
+          }
+        }
+
+        const BLANK_IS_NULL = ['number', 'date', 'datetime-local', 'ref', 'time', 'month'];
+        const payloads = []; let badRefs = 0;
+        for (let r = 1; r < rows.length; r++) {
+          if (!rows[r].some(v => String(v || '').trim() !== '')) continue; /* skip blank lines */
+          const payload = {};
+          Object.keys(colFor).forEach(idx => {
+            const c = colFor[idx];
+            let v = String(rows[r][idx] == null ? '' : rows[r][idx]).trim();
+            if (c.type === 'checkbox') { payload[c.key] = /^(yes|true|1|x|y|done)$/i.test(v); return; }
+            if (v === '') { payload[c.key] = BLANK_IS_NULL.includes(c.type) ? null : null; return; }
+            if (c.type === 'ref') {
+              const map = refLookup[c.key] || {};
+              const id = map[v.toLowerCase()] != null ? map[v.toLowerCase()] : (map[v] != null ? map[v] : null);
+              if (id == null) badRefs++;
+              payload[c.key] = id;
+              return;
+            }
+            if (c.type === 'number') { const n = Number(v); payload[c.key] = Number.isFinite(n) ? n : null; return; }
+            payload[c.key] = v;
+          });
+          delete payload.id;
+          payloads.push(payload);
+        }
+        if (!payloads.length) { toast('No usable rows found in that file.', 'warning'); return; }
+        const msg = 'Import ' + payloads.length + ' row(s) into ' + schema.title + 's?'
+          + (badRefs ? '\n\n' + badRefs + ' link cell(s) could not be matched to an existing record and will be left blank — you can set them after import.' : '');
+        if (!confirm(msg)) return;
+        let ok = 0, fail = 0; const errs = [];
+        for (let i = 0; i < payloads.length; i += 50) {
+          const batch = payloads.slice(i, i + 50);
+          const res = await this.sb.from(schema.table).insert(batch);
+          if (res.error) { errs.push(res.error.message); fail += batch.length; }
+          else ok += batch.length;
+        }
+        if (errs.length) console.warn('[crud] import errors:', errs);
+        toast('Imported ' + ok + ' row(s)' + (fail ? ' · ' + fail + ' failed (' + (errs[0] || 'error') + ')' : ''), fail ? 'warning' : 'success', 8000);
+        this.refresh(moduleId);
+      } catch (e) {
+        toast('Could not read that file: ' + (e.message || e), 'danger');
+      }
+    };
+    inp.click();
   },
 
   async remove(moduleId, id) {
