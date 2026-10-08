@@ -104,6 +104,7 @@
     'profile',
     'change-password',
     'inbox',
+    'messages',            // round 11: the two-way console — families message staff here
     'complaints',          // raising a concern is the whole point
     'surveys',             // answering one
     'cbt-exam',            // sitting a paper
@@ -153,8 +154,13 @@
     /* V27 — pages that belong to the staff side of the studio, not the
        family side. Removed from the family pane so a learner or parent is
        never offered a page their role cannot open (reported repeatedly as
-       "Your role (learner) does not have permission to access …"). */
-    'messages', 'helpdesk', 'directory', 'birthdays', 'timezones',
+       "Your role (learner) does not have permission to access …").
+       ROUND-11 CORRECTION: 'messages' was wrongly swept into this list —
+       the two-way message console is exactly the page families need
+       (v44 was built for it), so denying it here is what broke
+       student→tutor and parent→admin messaging. It now sits in
+       FAMILY_WRITE below. */
+    'helpdesk', 'directory', 'birthdays', 'timezones',
     'accommodations', 'learning-styles', 'broadcasts', 'policies',
     'referrals', 'blog-manage', 'contracts', 'class-links'
   ];

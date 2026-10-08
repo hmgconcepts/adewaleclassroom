@@ -124,12 +124,16 @@ window.CBTConsole = (function () {
       '<td style="padding:8px 10px;text-align:right;white-space:nowrap">' + manage + '</td></tr>';
   }
 
-  function render(opts) {
-    var host = document.getElementById(opts.host || 'cbt-console');
+  function render(cfg) {
+    /* v47 round-11 bugfix: this parameter used to be named `opts`, which
+       SHADOWED the opts() option-builder helper below — render() died with
+       "opts is not a function" at the Subject dropdown and the whole
+       Quizzes page showed no papers at all. Renamed cfg. */
+    var host = document.getElementById(cfg.host || 'cbt-console');
     if (!host) return;
-    var rows = opts.rows || [];
-    var engName = opts.engagementName || function () { return ''; };
-    var reload = opts.reload || function () {};
+    var rows = cfg.rows || [];
+    var engName = cfg.engagementName || function () { return ''; };
+    var reload = cfg.reload || function () {};
     var now = new Date();
 
     var subjects = [], engagements = [];
