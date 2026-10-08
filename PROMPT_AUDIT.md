@@ -548,3 +548,113 @@ now safe on legacy databases AND re-runnable (idempotent). No manual
 cleanup of the half-applied run is needed: every statement is
 `if not exists` / `create or replace` / drop-guarded, so re-running from
 the top converges.
+
+
+---
+
+# ROUND 10 — laptop mic fix, GOSA-parity CBT console, student-portal CBT placement
+
+Prompt (5 items, abridged): (1) ClassDeck mic dead on the reporter's laptop
+while Google Meet works on the same laptop and the deck works on their
+tablet — audit, diagnose, fix robustly. (2) Implement the GOSA/School
+Connect "CBT / Online Exams" features — Archive Recovery Center (V12.7),
+filtering/sorting, arrangement by type/kind. (3) CBTs set for an engagement
+should appear on the student HOMEWORK/CLASSWORK page, not just the homepage;
+clarify the purpose of "My quizzes" (staff saw it and had no use for it).
+(4) GOSA's automatic CBT→assignment mirroring is robust and seamless —
+match it. (5) Update every file across all repos.
+
+## Item 1 — the laptop mic (ClassDeck v14.1 "MicDoctor")
+
+**Diagnosis.** The teacher path requested `channelCount: 1` — an EXACT
+constraint (bare values are exact in getUserMedia) — plus a 48 kHz ideal
+and Chrome-only `goog*` flags. Laptop drivers that cannot satisfy exact
+constraints (Windows communications devices, some Realtek/BT stacks)
+reject the entire request; the catch then showed a *permission* message,
+so nobody knew what actually failed. Tablets worked because their drivers
+accept mono; Google Meet worked on the same laptop because it never pins
+exact constraints. Two further laptop-only failure modes had no detection
+at all: pages opened over http:// (desktop browsers disable mediaDevices
+entirely) and streams that open but carry silence (hardware mic-mute key,
+zero input volume, wrong OS device) — the failure Meet detects with a
+level meter.
+
+**Fix (classdeck/js/rtc.js MicKit + teach.js + join.js).** A constraint
+LADDER that never uses exact values (preferred-device → default with
+processing → plain `{audio:true}`), permission-denial aborts (constraints
+cannot fix permissions), precise error classification (NotAllowed /
+NotFound / NotReadable / Overconstrained / insecure-context, each with an
+actionable message), a remembered device choice, and a Web-Audio level
+watchdog that raises `silence` once when an enabled, unmuted track has
+never produced signal. Teacher side gets a MicDoctor banner (Fix mic +
+device picker + hearing-you confirmation) whose recovery re-feeds the
+live stage stream (`setStageStream` re-calls every student safely);
+student `shareMic` uses the same ladder and surfaces `micSilent` events
+into join.js guidance. The watchdog stops on every teardown path.
+
+## Item 2 — CBT console on the Quizzes page (GOSA parity)
+
+New `assets/js/cbt-console.js`, mounted on practice.html (fetch widened
+60 → 500 papers): filter bar (search / subject / class / kind / identity
+mode / single-vs-multi / status / active-archived-all view / sort by
+newest-oldest-title-code), papers ARRANGED BY NATURE — 🔴 Graded · 📝
+Drafts · 🧪 Practice · 🔵 Review · 📦 Archived — each group with a count
+chip, explainer line, state badge, multi-subject and negative-marking
+badges, windows, and the full CBTManage action set. The 🗃️ Archive
+Recovery Center (GOSA V12.7) ports in full: view archived/active/all,
+restore ALL, restore only the filtered-visible ones, undo the last bulk
+action, export archived papers as a portable JSON backup, import a backup
+back in, and an advanced restore-by-filter panel (subject / class / kind,
+blank = match all). (GOSA term/session concepts were adapted out — a
+tutoring studio organises by engagement, not term.)
+
+## Item 3 — where CBTs appear for students (the expert call)
+
+A CBT set for a class is **work due**, so it now lives wherever homework
+lives, and it is differentiated by nature everywhere it appears:
+
+- **Homework page (assignments.html) is role-aware.** Learners and parents
+  get a new view (`assets/js/homework-student.js`, fed by `tc_my_work`):
+  *Due next* — homework and CBT papers in ONE soonest-first list (CBT rows
+  carry a CBT chip + Start link); *CBT papers by nature* — 🟢 Live now /
+  🕓 Upcoming / 🧪 Practice / 🔒 Closed; *Done & marked* with scores.
+  Staff keep the marking workbench below.
+- **My quizzes is now a FAMILY page.** It was invisible to the families it
+  was built for (rbac deny-by-default) and cluttered staff menus — the
+  exact confusion reported. rbac.js lists it under FAMILY_READ; a new nav
+  audience `family` (nav.js) keeps it out of tutor/admin menus while the
+  page itself stays reachable; nav model → V28.
+- Work board cross-links Homework page · My quizzes.
+
+## Item 4 — seamless CBT → assignment automation (V46)
+
+`tc_sync_cbt_assignment()` is now a full lifecycle sync, behaviorally
+verified on PostgreSQL (tools/v46_behavior.sql): publish → mirror with
+sit link + summed max score; rename/close-date/max changes → mirror
+follows; archive → mirror withdrawn; restore → mirror returns; delete →
+mirror removed (no orphans, ever); practice/unclassed papers never
+mirror. `tc_my_work` v3 feeds the homework page with windows,
+multi-subject flag and negative-marking, and drops archived papers.
+Migration: `database/v46-cbt-automation.sql` (self-sufficient guards;
+also appended to complete-schema.sql).
+
+## Item 5 — every file, both repos
+
+Portal V46 (pages `?v=46`, shell cache `tc-shell-v15-20261008`, nav V28):
+practice.html, assignments.html, my-quizzes.html, app.js, nav.js, rbac.js,
+nav-model.js/.json, cbt-console.js (new), homework-student.js (new),
+database/v46-cbt-automation.sql + complete-schema.sql, sw.js.
+ClassDeck v14.1.0 (pages `?v=49`, sw
+`hmg-classdeck-v14.1.0-micdoctor-cbt-console-homework`): rtc.js, teach.js,
+join.js, teach.html, join.html, version.json, sw.js.
+
+## Round-10 QA tally (per repo, both repos green)
+
+    16 suites — 564/564 per repo × 2 repos
+    (469 round-9 baseline + 27 test_r10_mic + 67 test_r10_portal + 1 pin update)
+    PostgreSQL harness: 5/5 scenarios clean (incl. V46 behavioral asserts)
+
+**Deployment note:** run `database/v46-cbt-automation.sql` once on
+existing projects (idempotent; complete-schema.sql already carries it for
+fresh installs) and re-upload the ClassDeck — the mic fix only takes
+effect when the new v49 assets are served.
