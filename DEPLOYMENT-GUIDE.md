@@ -476,3 +476,97 @@ Assets: portal pages `?v=47` (shell cache `tc-shell-v16-20261008`),
 deck pages `?v=50` (sw `hmg-classdeck-v14.2.0-cloudcreds-streamkit`).
 QA: 19 suites, 666/666 per repo × 2 repos; PostgreSQL harness 6/6
 scenarios (V47 behavior exercised as the authenticated role).
+
+
+## V48 — airtight credential roaming, smart stream paste, bell deep links, WhatsApp chat (round 12)
+
+Run `database/v48-notification-links.sql` once on existing projects
+(idempotent; complete-schema.sql already carries it for fresh installs).
+Message and CBT notifications now carry a destination, so clicking them
+in the bell opens the right page — and legacy notifications were
+backfilled so they are clickable too.
+
+ClassDeck v14.3.0 makes credential roaming airtight: the portal endpoint
+is baked into js/config.js (roaming now also works when the deck is
+deployed on its own domain), credentials saved before the V47 update are
+auto-published to the cloud on the next studio open, a missing
+user_settings table is diagnosed with the exact migration to run, and the
+deck login itself links the portal account when the email+password match
+(a ☁️ Cloud sync card in Settings shows status, Sync now and Unlink).
+Streaming gains a ⚡ smart-paste box (paste a key, a full RTMP URL, or
+dashboard text — the platform/server/key are worked out for you) plus
+key-shape warnings and a one-press Save-and-sync. The portal chat is now
+a WhatsApp replica: bubbles with tails, in-bubble timestamps, ✓/✓✓ read
+ticks, date separators, emoji bar, Enter-to-send, phone slide layout.
+
+Assets: portal pages `?v=48` (shell cache `tc-shell-v17-20261008`), deck
+pages `?v=51` (sw `hmg-classdeck-v14.3.0-cloudsync-smartpaste-notiflinks`).
+QA: 21 suites, 739/739 per repo × 2 repos; PostgreSQL harness 7/7
+scenarios; complete-schema containment mechanically verified.
+
+## V49 — family library access, honest link labels, clearable notifications, GOSA toolbars (round 13)
+
+Run `database/v49-family-library-access.sql` once on existing projects
+(idempotent; complete-schema.sql already carries it for fresh installs).
+
+**The class shelves reach their families.** LMS lessons and the resource
+library had no family read policy at all, so assigned students never saw
+them; now every shelf (e-resources, digital library, LMS, resources) is
+readable by the students of the class it is scoped to — and their parents
+(GOSA parity: parents study with their children). Published LMS lessons
+only; drafts stay staff-only. The learner dashboard work board gained a
+**Mini LMS — my lessons** section and merges e-resources + resource-library
+items into the Class library shelf (the `tc_my_work` RPC feeds them now).
+
+**"Unlinked" was a lie — the rows were linked.** The class-name lookup
+failed for staff accounts whose profile status is NULL (created before the
+approval workflow); `is_tutor()` now treats NULL as approved. The CRUD
+engine also stopped guessing: a ref id it cannot resolve shows
+"linked · name unavailable" (with the raw id in the tooltip), a ref table
+the role cannot read raises a visible warning banner instead of silent
+blanks, the Add/Edit form keeps the current value instead of blanking it,
+and `refresh()` re-pulls the link names.
+
+**Notifications clear, and they announce themselves.** Your own
+notifications delete; shared broadcasts hide for you only (`notif_clear()`
++ `cleared_by` — another user's bell is untouched). Every bell item and
+every notification-centre entry has a ✕, both views have Clear all, and
+the bell dropdown **opens by itself** the moment a notification the device
+has never seen arrives (realtime or the 30s poll). Devices re-register for
+push after install/sign-in.
+
+**Reading links work for students.** reading_items were staff-only, so a
+student opening a reading assignment saw nothing to click; the items now
+render as Open ↗ links with a **✓ I read this** tick that saves to the
+database, and parents see the same cards read-only.
+
+**Pages made unambiguous.** The four shelf pages get the GOSA pattern:
+collapsible "What is this page?" card + toolbar (Add new / Refresh /
+Export CSV / Export PDF / Import CSV with header-matching and ref-name
+resolution). classwork.html gains KPI chips (due this week / overdue /
+comment-only / materials), filters (search, class, kind, due-this-week),
+kind icons, colour-coded due badges, skills chips and Export CSV/PDF.
+stream.html (portal) sheds its wrong governance intro for real comms
+guidance, hides scheduled posts from families, and gates posting to staff.
+documents.html roles corrected. 19 pages had copy-pasted governance
+boilerplate — all now describe their actual purpose.
+
+**admin-data "Tables readable / Rows in total" showing "–"** was the stat
+cards waiting for a manual scan: they now fill themselves on load (cheap
+head-count, no rows transferred) and read "x / total" with skipped tables
+named. The table list also grew the tables later updates added (lms,
+reading, user_settings, push_subscriptions, stream_posts, gallery).
+
+**ClassDeck v14.4.0 — restore buttons.** Signing in already pulled the
+TURN/streaming credentials automatically; now the login says so with a
+toast, and two **☁️ Restore** buttons (Tablet Live panel + the TURN card)
+pull credentials on demand. `classdeck/stream.html` gained an
+every-field-explained guide with copy-paste examples (gateway URL, secret,
+stream name, format, fps, destinations, smart paste, remember, start).
+
+Assets: portal pages `?v=49` (shell cache `tc-shell-v18-20261008`), deck
+pages `?v=52` (sw `hmg-classdeck-v14.4.0-restore-family-library-gosa`,
+version.json 14.4.0 build 18). QA: 22 suites, 829/829 per repo × 2 repos;
+PostgreSQL harness 8/8 scenarios (V49 behavior: cross-class isolation,
+draft-hiding, parent parity, reading ticks, clear semantics, work-board
+shelves).
