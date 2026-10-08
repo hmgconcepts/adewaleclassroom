@@ -1672,12 +1672,28 @@ class StudentRoom {
   async shareMic(on) {
     if (!on) {
       if (this.micCall) { try { this.micCall.close(); } catch {} this.micCall = null; }
+      try { if (this._micWatch) { this._micWatch.stop(); this._micWatch = null; } } catch {}
       if (this._micStream) { this._micStream.getTracks().forEach((t) => t.stop()); this._micStream = null; }
       return;
     }
     if (!this.peer || !this.conn) throw new Error("You are not connected to the class yet — join first, then speak.");
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("This browser does not support microphone sharing.");
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    /* v14.1: acquisition goes through the MicKit ladder (rtc.js) — plain
+       getUserMedia with no exact constraints, precise error classification,
+       and a silent-stream watchdog. Same field report as the teacher mic:
+       laptops whose drivers rejected over-constrained requests, hardware
+       mute keys, and http:// contexts all showed as silent failures. */
+    if (!window.MicKit || !MicKit.available()) {
+      const r = window.MicKit ? MicKit.blockedReason() : { title: "Mic engine missing", body: "Reload the page." };
+      throw new Error(r.title + " — " + r.body);
+    }
+    let acquired;
+    try {
+      acquired = await MicKit.acquire();
+    } catch (e) {
+      const c = MicKit.classify(e);
+      throw new Error(c.title + " — " + c.body);
+    }
+    const stream = acquired.stream;
     this._micStream = stream;
     this.micCall = this.peer.call(RTC_PREFIX + this.code + "-host", stream, { metadata: { kind: "stumic" } });
     const micCallRef = this.micCall;
@@ -1685,9 +1701,19 @@ class StudentRoom {
       /* v9: if the teacher (or network) closes the mic call, tell the student UI
          immediately — before, the student kept "speaking" into a dead call. */
       if (this.micCall === micCallRef) this.micCall = null;
+      try { if (this._micWatch) { this._micWatch.stop(); this._micWatch = null; } } catch {}
       try { if (this._micStream) { this._micStream.getTracks().forEach((t) => t.stop()); this._micStream = null; } } catch {}
       this.onEvent("micEnded");
     });
+    /* v14.1: open-but-silent detection (hardware mute key, zero input
+       volume, wrong OS device). Tells the student BEFORE they talk into a
+       dead mic for a whole lesson. */
+    try {
+      this._micWatch = MicKit.monitor(stream, (ev) => {
+        if (ev && ev.type === "silence") this.onEvent("micSilent", { reason: "never-heard" });
+        else if (ev && ev.type === "mute") this.onEvent("micSilent", { reason: "system-muted" });
+      });
+    } catch {}
   }
 
   leave() {
@@ -1704,3 +1730,211 @@ class StudentRoom {
     try { this.peer && this.peer.destroy(); } catch {}
   }
 }
+
+
+/* ═════════════════════════════════════════════════════════════════════
+   MicKit — robust microphone acquisition + health monitoring (v14.1)
+
+   FIELD REPORT this closes: "the mic does not work in the ClassDeck on my
+   laptop, but Google Meet works on the same laptop and the ClassDeck mic
+   works fine on my tablet." Three real-world causes, all laptop-specific:
+
+   1. OVER-CONSTRAINED AUDIO. The old teacher path asked for
+      channelCount:1 (an EXACT constraint — bare values are exact in
+      getUserMedia) plus a 48 kHz ideal and Chrome-only goog* processing
+      flags. Many laptop drivers (Windows communications devices, macOS
+      aggregate devices, some Realtek/BT stacks) cannot satisfy the exact
+      channel count and the whole getUserMedia call fails with
+      OverconstrainedError — which the old catch reported as "Microphone
+      blocked", a message about permissions that had nothing to do with
+      the failure. Android/iOS drivers happily accept mono, which is why
+      tablets worked, and Google Meet never sets exact constraints, which
+      is why Meet worked on the same laptop.
+
+   2. INSECURE CONTEXT. If the laptop opens the deck over http://<lan-ip>
+      (common on the hotspot Wi-Fi workflow), desktop browsers disable
+      navigator.mediaDevices entirely — the mic button can never work
+      until the https link is used. The old code did not distinguish this
+      from other failures.
+
+   3. SILENT-STREAM DEVICES. The stream opens "successfully" but carries
+      silence — a hardware mic-mute key (ThinkPad F4, HP mute key, headset
+      switch), OS input volume at zero, or the wrong input device selected
+      by the OS. Google Meet detects this with a level meter and tells the
+      user; we had nothing, so the teacher spoke and nobody heard.
+
+   MicKit fixes all three: a constraint ladder that NEVER uses exact
+   values and falls back to plain { audio: true }, precise error
+   classification with actionable messages, and a Web-Audio level
+   watchdog that raises 'silence' when a live enabled track has never
+   produced a signal. Nothing runs at load time, so VM test harnesses
+   without mediaDevices still load this file untouched.
+   ═════════════════════════════════════════════════════════════════════ */
+window.MicKit = (function () {
+  function md() {
+    try { return (typeof navigator !== "undefined" && navigator.mediaDevices) || null; }
+    catch (e) { return null; }
+  }
+
+  /* Is the mic API usable at all in this context? */
+  function available() {
+    try {
+      if (typeof window !== "undefined" && window.isSecureContext === false) return false;
+      const d = md();
+      return !!(d && typeof d.getUserMedia === "function");
+    } catch (e) { return false; }
+  }
+
+  /* Why not, in words a teacher can act on. */
+  function blockedReason() {
+    if (typeof window !== "undefined" && window.isSecureContext === false) {
+      return {
+        title: "This page was opened over http://",
+        body: "Browsers only allow the microphone on https (or localhost). Open the deck with its https link — on the Wi-Fi hotspot page, use the https address shown in the QR panel, not the raw IP."
+      };
+    }
+    if (!md()) {
+      return {
+        title: "This browser cannot reach the microphone",
+        body: "Use an up-to-date Chrome, Edge, Firefox or Safari, and make sure no privacy extension is blocking media devices."
+      };
+    }
+    return { title: "Microphone unavailable", body: "Press the mic button again in a moment." };
+  }
+
+  /* Turn a getUserMedia error into an actionable diagnosis. */
+  function classify(err) {
+    const n = String((err && (err.name || err.code)) || err || "").toLowerCase();
+    const msg = String((err && err.message) || err || "");
+    if (n.indexOf("notallowed") > -1 || n.indexOf("permission") > -1 || msg.indexOf("Permission denied") > -1) {
+      return { title: "Microphone permission denied",
+               body: "Click the 🔒 (or 🎥) icon at the left of the address bar → Site settings → Microphone → Allow, reload, then press the mic button again." };
+    }
+    if (n.indexOf("notfound") > -1) {
+      return { title: "No microphone found",
+               body: "This laptop reports no input device. Check the mic is enabled in system sound settings (many laptops can disable it in BIOS/privacy settings), or plug in a headset." };
+    }
+    if (n.indexOf("notreadable") > -1) {
+      return { title: "The microphone is busy",
+               body: "Another app may be holding it (Zoom, Meet, Teams, a recorder) or an OS privacy switch is off. Close the other app / check Settings → Privacy → Microphone, then press the mic button again." };
+    }
+    if (n.indexOf("overconstrained") > -1 || n.indexOf("constraint") > -1) {
+      return { title: "This mic rejected our audio settings",
+               body: "Some laptop drivers reject processing options. The engine already retries with plain settings — press the mic button once more." };
+    }
+    if (n.indexOf("abort") > -1 || n.indexOf("type") > -1) {
+      return { title: "The mic could not be started",
+               body: "Unplug/replug the headset or restart the browser, then press the mic button again." };
+    }
+    if (n === "mic-unsupported" || n.indexOf("unsupported") > -1) {
+      const r = blockedReason();
+      return r;
+    }
+    return { title: "Microphone error", body: msg || "Unknown error — press the mic button again." };
+  }
+
+  /* Constraint LADDER — nothing exact, ever:
+       1. preferred device (if the user picked one) + standard processing
+       2. default device + echoCancellation/noiseSuppression/autoGainControl
+       3. plain { audio: true } — the most compatible request that exists
+     Permission denial aborts the ladder (a different constraint set cannot
+     fix a permission); every other error falls through to the next rung. */
+  async function acquire(opts) {
+    opts = opts || {};
+    if (!available()) {
+      const r = blockedReason();
+      throw Object.assign(new Error(r.title), { name: "mic-unsupported" });
+    }
+    const attempts = [];
+    if (opts.deviceId) {
+      attempts.push({ label: "preferred mic", c: { audio: { deviceId: { ideal: opts.deviceId }, echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false } });
+    }
+    attempts.push({ label: "default mic", c: { audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false } });
+    attempts.push({ label: "plain mic", c: { audio: true, video: false } });
+    let lastErr = null;
+    for (const a of attempts) {
+      try {
+        const stream = await md().getUserMedia(a.c);
+        return { stream, attempt: a.label };
+      } catch (e) {
+        lastErr = e;
+        if (String((e && e.name) || "").toLowerCase().indexOf("notallowed") > -1) break;
+      }
+    }
+    throw lastErr || new Error("Microphone unavailable");
+  }
+
+  /* Level watchdog. cb receives { type: 'heard' | 'silence' | 'mute' | 'ended' }.
+     'silence' fires ONCE, only when an enabled, system-unmuted track has
+     NEVER produced a signal above the noise floor within silentMs — i.e. a
+     dead/hardware-muted device, not a teacher who is simply quiet. Falls
+     back to track-event-only monitoring when Web Audio is unavailable. */
+  function monitor(stream, cb, opts) {
+    opts = opts || {};
+    const SILENT_MS = opts.silentMs || 15000;
+    const POLL_MS = opts.pollMs || 500;
+    const NOISE = opts.noise || 4;              // byte-domain amplitude out of 128
+    let stopped = false, everHeard = false, silentFired = false, silentSince = Date.now();
+    const track = stream && stream.getAudioTracks && stream.getAudioTracks()[0];
+    if (!track) return { stop: function () {}, resetSilence: function () {} };
+
+    let ctx = null, timer = null;
+    try {
+      const AC = (typeof window !== "undefined") && (window.AudioContext || window.webkitAudioContext);
+      if (AC && track.enabled) {
+        ctx = new AC();
+        const src = ctx.createMediaStreamSource(stream);
+        const an = ctx.createAnalyser();
+        an.fftSize = 512;
+        src.connect(an);
+        const buf = new Uint8Array(an.frequencyBinCount);
+        timer = setInterval(function () {
+          if (stopped) return;
+          try {
+            an.getByteTimeDomainData(buf);
+            let peak = 0;
+            for (let i = 0; i < buf.length; i++) { const v = Math.abs(buf[i] - 128); if (v > peak) peak = v; }
+            if (peak > NOISE) {
+              if (!everHeard) everHeard = true;
+              silentSince = Date.now();
+              cb && cb({ type: "heard", level: peak, everHeard });
+            } else if (!everHeard && !silentFired && track.enabled && !track.muted &&
+                       Date.now() - silentSince > SILENT_MS) {
+              silentFired = true;
+              cb && cb({ type: "silence", everHeard });
+            }
+          } catch (e) { /* analyser died (context closed) — stop polling */ stopped = true; clearInterval(timer); }
+        }, POLL_MS);
+      }
+    } catch (e) { ctx = null; }
+
+    const onMute = function () { if (!stopped) cb && cb({ type: "mute" }); };
+    const onEnded = function () { if (!stopped) cb && cb({ type: "ended" }); };
+    try { track.addEventListener("mute", onMute); } catch (e) {}
+    try { track.addEventListener("ended", onEnded); } catch (e) {}
+
+    return {
+      stop: function () {
+        stopped = true;
+        if (timer) clearInterval(timer);
+        try { track.removeEventListener("mute", onMute); } catch (e) {}
+        try { track.removeEventListener("ended", onEnded); } catch (e) {}
+        try { if (ctx && ctx.close) ctx.close(); } catch (e) {}
+      },
+      resetSilence: function () { silentSince = Date.now(); }
+    };
+  }
+
+  /* List input devices (labels only meaningful after a granted stream). */
+  async function listInputs() {
+    const d = md();
+    if (!d || !d.enumerateDevices) return [];
+    try {
+      const list = await d.enumerateDevices();
+      return (list || []).filter(function (x) { return x.kind === "audioinput"; });
+    } catch (e) { return []; }
+  }
+
+  return { available: available, blockedReason: blockedReason, classify: classify,
+           acquire: acquire, monitor: monitor, listInputs: listInputs };
+})();

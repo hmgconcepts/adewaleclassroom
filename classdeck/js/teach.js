@@ -1593,7 +1593,8 @@ async function goLive() {
     if (COMP.raf) { cancelAnimationFrame(COMP.raf); COMP.raf = null; }
     try { stageStream && stageStream.getTracks().forEach((t) => t.stop()); } catch {}
     stageStream = null;
-    try { micStream && micStream.getTracks().forEach((t) => t.stop()); } catch {}
+    stopMicWatch();
+  try { micStream && micStream.getTracks().forEach((t) => t.stop()); } catch {}
     micStream = null; micOn = false; $("#btnMic").classList.remove("active");
     refreshPendingBadge();
     syncWaitingRoomUI();
@@ -1619,20 +1620,121 @@ function startCompositeStage() {
   if (room) room.setStageStream(stageStream);
 }
 
+/* ─────────────────────────────────────────────────────────────────────
+   v14.1 MIC REWORK (field report: mic dead on laptops, fine on tablets,
+   fine in Google Meet on the same laptop).
+
+   The old call asked for channelCount:1 — an EXACT constraint — plus
+   goog* processing flags. Laptop drivers that cannot do mono capture
+   rejected the whole request and the catch showed a misleading
+   "Microphone blocked" permission message. Google Meet works on the same
+   machine because it never pins exact constraints; the tablet works
+   because its driver accepts mono.
+
+   ensureMic now goes through MicKit (rtc.js): a constraint ladder that
+   never uses exact values, precise error diagnosis, a remembered device
+   choice, and a level watchdog that notices a stream that is open but
+   carrying silence (hardware mute key / zero input volume / wrong
+   device) — the failure Google Meet detects and we used to miss.
+   ───────────────────────────────────────────────────────────────────── */
+let micWatch = null;
+function stopMicWatch() { if (micWatch) { try { micWatch.stop(); } catch {} micWatch = null; } }
+
+function micDoctorShow(title, body) {
+  let el = $("#micDoctor");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "micDoctor";
+    el.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);bottom:18px;z-index:9999;max-width:560px;width:calc(100% - 32px);background:#fffbeb;border:2px solid #f59e0b;border-radius:14px;padding:14px 16px;box-shadow:0 12px 30px rgba(0,0,0,.18);font-size:.9rem";
+    document.body.appendChild(el);
+  }
+  el.innerHTML =
+    '<div style="display:flex;gap:10px;align-items:flex-start">' +
+    '<span style="font-size:1.4rem">🎙️</span><div style="flex:1">' +
+    '<b style="color:#92400e">' + title + '</b>' +
+    '<div style="margin-top:4px;color:#78350f">' + body + '</div>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">' +
+    '<button class="btn btn-primary btn-sm" id="micDrFix">↻ Fix mic</button>' +
+    '<select id="micDrPick" class="btn btn-outline btn-sm" style="max-width:220px"><option value="">Choose mic…</option></select>' +
+    '<button class="btn btn-ghost btn-sm" id="micDrHide" style="color:#92400e">Dismiss</button>' +
+    '<span id="micDrLevel" style="font-weight:800;color:#166534"></span>' +
+    '</div></div></div>';
+  $("#micDrHide").onclick = () => el.remove();
+  $("#micDrFix").onclick = () => micDoctorFix();
+  const pick = $("#micDrPick");
+  pick.onchange = () => { if (pick.value) micDoctorFix(pick.value); };
+  if (window.MicKit) MicKit.listInputs().then((list) => {
+    if (!pick || !list.length) return;
+    let saved = "";
+    try { saved = localStorage.getItem("cd-mic-device") || ""; } catch {}
+    pick.innerHTML = '<option value="">Choose mic…</option>' + list.map((d) =>
+      '<option value="' + d.deviceId + '"' + (d.deviceId === saved ? " selected" : "") + ">" + (d.label || "Microphone") + "</option>").join("");
+  }).catch(() => {});
+}
+
+async function micDoctorFix(deviceId) {
+  stopMicWatch();
+  stopMicWatch();
+  if (micStream) { try { micStream.getTracks().forEach((t) => t.stop()); } catch {} }
+  if (stageStream) stageStream.getAudioTracks().forEach((t) => { try { stageStream.removeTrack(t); } catch {} });
+  micStream = null;
+  if (deviceId) { try { localStorage.setItem("cd-mic-device", deviceId); } catch {} }
+  await ensureMic(true);
+  if (micStream) {
+    if (stageStream && room) { try { room.setStageStream(stageStream); } catch {} }
+    const el = $("#micDoctor"); if (el) el.remove();
+    toast("Mic reconnected — speak once to confirm the level bar moves.", "ok", 5000);
+  }
+}
+
 async function ensureMic(on) {
-  if (on && !micStream) {
-    try {
-      micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: { ideal: true }, noiseSuppression: { ideal: true }, autoGainControl: { ideal: true }, channelCount: 1, sampleRate: { ideal: 48000 }, googEchoCancellation: true, googAutoGainControl: true, googNoiseSuppression: true, googHighpassFilter: true }, video: false });
-      const micTrack = micStream.getAudioTracks()[0];
-      if (micTrack) micTrack.addEventListener("ended", () => {
-        micOn = false;
-        $("#btnMic")?.classList.remove("active");
-        toast("Microphone stopped by the browser or device.", "err", 5000);
-      });
-      micOn = true;
-      if (stageStream) micStream.getAudioTracks().forEach((t) => stageStream.addTrack(t));
-      $("#btnMic").classList.add("active");
-    } catch { toast("Microphone blocked — students won't hear you. Allow mic in browser settings.", "err", 6000); }
+  if (!on || micStream) return;
+  if (!window.MicKit || !MicKit.available()) {
+    const r = window.MicKit ? MicKit.blockedReason() : { title: "Mic engine missing", body: "Reload the page." };
+    micDoctorShow(r.title, r.body);
+    toast(r.title + " — " + r.body, "err", 9000);
+    return;
+  }
+  let saved = "";
+  try { saved = localStorage.getItem("cd-mic-device") || ""; } catch {}
+  let res;
+  try {
+    res = await MicKit.acquire({ deviceId: saved });
+  } catch (e) {
+    const c = window.MicKit.classify(e);
+    micDoctorShow(c.title, c.body);
+    toast(c.title + " — " + c.body, "err", 9000);
+    return;
+  }
+  micStream = res.stream;
+  if (res.attempt === "plain mic") toast("Mic connected with basic settings (this device rejected audio processing).", "", 5000);
+  const micTrack = micStream.getAudioTracks()[0];
+  if (micTrack) {
+    micTrack.addEventListener("ended", () => {
+      micOn = false;
+      $("#btnMic")?.classList.remove("active");
+      stopMicWatch();
+      micDoctorShow("Microphone disconnected", "The device stopped (unplugged, sleep, or taken over by another app). Press Fix mic to reconnect.");
+    });
+    try { const st = micTrack.getSettings && micTrack.getSettings(); if (st && st.deviceId) localStorage.setItem("cd-mic-device", st.deviceId); } catch {}
+  }
+  micOn = true;
+  if (stageStream) micStream.getAudioTracks().forEach((t) => stageStream.addTrack(t));
+  $("#btnMic").classList.add("active");
+  /* Watchdog: catch open-but-silent devices (hardware mute key, zero input
+     volume, wrong OS device) — the failure Meet warns about and we missed. */
+  stopMicWatch();
+  if (window.MicKit) {
+    micWatch = MicKit.monitor(micStream, (ev) => {
+      if (ev.type === "silence") {
+        micDoctorShow("Your mic is open but silent",
+          "The class cannot hear you. On laptops this is usually the mic-mute key (often F4/F8 — look for an LED on the key), system input volume at zero, or the wrong input device. Speak once: if the level stays empty, pick another mic here.");
+      } else if (ev.type === "mute") {
+        micDoctorShow("The system muted your microphone", "A privacy setting or hardware mute key muted the device. Unmute it, then press Fix mic.");
+      } else if (ev.type === "heard") {
+        const lv = $("#micDrLevel"); if (lv) lv.textContent = "● hearing you";
+      }
+    });
   }
 }
 
@@ -1692,6 +1794,7 @@ function endLive(force = false) {
   if (COMP.raf) { cancelAnimationFrame(COMP.raf); COMP.raf = null; }
   try { if (stageStream) stageStream.getTracks().forEach((t) => t.stop()); } catch {}
   stageStream = null;
+  stopMicWatch();
   try { if (micStream) micStream.getTracks().forEach((t) => t.stop()); } catch {}
   micStream = null; micOn = false; $("#btnMic").classList.remove("active");
   try { if (camStream) camStream.getTracks().forEach((t) => t.stop()); } catch {}
@@ -3955,6 +4058,7 @@ if ($("#btnTryScreenShare")) on("#btnTryScreenShare", "click", tryFullTabletScre
 /* captions hoisted */
 function releaseTeacherMicIfUnused() {
   if (room || recorder || capOn || (tabletLive && tabletLive.pc)) return;
+  stopMicWatch();
   try { if (micStream) micStream.getTracks().forEach((t) => t.stop()); } catch {}
   micStream = null;
   micOn = false;

@@ -415,6 +415,12 @@ function onEvent(type, p) {
       toast(p.rejoined ? "Reconnected — waiting for the teacher's screen…" : "Joined! Waiting for the teacher's screen…", "ok");
       break;
     case "cohost": handleCoHost(p); break;                      /* v14: assistant tutor */
+    case "micSilent":                                            /* v14.1: dead-mic detection */
+      toast(p && p.reason === "system-muted"
+        ? "🎙️ The system has muted your microphone — unmute it (mic-mute key / system settings), then tap the mic button twice (off and on) to retry."
+        : "🎙️ Your mic is open but silent — check the mic-mute key, system input volume, or another app holding the mic. Tap the mic button twice (off and on) to retry.",
+        "err", 10000);
+      break;
     case "handSync":
       if (!p.up) { handUp = false; const hb = $("#sBtnHand"); if (hb) hb.classList.remove("active"); }
       break;

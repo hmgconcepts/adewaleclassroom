@@ -8,7 +8,7 @@
    requests, making the site feel native on repeat visits.
    Bump CACHE_VERSION whenever you deploy changes.
    ============================================================ */
-const CACHE_VERSION = "hmg-classdeck-v14.0.0-cohost-scrolling-boards-pdf-nav";  /* bumped: v14 adds assistant tutors (co-hosts), mute-all/lower-hands/attendance CSV, scrollable zoomable whiteboard pages and PDF anchored zoom with visible scrollbars */
+const CACHE_VERSION = "hmg-classdeck-v14.1.0-micdoctor-cbt-console-homework";  /* bumped: v14.1 MicDoctor (laptop mic failures: constraint ladder, silence watchdog, recovery banner), CBT console + Archive Recovery Center on Quizzes, role-aware Homework page, V46 assignment automation */  /* bumped: v14 adds assistant tutors (co-hosts), mute-all/lower-hands/attendance CSV, scrollable zoomable whiteboard pages and PDF anchored zoom with visible scrollbars */
 
 const SHELL = [
   "./",
