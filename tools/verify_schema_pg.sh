@@ -49,6 +49,7 @@ V46="$REPO/database/v46-cbt-automation.sql"
 V47="$REPO/database/v47-cloud-credentials.sql"
 V48="$REPO/database/v48-notification-links.sql"
 V49="$REPO/database/v49-family-library-access.sql"
+V50="$REPO/database/v50-staff-access-truth.sql"
 
 # The worst-case LEGACY shape, generated mechanically from the schema
 # itself: every table that carries a later `alter table add column` is
@@ -84,7 +85,7 @@ echo "═══ verify_schema_pg: $REPO ═══"
 scenario "1. FRESH  (empty database)"                 tcv_fresh  "$STUBS" "$SCHEMA"
 scenario "2. LEGACY (pre-upgrade table shapes)"        tcv_legacy "$STUBS" __LEGACY__ "$SCHEMA"
 scenario "3. RE-RUN (same schema twice)"               tcv_rerun  "$STUBS" "$SCHEMA" "$SCHEMA"
-scenario "4. MIGRATIONS standalone on LEGACY"          tcv_migr   "$STUBS" __LEGACY__ "$V44" "$V45" "$V46" "$V47" "$V48" "$V49"
+scenario "4. MIGRATIONS standalone on LEGACY"          tcv_migr   "$STUBS" __LEGACY__ "$V44" "$V45" "$V46" "$V47" "$V48" "$V49" "$V50"
 
 # 5. V46 CBT→assignment automation, behaviorally: the mirror must appear on
 #    publish (with sit link + max score), follow edits, vanish on archive,
@@ -103,9 +104,14 @@ scenario "7. V48 notification deep-link behavior"      tcv_v48    "$STUBS" "$SCH
 #    drafts stay hidden, reading links work, notifications clearable.
 scenario "8. V49 family library access behavior"       tcv_v49    "$STUBS" "$SCHEMA" "$V49" "$REPO/tools/v49_behavior.sql"
 
+# 9. V50 staff access truth: pending-status owners read engagements (the
+#    "linked · name unavailable" root cause), approval workflow stays real,
+#    tc_ref_labels fallback works, LMS publishes by default.
+scenario "9. V50 staff access truth behavior"          tcv_v50    "$STUBS" "$SCHEMA" "$V50" "$REPO/tools/v50_behavior.sql"
+
 if [ "$fails" = "0" ]; then
   echo "═══ ALL SCENARIOS CLEAN ═══"
-  dropdb tcv_fresh; dropdb tcv_legacy; dropdb tcv_rerun; dropdb tcv_migr; dropdb tcv_v46; dropdb tcv_v47; dropdb tcv_v48; dropdb tcv_v49
+  dropdb tcv_fresh; dropdb tcv_legacy; dropdb tcv_rerun; dropdb tcv_migr; dropdb tcv_v46; dropdb tcv_v47; dropdb tcv_v48; dropdb tcv_v49; dropdb tcv_v50
   exit 0
 else
   echo "═══ $fails SCENARIO(S) FAILED — logs in /tmp/pgverify_* ═══"
