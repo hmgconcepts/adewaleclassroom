@@ -1,8 +1,8 @@
 {
-  "version": "14.5.0",
-  "build": 19,
+  "version": "14.6.0",
+  "build": 20,
   "channel": "stable",
-  "released": "2026-10-08",
+  "released": "2026-10-09",
   "features": [
     "custom-room-codes",
     "two-folder-generator",
@@ -66,6 +66,9 @@
     "v14.4-gosa-toolbars-portal-side",
     "v14.5-turn-key-cloud-prefill",
     "v14.5-restore-button-in-turn-card",
-    "v14.5-stream-page-deep-docs-checklist"
+    "v14.5-stream-page-deep-docs-checklist",
+    "v14.6-turn-key-saved-to-cloud-on-save",
+    "v14.6-honest-cloud-sync-card",
+    "v14.6-tablet-live-field-by-field-docs"
   ]
 }

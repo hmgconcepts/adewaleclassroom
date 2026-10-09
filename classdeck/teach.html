@@ -901,24 +901,24 @@ Not sure</textarea>
 
 <!-- v6: full-screen teacher auth gate (signup / login / license) -->
 <!-- authGate removed: ADEWALE CLASSROOM DECK uses portal session only -->
-<script src="vendor/peerjs.min.js?v=53"></script>
-<script src="vendor/pdf.min.js?v=53"></script>
-<script src="vendor/qrcode.min.js?v=53"></script>
-<script src="js/common.js?v=53"></script>
-<script src="js/config.js?v=53"></script>
-<script src="js/portal-bridge.js?v=53"></script>
-<script src="js/license.js?v=53"></script>
-<script src="js/whiteboard.js?v=53"></script>
-<script src="js/webcast.js?v=53"></script>
-<script src="js/toolkit.js?v=53"></script>
-<script src="js/toolkit-data.js?v=53"></script>
-<script src="js/toolkit-data2.js?v=53"></script>
-<script src="js/toolkit-data3.js?v=53"></script>
-<script src="js/toolkit-ext.js?v=53"></script>
-<script src="js/security-config.js?v=53"></script>
-<script src="js/auth.js?v=53"></script>
-<script src="js/rtc.js?v=53"></script>
-<script src="js/teach-toolbar-fix.js?v=53"></script>
+<script src="vendor/peerjs.min.js?v=54"></script>
+<script src="vendor/pdf.min.js?v=54"></script>
+<script src="vendor/qrcode.min.js?v=54"></script>
+<script src="js/common.js?v=54"></script>
+<script src="js/config.js?v=54"></script>
+<script src="js/portal-bridge.js?v=54"></script>
+<script src="js/license.js?v=54"></script>
+<script src="js/whiteboard.js?v=54"></script>
+<script src="js/webcast.js?v=54"></script>
+<script src="js/toolkit.js?v=54"></script>
+<script src="js/toolkit-data.js?v=54"></script>
+<script src="js/toolkit-data2.js?v=54"></script>
+<script src="js/toolkit-data3.js?v=54"></script>
+<script src="js/toolkit-ext.js?v=54"></script>
+<script src="js/security-config.js?v=54"></script>
+<script src="js/auth.js?v=54"></script>
+<script src="js/rtc.js?v=54"></script>
+<script src="js/teach-toolbar-fix.js?v=54"></script>
 <div id="mTimer" class="modal-back">
   <div class="modal" style="max-width:360px">
     <h3 style="margin:0 0 10px">⏱ Class countdown</h3>
@@ -1136,43 +1136,58 @@ Not sure</textarea>
 <!-- Tablet social live (no OBS) — drives $("#btnTabletLive") -->
 <div id="mTabletLive" class="modal-back">
   <div class="modal" style="max-width:480px">
-    <h3 style="margin:0 0 10px">📱 Tablet Live — stream to social (no OBS)</h3>
-    <label style="font-size:12px;color:var(--text-dim)">Relay gateway URL</label>
-    <input class="input" id="tlGateway" placeholder="https://your-relay.example.com" style="margin:6px 0 10px" />
-    <label style="font-size:12px;color:var(--text-dim)">Gateway secret</label>
-    <input class="input" id="tlSecret" type="password" placeholder="shared secret" style="margin:6px 0 10px" />
-    <label style="font-size:12px;color:var(--text-dim)">Stream name</label>
-    <input class="input" id="tlStream" placeholder="classdeck-room" style="margin:6px 0 10px" />
-    <label style="font-size:12px;color:var(--text-dim)">Format</label>
-    <select class="input" id="tlFormat" style="margin:6px 0 10px">
-      <option value="landscape">Landscape 16:9 — YouTube / Facebook</option>
+    <h3 style="margin:0 0 6px">📱 Tablet Live — stream to social (no OBS)</h3>
+    <p style="font-size:11.8px;color:var(--text-dim);margin:0 0 12px;line-height:1.55">You need exactly <b>3 things</b>: ① your relay address (the small free web service from <code>relay/no-obs-social-relay/</code> — deploy once), ② a <b>stream key</b> copied fresh from each platform's live page, ③ this tablet signed in. Miss any one and the ⚠ preflight below tells you which — before a byte leaves the tablet. Full guide with click-paths and troubleshooting: <a href="stream.html" style="text-decoration:underline">🌐 Social centre</a>.</p>
+
+    <label style="font-size:12px;color:var(--text-dim)">① Relay gateway URL — the https address of YOUR relay</label>
+    <div style="font-size:11.5px;color:var(--text-dim);margin:3px 0 4px;line-height:1.5">Paste just the domain root of the relay you deployed. <b>Example:</b> <code>https://class-relay.yourname.onrender.com</code>. ✅ starts with <code>https://</code> · ❌ <code>http://</code> (the browser blocks it), the WHIP path (the app adds <code>/rtc/v1/whip/…</code> itself), or your hosting dashboard URL.</div>
+    <input class="input" id="tlGateway" placeholder="https://class-relay.yourname.onrender.com" style="margin:0 0 10px" />
+
+    <label style="font-size:12px;color:var(--text-dim)">Gateway secret — the relay's password (leave empty if you never set one)</label>
+    <div style="font-size:11.5px;color:var(--text-dim);margin:3px 0 4px;line-height:1.5">When you deployed the relay you may have set a <code>SECRET</code> environment variable — paste that exact passphrase here. <b>Example:</b> <code>a-long-passphrase-only-you-know</code>. ❌ do NOT paste a platform stream key here: secret = the RELAY's password; stream key = the PLATFORM's password (that goes in a destination row below).</div>
+    <input class="input" id="tlSecret" type="password" placeholder="relay SECRET env var — blank if none" style="margin:0 0 10px" />
+
+    <label style="font-size:12px;color:var(--text-dim)">Stream name — a name for THIS tablet's feed</label>
+    <div style="font-size:11.5px;color:var(--text-dim);margin:3px 0 4px;line-height:1.5">Letters, digits and dashes only; pre-filled as <code>classdeck-&lt;room code&gt;</code>. <b>Example:</b> <code>classdeck-math10a</code>. ❌ spaces or emoji (rejected) — and two teachers streaming at the same time must use different names or the feeds fight.</div>
+    <input class="input" id="tlStream" placeholder="classdeck-math10a" style="margin:0 0 10px" />
+
+    <label style="font-size:12px;color:var(--text-dim)">Format — match the destination platform</label>
+    <div style="font-size:11.5px;color:var(--text-dim);margin:3px 0 4px;line-height:1.5">✅ <b>16:9 landscape</b> for YouTube / Facebook / Twitch · ✅ <b>9:16 vertical</b> for TikTok / Instagram (your camera is picture-in-picture beside the tall canvas). ❌ landscape to TikTok = black bars either side — the preflight warns you before you go live.</div>
+    <select class="input" id="tlFormat" style="margin:0 0 10px">
+      <option value="landscape">Landscape 16:9 — YouTube / Facebook / Twitch</option>
       <option value="vertical">Vertical 9:16 — TikTok / Instagram</option>
     </select>
-    <label style="font-size:12px;color:var(--text-dim)">Frame rate</label>
-    <select class="input" id="tlFps" style="margin:6px 0 10px">
-      <option value="10">10 fps — weak / mobile upload</option>
+
+    <label style="font-size:12px;color:var(--text-dim)">Frame rate — honest about your upload</label>
+    <div style="font-size:11.5px;color:var(--text-dim);margin:3px 0 4px;line-height:1.5">✅ <b>15 fps</b> is the recommendation for mobile/hotspot upload · 10 fps when viewers report stutter · 24–30 only on strong broadband. ❌ choosing 30 fps "because it is better" on mobile data usually stutters the stream.</div>
+    <select class="input" id="tlFps" style="margin:0 0 10px">
+      <option value="10">10 fps — weak / mobile upload (fallback)</option>
       <option value="15" selected>15 fps — balanced (recommended)</option>
       <option value="24">24 fps — smooth</option>
       <option value="30">30 fps — strong upload only</option>
     </select>
-    <label style="font-size:12px;color:var(--text-dim)">Destinations — paste anything below, or build rows by hand</label>
+
+    <label style="font-size:12px;color:var(--text-dim)">② Destinations — where the stream goes</label>
+    <div style="font-size:11.5px;color:var(--text-dim);margin:3px 0 4px;line-height:1.5">One row per platform. Paste <b>anything</b> in the smart box — a bare stream key, a full <code>rtmp(s)://server/app/KEY</code> URL, or the whole block copied from the platform page — and the platform, server and key are worked out for you. <b>Example key (YouTube):</b> <code>ab3d-1234-5678-9def</code>. ❌ never re-use last week's key on YouTube/Instagram (they expire — the #1 "no preview" cause); copy a fresh one per live session. The server URL fills itself — hand-typing it is the #1 failed-stream cause.</div>
     <div style="display:flex;gap:6px;margin:6px 0 8px;flex-wrap:wrap">
       <input class="input" id="tlSmartPaste" placeholder="Paste a stream key, a full rtmp(s)://…/key URL, or anything from the platform" style="flex:1;min-width:200px;margin:0" />
       <select class="input" id="tlSmartPlat" style="max-width:140px;margin:0" title="Used when what you paste is just a key"></select>
       <button type="button" class="btn ghost" id="tlSmartAdd" style="padding:5px 10px;font-size:12.5px">⚡ Add</button>
     </div>
     <div id="tlDests" style="margin:6px 0 8px;display:grid;gap:8px"></div>
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
       <button type="button" class="btn ghost" id="tlAddDest" style="padding:5px 10px;font-size:12.5px">+ Add destination</button>
-      <button type="button" class="btn ghost" id="tlSaveSettings" style="padding:5px 10px;font-size:12.5px">💾 Save settings</button>
+      <button type="button" class="btn ghost" id="tlSaveSettings" style="padding:5px 10px;font-size:12.5px" title="Keeps this setup on this device AND pushes it to your ADEWALE CLASSROOM account (when linked)">💾 Save settings</button>
       <button type="button" class="btn ghost" id="tlRestore" style="padding:5px 10px;font-size:12.5px" title="New device? Pull the gateway, secret and stream keys back from your ADEWALE CLASSROOM account">☁️ Restore from cloud</button>
       <span id="tlBitrateHint" style="font-size:11.5px;color:var(--text-dim)"></span>
     </div>
+    <div style="font-size:11.5px;color:var(--text-dim);margin:0 0 8px;line-height:1.5"><b>💾 Save settings</b> keeps the setup on this device and uploads it to your account (sign in first) — press it after EVERY change, not only the first time. <b>☁️ Restore from cloud</b> is the button for a NEW tablet: sign in, press it, and the gateway, secret and every key return. <b>Remember on this device</b> (below) keeps the full setup including keys across refreshes on THIS tablet — untick it on a shared device and the keys are re-entered next time.</div>
     <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin:6px 0 4px">
-      <input type="checkbox" id="tlRemember" checked /> Remember on this device
+      <input type="checkbox" id="tlRemember" checked /> Remember on this device (untick on shared tablets)
     </label>
     <div id="tlCloudNote" style="font-size:11.5px;color:var(--text-dim);margin:0 0 10px"></div>
     <div id="tlStatus" style="font-size:12.5px;color:var(--text-dim);margin-bottom:10px"></div>
+    <div style="font-size:11.5px;color:var(--text-dim);margin:0 0 8px;line-height:1.5"><b>▶ Start</b> runs the preflight first (empty keys, duplicate platforms, http gateway, TikTok-landscape — all caught BEFORE going live), then broadcasts the lesson canvas + mic to every destination. <b>■ Stop</b> ends it. <b>🩺 Check relay</b> tests whether the gateway answers at all — press it FIRST on a new setup, and do a 60-second dry run before every real class.</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button type="button" class="btn primary" id="tlStart">▶ Start social live</button>
       <button type="button" class="btn" id="tlStop">■ Stop</button>
@@ -1182,13 +1197,13 @@ Not sure</textarea>
     </div>
   </div>
 </div>
-<script src="js/cloud-creds.js?v=53"></script>
-<script src="js/stream-kit.js?v=53"></script>
-<script src="js/fix-webm-duration.js?v=53"></script>
-<script src="js/teach.js?v=53"></script>
-<script src="js/enhancements.js?v=53"></script>
-<script src="js/ecosystem-branding.js?v=53"></script>
-<script src="js/enterprise-enhanced.js?v=53"></script>
+<script src="js/cloud-creds.js?v=54"></script>
+<script src="js/stream-kit.js?v=54"></script>
+<script src="js/fix-webm-duration.js?v=54"></script>
+<script src="js/teach.js?v=54"></script>
+<script src="js/enhancements.js?v=54"></script>
+<script src="js/ecosystem-branding.js?v=54"></script>
+<script src="js/enterprise-enhanced.js?v=54"></script>
 <div id="hmgEcosystemFooterCompact" style="max-width:100%;padding:0 14px"></div>
 </body>
 </html>

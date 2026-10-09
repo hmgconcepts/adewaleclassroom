@@ -282,8 +282,15 @@ window.CloudCreds = (function () {
       if (!Array.isArray(rows)) return false;
       var applied = [];
       var cloudKeys = {};
+      state.cloud = {};   /* V51: WHAT the account holds — the sync card and
+                             the restore buttons report this honestly instead
+                             of implying "synced" for an empty account. */
       rows.forEach(function (r) {
         cloudKeys[r.key] = true;
+        if (r.key && r.value && typeof r.value === "object" &&
+            Object.keys(r.value).some(function (k) { return String(r.value[k] || "") !== ""; })) {
+          state.cloud[r.key] = true;
+        }
         var ch = CHANNELS[r.key];
         if (ch && ch.apply(r.value)) applied.push(r.key);
         if (r.key) lsSet(SYNCED_AT + ":" + r.key, String(Date.now()));
@@ -304,7 +311,15 @@ window.CloudCreds = (function () {
       state.ready = true;
       state.reason = "";
       state.missing = false;
-      state.lastSync = Date.now();
+      state.lastChecked = Date.now();
+      /* V51: "last sync" used to stamp on EVERY read — including login
+         reads of an EMPTY account, which read as "it is synchronising
+         empty details". It now only counts as a sync when data actually
+         moved: something was applied from the cloud, or this device
+         published credentials the cloud had not seen. */
+      if (applied.length || pushes.length || Object.keys(state.cloud).length) {
+        state.lastSync = Date.now();
+      }
       if (applied.length) notify(applied);
       return true;
     } catch (e) {
@@ -337,6 +352,9 @@ window.CloudCreds = (function () {
   return {
     /* CloudCreds.pull() — call on deck boot when a portal session exists */
     pull: pull,
+    /* V51: what the account actually holds + when it was last read */
+    cloud: function () { return state.cloud || {}; },
+    lastChecked: function () { return state.lastChecked || 0; },
     /* CloudCreds.push('cd-turn' | 'cd-stream', force?) — call after
        saving (force=true also pushes a deliberate clear) */
     push: push,
@@ -353,7 +371,8 @@ window.CloudCreds = (function () {
     sessionEmail: sessionEmail,
     status: function () {
       return { ready: state.ready, reason: state.reason, uid: state.uid,
-               missing: !!state.missing, lastSync: state.lastSync || 0 };
+               missing: !!state.missing, lastSync: state.lastSync || 0,
+               cloud: state.cloud || {}, lastChecked: state.lastChecked || 0 };
     }
   };
 })();

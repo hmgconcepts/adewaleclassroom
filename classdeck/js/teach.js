@@ -2862,6 +2862,32 @@ on("#setSave", "click", () => {
     }
     updateRelayPreview();
   }
+  /* V51 (round 15, item 7) — THE TURN-KEY ROAMING HOLE. Until now these
+     two boxes were persisted ONLY when the teacher pressed ⚡ Generate:
+     a key typed by hand and saved here NEVER reached the cloud, so every
+     other device legitimately reported "nothing saved there yet". Save
+     now persists whatever is in the boxes — and pushes it to the linked
+     account immediately (a deliberate clear pushes the tombstone too,
+     so removed keys are not resurrected on the next device). */
+  {
+    const cfk2 = $("#setCfKey"), cft2 = $("#setCfToken");
+    if (cfk2 || cft2) {
+      const k2 = cfk2 ? cfk2.value.trim() : "";
+      const t2 = cft2 ? cft2.value.trim() : "";
+      const hadKey = !!(Store.get("cf_key", "") || Store.get("cf_token", ""));
+      Store.set("cf_key", k2);
+      Store.set("cf_token", t2);
+      if (window.CloudCreds && CloudCreds.signedIn()) {
+        if (k2 || t2) {
+          CloudCreds.push("cd-turn").then((ok) => {
+            if (ok) toast("☁️ TURN key saved to your account — every device you sign in on now restores it automatically.", "ok", 8000);
+          });
+        } else if (hadKey) {
+          CloudCreds.push("cd-turn", true);
+        }
+      }
+    }
+  }
   /* v12: large-class settings */
   const msEl = $("#setMaxStudents");
   if (msEl) {
@@ -3923,6 +3949,11 @@ function renderCloudSyncCard() {
       '<button class="btn small ghost" id="cloudUnlink">Unlink</button>' +
       "</div>" +
       '<div class="sub" style="margin-top:6px">Your TURN key, relay credentials and streaming keys are pulled to every device you sign in from — and pushed back whenever they change.</div>' +
+      '<div class="sub" style="margin-top:4px">☁️ Account holds: ' +
+        (CloudCreds.cloud ? (CloudCreds.cloud()["cd-turn"] ? '<b style="color:#31c48d">🔑 TURN key ✓</b>' : '<span style="color:var(--warn)">🔑 TURN key — nothing saved yet</span>') : '') +
+        ' · ' +
+        (CloudCreds.cloud ? (CloudCreds.cloud()["cd-stream"] ? '<b style="color:#31c48d">📡 stream setup ✓</b>' : '<span style="opacity:.75">📡 stream setup — nothing saved yet</span>') : '') +
+        '. ' + (st.lastSync ? 'Last real sync ' + esc(when) + '.' : 'Nothing stored yet — save once (⚙ Settings → Save) and every future device gets it.') + '</div>' +
       (st.reason ? '<div class="warn" style="margin-top:6px">⚠️ ' + esc(st.reason) + "</div>" : "");
     $("#cloudSyncNow").onclick = async () => {
       const ok = await CloudCreds.pull();
@@ -4415,7 +4446,9 @@ async function restoreCredsFromCloud() {
   const bits = [];
   if (Store.get("cf_key", "")) bits.push("TURN key ✓");
   if ((Store.get("tablet_live", {}) || {}).gateway) bits.push("streaming gateway ✓");
-  toast("☁️ Restored from your account" + (bits.length ? " — " + bits.join(" · ") : " (nothing saved there yet — save once and every future device gets it)."), "ok", 10000);
+  toast(bits.length
+    ? "☁️ Restored from your account — " + bits.join(" · ") + "."
+    : "☁️ Your account has nothing saved yet. Enter the TURN key (or the stream setup) on THIS device and press Save — it uploads automatically and every future device restores it.", "ok", 12000);
 }
 if ($("#tlRestore")) on("#tlRestore", "click", restoreCredsFromCloud);
 if ($("#btnRestoreCreds")) on("#btnRestoreCreds", "click", restoreCredsFromCloud);
