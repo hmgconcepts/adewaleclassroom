@@ -958,3 +958,106 @@ test_v27/v28 rot repaired to test intent. ZIPs rebuilt.
     (+94 round-13 portal checks, plus pin updates; includes runtime
      DOM/VM tests and a PostgreSQL harness with 8 scenarios, one of them
      a 29-assertion behavioral run as the authenticated role)
+
+# ROUND 14 AUDIT (2026-10-08)
+
+The user's eight-item field report against the deployed round-13 build, and
+what each one turned out to be.
+
+## Item 1 — TURN key must pre-fill on any device (+ Restore button)
+
+The settings-open handler filled the TURN Token ID / API token boxes from
+LOCAL storage only — a new device always showed them empty, and the teacher
+reasonably assumed the key had to be bought/pasted again. Fix (14.5.0):
+`settingsCloudPrefill()` runs on every Settings open — when this device has
+no saved key and the account is linked, the key is pulled from the cloud and
+the boxes + relay box fill themselves; a **☁️ Restore key from cloud**
+button now sits inside the TURN-key card next to ⚡ Generate (always
+refreshes the boxes, with an honest "nothing saved in your account yet"
+message), alongside the r13 relay-card restore. Auto-pull never overwrites
+values typed into the boxes but not yet saved.
+
+## Items 4–7 — "linked · name unavailable" on all four shelves (ROOT CAUSE)
+
+`profiles.status` DEFAULTS TO 'pending' — not NULL. Round 13's
+`coalesce(status,'approved')` therefore matched nothing: the owner's
+profile sat at the untouched signup default, `is_tutor()`/`tc_is_manager()`
+returned false, and the engagements READ policy (is_tutor + family joins
+only — no `is_admin()`) silently returned zero rows. RLS does not error
+there; the CRUD link map came back empty and every linked row rendered
+"linked · name unavailable" — on E-resources, Mini LMS, Digital library
+and Resource library alike — while writes (which DO accept `is_admin()`)
+kept working. V50 (`database/v50-staff-access-truth.sql`):
+
+- `is_tutor()` v2 — manager roles (owner, admin, director, super_admin,
+  lead_tutor) are NEVER status-gated (there is no one above an owner to
+  approve them — gating them is a deadlock); operational roles (tutor,
+  staff, teacher, instructor) pass on NULL/blank/approved/active, while
+  'pending'/'suspended' still require approval — the workflow stays real.
+- `tc_is_manager()` v2 — same never-gate for manager roles.
+- `engagements_read` now also accepts `is_admin()`.
+- NEW `tc_ref_labels(p_table)` — a security-definer RPC returning
+  id→label maps for engagements/subjects/tutors/learners/parents to
+  approved staff (learners get {}). crud.js calls it automatically
+  whenever a ref table reads back empty, so link names can never go dark
+  again even if a future policy regresses; a retry banner covers the rest.
+
+## Item 5 — new LMS lessons never reached students
+
+Two traps stacked: the table default and the form's first option were both
+'draft', and drafts are (correctly) invisible to families — so every "new
+resource" was born hidden. V50 sets the table default to 'published', the
+form order/default follows, the list renders 🟢 published / 🟡 draft·hidden
+badges, and every row gets **🚀 Publish / 🐢 Unpublish** one-click actions
+(rowActions gained a `when(row)` predicate so only the relevant button
+shows). Explicit drafts stay hidden — asserted in the behavior harness.
+
+## Item 3 — admin-data "Tables readable / Rows in total: –"
+
+Same root cause (a pending-status owner failed every staff gate, so every
+count query starved), plus a UX that could fail silently. v50 fixes the
+data path; `autoHeadCount` was also hardened: a signed-out state ("sign
+in"), live counting progress, a clickable card to recount, an automatic
+2.5s retry, and a zero-readable diagnosis that names the cause and the
+migration file to run.
+
+## Items 4–6 enhancements (GOSA re-understudy)
+
+Fetched GOSA lms.html + digital_library.html: their pattern (collapsible
+intro + staff-gated toolbar + CRUD list) was already ported in round 13;
+this round adds the substance on top of it — scoped/shared KPI cards
+("Scoped to a class: N · Shared to everyone: M"), colored status badges
+with student-visibility tooltips, example-bearing field help on all four
+shelf schemas (titles, links, kinds — "so new users make no errors"),
+lms.html publish-workflow copy, and the empty-ref-map retry banner.
+
+## Item 2 — stream.html depth
+
+Rebuilt around the new user: a "3 things you need" orientation card, a
+6-step quick start with a mandatory 60-second dry run, the field guide
+gained a **new-user mistake column** (✅ right / ❌ wrong per field), a
+platform cheat-sheet with exact click-paths (YouTube Studio → Go Live →
+Streaming software; Facebook Live Producer; TikTok Live Center + 1,000-
+follower eligibility; Instagram professional-account + per-session keys;
+Twitch dashboard), a 10-row symptom→cause→fix troubleshooting table, a
+**first-run checklist that persists** (localStorage), and a downloadable
+plan that now includes where-every-key-lives + troubleshooting.
+
+## Item 8 — every file, both repos
+
+Portal V50 (pages ?v=50, shell tc-shell-v19-20261008): crud.js, the four
+shelf pages + lms copy, admin-data.html, database/v50 (new) +
+complete-schema.sql, tools/v50_behavior.sql (new) + harness scenario 9.
+ClassDeck v14.5.0 build 19 (pages ?v=53, sw
+hmg-classdeck-v14.5.0-staff-truth-publish-turn-roam): teach.js,
+teach.html, stream.html, version.json, sw.js. Twin synced byte-identical
+(AC→TC site files; TC keeps the generator tooling); suites re-whitelisted
+for the new versions; test_r14_portal.js (88 checks) added and registered.
+
+## Round-14 QA tally (per repo, both repos green)
+
+    23 suites — 921/921 per repo × 2 repos
+    (+88 round-14 portal checks; PG harness now 9 scenarios — V50's is a
+     13-assertion behavioral run including the pending-OWNER engagement
+     read, the pending-tutor block, tc_ref_labels staff-only, and
+     publish-by-default vs explicit-draft visibility)
