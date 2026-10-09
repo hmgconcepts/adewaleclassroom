@@ -242,7 +242,16 @@ const CRUD = {
       { key: 'score', label: 'Score', type: 'number' },
       { key: 'submission_url', label: 'Submission (Drive)', type: 'text' },
       { key: 'status', label: 'Status', type: 'select', options: ['set','submitted','marked','late','missing'] }
-    ]},
+    ],
+      /* V51 (round 15, item 10): score the whole class from the row —
+         auto-filled from CBT results for CBT assignments (GOSA parity). */
+      rowActions: [{ id: 'scoreclass', label: '✍️ Score class', cls: 'btn-outline',
+                     title: 'Score every learner of this class in one sheet — auto-filled from CBT results for CBT assignments' }],
+      onRowAction: function (action, r) {
+        if (action !== 'scoreclass' || !r) return;
+        if (window.ASSIGN_POINTS) ASSIGN_POINTS.scoreClass(r);
+      },
+    },
     assessments: { table: 'assessments', title: 'Assessment', cols: [
       { key: 'engagement_id', label: 'Engagement', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id' },
       { key: 'learner_id', label: 'Learner', type: 'ref', refTable: 'learners', refValue: 'full_name', refStore: 'id', required: true },
@@ -463,6 +472,9 @@ const CRUD = {
       { key: 'url', label: 'Drive / web link', type: 'text', required: true, help: 'The https address of the book / paper / video. For Drive files set sharing to “Anyone with the link” first.' },
       { key: 'subject', label: 'Subject', type: 'lookup', lookupTable: 'subjects', lookupValue: 'name', help: 'Pick a subject you teach. Keeps the shelf filterable by subject.' },
       { key: 'kind', label: 'Kind', type: 'select', options: ['book','paper','video','worksheet','other'], help: 'What the link contains — shown as an icon on the students’ work board.' },
+      { key: 'due_date', label: 'Due', type: 'date', help: 'Optional — students see a “due” chip on their shelf (V51).' },
+      { key: 'max_score', label: 'Max score', type: 'number', help: 'Points the quiz is worth in the 🏅 points workbench (V51).' },
+      { key: 'has_quiz', label: 'Has quiz', type: 'checkbox', help: 'Set automatically when you add comprehension questions in the ➕ card above (V51).' },
       { key: 'engagement_id', label: 'Class / group / cohort (who sees it)', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id', help: 'Leave blank for the studio-wide public shelf. Pick a class and ONLY its students see this item on their dashboard — students in other classes never do. Only you (and the admin) can edit it afterwards.' }
     ]},
     eresources: { table: 'eresources', title: 'E-resource', cols: [
