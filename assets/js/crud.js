@@ -372,9 +372,9 @@ const CRUD = {
     ]},
     resources: { table: 'resources', title: 'Resource', cols: [
       { key: 'engagement_id', label: 'Class / group / cohort (who sees it)', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id', help: 'Leave blank for the studio-wide shared shelf. Pick a class and ONLY its students (and their parents) see this resource on their portal.' },
-      { key: 'title', label: 'Title', type: 'text', required: true },
-      { key: 'url', label: 'URL (Drive/YouTube)', type: 'text' },
-      { key: 'kind', label: 'Kind', type: 'select', options: ['video','pdf','worksheet','link'] }
+      { key: 'title', label: 'Title', type: 'text', required: true, help: 'What the student clicks on — e.g. “JSS 2 gold — photosynthesis video”.' },
+      { key: 'url', label: 'URL (Drive/YouTube)', type: 'text', help: 'The https address of the material. For Drive: share = “Anyone with the link”. Links only — this studio never uploads files.' },
+      { key: 'kind', label: 'Kind', type: 'select', options: ['video','pdf','worksheet','link'], help: 'Tells the student what they are about to open before they click.' }
     ]},
     flashcards: { table: 'flashcards', title: 'Card', cols: [
       { key: 'learner_id', label: 'Learner', type: 'ref', refTable: 'learners', refValue: 'full_name', refStore: 'id', required: true },
@@ -458,27 +458,49 @@ const CRUD = {
       { key: 'status', label: 'Status', type: 'select', options: ['open','closed'] }
     ]},
     library: { table: 'library_items', title: 'Library item', cols: [
-      { key: 'title', label: 'Title', type: 'text', required: true },
-      { key: 'author', label: 'Author / source', type: 'text' },
-      { key: 'url', label: 'Drive / web link', type: 'text', required: true },
-      { key: 'subject', label: 'Subject', type: 'lookup', lookupTable: 'subjects', lookupValue: 'name', help: 'Pick a subject you teach.' },
-      { key: 'kind', label: 'Kind', type: 'select', options: ['book','paper','video','worksheet','other'] },
+      { key: 'title', label: 'Title', type: 'text', required: true, help: 'e.g. “Things Fall Apart — full text” or “Algebra mastery worksheet 4”.' },
+      { key: 'author', label: 'Author / source', type: 'text', help: 'Who made it — e.g. “Chinua Achebe”, “Khan Academy”.' },
+      { key: 'url', label: 'Drive / web link', type: 'text', required: true, help: 'The https address of the book / paper / video. For Drive files set sharing to “Anyone with the link” first.' },
+      { key: 'subject', label: 'Subject', type: 'lookup', lookupTable: 'subjects', lookupValue: 'name', help: 'Pick a subject you teach. Keeps the shelf filterable by subject.' },
+      { key: 'kind', label: 'Kind', type: 'select', options: ['book','paper','video','worksheet','other'], help: 'What the link contains — shown as an icon on the students’ work board.' },
       { key: 'engagement_id', label: 'Class / group / cohort (who sees it)', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id', help: 'Leave blank for the studio-wide public shelf. Pick a class and ONLY its students see this item on their dashboard — students in other classes never do. Only you (and the admin) can edit it afterwards.' }
     ]},
     eresources: { table: 'eresources', title: 'E-resource', cols: [
-      { key: 'title', label: 'Title', type: 'text', required: true },
-      { key: 'subject', label: 'Subject', type: 'lookup', lookupTable: 'subjects', lookupValue: 'name', help: 'Pick a subject you teach.' },
-      { key: 'url', label: 'Link', type: 'text', required: true },
-      { key: 'notes', label: 'Notes', type: 'textarea' },
+      { key: 'title', label: 'Title', type: 'text', required: true, help: 'What the student clicks on — e.g. “Simultaneous equations — worked examples”.' },
+      { key: 'subject', label: 'Subject', type: 'lookup', lookupTable: 'subjects', lookupValue: 'name', help: 'Pick a subject you teach. Keeps the shelf filterable by subject.' },
+      { key: 'url', label: 'Link', type: 'text', required: true, help: 'Any https link: Google Drive (share = “Anyone with the link”), YouTube, a website. Copy the full address from the browser bar.' },
+      { key: 'notes', label: 'Notes', type: 'textarea', help: 'Optional guidance the student reads before opening the link — what to pay attention to, how long to spend.' },
       { key: 'engagement_id', label: 'Class / group / cohort (who sees it)', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id', help: 'Leave blank for the studio-wide shelf. Pick a class and only its students see it.' }
     ]},
     lms: { table: 'lms_lessons', title: 'LMS lesson', cols: [
-      { key: 'engagement_id', label: 'Class / group / cohort (who sees it)', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id', help: 'The class this lesson belongs to. Only ITS students (and their parents) see the lesson once it is published.' },
-      { key: 'title', label: 'Lesson title', type: 'text', required: true },
-      { key: 'url', label: 'Material link', type: 'text' },
-      { key: 'order_no', label: 'Order', type: 'number' },
-      { key: 'status', label: 'Status', type: 'select', options: ['draft','published'] }
-    ]},
+      { key: 'engagement_id', label: 'Class / group / cohort (who sees it)', type: 'ref', refTable: 'engagements', refValue: 'name', refStore: 'id', help: 'The class this lesson belongs to. Only ITS students (and their parents) see the lesson once it is published. Leave empty to share the lesson with EVERY student (the studio-wide shelf).' },
+      { key: 'title', label: 'Lesson title', type: 'text', required: true, help: 'What the students will click on — e.g. “Fractions — lesson 3: comparing”.' },
+      { key: 'url', label: 'Material link', type: 'text', help: 'Any https link the student opens: Google Drive file (set to “Anyone with the link”), YouTube video, Google Docs notes, a website. Links only — this studio never uploads files.' },
+      { key: 'order_no', label: 'Order', type: 'number', help: 'Optional position in the lesson sequence (1, 2, 3…). Lessons sort by this.' },
+      { key: 'status', label: 'Status', type: 'select', options: ['published','draft'], default: 'published', help: 'published = the class sees it the moment you save. draft = hidden from students until you press 🚀 Publish on the row.' }
+    ],
+      /* V50 — the draft trap: 'draft' used to be the FIRST option, so every
+         new lesson silently came out invisible to its class. Published is
+         now the default (here and in the database), and the list gives
+         every row a one-click Publish / Unpublish. */
+      rowActions: [
+        { id: 'publish',   label: '🚀 Publish',   cls: 'btn-outline', title: 'Make this lesson visible to the linked class immediately',
+          when: r => (r.status || 'published') !== 'published' },
+        { id: 'unpublish', label: '🐢 Unpublish', cls: 'btn-ghost',   title: 'Hide this lesson from students (back to draft). Nothing is deleted.',
+          when: r => r.status === 'published' }
+      ],
+      onRowAction: async function (actionId, r, reload) {
+        if ((actionId !== 'publish' && actionId !== 'unpublish') || !r) return;
+        if (!window.CRUD || !CRUD.sb) { toast('Connect the database first.', 'warning'); return; }
+        const next = actionId === 'publish' ? 'published' : 'draft';
+        const { error } = await CRUD.sb.from('lms_lessons').update({ status: next }).eq('id', r.id);
+        if (error) { toast('Could not ' + actionId + ': ' + error.message, 'danger'); return; }
+        toast(actionId === 'publish'
+          ? '🚀 Published — the students of ' + (r.engagement_id ? 'its class' : 'the studio-wide shelf') + ' can see it now.'
+          : 'Lesson moved back to draft — hidden from students, nothing deleted.', 'success', 5000);
+        if (typeof reload === 'function') reload();
+      },
+    },
     leave: { table: 'leave_requests', title: 'Leave request', cols: [
       { key: 'tutor_name', label: 'Tutor', type: 'lookup', lookupTable: 'tutors', lookupValue: 'full_name', required: true, help: 'Pick from your tutors.' },
       { key: 'tutor_id', label: 'Tutor (linked record)', type: 'ref', refTable: 'tutors', refValue: 'full_name', refStore: 'id' },
@@ -870,6 +892,20 @@ const CRUD = {
               break;
             }
           }
+          if (ok && this.sb && !(data || []).length) {
+            /* V50 — the ref table read back EMPTY (no error). For a staff
+               user who can see the rows that reference it, an empty map
+               would turn every link into “linked · name unavailable”.
+               Ask the security-definer RPC for the id→label map before
+               giving up. On a pre-V50 database the RPC is missing and we
+               keep the honest empty map (the warning banner shows). */
+            try {
+              const { data: rpcMap, error: rpcErr } = await this.sb.rpc('tc_ref_labels', { p_table: c.refTable });
+              if (!rpcErr && rpcMap && typeof rpcMap === 'object' && !Array.isArray(rpcMap)) {
+                Object.keys(rpcMap).forEach(k => { m[k] = rpcMap[k]; });
+              }
+            } catch (e) { /* pre-V50 database — fallback unavailable */ }
+          }
           if (ok) (data || []).forEach(d => { m[String(d[c.refStore || c.refValue])] = d[c.refValue] || d.email || d.name || d.title || 'Unnamed'; });
         } else {
           ((window.DEMO && window.DEMO[c.refTable]) || []).forEach(d => { m[String(d[c.refStore || c.refValue])] = d[c.refValue] || d.email || d.name || d.title || 'Unnamed'; });
@@ -943,6 +979,20 @@ const CRUD = {
       return '<span class="badge badge-' + tone + '">' + TC.esc(s) + '</span>';
     }
     if (s.length > 90) return '<span title="' + TC.esc(s) + '">' + TC.esc(s.slice(0, 88)) + '…</span>';
+    if (col.type === 'select') {
+      /* V50 — statuses render as colored badges so the visibility of a
+         shelf item is readable at a glance. The two special cases carry
+         their own tooltip because they gate what students can see. */
+      const v = String(raw);
+      if (v === 'draft') return '<span class="badge badge-warning" title="Saved, but HIDDEN from the students of the linked class until you press 🚀 Publish on this row.">🟡 draft · hidden</span>';
+      if (v === 'published') return '<span class="badge badge-success" title="Visible now to the students of the linked class (and their parents).">🟢 published</span>';
+      if (['active','approved','paid','completed','complete','passed','present','success','new'].indexOf(v) > -1)
+        return '<span class="badge badge-success">' + TC.esc(v) + '</span>';
+      if (['pending','inactive','trial','paused','inquiry','needs repair','maintenance','in transit'].indexOf(v) > -1)
+        return '<span class="badge badge-warning">' + TC.esc(v) + '</span>';
+      if (['cancelled','canceled','rejected','suspended','failed','churned','retired','closed','absent','overdue'].indexOf(v) > -1)
+        return '<span class="badge badge-danger">' + TC.esc(v) + '</span>';
+    }
     return TC.esc(s);
   },
 
@@ -968,6 +1018,17 @@ const CRUD = {
       rows.forEach(r => { const v = r[enumCol.key] || '—'; tally[v] = (tally[v] || 0) + 1; });
       Object.entries(tally).sort((a, b) => b[1] - a[1]).slice(0, 4)
         .forEach(([k, v]) => cards.push({ label: enumCol.label + ': ' + k, value: String(v) }));
+    }
+
+    /* V50 — for shelf pages (E-resources, Mini LMS, Digital library,
+       Resource library) show how the records are scoped: linked to one
+       class/group vs shared with every student. That question — “who
+       exactly can see this?” — is the first thing a confused owner asks. */
+    const scopeCol = schema.cols.find(c => c.type === 'ref' && c.refTable === 'engagements');
+    if (scopeCol && rows.length) {
+      const scoped = rows.filter(r => r[scopeCol.key]).length;
+      cards.push({ label: 'Scoped to a class', value: scoped.toLocaleString() });
+      cards.push({ label: 'Shared to everyone', value: (rows.length - scoped).toLocaleString() });
     }
 
     const dateCol = schema.cols.find(c => c.key === 'created_at')
@@ -1049,6 +1110,23 @@ const CRUD = {
         .filter(c => c.type === 'ref' && c.refTable && self._refErrors && self._refErrors[c.refTable])
         .map(c => c.refTable);
       const uniqFailed = [...new Set(failedRefs)];
+      /* V50 — a ref table that read back EMPTY (no error, no rows) while
+         visible rows reference it also deserves an honest note, with a
+         one-click retry (names usually appear after the V50 RPC fallback
+         or after the user's access is upgraded). */
+      const emptyRefs = schema.cols
+        .filter(c => c.type === 'ref' && c.refTable && maps[c.key] &&
+                     !Object.keys(maps[c.key]).length &&
+                     rows.some(r => r[c.key]))
+        .map(c => c.refTable);
+      const uniqEmpty = [...new Set(emptyRefs)];
+      const refEmptyWarn = uniqEmpty.length
+        ? '<div style="display:flex;gap:10px;align-items:flex-start;background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.45);border-radius:10px;padding:10px 14px;margin:0 0 12px;font-size:13px">'
+          + '<span style="font-size:16px;line-height:1.2">🔗</span><div>'
+          + '<strong>Link names are not loading</strong> from ' + uniqEmpty.map(t => '<code>' + TC.esc(t) + '</code>').join(', ')
+          + ' — the links themselves are intact and save correctly. '
+          + '<button class="btn btn-sm btn-outline" type="button" id="crud-refretry" style="margin-left:6px">↻ Retry names</button></div></div>'
+        : '';
       const refWarn = uniqFailed.length
         ? '<div style="display:flex;gap:10px;align-items:flex-start;background:rgba(245,158,11,0.10);border:1px solid rgba(245,158,11,0.45);border-radius:10px;padding:10px 14px;margin:0 0 12px;font-size:13px">'
           + '<span style="font-size:16px;line-height:1.2">⚠️</span><div>'
@@ -1060,6 +1138,7 @@ const CRUD = {
       mount.innerHTML =
         '<div id="crud-kpis" class="crud-kpis"></div>' +
         refWarn +
+        refEmptyWarn +
 
         '<div class="crud-toolbar">' +
           '<input class="form-input" id="crud-q" placeholder="Search this page…" value="' + TC.esc(view.q) + '" style="max-width:260px">' +
@@ -1181,7 +1260,7 @@ const CRUD = {
                crud.js calls schema.onRowAction(actionId, row) when one is
                pressed. exam-register.html uses this to print a docket, a
                result slip, a certificate and an outcome letter. */
-            (schema.rowActions || []).map(a =>
+            (schema.rowActions || []).filter(a => !a.when || a.when(r)).map(a =>
               '<button class="btn btn-sm ' + (a.cls || 'btn-ghost') + '" data-rowact="' + TC.esc(a.id) +
               '" data-rowid="' + TC.esc(String(r.id)) + '" title="' + TC.esc(a.title || a.label) + '">' +
               TC.esc(a.label) + '</button>').join('') +
@@ -1193,6 +1272,11 @@ const CRUD = {
         '</tr>').join('');
 
       const find = id => list.find(x => String(x.id) === String(id));
+      const rr = document.getElementById('crud-refretry');
+      if (rr) rr.onclick = () => {
+        self._refCache = {}; self._refFailed = {}; self._refErrors = {};
+        reload();
+      };
       body.querySelectorAll('[data-rowact]').forEach(b => b.onclick = () => {
         if (typeof schema.onRowAction === 'function') schema.onRowAction(b.dataset.rowact, find(b.dataset.rowid), reload);
       });
@@ -1448,6 +1532,13 @@ const CRUD = {
     /* V33 — adminOnly columns (portal login link) hidden from non-admins */
     let schema = this.def(moduleId) || this.SCHEMA[moduleId];
     if (!schema) { try { toast('Unknown form', 'danger'); } catch(_){} return; }
+    /* V50 — a column may declare `default` for NEW records (e.g. lms
+       status 'published' so a fresh lesson is visible immediately). */
+    if (row && !row.id) {
+      (schema.cols || []).forEach(c => {
+        if (c.default !== undefined && (row[c.key] === undefined || row[c.key] === null)) row[c.key] = c.default;
+      });
+    }
     schema = Object.assign({}, schema, { cols: this.visibleCols(schema.cols || []) });
     let host = document.getElementById('crud-modal');
     if (!host) {
