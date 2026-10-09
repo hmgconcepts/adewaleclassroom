@@ -620,3 +620,52 @@ click-paths, troubleshooting table, persisted first-run checklist.
 signed-out state, live progress, a clickable recount, an automatic retry,
 and — if signed in but nothing is readable — a diagnosis that names the
 cause and the exact migration file to run.
+
+## V51 — family link names, library quiz, homework points, cloud last-backup (round 15)
+
+Run `database/v51-family-ref-labels-library-quiz.sql` once on existing
+projects (idempotent; complete-schema.sql already carries it for fresh
+installs — and tools/audit_selfcontained.py now PROVES the complete
+schema carries every object of every migration file, so one run of
+complete-schema.sql is all a fresh install needs).
+
+**Student-portal link names (items 2–5).** `tc_ref_labels()` is now
+role-aware: learners get the id→name map of the engagements they are
+members of, parents get their children's — the same visibility predicate
+that governs the shelf rows themselves, so a class name resolves exactly
+when the row that references it is visible. The four shelf pages are
+also role-aware now: learners and parents get a studying view (cards,
+search, filters, working links, due chips) instead of the staff table.
+
+**Digital library with comprehension quizzes (GOSA parity).** Readings
+carry optional auto-marked questions (mcq, multiple response,
+true/false, short answer, keyword; answers typed as letters or positions
+mark correctly), an attempt limit, a due date, a max score and an
+optional linked CBT code. Attempts are recorded per learner
+(library_quiz_attempts: own-insert only, RLS-refused otherwise). The 🏅
+points workbench aggregates best attempts per learner per reading
+(linked-CBT best attempts merged) and pushes the totals into the
+scoresheet as continuous-assessment evidence (source `library_points`).
+
+**Homework points workbench (GOSA parity).** ✍️ Score class on any
+homework row opens the class scoring sheet — auto-filled from CBT
+results for CBT assignments (scaled to the assignment's max), manual for
+physical work — and writes per-learner rows. The term score sheet shows
+every assignment as a column with cumulative totals per learner; 🚀
+pushes the totals into the scoresheet (source `homework_points`); CSV
+export included. Students get a plain-language explainer of how homework
+earns points, with their live total.
+
+**"Last backup" is a studio record now.** practice_settings.last_backup_at
+is stamped by every backup path (local download, Google Drive) and read
+by every device — the card shows the newest record with its source and
+age instead of a per-device localStorage guess.
+
+**ClassDeck 14.6.0 — the TURN key actually reaches the cloud.** Settings
+→ Save now persists the TURN Token ID / API token boxes AND pushes them
+to the linked account immediately (round 15 found the save handler had
+never read them — a hand-typed key never left the device, which is why
+every other device said "nothing saved there yet"). The cloud-sync card
+shows what the account actually holds, "last sync" only counts when data
+moved, and the Tablet Live modal documents every field with examples
+and ✅/❌ guidance.
