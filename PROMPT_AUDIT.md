@@ -1061,3 +1061,125 @@ for the new versions; test_r14_portal.js (88 checks) added and registered.
      13-assertion behavioral run including the pending-OWNER engagement
      read, the pending-tutor block, tc_ref_labels staff-only, and
      publish-by-default vs explicit-draft visibility)
+
+# ROUND 15 AUDIT (2026-10-09)
+
+The user's eleven-item report, and what each turned out to be.
+
+## Items 2–5 — "linked · name unavailable" ON THE STUDENT PORTAL
+
+Round 14 fixed the staff side; the student side still broke because the
+link-name lookup reads the engagements TABLE through RLS, and for these
+family accounts that read came back empty while the shelf rows themselves
+stayed visible through the family policy. V50's tc_ref_labels() fallback
+returned {} for non-staff, so it could not rescue them. **V51 makes
+tc_ref_labels() role-aware**: a learner receives the id→name map of
+exactly the engagements they are a member of (the same predicate that
+lets them see the shelf rows at all — proven in the harness as the
+learner resolving their own class name while NOT receiving other
+classes'), and a parent gets their children's. Name resolution no longer
+depends on the engagements table's SELECT policy. On top of the fix, all
+four shelf pages are now ROLE-AWARE: learners and parents get
+**shelf-student.js** — a studying view (search, subject/kind filters,
+Open buttons that normalise Drive links, due chips, lesson numbering,
+honest empty states) instead of the staff database table.
+
+## Item 8 — Digital library, GOSA deep-study implemented
+
+Studied GOSA's digital_library.html in full (authoring card, five
+question types, tolerant marking, attempt limits, linked CBT, points
+accumulation, report-card push). Implemented for ADEWALE CLASSROOM:
+library_items gains instructions / due date / max score / attempt limit
+/ questions JSONB / has_quiz / linked-CBT code; a new
+**library_quiz_attempts** table records each learner's auto-marked
+attempt (own-insert, own+children read, staff read all — RLS-refused
+foreign inserts asserted in the harness); **library-quiz.js** carries
+the engine — quiz modal with mcq / multiple-response / true-false /
+short-answer / keyword questions, GOSA-tolerant marking (an answer typed
+as a LETTER or POSITION marks correctly), attempt limiting, best-attempt
+aggregation; library.html gains the teacher authoring card with the
+question builder + edit picker, and the **🏅 points workbench** (best
+attempt per learner per reading, linked-CBT best attempts merged,
+Σ totals, 🚀 push into the scoresheet as continuous-assessment
+evidence with source 'library_points').
+
+## Item 10 — Assignments, GOSA deep-study implemented
+
+Studied GOSA's assignments.html (CBT-assignment auto-fill V12.11, the
+student points explainer, the points workbench). Implemented:
+**assignment-points.js** — ✍️ Score class on any homework row scores
+the whole class in one modal, AUTO-FILLED from each learner's best CBT
+attempt scaled to the assignment's maximum (raw 15/20 → 7.5/10 at max
+10) for CBT assignments, manual for physical; per-learner rows are
+written so the class-wide row is never overwritten. The **term score
+sheet** renders every assignment as a column and every learner as a row
+with totals and %; Σ Totals is the condensed view; 🚀 pushes cumulative
+homework points into the scoresheet (source 'homework_points'); CSV
+export included. The page gains the CBT-homework guide with the
+unambiguous badge table (🟢 CBT homework many-per-term cumulative · 🔵
+graded quiz once-per-term → scoresheet · 🟣 practice never graded) and
+the student explainer "🏆 Why your homework earns points" with a live
+my-points panel fed by tc_my_work.
+
+## Item 1 — "Last backup: never"
+
+The timestamp lived in localStorage — PER DEVICE — and the cloud-side
+Drive timestamp was never read by the card. Backups taken on the tablet
+read as "never" on the laptop. practice_settings gains **last_backup_at**
+(the studio record): every backup path stamps it (local download and
+Google Drive), and the card shows the newest of local / studio / Drive
+with source and staleness ("35 days ago — take a fresh one"). A true
+"never" now explains exactly what to do.
+
+## Item 7 — the TURN key never reached the cloud (root cause found)
+
+The Settings save handler NEVER read the two TURN boxes — they were
+persisted only when ⚡ Generate ran, so a hand-typed key+token lived in
+the input boxes alone: never in Store, never pushed, and every other
+device correctly said "nothing saved there yet". And "last sync = login
+time" was pull() stamping lastSync on every read — including reads of an
+empty account. Fixes: Save now persists the boxes and pushes cd-turn
+immediately (a deliberate clear pushes the tombstone); pull() only
+counts as a sync when data actually moved; the sync card shows WHAT the
+account holds ("🔑 TURN key ✓/nothing yet · 📡 stream setup ✓/nothing
+yet"); the empty-account restore message names the exact remedy.
+
+## Item 6 — Tablet Live modal, field by field
+
+The modal's bare labels are gone: a 3-things orientation line, then
+every field (① gateway URL ② destinations, gateway secret, stream name,
+format, frame rate, save/restore/remember, start/stop/check) carries a
+description with a copy-paste example and explicit ✅ right / ❌ wrong
+guidance, cross-linked to the Social centre's full guide, click-paths
+and troubleshooting table.
+
+## Item 9 — complete-schema.sql proven self-contained
+
+New tools/audit_selfcontained.py walks EVERY database/*.sql file,
+extracts each created object (tables, functions, policies, indexes,
+triggers, columns) and verifies it exists in complete-schema.sql —
+currently 884 objects, SELF-CONTAINED ✅, and the check runs inside
+test_r15_portal so a future migration that forgets the splice fails the
+battery. (The audit also caught this round's one real splice regression
+within minutes: a bad tail-splice had silently dropped the V50 section —
+rebuilt and re-proven.)
+
+## Item 11 — every file, both repos
+
+Portal V51 (pages ?v=51, shell tc-shell-v20-20261009): crud.js,
+shelf-student.js (new), library-quiz.js (new), assignment-points.js
+(new), drive-sync.js, the 4 shelf pages + library.html + assignments.html
++ admin-data.html, database/v51 (new) + complete-schema.sql,
+tools/v51_behavior.sql + audit_selfcontained.py (new) + harness scenario
+10. ClassDeck v14.6.0 build 20 (pages ?v=54, sw
+hmg-classdeck-v14.6.0-family-labels-quiz-points-turnsave): teach.js,
+cloud-creds.js, teach.html, version.json, sw.js. Twin synced
+byte-identical including tools/.
+
+## Round-15 QA tally (per repo, both repos green)
+
+    24 suites — 1007/1007 per repo × 2 repos
+    (+85 round-15 portal checks; PG harness now 10 scenarios — V51's is a
+     10-assertion behavioral run incl. the learner's own-class name
+     resolution, the parent path, foreign-attempt RLS refusal, and the
+     owner-settable last_backup_at)

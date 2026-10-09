@@ -6,7 +6,7 @@
 // CLIENT build (builder.html / generator.js / wizard.js are generator-only and
 // must NOT be precached here). Each URL is cached individually so one missing
 // file never aborts the whole precache (cache.addAll is atomic).
-const CACHE = 'tc-shell-v19-20261008';   /* bumped: V50 round 14 — staff access truth (pending-status owners never locked out), tc_ref_labels fallback, LMS publish-by-default + 🚀 Publish, admin-data hardened counts, shelf badges/KPIs, TURN key cloud pre-fill */
+const CACHE = 'tc-shell-v20-20261009';   /* bumped: V51 round 15 — role-aware link names for the student portal, digital-library quiz + points workbench, homework points workbench, cloud last-backup, TURN-key save-to-cloud, Tablet Live field docs */
 
 // Files guaranteed to exist in every generated client studio.
 const CORE = [
