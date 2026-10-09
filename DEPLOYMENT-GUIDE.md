@@ -570,3 +570,53 @@ version.json 14.4.0 build 18). QA: 22 suites, 829/829 per repo × 2 repos;
 PostgreSQL harness 8/8 scenarios (V49 behavior: cross-class isolation,
 draft-hiding, parent parity, reading ticks, clear semantics, work-board
 shelves).
+
+## V50 — staff access truth, publish-by-default LMS, TURN-key roaming (round 14)
+
+Run `database/v50-staff-access-truth.sql` once on existing projects
+(idempotent; complete-schema.sql already carries it for fresh installs).
+
+**Why: the round-14 field report.** `profiles.status` defaults to
+'pending' — not NULL — so round 13's NULL-only fix matched nothing. An
+owner (or admin) whose profile sat at the signup default failed every
+staff gate: the engagements read policy returned zero rows silently, every
+shelf page showed "linked · name unavailable", and the admin-data head
+count starved to "–" — while writes kept working, because the write
+policies accept `is_admin()`.
+
+**Manager roles are never status-gated.** `is_tutor()` v2 returns true
+for owner/admin/director/super_admin/lead_tutor regardless of status
+(there is no one above an owner to approve them — gating them on their
+own un-approval is a deadlock). Operational roles (tutor, staff, teacher,
+instructor) pass on NULL/blank/approved/active; 'pending' and 'suspended'
+still require approval, so the approvals workflow keeps its meaning.
+`tc_is_manager()` follows the same rule, and `engagements_read` now also
+accepts `is_admin()` (write and read are finally symmetric).
+
+**`tc_ref_labels(p_table)` — the link-name fallback.** A security-definer
+RPC returning id→label maps for engagements / subjects / tutors / learners
+/ parents, granted to authenticated staff only (learners get `{}`). The
+CRUD engine calls it automatically whenever a ref table reads back empty,
+so link names survive even a future policy regression; if names still
+cannot load, the shelf pages show an honest amber note with a ↻ Retry
+button instead of a silent "name unavailable".
+
+**New LMS lessons are visible by default.** The old table default and the
+old form order both said 'draft' — and drafts are invisible to families —
+so every freshly added lesson silently never reached its class. The
+default is now 'published' (database and form), the staff list renders
+🟢 published / 🟡 draft·hidden badges, and every row carries one-click
+🚀 Publish / 🐢 Unpublish actions. Existing rows are untouched — publish
+them from the list.
+
+**ClassDeck 14.5.0 — the TURN key follows the login.** Opening Settings on
+a device with no saved key now pulls the key from the linked cloud account
+automatically (never overwriting unsaved edits), a ☁️ Restore-key button
+sits inside the TURN-key card itself, and stream.html was rebuilt for the
+first-time user: 3-things orientation, mistake-per-field guide, platform
+click-paths, troubleshooting table, persisted first-run checklist.
+
+**Admin-data counts refuse to fail silently.** The head count shows a
+signed-out state, live progress, a clickable recount, an automatic retry,
+and — if signed in but nothing is readable — a diagnosis that names the
+cause and the exact migration file to run.
