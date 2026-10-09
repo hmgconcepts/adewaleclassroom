@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Tablet Social Live — ADEWALE CLASSROOM DECK</title>
-<meta name="description" content="No-OBS tablet live streaming centre for ADEWALE CLASSROOM DECK: direct Classroom Deck workspace sharing, WebRTC relay setup, YouTube, Facebook, Instagram, TikTok and free browser-studio workflows." />
+<meta name="description" content="No-OBS tablet live streaming centre for ADEWALE CLASSROOM DECK: direct Classroom Deck workspace sharing, WebRTC relay setup, YouTube, Facebook, Instagram, TikTok and free browser-studio workflows — every field documented with examples." />
 <link rel="canonical" href="https://adewaleclassroomclassdeck.vercel.app/stream.html" />
 <link rel="manifest" href="manifest.webmanifest" />
 <link rel="icon" href="assets/icon-96.png" />
@@ -19,14 +19,32 @@
   body{background:linear-gradient(135deg,#10142b,#1e2a78);min-height:100vh;color:var(--text)}
   .wrap{max-width:1180px;margin:0 auto;padding:18px;display:grid;gap:14px}.hero,.card{border-radius:20px;box-shadow:0 18px 55px rgba(0,0,0,.25)}
   .hero{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);padding:18px}.hero h1{margin:0 0 6px;font-size:clamp(24px,4vw,42px)}
-  .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:14px}.card{background:#fff;color:#10142b;padding:16px}.card h2,.card h3{margin:0 0 9px;color:#1e2a78}.card p,.card li{line-height:1.55}.muted{color:#576079}.tiny{font-size:12px}.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 9px;background:#eef1ff;color:#1e2a78;font-size:12px;font-weight:700;margin:2px}.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#10142b;color:#dfe6ff;border-radius:10px;padding:8px;word-break:break-all}.row2{display:flex;gap:8px;flex-wrap:wrap}.ok-note{border-left:4px solid #1d8f4f;background:#effaf3;padding:10px;border-radius:10px}.warn-note{border-left:4px solid #f59e0b;background:#fff8e8;padding:10px;border-radius:10px}.danger-note{border-left:4px solid #e02b2b;background:#fff1f1;padding:10px;border-radius:10px}.platforms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.plat{border:1px solid #d8def7;border-radius:14px;padding:10px;background:#f8f9ff}.plat b{display:block;color:#1e2a78;margin-bottom:4px}.footer{color:#dfe6ff;text-align:center;font-size:12px;padding:12px}@media(max-width:900px){.grid{grid-template-columns:1fr}.platforms{grid-template-columns:1fr}}
+  .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:14px}.card{background:#fff;color:#10142b;padding:16px}.card h2,.card h3{margin:0 0 9px;color:#1e2a78}.card p,.card li{line-height:1.55}.muted{color:#576079}.tiny{font-size:12px}.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 9px;background:#eef1ff;color:#1e2a78;font-size:12px;font-weight:700;margin:2px}.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#10142b;color:#dfe6ff;border-radius:10px;padding:8px;word-break:break-all}.row2{display:flex;gap:8px;flex-wrap:wrap}.ok-note{border-left:4px solid #1d8f4f;background:#effaf3;padding:10px;border-radius:10px}.warn-note{border-left:4px solid #f59e0b;background:#fff8e8;padding:10px;border-radius:10px}.danger-note{border-left:4px solid #e02b2b;background:#fff1f1;padding:10px;border-radius:10px}.platforms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.plat{border:1px solid #d8def7;border-radius:14px;padding:10px;background:#f8f9ff}.plat b{display:block;color:#1e2a78;margin-bottom:4px}.footer{color:#dfe6ff;text-align:center;font-size:12px;padding:12px}
+  /* V50 (round 14, item 2): deeper documentation styles */
+  table.guide,table.trouble{width:100%;border-collapse:collapse;font-size:13px}
+  .guide th,.trouble th{text-align:left;border-bottom:2px solid #d8def7;padding:6px 8px;color:#1e2a78}
+  .guide td,.trouble td{padding:8px;border-bottom:1px solid #eef1ff;vertical-align:top}
+  .good{color:#12733d;font-weight:700}.bad{color:#c22;font-weight:700}
+  .steps{counter-reset:s;list-style:none;padding:0;margin:0}
+  .steps li{counter-increment:s;position:relative;padding:8px 10px 8px 44px;border:1px solid #d8def7;border-radius:12px;margin:6px 0;background:#f8f9ff}
+  .steps li::before{content:counter(s);position:absolute;left:10px;top:8px;width:24px;height:24px;border-radius:999px;background:#1e2a78;color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px}
+  .steps b{color:#1e2a78}
+  .fr-check{list-style:none;padding:0;margin:0}
+  .fr-check li{display:flex;gap:8px;align-items:flex-start;padding:7px 9px;border:1px solid #d8def7;border-radius:12px;margin:5px 0;background:#f8f9ff;font-size:13px}
+  .fr-check input{margin-top:3px;transform:scale(1.25)}
+  .fr-check li.done{opacity:.55;text-decoration:line-through}
+  #frProgress{font-weight:800;color:#1e2a78}
+  .need3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .need3>div{border:1px solid #d8def7;border-radius:14px;padding:10px;background:#f8f9ff;font-size:12.5px}
+  .need3 b{color:#1e2a78;display:block;margin-bottom:3px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}.platforms{grid-template-columns:1fr}.need3{grid-template-columns:1fr}}
 </style>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"SoftwareApplication","name":"ADEWALE CLASSROOM DECK Tablet Social Live","applicationCategory":"EducationalApplication","operatingSystem":"Web","creator":{"@type":"Person","name":"Adewale Samson Adeagbo","url":"https://cssadewale.pages.dev"},"publisher":{"@type":"Organization","name":"ADEWALE CLASSROOM","url":"https://adewaleclassroom.pages.dev"},"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
-<script src="js/config.js?v=52"></script>
-<script src="js/portal-bridge.js?v=52"></script>
-<script src="js/common.js?v=52"></script>
+<script src="js/config.js?v=53"></script>
+<script src="js/portal-bridge.js?v=53"></script>
+<script src="js/common.js?v=53"></script>
 </head>
 <body>
 <div class="wrap">
@@ -37,47 +55,153 @@
     <div><span class="pill">Tablet-first</span><span class="pill">No OBS</span><span class="pill">No AI API</span><span class="pill">Free/open-source relay option</span><span class="pill">HMG branded</span></div>
   </div>
 
+  <!-- V50 (r14 item 2): the "3 things you need" orientation card — a new
+       user should never scroll past the fold without knowing the shape of
+       the whole setup. -->
+  <section class="card">
+    <h2>🧭 The 3 things you need before anything else</h2>
+    <div class="need3">
+      <div><b>1 · A relay address</b>Your own small web service (we give you the folder — <code>relay/no-obs-social-relay/</code>) uploaded once to a free host. It converts the tablet's web stream into the RTMP language social platforms understand. It costs nothing on Render/fly.io free tiers.</div>
+      <div><b>2 · A stream key from each platform</b>YouTube / Facebook / Instagram / TikTok each show you a private key when you start creating a live stream. It is the password that lets YOUR relay publish to YOUR channel. Copy it fresh for each stream.</div>
+      <div><b>3 · This tablet, signed in</b>Open Teacher Studio on the tablet and sign in with your ADEWALE CLASSROOM account. That is what makes the whole setup roam — every other device restores it with one button.</div>
+    </div>
+    <p class="tiny muted" style="margin:8px 0 0">Miss any one of the three and the ⚠ preflight tells you exactly which — before a single byte leaves the tablet.</p>
+  </section>
+
   <div class="grid">
     <section class="card">
-      <h2>1. Direct from tablet: the 5-step quick start</h2>
-      <ol>
-        <li><b>Deploy the relay once:</b> upload the included <code>relay/no-obs-social-relay/</code> folder to a free/low-cost VM with <b>HTTPS</b> (Vercel/Render/fly.io/a $4 VPS all work). Note its address — that is your <b>gateway URL</b>.</li>
-        <li>On the platform(s) you want (YouTube, Facebook, TikTok, Instagram…), start creating a live stream and copy the <b>stream key</b> it shows you.</li>
-        <li>Open <b>Teacher Studio</b> on your tablet → <b>⚙ Settings → 📡 Tablet Live</b>.</li>
-        <li>Paste your <b>gateway URL</b> and each platform <b>key</b> into a destination row (see the field guide below — the server URL fills itself in).</li>
-        <li>Tap <b>▶ Start social live</b>. Classroom Deck sends the lesson canvas + mic to the relay; the relay publishes to your platforms.</li>
+      <h2>1. Direct from tablet: the 6-step quick start</h2>
+      <ol class="steps">
+        <li><b>Deploy the relay once:</b> upload the included <code>relay/no-obs-social-relay/</code> folder to a free/low-cost host with <b>HTTPS</b> (Render, fly.io, Vercel-docker, a $4 VPS all work). Note its address — that is your <b>gateway URL</b> (e.g. <code>https://class-relay.yourname.onrender.com</code>).</li>
+        <li><b>Get a stream key:</b> on the platform(s) you want (YouTube, Facebook, TikTok, Instagram…), start creating a live stream and copy the <b>stream key</b> it shows you (exact click-paths in section 4 below).</li>
+        <li><b>Open Teacher Studio</b> on your tablet → <b>⚙ Settings → 📡 Tablet Live</b>.</li>
+        <li><b>Paste your gateway URL</b> and each platform <b>key</b> into a destination row (the server URL fills itself in — never type it by hand).</li>
+        <li><b>Do a 60-second dry run:</b> press ▶ Start, check the preview appears on the platform, then ■ Stop. Delete the dry-run recording.</li>
+        <li><b>Go live for the class:</b> ▶ Start social live. Classroom Deck sends the lesson canvas + mic to the relay; the relay publishes to your platforms.</li>
       </ol>
       <div class="row2"><button class="btn primary" id="openTeach">🧑‍🏫 Open Teacher Studio</button><button class="btn" id="copyRelay">Copy default WHIP pattern</button><button class="btn" id="downloadPlan">⬇ Download tablet-live plan</button></div>
       <div class="ok-note tiny" style="margin-top:10px"><b>Why a relay is needed:</b> the modern web browser can send WebRTC, but social platforms still commonly require RTMP/RTMPS ingest. The relay converts WebRTC to RTMP without needing OBS on the tablet.</div>
       <div class="ok-note tiny" style="margin-top:8px"><b>Already set up on another device?</b> Sign in with your ADEWALE CLASSROOM account — the gateway, secret and every key are restored automatically, and there is a <b>☁️ Restore from cloud</b> button in the Tablet Live panel to pull them on demand.</div>
     </section>
 
+    <section class="card">
+      <h2>✅ First-run checklist <span class="tiny muted">(ticks are saved on this tablet)</span></h2>
+      <ul class="fr-check" id="frChecklist">
+        <li data-k="relay"><input type="checkbox"><span>Relay deployed and its <b>https://</b> address noted</span></li>
+        <li data-k="ping"><input type="checkbox"><span><b>🩺 Check relay</b> pressed in Tablet Live — it answered</span></li>
+        <li data-k="key"><input type="checkbox"><span>Fresh <b>stream key</b> copied from the platform's live page</span></li>
+        <li data-k="row"><input type="checkbox"><span>Platform picked + key pasted; <b>server URL auto-filled</b> (not typed)</span></li>
+        <li data-k="fmt"><input type="checkbox"><span>Format matches the platform (<b>16:9</b> YouTube/Facebook · <b>9:16</b> TikTok/Instagram)</span></li>
+        <li data-k="save"><input type="checkbox"><span><b>💾 Save settings</b> pressed (and ☁️ cloud sync linked, so a new tablet restores in one click)</span></li>
+        <li data-k="dry"><input type="checkbox"><span><b>Dry run done:</b> preview confirmed on the platform, then stopped</span></li>
+        <li data-k="live"><input type="checkbox"><span>Go live for the real class 🎉</span></li>
+      </ul>
+      <p class="tiny" style="margin:6px 0 0"><span id="frProgress">0 / 8</span> complete — <a href="#" id="frReset" style="color:#1e2a78">reset</a></p>
+    </section>
   </div>
 
   <section class="card">
     <h2>2. Every field explained — Settings → 📡 Tablet Live</h2>
-    <p class="muted" style="margin-top:0">Each row below matches a field in the Tablet Live panel exactly, with a copy-paste example. Nothing is assumed.</p>
-    <table style="width:100%;border-collapse:collapse;font-size:13.5px">
-      <tr style="text-align:left"><th style="border-bottom:2px solid #d8def7;padding:6px 8px">Field</th><th style="border-bottom:2px solid #d8def7;padding:6px 8px">What it is · example</th></tr>
-      <tr><td style="padding:7px 8px;border-bottom:1px solid #eef1ff"><b>Relay gateway URL</b></td><td style="padding:7px 8px;border-bottom:1px solid #eef1ff">The HTTPS address of YOUR deployed relay (step 1 above). <b>Example:</b> <code>https://class-relay.yourdomain.com</code> — the WHIP pattern is <code>https://YOUR-RELAY-DOMAIN/rtc/v1/whip/?app=live&amp;stream=classdeck</code>. Must start with <code>https://</code>: the browser blocks an <code>http://</code> gateway on an HTTPS page, and the preflight catches it before you stream.</td></tr>
-      <tr><td style="padding:7px 8px;border-bottom:1px solid #eef1ff"><b>Gateway secret</b></td><td style="padding:7px 8px;border-bottom:1px solid #eef1ff">The shared password you set on the relay (its <code>SECRET</code> environment variable) — only people who know it can publish through your relay. <b>Example:</b> <code>a-long-passphrase-only-you-know</code>. Leave empty if your relay does not require one.</td></tr>
-      <tr><td style="padding:7px 8px;border-bottom:1px solid #eef1ff"><b>Stream name</b></td><td style="padding:7px 8px;border-bottom:1px solid #eef1ff">A name for THIS device&#8217;s feed — letters, digits and dashes only. Pre-filled as <code>classdeck-&lt;room code&gt;</code>. <b>Example:</b> <code>classdeck-math10a</code>. Two teachers streaming at the same time must use different stream names.</td></tr>
-      <tr><td style="padding:7px 8px;border-bottom:1px solid #eef1ff"><b>Format</b></td><td style="padding:7px 8px;border-bottom:1px solid #eef1ff"><b>Landscape 16:9</b> for YouTube / Facebook / Twitch, or <b>Vertical 9:16</b> for TikTok / Instagram (the class canvas is framed full-height with your camera picture-in-picture).</td></tr>
-      <tr><td style="padding:7px 8px;border-bottom:1px solid #eef1ff"><b>Frame rate</b></td><td style="padding:7px 8px;border-bottom:1px solid #eef1ff">10 fps for weak/mobile upload · <b>15 fps recommended</b> · 24 fps smooth · 30 fps only on strong upload. The panel shows an honest bitrate hint for each choice.</td></tr>
-      <tr><td style="padding:7px 8px;border-bottom:1px solid #eef1ff"><b>Destination — platform</b></td><td style="padding:7px 8px;border-bottom:1px solid #eef1ff">Pick YouTube, Facebook, TikTok, Instagram, Twitch, Kick or Custom RTMP. The correct RTMP/RTMPS server is filled in automatically — you never type a server URL by hand (hand-typed servers are the #1 cause of failed streams).</td></tr>
-      <tr><td style="padding:7px 8px;border-bottom:1px solid #eef1ff"><b>Destination — key</b></td><td style="padding:7px 8px;border-bottom:1px solid #eef1ff">The stream key from the platform dashboard (YouTube → Go Live → Stream key; Facebook → Live Producer → Use stream key; TikTok → Live Center; Instagram → Live Producer). <b>Example (YouTube):</b> <code>ab3d-1234-5678-9def</code>. Keys are masked and never logged; pasting a full <code>rtmp://…</code> URL by mistake is understood, not rejected. YouTube keys go stale after a few uses — copy a fresh one if the stream is refused.</td></tr>
-      <tr><td style="padding:7px 8px;border-bottom:1px solid #eef1ff"><b>Destination — server</b></td><td style="padding:7px 8px;border-bottom:1px solid #eef1ff">Auto-filled from the preset (YouTube <code>rtmp://a.rtmp.youtube.com/live2</code>, Facebook <code>rtmps://live-api-s.facebook.com:443/rtmp/</code>…). Only <b>Custom RTMP</b> asks you to type one — paste it exactly as your provider shows it. The full publish URL sent to the relay is <code>server/key</code>.</td></tr>
-      <tr><td style="padding:7px 8px;border-bottom:1px solid #eef1ff"><b>⚡ Smart paste box</b></td><td style="padding:7px 8px;border-bottom:1px solid #eef1ff">Paste <i>anything</i> — a bare key, a full <code>rtmp(s)://server/app/KEY</code> URL, or the whole block copied from the platform page (even when it mentions the platform by name) — and Classroom Deck works out the platform, server and key and adds the row for you.</td></tr>
-      <tr><td style="padding:7px 8px;border-bottom:1px solid #eef1ff"><b>💾 Save settings · ☁️ Restore</b></td><td style="padding:7px 8px;border-bottom:1px solid #eef1ff">Save keeps the setup on this device (and pushes it to your ADEWALE CLASSROOM account when signed in). <b>Restore from cloud</b> pulls the gateway, secret and keys back onto THIS device — the button to press on a new tablet after signing in.</td></tr>
-      <tr><td style="padding:7px 8px;border-bottom:1px solid #eef1ff"><b>Remember on this device</b></td><td style="padding:7px 8px;border-bottom:1px solid #eef1ff">Checked = the full setup (including keys) is stored on this device so it survives a refresh. Unchecked = only the gateway, stream name and format are kept, and the keys are re-entered next time.</td></tr>
-      <tr><td style="padding:7px 8px"><b>▶ Start · ■ Stop · 🩺 Check relay</b></td><td style="padding:7px 8px">Start runs a preflight first (empty keys, duplicate platforms, http gateway and TikTok-landscape warnings are caught BEFORE a byte leaves the tablet), then begins the broadcast. Stop ends it. Check relay tests whether the gateway answers at all.</td></tr>
+    <p class="muted" style="margin-top:0">Each row matches a field in the Tablet Live panel exactly. For every field: what it is, a copy-paste example, and the mistake new users make — with the ✅ right way and the ❌ wrong way side by side.</p>
+    <table class="guide">
+      <tr><th style="width:150px">Field</th><th>What it is · example</th><th style="width:34%">New-user mistake (✅ / ❌)</th></tr>
+      <tr>
+        <td><b>Relay gateway URL</b></td>
+        <td>The HTTPS address of YOUR deployed relay (step 1 above). <b>Example:</b> <code>https://class-relay.yourname.onrender.com</code> — the WHIP pattern is <code>https://YOUR-RELAY-DOMAIN/rtc/v1/whip/?app=live&amp;stream=classdeck</code>. Must start with <code>https://</code>: the browser blocks an <code>http://</code> gateway on an HTTPS page, and the preflight catches it before you stream.</td>
+        <td><span class="bad">❌</span> pasting the whole WHIP path, or <code>http://</code>, or the host's dashboard URL.<br><span class="good">✅</span> just the domain root: <code>https://class-relay.yourname.onrender.com</code> — Classroom Deck adds the rest.</td>
+      </tr>
+      <tr>
+        <td><b>Gateway secret</b></td>
+        <td>The shared password you set on the relay (its <code>SECRET</code> environment variable) — only people who know it can publish through your relay. <b>Example:</b> <code>a-long-passphrase-only-you-know</code>. Leave empty if your relay does not require one.</td>
+        <td><span class="bad">❌</span> typing the platform stream key here (they are different things: secret = relay password, key = platform password).<br><span class="good">✅</span> the same passphrase you put in the relay's <code>SECRET</code> env var — or leave blank if you never set one.</td>
+      </tr>
+      <tr>
+        <td><b>Stream name</b></td>
+        <td>A name for THIS device's feed — letters, digits and dashes only. Pre-filled as <code>classdeck-&lt;room code&gt;</code>. <b>Example:</b> <code>classdeck-math10a</code>. Two teachers streaming at the same time must use different stream names.</td>
+        <td><span class="bad">❌</span> spaces or emoji (rejected), or the same name on two tablets at once (the feeds fight).<br><span class="good">✅</span> <code>classdeck-</code> + your room code, one per concurrent teacher.</td>
+      </tr>
+      <tr>
+        <td><b>Format</b></td>
+        <td><b>Landscape 16:9</b> for YouTube / Facebook / Twitch, or <b>Vertical 9:16</b> for TikTok / Instagram (the class canvas is framed full-height with your camera picture-in-picture).</td>
+        <td><span class="bad">❌</span> landscape to TikTok/Instagram → ugly black bars left+right (the preflight warns you).<br><span class="good">✅</span> match the destination: 16:9 YouTube/Facebook, 9:16 TikTok/Instagram.</td>
+      </tr>
+      <tr>
+        <td><b>Frame rate</b></td>
+        <td>10 fps for weak/mobile upload · <b>15 fps recommended</b> · 24 fps smooth · 30 fps only on strong upload. The panel shows an honest bitrate hint for each choice.</td>
+        <td><span class="bad">❌</span> 30 fps "because it's better" on mobile data → the encoder can't keep up and the stream stutters.<br><span class="good">✅</span> 15 fps. If your viewers report lag, drop to 10 before touching anything else.</td>
+      </tr>
+      <tr>
+        <td><b>Destination — platform</b></td>
+        <td>Pick YouTube, Facebook, TikTok, Instagram, Twitch, Kick or Custom RTMP. The correct RTMP/RTMPS server is filled in automatically — you never type a server URL by hand (hand-typed servers are the #1 cause of failed streams).</td>
+        <td><span class="bad">❌</span> choosing "Custom RTMP" because you don't see your server yet, then typing a URL with a typo.<br><span class="good">✅</span> pick the platform by name — the server fills itself. Custom RTMP is only for platforms not in the list.</td>
+      </tr>
+      <tr>
+        <td><b>Destination — key</b></td>
+        <td>The stream key from the platform dashboard (where to find it: section 4). <b>Example (YouTube):</b> <code>ab3d-1234-5678-9def</code>. Keys are masked and never logged; pasting a full <code>rtmp://…</code> URL by mistake is understood, not rejected. YouTube keys go stale after a few uses — copy a fresh one if the stream is refused.</td>
+        <td><span class="bad">❌</span> reusing last week's key (expired on YouTube/Instagram), or pasting the stream URL into the key box AND the server box.<br><span class="good">✅</span> copy a <b>fresh</b> key for each live session; paste it in the key box only.</td>
+      </tr>
+      <tr>
+        <td><b>Destination — server</b></td>
+        <td>Auto-filled from the preset (YouTube <code>rtmp://a.rtmp.youtube.com/live2</code>, Facebook <code>rtmps://live-api-s.facebook.com:443/rtmp/</code>…). Only <b>Custom RTMP</b> asks you to type one — paste it exactly as your provider shows it. The full publish URL sent to the relay is <code>server/key</code>.</td>
+        <td><span class="bad">❌</span> "fixing" the auto-filled URL because it looks unusual.<br><span class="good">✅</span> leave the auto-fill alone — it is the platform's current ingest address.</td>
+      </tr>
+      <tr>
+        <td><b>⚡ Smart paste box</b></td>
+        <td>Paste <i>anything</i> — a bare key, a full <code>rtmp(s)://server/app/KEY</code> URL, or the whole block copied from the platform page (even when it mentions the platform by name) — and Classroom Deck works out the platform, server and key and adds the row for you.</td>
+        <td><span class="bad">❌</span> typing a key by hand, character by character, from a paper note.<br><span class="good">✅</span> copy from the platform page → paste into the smart box → row appears complete.</td>
+      </tr>
+      <tr>
+        <td><b>💾 Save settings · ☁️ Restore</b></td>
+        <td>Save keeps the setup on this device (and pushes it to your ADEWALE CLASSROOM account when signed in). <b>Restore from cloud</b> pulls the gateway, secret and keys back onto THIS device — the button to press on a new tablet after signing in.</td>
+        <td><span class="bad">❌</span> doing the whole setup again on a new tablet.<br><span class="good">✅</span> sign in once → ☁️ Restore → stream. Also: press 💾 Save after EVERY change, not only the first time.</td>
+      </tr>
+      <tr>
+        <td><b>Remember on this device</b></td>
+        <td>Checked = the full setup (including keys) is stored on this device so it survives a refresh. Unchecked = only the gateway, stream name and format are kept, and the keys are re-entered next time.</td>
+        <td><span class="bad">❌</span> unchecking it on a shared/public tablet is right, forgetting to RE-check on your own tablet next time.<br><span class="good">✅</span> keep it checked on YOUR tablet; uncheck only on devices other people use.</td>
+      </tr>
+      <tr>
+        <td><b>▶ Start · ■ Stop · 🩺 Check relay</b></td>
+        <td>Start runs a preflight first (empty keys, duplicate platforms, http gateway and TikTok-landscape warnings are caught BEFORE a byte leaves the tablet), then begins the broadcast. Stop ends it. Check relay tests whether the gateway answers at all.</td>
+        <td><span class="bad">❌</span> pressing Start straight to a live class with no dry run.<br><span class="good">✅</span> 🩺 Check relay → dry run → real class, every time you change a destination.</td>
+      </tr>
     </table>
     <div class="warn-note tiny" style="margin-top:10px"><b>First time?</b> Do one dry run: start the stream, confirm the preview appears on the platform, stop it, delete the dry-run recording. Keys are per-stream on YouTube and Instagram — generate fresh ones for the real class.</div>
   </section>
 
+  <section class="card">
+    <h2>3. Platform cheat-sheet — exactly where the key lives</h2>
+    <div class="platforms">
+      <div class="plat"><b>▶ YouTube</b><p class="tiny"><b>Path:</b> studio.youtube.com → <b>Go Live</b> (or Create → Go live) → choose <b>Streaming software</b> → the page shows <b>Stream key (paste into your software)</b> → copy.<br><b>Server:</b> auto-filled (<code>rtmp://a.rtmp.youtube.com/live2</code>).<br><b>Key looks like:</b> <code>ab3d-1234-5678-9def</code>.<br><b>Format:</b> 16:9 · 15 fps. <b>Notes:</b> the stream appears as "waiting for signal" — your tablet IS the signal. Eligibility: 24h wait on brand-new channels, live streaming must be enabled in settings (can take 24 h to activate).</p></div>
+      <div class="plat"><b>f Facebook</b><p class="tiny"><b>Path:</b> facebook.com/live/producer → choose <b>Streaming software</b> → copy the <b>stream key</b>.<br><b>Server:</b> auto-filled (<code>rtmps://live-api-s.facebook.com:443/rtmp/</code>).<br><b>Key looks like:</b> a long <code>0-RA…</code> string.<br><b>Format:</b> 16:9 · 15 fps. <b>Notes:</b> after the preview appears you may still need to press <b>Go Live</b> inside Facebook. Pages with repeated policy strikes lose live access.</p></div>
+      <div class="plat"><b>🎵 TikTok</b><p class="tiny"><b>Path:</b> livecenter.tiktok.com (or the app → Live Center → LIVE Studio access) → <b>RTMP</b> → copy the URL and key shown.<br><b>Key looks like:</b> shown once, with the RTMP URL beside it.<br><b>Format:</b> <b>9:16 vertical</b> (landscape gets bars) · 15 fps. <b>Notes:</b> RTMP streaming needs a LIVE-eligible account (usually 1,000+ followers and 18+; check Live Center availability in your region). Not eligible? Stream to YouTube and share the link to TikTok instead.</p></div>
+      <div class="plat"><b>📸 Instagram</b><p class="tiny"><b>Path:</b> a <b>professional/creator</b> account → Live producer on desktop (instagram.com → Create → Live producer) → copy the <b>stream key</b>.<br><b>Key looks like:</b> temporary, usually shown per-live-session.<br><b>Format:</b> <b>9:16 vertical</b> · 15 fps. <b>Notes:</b> keys are short-lived — generate a fresh one for each class; a stale key is the #1 Instagram failure. Personal (non-professional) accounts do not get RTMP keys.</p></div>
+      <div class="plat"><b>🎮 Twitch / Kick</b><p class="tiny"><b>Path (Twitch):</b> dashboard.twitch.tv → Settings → Stream → <b>Primary Stream key</b> → copy.<br><b>Server:</b> auto-filled (<code>rtmp://live.twitch.tv/app</code>).<br><b>Format:</b> 16:9 · 15 fps.<br><b>Notes:</b> Twitch keys are long-lived; Kick follows the same pattern from its Creator Dashboard → Streaming keys.</p></div>
+      <div class="plat"><b>🔧 Custom RTMP</b><p class="tiny">For any platform not listed (LinkedIn events, a church system, your own media server): pick Custom RTMP and paste the publish URL <b>exactly</b> as the provider prints it — including the app path, e.g. <code>rtmps://ingest.example.com/live</code>. This is the only place you ever type a server by hand.</p></div>
+    </div>
+    <div class="danger-note tiny" style="margin-top:10px"><b>Protect stream keys:</b> do not commit keys to GitHub, do not paste them into chats. Enter them only on your own tablet and relay over HTTPS. Obtain consent before publicly streaming minors — parents' permission first, always.</div>
+  </section>
+
+  <section class="card">
+    <h2>4. When something goes wrong — symptom → cause → fix</h2>
+    <table class="trouble">
+      <tr><th style="width:26%">Symptom</th><th style="width:32%">Most likely cause</th><th>Fix</th></tr>
+      <tr><td>🩺 Check relay says the gateway does not answer</td><td>Relay not deployed, sleeping (free tiers sleep when idle), or wrong URL.</td><td>Re-check the address; open the relay URL in a browser (it should respond, even with an error page); on free tiers, wake it by loading the page once, then Check relay again.</td></tr>
+      <tr><td>Preflight warning: gateway is not https</td><td>An <code>http://</code> address was pasted.</td><td>Your host gives an HTTPS address — use it. Browsers silently block mixed http gateways; the preflight is saving you a silent failure.</td></tr>
+      <tr><td>Stream starts, but no preview on the platform</td><td>Stale/rejected key, or the platform page was not created yet.</td><td>Copy a FRESH key from the platform's live page, paste it, Save, Stop → Start again. On YouTube check the Live Control Room shows "waiting for signal" first.</td></tr>
+      <tr><td>Preview appears then freezes / viewers report lag</td><td>Upload bandwidth too low for the chosen fps.</td><td>Drop frame rate to 10 fps. If it persists, stream to ONE platform instead of several (each destination multiplies the relay's outgoing work).</td></tr>
+      <tr><td>TikTok shows black bars either side</td><td>Landscape 16:9 sent to a vertical platform.</td><td>Set Format = Vertical 9:16 and restart the stream (the preflight warns about this before you go live).</td></tr>
+      <tr><td>"Unauthorized" / 401 from the relay</td><td>Gateway secret mismatch.</td><td>The secret in Tablet Live must match the relay's <code>SECRET</code> environment variable exactly — same case, no extra spaces. No secret on the relay? Leave the field empty.</td></tr>
+      <tr><td>Two teachers stream and one overwrites the other</td><td>Same stream name on both tablets.</td><td>Each concurrent teacher uses their own stream name: <code>classdeck-math10a</code>, <code>classdeck-english9b</code>…</td></tr>
+      <tr><td>New tablet: everything is empty</td><td>You have not linked your account on this device.</td><td>Sign in with your ADEWALE CLASSROOM account, then ☁️ Restore from cloud — gateway, secret and keys return in one click.</td></tr>
+      <tr><td>Instagram refuses the key you used yesterday</td><td>Instagram keys are short-lived by design.</td><td>Generate a new key in Live producer for each session. Same habit for YouTube after a few uses.</td></tr>
+      <tr><td>Students inside the class cannot see the social stream</td><td>They were never meant to — class video and social broadcast are separate pipes.</td><td>Students join your class link as always; the social stream is for the public audience. Both can run at once.</td></tr>
+    </table>
+  </section>
+
   <div class="grid">
     <section class="card">
-      <h2>3. Full tablet screen vs Classroom Deck screen</h2>
+      <h2>5. Full tablet screen vs Classroom Deck screen</h2>
       <p>On many Android tablets, browser security does not expose full-system screen capture to websites. Classroom Deck therefore provides two routes:</p>
       <ul>
         <li><b>Classroom Deck workspace capture:</b> always available because the app captures its own teaching canvas.</li>
@@ -85,22 +209,9 @@
       </ul>
       <div class="warn-note tiny">If full Android screen capture is not available, your students/social audience still see the whole Classroom Deck teaching workspace — whiteboard, PDFs, browser cast, notes, toolkit, camera, captions and overlays.</div>
     </section>
-  </div>
-
-  <div class="grid">
-    <section class="card">
-      <h2>4. Social platform notes</h2>
-      <div class="platforms">
-        <div class="plat"><b>▶ YouTube</b><p class="tiny">Use YouTube Studio/Live Control Room to create a stream and copy the RTMP server + key. Paste the full publish URL into Tablet Live.</p></div>
-        <div class="plat"><b>f Facebook</b><p class="tiny">Use Facebook Live Producer. Copy the secure RTMPS publish URL/key. Some workflows require you to click Go Live in Facebook after the preview appears.</p></div>
-        <div class="plat"><b>📸 Instagram</b><p class="tiny">Use a professional/creator account with Instagram Live Producer. Keys are temporary and usually must be generated for each live session.</p></div>
-        <div class="plat"><b>🎵 TikTok</b><p class="tiny">TikTok Live/RTMP access depends on account eligibility or Live Center access. Use the RTMP URL/key shown by TikTok when available.</p></div>
-      </div>
-      <div class="danger-note tiny" style="margin-top:10px"><b>Protect stream keys:</b> do not commit keys to GitHub. Enter them only on your own tablet and relay over HTTPS.</div>
-    </section>
 
     <section class="card">
-      <h2>5. No relay yet? Browser-studio fallback</h2>
+      <h2>6. No relay yet? Browser-studio fallback</h2>
       <p class="muted">These are also no-OBS options from a tablet browser, but they depend on each provider's free-plan limits and mobile browser support.</p>
       <div class="row2">
         <a class="btn" href="https://studio.youtube.com" target="_blank" rel="noopener">YouTube Studio</a>
@@ -114,7 +225,7 @@
   </div>
 
   <div class="card">
-    <h2>6. HMG brand details embedded</h2>
+    <h2>7. HMG brand details embedded</h2>
     <p><b>Adewale Samson Adeagbo</b> — AI-Augmented Solutions Developer, Data Scientist, STEM Educator, EdTech Builder and Founder/Visioner of the HMG ecosystem.</p>
     <p>HMG Concepts means <b>His Marvellous Grace</b> — Education, Technology, Media and Gospel arms built with cost discipline, Nigerian context awareness and values-driven problem solving.</p>
     <div class="row2">
@@ -134,7 +245,32 @@ const $=(s,r=document)=>r.querySelector(s);
 const base=location.href.replace(/stream\.html.*$/,"");
 $("#openTeach").onclick=()=>window.open(base+"teach.html","_blank","noopener");
 $("#copyRelay").onclick=async()=>{const txt="https://YOUR-RELAY-DOMAIN/rtc/v1/whip/?app=live&stream=classdeck"; try{await navigator.clipboard.writeText(txt); alert("Copied: "+txt);}catch{prompt("Copy WHIP endpoint pattern",txt)}};
-function plan(){return ["HMG CLASSDECK TABLET SOCIAL LIVE PLAN","","1. Deploy relay/no-obs-social-relay on a free/low-cost HTTPS VM.","2. Open teach.html on the tablet.","3. Settings → Tablet Live.","4. Gateway URL: https://YOUR-RELAY-DOMAIN","5. Stream name: classdeck-ROOMCODE","6. Paste full RTMP/RTMPS publish URLs from YouTube/Facebook/Instagram/TikTok.","7. Start tablet social live.","","FIELD CHECKLIST (Settings -> Tablet Live):","- Relay gateway URL: https://YOUR-RELAY-DOMAIN  (https only)","- Gateway secret: the relay SECRET env var (blank if none)","- Stream name: classdeck-ROOMCODE (letters/digits/dashes)","- Format: landscape 16:9 (YouTube/Facebook) or vertical 9:16 (TikTok/Instagram)","- Frame rate: 15 fps recommended (10 on weak mobile upload)","- Destinations: pick platform, paste ONLY the stream key (server fills in)","- Save settings; on a new device press Restore from cloud after sign-in","","Reminder: protect stream keys and obtain consent before public streaming minors."].join("\n")}
+/* V50 (r14 item 2): persisted first-run checklist — progress survives
+   refresh on this tablet so a new user always knows where they stopped. */
+(function(){
+  const KEY="cd_stream_firstrun_v1";
+  let state={};
+  try{state=JSON.parse(localStorage.getItem(KEY)||"{}");}catch(e){state={};}
+  const items=[].slice.call(document.querySelectorAll("#frChecklist li"));
+  const prog=$("#frProgress");
+  function paint(){
+    let done=0;
+    items.forEach(li=>{
+      const k=li.dataset.k, cb=li.querySelector("input");
+      cb.checked=!!state[k]; li.classList.toggle("done",!!state[k]);
+      if(state[k])done++;
+    });
+    prog.textContent=done+" / "+items.length;
+  }
+  items.forEach(li=>{
+    const k=li.dataset.k, cb=li.querySelector("input");
+    cb.addEventListener("change",()=>{state[k]=cb.checked;try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}paint();});
+  });
+  const rs=$("#frReset");
+  if(rs)rs.onclick=e=>{e.preventDefault();state={};try{localStorage.setItem(KEY,"{}");}catch(err){}paint();};
+  paint();
+})();
+function plan(){return ["HMG CLASSDECK TABLET SOCIAL LIVE PLAN","","THE 3 THINGS YOU NEED:","1. A relay address  (relay/no-obs-social-relay/ deployed on a free HTTPS host)","2. A fresh stream key from each platform's live page","3. This tablet, signed in to your ADEWALE CLASSROOM account","","SETUP (once):","1. Deploy relay/no-obs-social-relay on a free/low-cost HTTPS host.","2. Open teach.html on the tablet and sign in.","3. Settings -> Tablet Live.","4. Gateway URL: https://YOUR-RELAY-DOMAIN   (https only; just the domain root)","5. Gateway secret: the relay SECRET env var (leave blank if none)","6. Stream name: classdeck-ROOMCODE  (letters/digits/dashes; unique per teacher)","7. Destinations: pick the platform by name, paste ONLY the stream key (server auto-fills)","8. Format: 16:9 for YouTube/Facebook/Twitch -> 9:16 for TikTok/Instagram -> 15 fps recommended (10 on weak upload)","9. Save settings; dry run: Start -> confirm platform preview -> Stop","10. On a new tablet: sign in, press Restore from cloud, done.","","WHERE THE KEY LIVES:","- YouTube:    studio.youtube.com -> Go Live -> Streaming software -> Stream key","- Facebook:   facebook.com/live/producer -> Streaming software -> key","- TikTok:     livecenter.tiktok.com -> RTMP (LIVE-eligible accounts; vertical 9:16)","- Instagram:  Live producer on desktop (professional account; fresh key per session)","- Twitch:     dashboard.twitch.tv -> Settings -> Stream -> Primary Stream key","","IF SOMETHING GOES WRONG:","- Gateway does not answer -> wake the free-tier relay (open its URL once), re-check address","- No preview on platform -> copy a FRESH key, Save, Stop, Start again","- Lag/stutter -> drop to 10 fps, or stream to one platform instead of several","- TikTok black bars -> switch Format to Vertical 9:16","- 401 from relay -> gateway secret must match the relay SECRET env var exactly","","Reminder: protect stream keys and obtain consent before public streaming minors."].join("\n")}
 $("#downloadPlan").onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([plan()],{type:'text/plain'}));a.download='classdeck-tablet-social-live-plan.txt';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500)};
 </script>
 </body>

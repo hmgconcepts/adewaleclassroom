@@ -1,6 +1,6 @@
 {
-  "version": "14.4.0",
-  "build": 18,
+  "version": "14.5.0",
+  "build": 19,
   "channel": "stable",
   "released": "2026-10-08",
   "features": [
@@ -63,6 +63,9 @@
     "v14.4-login-restore-toast",
     "v14.4-stream-page-field-guide",
     "v14.4-family-library-access-v49-db",
-    "v14.4-gosa-toolbars-portal-side"
+    "v14.4-gosa-toolbars-portal-side",
+    "v14.5-turn-key-cloud-prefill",
+    "v14.5-restore-button-in-turn-card",
+    "v14.5-stream-page-deep-docs-checklist"
   ]
 }

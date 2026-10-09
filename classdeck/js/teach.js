@@ -2563,8 +2563,45 @@ on("#btnSettings", "click", () => {
   updateRelayPreview();
   $("#setNewRoom").checked = false;
   renderCloudSyncCard();          /* V48: roaming status + link card */
+  settingsCloudPrefill();         /* V50 (r14 item 1): the TURN key the teacher
+                                     saved on the tablet must PRE-FILL here on
+                                     any device — pull from the cloud account
+                                     when this device has nothing saved. */
   openModal("#mSettings");
 });
+
+/* ============================================================
+   V50 (round 14, item 1) — TURN key roaming pre-fill.
+   The teacher sets the key up ONCE (usually on the tablet).
+   On every OTHER device the two boxes below opened empty and the
+   teacher assumed they had to buy/paste it again. Now:
+     · opening Settings on a device with NO saved key pulls the key
+       from the linked cloud account automatically, and
+     · a ☁️ Restore button sits right next to the boxes for the
+       manual case (or to refresh after renewing the token).
+   ============================================================ */
+function prefillTurnBoxes() {
+  const cfk = $("#setCfKey"), cft = $("#setCfToken");
+  if (cfk) cfk.value = Store.get("cf_key", "") || "";
+  if (cft) cft.value = Store.get("cf_token", "") || "";
+  try { updateRelayPreview(); } catch (e) {}
+}
+async function settingsCloudPrefill() {
+  if (!window.CloudCreds || !CloudCreds.signedIn()) return;
+  /* Only auto-pull when THIS device has nothing saved — never overwrite
+     values the teacher just typed into the boxes but has not saved. */
+  if (Store.get("cf_key", "") || Store.get("cf_token", "")) return;
+  const ok = await CloudCreds.pull();
+  if (ok && (Store.get("cf_key", "") || Store.get("cf_token", ""))) {
+    prefillTurnBoxes();
+    /* pull() also re-applies the saved relay credentials — refresh that
+       box too, it was filled from THIS device's (empty) storage above. */
+    const rl = $("#setRelay");
+    if (rl) rl.value = Store.get("relay_servers", "") || "";
+    try { updateRelayPreview(); } catch (e) {}
+    toast("☁️ TURN key restored from your account — nothing to re-paste.", "ok", 8000);
+  }
+}
 
 /* ============================================================
    v12 RELAY WORKBENCH — live preview, Cloudflare key generator,
@@ -4382,6 +4419,25 @@ async function restoreCredsFromCloud() {
 }
 if ($("#tlRestore")) on("#tlRestore", "click", restoreCredsFromCloud);
 if ($("#btnRestoreCreds")) on("#btnRestoreCreds", "click", restoreCredsFromCloud);
+
+/* V50 (r14 item 1): the Restore button that lives right next to the TURN
+   Token ID / API token boxes. Same cloud pull, but it ALWAYS refreshes the
+   two boxes (not only when this device was empty) and explains itself. */
+if ($("#btnRestoreCfKey")) on("#btnRestoreCfKey", "click", async () => {
+  if (!window.CloudCreds) { toast("Cloud sync is not available in this build.", "err"); return; }
+  if (!CloudCreds.signedIn()) {
+    toast("Not linked yet. Open ☁️ Cloud sync below, enter your ADEWALE CLASSROOM email and password once — after that this button (and Settings itself) brings the key back on every device.", "err", 12000);
+    return;
+  }
+  toast("☁️ Pulling your TURN key from the cloud…", "ok", 4000);
+  const ok = await CloudCreds.pull();
+  const st = CloudCreds.status();
+  if (!ok || st.missing) { toast("Restore problem: " + (st.reason || "unknown"), "err", 10000); return; }
+  prefillTurnBoxes();
+  try { renderCloudSyncCard(); } catch (e) {}
+  if (Store.get("cf_key", "")) toast("☁️ TURN Token ID + API token restored into the boxes above — press ⚡ Generate whenever you need fresh relay credentials.", "ok", 9000);
+  else toast("☁️ Restored — but no TURN key is saved in your account yet. Fill the boxes once and press ⚡ Generate; every future device then restores it automatically.", "ok", 12000);
+});
 
 /* V47: never let a live social stream die silently with a closed tab */
 window.addEventListener("beforeunload", (e) => {
