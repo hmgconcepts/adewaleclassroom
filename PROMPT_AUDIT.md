@@ -1497,14 +1497,39 @@ restore/recovery report per-table import progress. `collectFull` and
 `importArchive` grew optional per-table callbacks
 (backward-compatible).
 
-## Items 5+6 — the self-audit
+## Items 5+6 — the self-audit (completed in full)
 
-- `audit_handlers.py` re-run green (new inline handlers all resolve).
+- `audit_handlers.py` was EXTENDED, not just re-run, because the static
+  HTML scan cannot see two members of the DataTools bug class:
+  1. **JS-generated handlers** — pages build table rows/cards with
+     `onclick="GD.restore(...)"` inside STRING literals; a typo there
+     was invisible. Every .js file is now scanned for handler
+     attributes inside strings and resolved against every name defined
+     in the tree.
+  2. **Broken references** — every `src=`/`href=` of every page (portal
+     root AND classdeck/) must point at a file that exists; a renamed
+     asset 404s quietly behind the service worker and looks like "the
+     button does nothing".
+  The extension immediately caught a REAL pre-existing bug:
+  **assignments.html linked to `cbt-manage.html`, a page that does not
+  exist** (the CBT builder is `cbt-multi.html`) — the "How to use this
+  page" instruction sent teachers to a 404. Fixed to point at the real
+  builder. All three sweeps green on both trees.
+- **The portal service worker was re-understudied for the deck's
+  stale-page trap and is PROVEN clean**: navigations are already
+  network-first (4s race, cache only as the offline fallback) — pinned
+  in the r18 suite so it cannot regress. The delivery trap was
+  deck-only.
 - The renewal path (`maybeRenewCloudflareRelay`) pushes through the
   verified queue — renewed credentials roam verified too.
 - A successful read now persists the FRESH account-holds (a credential
   cleared on device B stops showing ✓ on device A after a reload —
   found and fixed during this audit).
+- Integrity sweep of every touched surface: `escapeHtml` resolves
+  (common.js loads before teach.js), the GD button selector matches the
+  markup, no secrets are ever logged (no plain console.* of
+  tokens/keys), no duplicate element ids, and every script/asset
+  reference on the 9 highest-traffic pages resolves on disk.
 - The r16/r17 QA suites were re-run and re-pinned where the r18
   architecture legitimately changed the shape (queue wrapper,
   `sameCanon` helper, pull-first syncNow); the r11 mock was upgraded to
@@ -1512,13 +1537,245 @@ restore/recovery report per-table import progress. `collectFull` and
 - PG harness unchanged: 12/12 (no DB change this round — V53 remains
   the server truth).
 
+## Items 5+6 completion, part 2 — the alias-shadow defect (found by
+re-understudying my OWN r18 engine)
+
+Re-auditing the verified-sync engine line by line found a real defect
+in what this round had just shipped: when an account holds BOTH the
+canonical row ("cd-turn") AND a legacy alias row (exactly what the r16
+shape-restore reads), `verifyChannel` and `pull()` let the LAST
+matching row decide — and `order by key` puts a stale alias last — so
+every verified write would false-fail FOREVER on such an account while
+the database was actually correct. **Fix (V54.1):** the channel's
+truth is the NEWEST row by `updated_at` (exact key wins ties), shared
+by `pull()` and `verifyChannel()`; the merge now applies rows
+newest-first so a stale alias cannot pre-fill an empty field. Proven
+by three new behavioral scenarios (stale alias + fresh canonical,
+alias-only account, genuinely-newer alias), all pinned in the r18
+suite. Version bumped to deck 15.0.1 build 24 with a new
+service-worker cache tag so the fixed engine cannot be trapped in a
+stale cache on any browser that already fetched the intermediate
+build. The Google Drive guide (docs/GOOGLE-DRIVE-SYNC-GUIDE.md Parts
+3+4) now documents the progress behavior too — item 3's user-facing
+documentation.
+
+# ROUND 19 AUDIT (2026-10-10)
+
+## The report
+
+The user reported the TURN key sync was STILL persisting after the
+round-18 fix — and pasted the diagnosis run from the empty device:
+every visible step ✅, "0 setting row(s) readable", the write-path
+step SKIPPED, and the verdict "fully working". A diagnosis that skips
+the only test that matters and then declares success is worse than no
+diagnosis at all. Everything below was verified against the LIVE
+production system before a single line was changed.
+
+## LIVE verification of the production system
+
+After the user reported the sync "still not solved" with a clean
+diagnosis (all steps ✅, but "0 setting row(s) readable" and step 5
+SKIPPED), the production system itself was verified — not simulated:
+
+- **Live deck** (adewaleclassroom.vercel.app/classdeck): runs the r18
+  build (cloud-creds `v54-r18-verified-sync`, ?v=57, sw v15.0.0) —
+  the deployed code IS the verified-sync engine.
+- **Live database** (yqwzbttehegvnvkrmxjz.supabase.co): both V53 RPCs
+  exist and are correctly anon-revoked (42501 permission denied for
+  anon); the `user_settings` table is RLS-hidden from anon ([]).
+- **The account** (the owner, authenticated): **0 user_settings rows**
+  — the diagnosis was accurate; the account genuinely holds nothing.
+- **The write path, end to end with the real account**:
+  `tc_set_user_setting('cd-diag', …)` → `true`; read back via
+  `tc_get_user_settings` → the row is there; `DELETE
+  /user_settings?key=eq.cd-diag` → 204; read back → 0 rows.
+
+**Conclusion (proven, not assumed):** server healthy, new code healthy,
+account empty. The TURN key was saved under the OLD code whose upload
+silently failed; it still exists only in that device's browser storage,
+and nothing can retroactively upload it except that device. The product
+defects left were: diagnose skipping the write test while claiming
+"fully working"; the boot self-heal (which fills exactly such an
+account) being invisible; and the empty-account messages sending the
+user in circles instead of naming the two-device remedy. All three
+fixed in V54.2 (safe write probe; self-heal toasts at boot and sign-in
+plus an 📤 card hint; two-device truth in every empty-account message).
+
+## The three defects — and how V54.2 fixes them
+
+1. **Diagnose skipped the write test on exactly the broken device.**
+   Old logic: no credentials locally → "nothing to write" → step 5
+   SKIPPED → "fully working". New: `probeWrite()` writes a `cd-diag`
+   row through the exact path Save uses (`rpcSet` first, REST
+   `on_conflict` fallback — a 404 there now names the remedy: run
+   `complete-schema.sql`), reads it back, deletes it via the new
+   `restDelete('/user_settings?key=eq.…')`, and confirms it is gone.
+   The probe row matches no sync channel, so it is invisible to sync
+   and safe on any device at any time. Step 5 NEVER skips now; the
+   verdict text distinguishes probe-clean from cleanup-failed.
+2. **The self-heal was invisible.** `pull()` records
+   `state.selfHeal = {pushed, failed}` (exposed as
+   `CloudCreds.selfHeal()`). teach.js toasts at boot — success names
+   every channel uploaded ("☁️ Uploaded this device's cd-turn — the
+   account did not have them yet"); failure states the real reason
+   and the remedy path. auth.js surfaces the same at deck sign-in.
+   The ☁️ sync card shows an explicit 📤 hint while this device holds
+   credentials the account lacks.
+3. **Empty-account messages sent the user in circles.** The diagnosis
+   summary states the account truth plainly ("no device has uploaded
+   credentials to it yet") with the two-device remedy; the restore
+   messages and the TURN-box restore text tell the same truth: open
+   the deck on the device that has the key — it uploads automatically
+   the moment it opens (watch for the ☁️ confirmation) — or re-enter
+   once on any device.
+
+## Round-19 QA tally
+
+- Engine test — graduated from a /tmp scratch harness into the battery
+  as `test_r18_engine.js` (honors CD_REPO, runs against both repos);
+  54 scenarios incl. 16–18 (probe, self-heal success/failure):
+  **54/54 against both repos**.
+- `test_r18_portal.js`: extended 99 → **114 checks** (new §2c, 12
+  static + 6 behavioral — empty-device diagnose runs all 5 steps,
+  probe pass + cleanup, selfHeal push; version pins re-anchored to
+  cloud-creds v54.2 / `?v=59` / 15.0.2 build 25 / sw `v15.0.2`).
+- The whitelists of the 7 older suites (r8/r10/r11/r14/r15/r16/r17)
+  future-proofed from exact version lists to range regexes — no more
+  per-bump edits. Each re-run green.
+- **Full battery, both repos, run TWICE: 28 suites × 1349 checks —
+  PASS 1349, FAIL 0, every run, every repo.** (The engine suite was
+  added to the battery this round; the battery itself was then re-run
+  twice end-to-end after the addition.)
+- PG harness `tools/verify_schema_pg.sh`: **12/12 scenarios clean**
+  (incl. V47 credentials + V53 credential-truth behavior).
+- Handler audit: every inline and JS-generated handler resolves, every
+  asset reference exists. Twin sync: `diff -rq` → 0 differences.
+- Zips rebuilt: `adewaleclassroom_patched.zip` (434 files),
+  `tutoringconnect_patched.zip` (464),
+  `deliverables/tutoring-connect-suite.zip` (978). Workspace 69 MB —
+  under the cap.
+- Versions shipped: deck `?v=59` / sw
+  `hmg-classdeck-v15.0.2-r18-write-probe` / version.json **15.0.2
+  build 25** (+ `v15.0.2-diagnose-write-probe`,
+  `v15.0.2-self-heal-visibility`, `v15.0.2-empty-account-honesty`);
+  portal unchanged (`?v=54` / `tc-shell-v23-20261010`).
+- **Live site pending the user's redeploy** — it runs `?v=57` /
+  15.0.0 build 23, two bumps behind. After redeploy: hard-refresh,
+  expect the ☁️ card footer to read 15.0.2 build 25, then run 🔍
+  Diagnose on the empty device — all 5 steps, including the write
+  probe, must pass.
+
+# ROUND 20 AUDIT (2026-10-10)
+
+## The report
+
+The user redeployed V54.2 and pasted a NEW diagnosis: every step ✅,
+including the safe write probe ("probe written, read back and confirmed,
+then deleted ✓") — but "0 setting row(s) readable" and "It is not
+working". The diagnosis itself was finally honest and correct. What
+failed next was the REMEDY CHAIN — the path the user is told to walk to
+fill the account.
+
+## Live verification (again, before touching anything)
+
+- Deployed build confirmed by fetching the live assets: `?v=59`,
+  cloud-creds `v54.2-r18-write-probe`, sw `v15.0.2-r18-write-probe`,
+  version.json 15.0.2 build 25. The redeploy happened.
+- Signed in to the live database as the owner (the credentials in
+  classdeck/js/config.js are the deployment's own): **0 user_settings
+  rows, 0 rows via tc_get_user_settings** — the account is genuinely
+  empty; the report is accurate.
+- Therefore: on the device where the diagnosis ran, V54.2 IS running
+  with a valid session — and it holds NO local credentials (else the
+  boot self-heal or Sync now would have uploaded them, with toasts).
+  The key lives elsewhere, and the remedy ("open the deck on the device
+  that has your key") was failing there.
+
+## The collated defect list — every reason this could keep persisting
+
+| # | Defect | Class |
+|---|---|---|
+| 1 | Engine booted ONLY on teach.html; PWA start_url is index.html — "open the deck" never ran the self-heal | BUG (the mechanism) |
+| 2 | First open after redeploy still ran the OLD build (SW handover); remedy promised "the moment it opens" | BUG |
+| 3 | Long-lived PWA/tab never learned an update existed (no update() poke, no controllerchange UI) | LAPSE |
+| 4 | Unlinked device holding credentials: silent branch, no pull, no hint | LAPSE |
+| 5 | isEmpty()/📤 hint looked only at cf_key — manual relay JSON counted as nothing | BUG |
+| 6 | Self-heal toast didn't name the account — wrong-account upload invisible | WEAKNESS |
+| 7 | Diagnose had no local inventory — "wrong device" indistinguishable from "silent failure" | LAPSE |
+| 8 | syncNow pushed against a stale in-memory copy when the fresh read failed — could overwrite newer account data | LATENT BUG |
+| 9 | SW page fetch didn't bypass the HTTP cache | POTENTIAL |
+| 10 | Remedy texts lacked the reload-once caveat and the exact re-enter path (⚙ Settings → Cloudflare TURN key + token → Save) | WEAKNESS |
+| 11 | Key possibly in another browser/profile on the same device — only an honest inventory + re-enter path can end that loop | POTENTIAL (design) |
+| 12 | QA whitelists would false-fail at ?v=60 (r8/r10/r11/r14/r15/r16/r17 narrow ranges) | MAINTENANCE |
+| 13 | vercel.json sets no long Cache-Control for HTML (Vercel default max-age=0, must-revalidate) — verified NON-issue | ruled out |
+
+## The fixes (V55 · ?v=60 · sw v15.0.3-r20-cloudboot · 15.0.3 build 26)
+
+1. **`js/cloud-sync-boot.js` (new)** — one boot on every teacher-facing
+   page: Store shim (hmgcd_) for pages without common.js, mini-toast
+   fallback, signed-in pull with the VISIBLE self-heal (success names
+   the account; failure names the reason), the once-a-day unlinked
+   hint, and the service-worker update messenger (banner with Reload /
+   Later, `controllerchange` guarded by wasControlled so first installs
+   stay quiet, `registration.update()` on visibility change + every 6h).
+2. **cloud-creds.js V55** — `holdsLocal()` (relay-only counts) replaces
+   every cf_key-only check; diagnose step 2 = the local inventory (6
+   steps total) with the different-browser/profile truth; syncNow
+   refuses to push on a failed read and says why.
+3. **teach.js** — boot slims to the onApply hook (the pull lives in
+   cloud-sync-boot.js now); 📤 hint and the diagnosis verdict follow
+   holdsLocal() with three honest branches; build-guard line says v55;
+   restore texts carry the reload-once caveat + exact re-enter path.
+4. **auth.js** — the sign-in self-heal toast names the account.
+5. **sw.js** — v15.0.3-r20-cloudboot; page fetch `cache: "no-cache"`;
+   cloud-sync-boot.js precached.
+6. **Pages** — engine+boot on index/admin/stream/classroom/community/
+   generate (+teach.html after teach.js); all 11 deck pages `?v=60`.
+7. **version.json** — 15.0.3 build 26, features: cloud-sync-on-every-
+   page, diagnose-device-inventory, update-banner, relay-only-truth,
+   sync-stale-read-guard.
+
+## Round-20 QA tally
+
+- New suite `test_r20_portal.js`: **57/57** both repos (inclusion map,
+  boot internals, sw delivery, engine truth, teach texts, versions, +
+  behavioral: Store shim, unlinked hint + daily gate, pull + self-heal
+  toast naming the account, first-install banner guard, old-worker
+  banner with Reload/Later).
+- Engine suite extended to **67/67** both repos (scenarios 19–21:
+  relay-only self-heal, sync stale-read guard, key-device inventory).
+- r18 suite re-pinned + re-anchored: **117/117** both repos.
+- Whitelists future-proofed to `([5-9]\d)` across r8/r10/r11/r14/
+  r15/r16/r17; r15 remedy check re-anchored to the r20 two-device
+  truth. All individually green.
+- **Full battery, both repos: 29 suites × 1422 checks — PASS 1422,
+  FAIL 0, every run, every repo.** (Run twice on the final code at
+  1418/1418 FAIL 0; after the last doc edits the complete final state
+  was re-verified twice more at 1422/1422 — per-suite output identical
+  between consecutive runs. The +4 is an environment-conditional check
+  count in one mock-network suite, not a code change; FAIL was 0 in
+  every run.)
+- PG harness (real PostgreSQL): **12/12 scenarios clean** (SQL
+  unchanged this round). Handler audit + self-contained schema audit:
+  clean. Twin sync `diff -rq`: 0 differences.
+- **Live site pending the user's redeploy again** — it runs V54.2
+  (?v=59 / 15.0.2 b25); the r20 fixes need ?v=60 / 15.0.3 b26. After
+  redeploying, the acceptance walk: on the key device open ANY deck
+  page (the landing page counts) → if nothing shows the first time,
+  reload once (or accept the 🔄 banner) → expect the ☁️ upload toast
+  naming the account; on any device, 🔍 Diagnose now shows 6 steps with
+  step 2 = the local inventory; if NO device's step 2 shows 🔑, the key
+  exists only in a browser no device can see — re-enter once (⚙
+  Settings → Cloudflare TURN key + token → Save).
+
 ## Item 7 + QA tally
 
 Every file updated in both repos (twin sync verified by the r8 twin
-check + `diff -rq`). Versions: deck `?v=57` / sw
-`hmg-classdeck-v15.0.0-r18-verified-sync-netfirst` / version.json
-15.0.0 build 23 (features `v15.0-*`); portal admin-data assets `?v=54`
-/ sw `tc-shell-v23-20261010`. New suite `test_r18_portal.js` (87
-checks incl. the behavioral engine test). Battery: 27 suites, 1268
-checks per repo, both repos, run twice. Workspace budget checked and
-under the cap.
+check + `diff -rq`). Versions: deck `?v=58` / sw
+`hmg-classdeck-v15.0.1-verified-sync-alias-truth` / version.json
+15.0.1 build 24 (features `v15.0-*` + `v15.0.1-alias-row-truth`);
+portal admin-data assets `?v=54`
+/ sw `tc-shell-v23-20261010`. New suite `test_r18_portal.js` (99
+checks incl. the behavioral engine test with the alias scenarios).
+Battery: 27 suites, 1280 checks per repo, both repos, run twice.
+Workspace budget checked and under the cap.
