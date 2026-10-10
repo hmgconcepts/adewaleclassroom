@@ -5,6 +5,11 @@
    ==================================================================== */
 
 :root {
+  color-scheme: light;
+  --field-bg: #ffffff;
+  --field-fg: #1e293b;
+  --field-placeholder: #64748b;
+  --card-bg: #ffffff;
   --primary: #4f46e5;
   --primary-dark: #3730a3;
   --primary-light: #818cf8;
@@ -38,7 +43,19 @@
 }
 
 /* Dark mode variables */
-[data-theme="dark"] {
+html[data-theme="dark"] {
+  /* r21: the dark theme remaps the BRAND ACCENTS too. The per-page tc-brand
+     override sets :root{--primary:#0506ae} — near-black indigo that is
+     INVISIBLE on dark surfaces (the "exam code was not visible" report).
+     html[data-theme="dark"] outranks :root, so dark mode always wins. */
+  --primary: #93a5ff;
+  --primary-dark: #7c92ff;
+  --primary-light: #b4c1ff;
+  --accent: #67e8f9;
+  --field-bg: #10192e;
+  --field-fg: #f1f5f9;
+  --field-placeholder: #94a3b8;
+  --card-bg: #101a30;
   --dark: #f8fafc;
   --gray-900: #f1f5f9;
   --gray-800: #e2e8f0;
@@ -53,6 +70,7 @@
   background: var(--gray-100);
   color: var(--gray-800);
 }
+[data-theme="dark"] { color-scheme: dark; }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -128,7 +146,7 @@ input, textarea, select { font-family: inherit; font-size: 1rem; }
 .grid-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 .grid-3 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
 .grid-4 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-.card { background: white; border-radius: var(--radius-lg); padding: 28px; box-shadow: var(--shadow); border: 1px solid var(--gray-200); transition: var(--transition); }
+.card { background: var(--card-bg, white); border-radius: var(--radius-lg); padding: 28px; box-shadow: var(--shadow); border: 1px solid var(--gray-200); transition: var(--transition); }
 .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
 .card h3 { font-size: 1.2rem; font-weight: 800; color: var(--dark); margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
 .card p { color: var(--gray-700); font-size: 0.95rem; line-height: 1.6; }
@@ -156,7 +174,34 @@ input, textarea, select { font-family: inherit; font-size: 1rem; }
 /* ===== Forms ===== */
 .form-group { margin-bottom: 20px; }
 .form-group label { display: block; font-weight: 600; font-size: 0.9rem; color: var(--gray-700); margin-bottom: 6px; }
-.form-input, .form-textarea, .form-select { width: 100%; padding: 12px 16px; border: 1.5px solid var(--gray-300); border-radius: 10px; background: white; color: var(--gray-900); transition: var(--transition); font-size: 0.95rem; }
+/* ═══ r21 (round 21, item 2): THE CBT/TEXT CLARITY PASS ═══
+   Field report: on one laptop every CBT text was crisp; on the student's
+   system, typed text did not appear, the exam code was invisible and some
+   questions did not show. Root causes (all fixed here, platform-wide):
+   (a) fields hardcoded background:white with color:var(--gray-900) — under
+       the dark theme --gray-900 flips to near-WHITE = white text on white
+       fields: typing showed NOTHING. Fields are now theme-aware via
+       --field-bg/--field-fg with an explicit caret-color and placeholder.
+   (b) .card hardcoded background:white while its text colors flipped —
+       question cards went blank in dark mode. Now --card-bg.
+   (c) --primary is near-black indigo (#0506ae): exam code/timer text using
+       it was invisible on dark surfaces. The dark theme now remaps the
+       brand accents to legible tints (higher specificity than the per-page
+       tc-brand :root override).
+   (d) no color-scheme declaration — UA widgets, autofill and scrollbars
+       fought the theme on Windows dark-mode systems. Declared per theme.
+   (e) no autofill/forced-colors handling — Chrome autofill painted its own
+       yellow/white and Windows High Contrast dropped borders. Both handled. */
+.form-input, .form-textarea, .form-select { width: 100%; padding: 12px 16px; border: 1.5px solid var(--gray-300); border-radius: 10px; background: var(--field-bg, white); color: var(--field-fg, var(--gray-900)); caret-color: var(--field-fg, var(--gray-900)); transition: var(--transition); font-size: 0.95rem; }
+.form-input::placeholder, .form-textarea::placeholder, .form-select::placeholder { color: var(--field-placeholder, #6b7280); opacity: 1; }
+input:-webkit-autofill, input:-webkit-autofill:hover, input:-webkit-autofill:focus,
+textarea:-webkit-autofill, textarea:-webkit-autofill:hover, textarea:-webkit-autofill:focus,
+select:-webkit-autofill, select:-webkit-autofill:hover, select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--field-fg, var(--gray-900));
+  -webkit-box-shadow: 0 0 0 1000px var(--field-bg, white) inset;
+  caret-color: var(--field-fg, var(--gray-900));
+  transition: background-color 9999s ease-out 0s;
+}
 .form-input:focus, .form-textarea:focus, .form-select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(79,70,229,0.12); }
 .form-textarea { resize: vertical; min-height: 100px; }
 .form-help { font-size: 0.82rem; color: var(--gray-500); margin-top: 4px; }
@@ -590,6 +635,22 @@ body.layout-academy .dash-quick-links .btn:hover{border-color:var(--tc-violet-li
 .stat-label,
 .table-wrap td .muted { color: #566276; }
 .form-help, .feed-meta, .notif-item-time, .pulse, .muted, .stat-label { color: #566276; }
+
+/* ── r21 (item 2): CBT readability floors ──────────────────────────────
+   Question text at 700 weight but no size floor + .muted meta at .78rem
+   made dense papers hard to read on small/low-DPI laptops. Floors here are
+   deliberately conservative: they only ever INCREASE legibility. */
+.cbt-q p { font-size: 1.02rem; line-height: 1.6; }
+.cbt-q label { font-size: .98rem; line-height: 1.55; padding: 4px 0; }
+.cbt-q blockquote { font-size: .98rem; line-height: 1.55; }
+.cbt-q .muted { font-size: .8rem; }
+#gate .form-input { font-size: 1.05rem; letter-spacing: .02em; }
+/* Windows High Contrast / forced-colors: never lose the field borders */
+@media (forced-colors: active) {
+  .form-input, .form-textarea, .form-select { border: 2px solid ButtonText; }
+  .card { border: 1px solid CanvasText; }
+  .tc-pal-btn { border: 2px solid ButtonText; }
+}
 
 /* Badges: keep the tinted pill, darken the label so it is legible */
 .badge-success, .tag-new      { background: rgba(4,120,87,.12)  !important; color: #046c4e !important; }
