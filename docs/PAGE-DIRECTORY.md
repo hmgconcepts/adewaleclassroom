@@ -3395,7 +3395,7 @@ Who created, edited, deleted, signed in. The main actions available here are: Si
 - **Parent:** No access.
 - **Learner:** No access.
 
-**Connects to.** Sits in the Platform group, alongside about, admin-data, approvals, builder, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
+**Connects to.** Sits in the Platform group, alongside about, admin-data, approvals, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
 
 ---
 
@@ -3437,7 +3437,7 @@ Backup, restore, CSV export, table browser. SHA-256 sealed JSON archive. The mai
 - **Where are backups stored?** A sealed SHA-256 JSON archive downloads to your device, and optionally syncs to your own Google Drive folder.
 - **Does Drive sync cost anything?** No. It uses the free Google Identity Services flow and the drive.file scope, which can only see files this app created.
 
-**Connects to.** Sits in the Platform group, alongside about, activity-log, approvals, builder, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
+**Connects to.** Sits in the Platform group, alongside about, activity-log, approvals, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
 
 ---
 
@@ -3474,7 +3474,7 @@ Approve parent/learner/tutor self-signups. The main actions available here are: 
 
 **Common tasks.** approve a new account · reject a sign-up
 
-**Connects to.** Sits in the Platform group, alongside about, activity-log, admin-data, builder, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
+**Connects to.** Sits in the Platform group, alongside about, activity-log, admin-data, change-password, contact. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
 
 ---
 
@@ -3605,7 +3605,7 @@ In-app explanation of every module. The main actions available here are: Sign ou
 - **Parent:** No access.
 - **Learner:** No access.
 
-**Connects to.** Sits in the Platform group, alongside about, activity-log, admin-data, approvals, builder, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
+**Connects to.** Sits in the Platform group, alongside about, activity-log, admin-data, approvals, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
 
 ---
 
@@ -3706,7 +3706,7 @@ Name, phone, timezone, Drive photo, password. Family-safe. The main actions avai
 - **Parent:** No access.
 - **Learner:** No access.
 
-**Connects to.** Sits in the Platform group, alongside about, activity-log, admin-data, approvals, builder, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
+**Connects to.** Sits in the Platform group, alongside about, activity-log, admin-data, approvals, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
 
 ---
 
@@ -3745,7 +3745,7 @@ Keep-alive heartbeat, DB size, Drive backup, license, idle lock. The main action
 - **Why would the project pause?** Supabase pauses a free project after 7 days without database activity. The keep-alive layers prevent that.
 - **What if it already paused?** Open the Supabase dashboard and press Restore. Data is safe — but a project left paused is eventually deleted.
 
-**Connects to.** Sits in the Platform group, alongside about, activity-log, admin-data, approvals, builder, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
+**Connects to.** Sits in the Platform group, alongside about, activity-log, admin-data, approvals, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
 
 ---
 
@@ -3809,7 +3809,7 @@ Change role/status with an audit row. The main actions available here are: Sign 
 - **Parent:** No access.
 - **Learner:** No access.
 
-**Connects to.** Sits in the Platform group, alongside about, activity-log, admin-data, approvals, builder, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
+**Connects to.** Sits in the Platform group, alongside about, activity-log, admin-data, approvals, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
 
 ---
 
@@ -3843,7 +3843,7 @@ Brand, signatures, 2FA, language, accessibility, cancellation policy, default ti
 
 **Common tasks.** change the studio name · change the logo · set the timezone
 
-**Connects to.** Sits in the Platform group, alongside about, activity-log, admin-data, approvals, builder, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
+**Connects to.** Sits in the Platform group, alongside about, activity-log, admin-data, approvals, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
 
 ---
 
@@ -3875,7 +3875,7 @@ Lifetime or subscription lock. Same idea as School Connect, adapted. The main ac
 - **Parent:** No access.
 - **Learner:** No access.
 
-**Connects to.** Sits in the Platform group, alongside about, activity-log, admin-data, approvals, builder, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
+**Connects to.** Sits in the Platform group, alongside about, activity-log, admin-data, approvals, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
 
 ---
 
@@ -3910,7 +3910,7 @@ Watch the free 500 MB. Archive then purge old logs. The main actions available h
 - **Parent:** No access.
 - **Learner:** No access.
 
-**Connects to.** Sits in the Platform group, alongside about, activity-log, admin-data, approvals, builder, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
+**Connects to.** Sits in the Platform group, alongside about, activity-log, admin-data, approvals, change-password. Data is scoped to the engagement it belongs to, so one learner's records never appear inside another's.
 
 ---
 
@@ -3980,38 +3980,11 @@ The friendly page the service worker serves when the device loses connection, so
 
 ---
 
-### 🚀 Build a tutoring studio · `builder.html` · 🎓 Staff
+### 🚀 Build a tutoring studio · `builder.html` · 🎓 Staff — RETIRED
 
-The internal HMG wizard that generates a complete, branded studio for a client: studio name, logo, theme, font, layout, modules and optional Supabase keys, then produces a ready-to-deploy ZIP with a one-click SQL schema. Requires sign-in as a tutor, admin or owner. Families cannot open it and the database refuses their queries even if they try the URL directly.
-
-**Who it is for.** HMG representatives only — this page is never shipped inside a client build.
-
-**Why it matters.** It is the factory. Every client studio in existence is stamped out of this one page, which is why its output has to be complete and correct.
-
-**How to use it**
-
-1. Work through the wizard step by step.
-2. Preview the chosen theme, font and layout live before committing.
-3. Download the ZIP, then follow DEPLOYMENT-GUIDE.md exactly.
-4. Run database/complete-schema.sql in a fresh Supabase project and promote the first admin.
-
-**Sections on this page**
-
-- **Page header** — The title, a one-line purpose, and the ? Page Help button that opens this same explanation inside the app.
-- **Toolbar / filters** — Search box, status and date filters, and the Add / New button. Filters narrow the list below without reloading the page.
-- **Records table** — Every record you are allowed to see. Parents and learners are filtered to their own rows by the database itself, not by hiding buttons.
-- **Row actions** — Open, edit, duplicate or delete a record. Deleting asks for confirmation and is written to the activity log.
-- **Record form (modal)** — Opens over the list. Required fields are marked; everything else can be completed later.
-- **Export** — Download the current view as CSV. Your data is always portable — nothing is locked in.
-
-**What each role sees**
-
-- **Owner:** Full configuration control.
-- **Tutor:** No access.
-- **Parent:** No access.
-- **Learner:** No access.
-
-**Connects to.** Generator-only. It reads the same page files the client will receive, so what you preview is what they get.
+This page was removed from the site (owner decision, Aug 2026). The
+generator lives on in the tutoringconnect build pipeline; the page
+itself is no longer shipped and no link points to it.
 
 ---
 
