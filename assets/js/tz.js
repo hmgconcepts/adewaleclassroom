@@ -150,8 +150,12 @@ window.TZ = (function () {
     var fm = Number(from.slice(0, 2)) * 60 + Number(from.slice(3, 5));
     var tm = Number(to.slice(0, 2)) * 60 + Number(to.slice(3, 5));
     if (tm <= fm) tm += 1440;  /* past-midnight window */
-    var m = p.minutes < fm ? p.minutes + 1440 : p.minutes;  /* handle windows starting late */
-    var inWin = m >= fm && p.minutes <= tm;
+    /* r17 fix: the old comparison mixed two clocks (m >= fm AND
+       p.minutes <= tm) — for a normal 09:00–17:00 window it marked 08:00
+       as IN hours (m wrapped to 20:00 ≥ 09:00 while 08:00 ≤ 17:00).
+       Both bounds must use the same wrapped minute. */
+    var m = p.minutes < fm ? p.minutes + 1440 : p.minutes;
+    var inWin = m >= fm && m <= tm;
     return {
       ok: inWin,
       txt: inWin ? 'in working hours' : ('outside ' + from + '–' + to + ' their time')

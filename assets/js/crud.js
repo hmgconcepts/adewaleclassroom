@@ -96,7 +96,14 @@ const CRUD = {
       { key: 'timezone', label: 'Timezone', type: 'select', options: ['Africa/Lagos','Europe/London','America/New_York','America/Chicago','America/Toronto','Asia/Dubai','Asia/Kolkata','Australia/Sydney','UTC'] },
       { key: 'billing_name', label: 'Billing name', type: 'text' },
       { key: 'status', label: 'Status', type: 'select', options: ['active','inactive'] }
-    ]},
+    ],
+    /* V53 (round 17, item 4): the admin's per-parent monitor — children,
+       their classes and tutors, invoices and payment history. */
+    rowActions: [{ id: 'monitor', label: '📊 Monitor', cls: 'btn-outline', title: 'Everything about this family — children, their classes and tutors, invoices, payment history' }],
+    onRowAction: function (action, r) {
+      if (action === 'monitor' && window.StaffMonitor) StaffMonitor.parent(r);
+      else if (action === 'monitor') toast('The staff monitor needs assets/js/staff-monitor.js (V53).', 'warning');
+    } },
     parent_links: { table: 'parent_learner', title: 'Parent–learner link', cols: [
       { key: 'parent_id', label: 'Parent', type: 'ref', refTable: 'parents', refValue: 'full_name', refStore: 'id', required: true },
       { key: 'learner_id', label: 'Learner', type: 'ref', refTable: 'learners', refValue: 'full_name', refStore: 'id', required: true },
@@ -117,7 +124,15 @@ const CRUD = {
       { key: 'specialisms', label: 'Specialisms', type: 'text' },
       { key: 'hourly_cost', label: 'Pay rate (if staff)', type: 'number' },
       { key: 'status', label: 'Status', type: 'select', options: ['active','inactive'] }
-    ]},
+    ],
+    /* V53 (round 17, item 4): the admin's per-tutor monitor — one button,
+       every fact (classes taken, bookings, students, subjects, topics,
+       CBTs, payroll). Rendered by assets/js/staff-monitor.js. */
+    rowActions: [{ id: 'monitor', label: '📊 Monitor', cls: 'btn-outline', title: 'Everything this tutor does — classes taken, bookings, students, subjects, topics covered, CBTs created, salary history' }],
+    onRowAction: function (action, r) {
+      if (action === 'monitor' && window.StaffMonitor) StaffMonitor.tutor(r);
+      else if (action === 'monitor') toast('The staff monitor needs assets/js/staff-monitor.js (V53).', 'warning');
+    } },
     subjects: { table: 'subjects', title: 'Subject', cols: [
       { key: 'name', label: 'Name', type: 'text', required: true },
       { key: 'exam_board', label: 'Exam board', type: 'text' },
@@ -1475,7 +1490,7 @@ const CRUD = {
       if (colsBtn) colsBtn.onclick = () => self.openColumns(moduleId, schema, view, () => { persist(); shell(); wire(); paint(); });
 
       const printBtn = $('crud-print');
-      if (printBtn) printBtn.onclick = () => self.printList(schema, rows, visible(), maps);
+      if (printBtn) printBtn.onclick = () => self.printList(schema, rows, visible(), maps, can);
 
       const csv = $('crud-csv');
       if (csv) csv.onclick = () => self.exportCsv(schema, rows);
@@ -1561,7 +1576,7 @@ const CRUD = {
       '<button type="button" onclick="closeModal(\'crud-record\')">×</button></div>' +
       '<div class="modal-body">' +
         '<table class="crud-detail"><tbody>' +
-          schema.cols.map(c => '<tr><th>' + TC.esc(c.label) + '</th><td>' + this._cell(row, c, maps || {}) + '</td></tr>').join('') +
+          schema.cols.map(c => '<tr><th>' + TC.esc(c.label) + '</th><td>' + this._cell(row, c, maps || {}, can) + '</td></tr>').join('') +
           extra.map(k => '<tr><th class="muted">' + TC.esc(k) + '</th><td class="muted">' +
             TC.esc(row[k] == null ? '—' : (typeof row[k] === 'object' ? JSON.stringify(row[k]) : String(row[k]))) + '</td></tr>').join('') +
           '<tr><th class="muted">Record id</th><td class="muted" style="font-family:monospace;font-size:.8rem">' + TC.esc(String(row.id)) + '</td></tr>' +
@@ -1582,7 +1597,7 @@ const CRUD = {
 
   /* Printable view of exactly what is on screen — no browser chrome, no
      nav, no buttons. Prints or "saves as PDF" from the print dialog. */
-  printList(schema, rows, cols, maps) {
+  printList(schema, rows, cols, maps, can) {
     const w = window.open('', '_blank');
     if (!w) { toast('Allow pop-ups to print.', 'warning'); return; }
     const brand = (window.CONFIG && (CONFIG.practiceName || CONFIG.siteName)) || document.title;
@@ -1595,7 +1610,10 @@ const CRUD = {
       '<h1>' + TC.esc(brand) + ' — ' + TC.esc(schema.title) + '</h1>' +
       '<small>' + rows.length + ' record(s) · printed ' + new Date().toLocaleString() + '</small>' +
       '<table><thead><tr>' + cols.map(c => '<th>' + TC.esc(c.label) + '</th>').join('') + '</tr></thead><tbody>' +
-      rows.map(r => '<tr>' + cols.map(c => '<td>' + this._cell(r, c, maps || {}) + '</td>').join('') + '</tr>').join('') +
+      /* V53: viewer-awareness now reaches the PRINT view too — before,
+         the 3-arg call left viewerCanWrite undefined, so a STAFF print
+         showed the family-safe "your class" cells instead of real names. */
+      rows.map(r => '<tr>' + cols.map(c => '<td>' + this._cell(r, c, maps || {}, can !== false) + '</td>').join('') + '</tr>').join('') +
       '</tbody></table></body></html>');
     w.document.close();
     setTimeout(() => w.print(), 350);
