@@ -62,6 +62,13 @@ window.HomeworkStudent = (function () {
     var sub = esc(x.subject || (x.multi ? 'multi-subject' : 'quiz')) + ' · ' + (x.minutes || 40) + ' min' +
       (x.multi ? ' · 🎯 UTME-style multi-subject' : '') +
       (graded && Number(x.negative_mark) > 0 ? ' · ⚠️ negative marking' : '');
+    /* V52 (round 16, item 1): an international student must never have to
+       do timezone arithmetic to know when a paper opens or closes — the
+       studio's home time and the student's own time show side by side. */
+    var dual = '';
+    if (state === 'upcoming' && x.opens) dual = (window.TZ && TZ.dualHtml) ? TZ.dualHtml(x.opens, 'opens', null) : '';
+    else if (state === 'live' && x.closes) dual = (window.TZ && TZ.dualHtml) ? TZ.dualHtml(x.closes, 'closes_at', null) : '';
+    if (dual) sub += dual;
     var chips = '';
     if (state === 'live') chips = '<span class="badge" style="background:#dcfce7;color:#166534">🟢 Live now</span>';
     if (state === 'upcoming') {
@@ -106,6 +113,9 @@ window.HomeworkStudent = (function () {
     }
 
     var now = new Date();
+    /* V52: prime the timezone engine before cards render, so the dual-time
+       lines on CBT papers are on the first paint. */
+    if (window.TZ && TZ.init) { try { await TZ.init(); } catch (eTz) {} }
     var hw = (data.homework || []);
     var exams = (data.exams || []);
     var todo = hw.filter(function (x) { return String(x.status || 'set') !== 'marked' && x.score == null; });

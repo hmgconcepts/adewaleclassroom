@@ -159,8 +159,10 @@ const DriveSync = {
     })).json();
     try { await this.saveCfg({ lastBackup: new Date().toISOString() }); } catch (_) {}
     /* V51: the unified studio record — every backup path writes this one
-       column, and every device reads it on the admin-data page. */
-    try { if (window.sb) await window.sb.from('practice_settings').update({ last_backup_at: new Date().toISOString() }).eq('id', 1); } catch (_) {}
+       column, and every device reads it on the admin-data page.
+       V52: also record WHICH archive is newest (backup_path), surfaced by
+       the Last-backup card tooltip and tc_last_backup(). */
+    try { if (window.sb) await window.sb.from('practice_settings').update({ last_backup_at: new Date().toISOString(), backup_path: 'drive: ' + name }).eq('id', 1); } catch (_) {}
     this.setState({ lastBackupLocal: Date.now() });
     this.trimOld(folderId).catch(() => {});
     this._progress(opts, '');

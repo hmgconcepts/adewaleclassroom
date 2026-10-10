@@ -65,7 +65,7 @@ window.ShelfStudent = (function () {
   }
 
   /* state */
-  var S = { items: [], attempts: [], labels: {}, q: '', subject: '', kind: '' };
+  var S = { items: [], attempts: [], labels: {}, q: '', subject: '', kind: '', cls: '' };
 
   async function load(mod) {
     var cfg = CFG[mod];
@@ -160,12 +160,22 @@ window.ShelfStudent = (function () {
         }
         if (S.subject && String(it.subject || '') !== S.subject) return false;
         if (S.kind && String(it.kind || '') !== S.kind) return false;
+        /* V52 (round 16): class filter — a student in many classes can
+           narrow the shelf to ONE class (GOSA's class scoping, better). */
+        if (S.cls) {
+          var lbl = it.engagement_id ? (S.labels[it.engagement_id] || '🎓 your class') : '🌐 for everyone';
+          if (lbl !== S.cls) return false;
+        }
         return true;
       });
       if (mod === 'lms') items.sort(function (a, b) { return (Number(a.order_no) || 0) - (Number(b.order_no) || 0); });
 
       var subjects = []; S.items.forEach(function (it) { if (it.subject && subjects.indexOf(it.subject) === -1) subjects.push(it.subject); });
       var kinds = []; S.items.forEach(function (it) { if (it.kind && kinds.indexOf(it.kind) === -1) kinds.push(it.kind); });
+      var classes = []; S.items.forEach(function (it) {
+        var lbl = it.engagement_id ? (S.labels[it.engagement_id] || '🎓 your class') : '🌐 for everyone';
+        if (classes.indexOf(lbl) === -1) classes.push(lbl);
+      });
 
       root.innerHTML =
         '<div class="card" style="margin-bottom:14px;background:linear-gradient(135deg,#eef2ff,#faf5ff);border-color:#c7d2fe">' +
@@ -175,6 +185,8 @@ window.ShelfStudent = (function () {
           subjects.map(function (s) { return '<option' + (S.subject === s ? ' selected' : '') + '>' + esc(s) + '</option>'; }).join('') + '</select>' : '') +
         (kinds.length > 1 && mod !== 'lms' ? '<select id="shelf-kind" class="form-select" style="max-width:140px"><option value="">All kinds</option>' +
           kinds.map(function (k) { return '<option' + (S.kind === k ? ' selected' : '') + '>' + esc(k) + '</option>'; }).join('') + '</select>' : '') +
+        (classes.length > 1 ? '<select id="shelf-cls" class="form-select" style="max-width:180px" title="Show only one class"><option value="">All my classes</option>' +
+          classes.map(function (c) { return '<option' + (S.cls === c ? ' selected' : '') + '>' + esc(c) + '</option>'; }).join('') + '</select>' : '') +
         '<span class="muted" style="font-size:.82rem;margin-left:auto">' + items.length + ' ' + esc(cfg.what) + (items.length === 1 ? '' : 's') + ' for you</span>' +
         '</div></div>' +
         (items.length
@@ -189,6 +201,8 @@ window.ShelfStudent = (function () {
       if (se) se.onchange = function () { S.subject = se.value; render(rootId, mod); };
       var ke = document.getElementById('shelf-kind');
       if (ke) ke.onchange = function () { S.kind = ke.value; render(rootId, mod); };
+      var ce = document.getElementById('shelf-cls');
+      if (ce) ce.onchange = function () { S.cls = ce.value; render(rootId, mod); };
 
       root.querySelectorAll('[data-quiz]').forEach(function (b) {
         b.onclick = function () {

@@ -1034,6 +1034,9 @@ const App = {
     if (!host) return;
     if (!window.sb || !window.sb.rpc) { host.innerHTML = '<p class="muted">Sign in to see your work board.</p>'; return; }
     try {
+      /* V52: prime the timezone engine so the Next-class dual-time line
+         (studio zone + viewer zone) is on the first paint. */
+      if (window.TZ && TZ.init) { try { await TZ.init(); } catch (eTz) {} }
       const args = learnerId ? { p_learner_id: learnerId } : {};
       const { data, error } = await window.sb.rpc('tc_my_work', args);
       if (error) throw new Error(error.message);
@@ -1147,8 +1150,13 @@ const App = {
         }
       }
       if (data.next_class && data.next_class.starts) {
+        /* V52 (round 16, item 1): the next class shows in the viewer's own
+           zone AND the studio's home zone concurrently — an international
+           student never has to do timezone arithmetic in their head. */
+        var dualLine = (window.TZ && TZ.dualHtml) ? TZ.dualHtml(data.next_class.starts, 'starts_at', null) : '';
         html += '<div class="muted" style="margin-top:10px">🕒 Next class: <b>' + esc(data.next_class.engagement || 'class') + '</b> — ' +
           new Date(data.next_class.starts).toLocaleString([], { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) +
+          dualLine +
           (data.next_class.url ? ' · <a href="' + esc(data.next_class.url) + '" target="_blank" rel="noopener">join link</a>' : '') + '</div>';
       }
       host.innerHTML = html;
@@ -1962,6 +1970,43 @@ function handleSignUp(e) { return App.handleSignUp(e); }
 })();
 
 window.App = App;
+
+/* ═════════════════════════════════════════════════════════════════════
+   V52 (round 16) — App.detectRole(): role resolution that cannot lose a
+   race. Pages that split staff/family views used to poll App.currentRole
+   for a few seconds; on a slow session restore the role arrived AFTER
+   the wait, a learner fell through to the staff table, and the page then
+   showed the very banners and "name unavailable" cells the split was
+   meant to prevent. detectRole() waits longer, and when the client-side
+   role is still unknown it asks the DATABASE directly (tc_current_role
+   is a security-definer RPC that always answers with the signed-in
+   profile) — so the split is decided by truth, not by timing.
+   ═════════════════════════════════════════════════════════════════════ */
+App.detectRole = async function (maxMs) {
+  maxMs = maxMs || 10000;
+  var waited = 0;
+  while (waited < maxMs) {
+    var r = String(App.currentRole || '').toLowerCase();
+    if (r && r !== 'guest' && r !== 'pending') return r;
+    await new Promise(function (res) { setTimeout(res, 200); });
+    waited += 200;
+  }
+  var r2 = String(App.currentRole || '').toLowerCase();
+  if (r2 && r2 !== 'guest' && r2 !== 'pending') return r2;
+  /* tiebreak: ask the database who is actually signed in */
+  try {
+    if (window.sb && window.sb.rpc) {
+      var res = await window.sb.rpc('tc_current_role');
+      if (res.data && res.data.role) return String(res.data.role).toLowerCase();
+    }
+  } catch (e) {}
+  /* last resort: the cached profile (set by app.js itself on past visits) */
+  try {
+    var cached = JSON.parse(localStorage.getItem('tc-cached-profile') || 'null');
+    if (cached && cached.role) return String(cached.role).toLowerCase();
+  } catch (e) {}
+  return '';
+};
 window.toast = toast;
 window.openModal = openModal;
 window.closeModal = closeModal;
