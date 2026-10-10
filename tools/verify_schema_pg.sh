@@ -52,6 +52,7 @@ V49="$REPO/database/v49-family-library-access.sql"
 V50="$REPO/database/v50-staff-access-truth.sql"
 V51="$REPO/database/v51-family-ref-labels-library-quiz.sql"
 V52="$REPO/database/v52-timezone-truth.sql"
+V53="$REPO/database/v53-credential-truth-staff-monitor.sql"
 
 # The worst-case LEGACY shape, generated mechanically from the schema
 # itself: every table that carries a later `alter table add column` is
@@ -87,7 +88,7 @@ echo "═══ verify_schema_pg: $REPO ═══"
 scenario "1. FRESH  (empty database)"                 tcv_fresh  "$STUBS" "$SCHEMA"
 scenario "2. LEGACY (pre-upgrade table shapes)"        tcv_legacy "$STUBS" __LEGACY__ "$SCHEMA"
 scenario "3. RE-RUN (same schema twice)"               tcv_rerun  "$STUBS" "$SCHEMA" "$SCHEMA"
-scenario "4. MIGRATIONS standalone on LEGACY"          tcv_migr   "$STUBS" __LEGACY__ "$V44" "$V45" "$V46" "$V47" "$V48" "$V49" "$V50" "$V51" "$V52"
+scenario "4. MIGRATIONS standalone on LEGACY"          tcv_migr   "$STUBS" __LEGACY__ "$V44" "$V45" "$V46" "$V47" "$V48" "$V49" "$V50" "$V51" "$V52" "$V53"
 
 # 5. V46 CBT→assignment automation, behaviorally: the mirror must appear on
 #    publish (with sit link + max score), follow edits, vanish on archive,
@@ -118,9 +119,12 @@ scenario "10. V51 family ref labels + library quiz"    tcv_v51    "$STUBS" "$SCH
 # 11. V52 timezone truth: tc_my_tz() answers home + the viewer's own zone.
 scenario "11. V52 timezone truth behavior"             tcv_v52    "$STUBS" "$SCHEMA" "$V52" "$REPO/tools/v52_behavior.sql"
 
+# 12. V53 credential truth + backup stamp + tutor isolation + staff monitor.
+scenario "12. V53 credential truth + staff monitor"     tcv_v53    "$STUBS" "$SCHEMA" "$V53" "$REPO/tools/v53_behavior.sql"
+
 if [ "$fails" = "0" ]; then
   echo "═══ ALL SCENARIOS CLEAN ═══"
-  dropdb tcv_fresh; dropdb tcv_legacy; dropdb tcv_rerun; dropdb tcv_migr; dropdb tcv_v46; dropdb tcv_v47; dropdb tcv_v48; dropdb tcv_v49; dropdb tcv_v50; dropdb tcv_v51; dropdb tcv_v52
+  dropdb tcv_fresh; dropdb tcv_legacy; dropdb tcv_rerun; dropdb tcv_migr; dropdb tcv_v46; dropdb tcv_v47; dropdb tcv_v48; dropdb tcv_v49; dropdb tcv_v50; dropdb tcv_v51; dropdb tcv_v52; dropdb tcv_v53
   exit 0
 else
   echo "═══ $fails SCENARIO(S) FAILED — logs in /tmp/pgverify_* ═══"

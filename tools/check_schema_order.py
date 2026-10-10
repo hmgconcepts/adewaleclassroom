@@ -34,6 +34,7 @@ CREATE_RE = re.compile(r'create\s+table\s+if\s+not\s+exists\s+(?:public\.)?([a-z
 ALTER_RE = re.compile(
     r'alter\s+table\s+(?:if\s+exists\s+)?(?:public\.)?([a-z_][a-z0-9_]*)\s+'
     r'add\s+column\s+if\s+not\s+exists\s+([a-z_][a-z0-9_]*)', re.I)
+ADD_COL_RE = re.compile(r'add\s+column\s+if\s+not\s+exists\s+([a-z_][a-z0-9_]*)', re.I)
 INDEX_HEAD_RE = re.compile(
     r'create\s+(?:unique\s+)?index\s+(?:if\s+not\s+exists\s+)?[a-z_][a-z0-9_]*\s+'
     r'on\s+(?:public\.)?([a-z_][a-z0-9_]*)\s*\(', re.I)
@@ -212,7 +213,17 @@ def check(path):
 
     for m in ALTER_RE.finditer(clean):
         t = m.group(1).lower()
-        alters.setdefault(t, []).append((m.start(), m.group(2).lower()))
+        # r17: one ALTER statement may add SEVERAL columns
+        # (`alter table t add column if not exists a …, add column if not
+        #  exists b …`). The old single-capture regex registered only the
+        # FIRST column of such statements, so a later column (e.g.
+        # library_items.tutor_id in the V43 pack) was treated as
+        # never-alter-introduced and escaped checking entirely. Register
+        # every add-column clause of the statement at its position.
+        end = clean.find(';', m.end())
+        span = clean[m.start():end if end != -1 else len(clean)]
+        for cm in ADD_COL_RE.finditer(span):
+            alters.setdefault(t, []).append((m.start(), cm.group(1).lower()))
 
     def known_before(t, pos):
         """Columns guaranteed present on a LEGACY db by position pos."""
