@@ -731,3 +731,76 @@ scenarios), `python3 tools/audit_selfcontained.py`, then the QA battery
 (25 suites, 1110 checks per repo). Versions: portal `?v=52` / sw
 `tc-shell-v21-20261010`; deck `?v=55` / `hmg-classdeck-v14.7.0-turnsync-truth`
 / version.json 14.7.0 build 21.
+
+## V53 — credential truth, backup stamp, tutor isolation, staff monitors (round 17)
+
+**Run it:** `psql "$DATABASE_URL" -f database/v53-credential-truth-staff-monitor.sql`
+(all statements are idempotent — `create or replace`, `drop policy if
+exists` + `create policy`, `add column if not exists`). An
+**upgrade-order guard** at the top re-creates `tc_my_tutor_id`,
+`tc_is_manager`, `tc_teaches_engagement` and guarantees the
+`tutor_id` columns on `sessions`, `library_items` and `eresources`, so
+the pack also applies cleanly to a pre-V53 standalone database.
+
+**Why it exists — three silent lies, closed at the server:**
+
+1. **Credential writes now go through security-definer RPCs.** The deck
+   used a REST upsert to `user_settings`; when that failed (RLS, missing
+   table, NULL user) the caller saw a generic error and the credential
+   silently never reached the account — which is exactly why device B
+   said "nothing saved yet" after device A "saved". `tc_set_user_setting
+   (p_key, p_value)` upserts `on conflict (user_id, key)` scoped to
+   `auth.uid()`, and `tc_get_user_settings()` returns **only the
+   caller's rows** — a learner can never read a tutor's TURN key, and
+   vice versa. Both are granted to `authenticated` only, revoked from
+   `anon`/`public`. The client (`cloud-creds.js`) writes RPC-first,
+   reads RPC-first with a table-GET fallback for pre-V53 databases, and
+   surfaces the **real error body** (`message` + `hint`) on failure —
+   "unknown" errors are gone. Cloud/local comparison now canonicalises
+   JSON (deep-sorted keys) before diffing, so jsonb key ORDER can no
+   longer make "synced - credentials current" a lie.
+2. **The backup stamp is a manager RPC.** `tc_stamp_backup(p_path)`
+   (security definer, `tc_is_manager`-guarded, upserts
+   `practice_settings` id 1 with an insert fallback) records
+   `last_backup_at = now()` and `backup_path`. Both the sealed-download
+   path and the Drive path call it RPC-first (plain UPDATE fallback),
+   so "Last Backup: never" after a successful backup cannot happen; if
+   the stamp itself fails, the admin sees the failure text, not a
+   silent nothing.
+3. **Tutor content isolation + the two 360° monitors.** Read policies on
+   `library_items`, `eresources`, `resources` and `lms_lessons` scope a
+   tutor to: rows they authored, rows on engagements they teach, and
+   the studio-shared shelf (`engagement_id is null and tutor_id is
+   null`). Family read access via `tc_family_reads_engagement` is
+   preserved. `tc_tutor_monitor(p_tutor_id)` (manager-only) returns the
+   complete audit as jsonb: profile, subjects taught, students taught,
+   sessions taken, recent + upcoming sessions, bookings (completed /
+   ongoing / earnings), topics covered, CBTs created, assignments set,
+   library items authored, and **salary payment history** from payroll.
+   `tc_parent_monitor(p_parent_id)` (manager-only) returns children
+   with their classes and tutors, invoices, payment history and
+   upcoming sessions. Both refuse non-managers at the server, and the
+   admin UI (`assets/js/staff-monitor.js`, the 📊 Monitor row action on
+   Tutors and Parents) renders them with honest empty states and
+   visible error cards.
+
+**Round-16/17 self-audit fixes shipped with this pack:** `TZ.workStatus`
+compared two different clocks (08:00 counted as inside 09:00–17:00 —
+fixed and now unit-proven for normal and past-midnight windows);
+`crud.js` `openRecord`/`printList` dropped the fourth `viewerCanWrite`
+argument so staff saw family-safe labels in the drawer and printouts;
+the "Full backup & restore" buttons in **admin-data** referenced
+`DataTools`, which was never defined — both buttons threw a silent
+`ReferenceError` (defined now, wired to the real download + restore
+readers). A new auditor, `tools/audit_handlers.py`, sweeps EVERY page
+of both trees for dangling inline `onclick`/`onchange` references — the
+DataTools class of bug — and runs green on the portal and the deck.
+
+**Verify after deploying:** `bash tools/verify_schema_pg.sh` (**12**
+scenarios — scenario 12 exercises the V53 RPC round-trip,
+cross-account isolation, the backup stamp, tutor shelf isolation and
+both monitors), `python3 tools/audit_selfcontained.py`, `python3
+tools/audit_handlers.py`, then the QA battery (26 suites, 1181 checks
+per repo). Versions: portal `?v=53` / sw `tc-shell-v22-20261010`; deck
+`?v=56` / `hmg-classdeck-v14.8.0-turnsync-rpc` / version.json 14.8.0
+build 22.
