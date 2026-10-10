@@ -1779,3 +1779,186 @@ portal admin-data assets `?v=54`
 checks incl. the behavioral engine test with the alias scenarios).
 Battery: 27 suites, 1280 checks per repo, both repos, run twice.
 Workspace budget checked and under the cap.
+
+---
+
+# ROUND 21 AUDIT (2026-10-10)
+
+## The report — seven items
+
+1. *"During class I wanted to show them on another app or screen; currently
+   I must stop recording/live and switch broadcast mode — not wholesome.
+   Is there a way to switch without stopping?"*
+2. *"Student's system: some CBT texts weren't showing clearly; typing
+   student names not visible; exam code not visible; some questions not
+   visible — fix so on every system CBT text is clearly shown without
+   ambiguity."*
+3. *"Recording played in laptop VLC: clicking different timestamps stops
+   playback — fix so recordings play seamlessly/robustly on laptop
+   players."*
+4. *"Add Co-Tutor just like assisted tutor, but Co-Tutor must have ALL the
+   same access/permission/privilege as the Tutor."*
+5. *"Student screen share appears small at my end, had to zoom out — when
+   students or tutors share screen or whiteboard it must be high quality
+   and clearly visible."*
+6. *"Teacher decides if a student's screen/whiteboard share is shown to
+   teacher alone or the whole class (student presenting to class /
+   solving in front of class)."*
+7. *"Update every file accordingly across all repos."*
+
+## Item 1 — the stop-everything switch (FIXED, seamless)
+
+The old switch path re-called every student with a new media stream: a
+visible reconnect blink for the whole class, and the safety rails required
+stopping the recording/live first. The fix swaps the video source INSIDE
+the live RTP streams:
+
+- `rtc.js updateStageVideo(newTrack)`: `RTCRtpSender.replaceTrack()` on
+  every live stage sender — no re-negotiation, no blink, recording never
+  touches it. In relay mode the captains re-serve the SAME received track
+  down their trees, so one replaceTrack propagates to every student
+  behind every captain. Failure of any single replaceTrack falls back to
+  a re-call for THAT student only (never a dead stage).
+- `teach.js switchBroadcastMode(mode)`: gets the screen (1080p ideal,
+  `contentHint "detail"`), mirrors it in a hidden video element, then
+  `updateStageVideo(track)` — the class follows instantly. Mic audio is
+  untouched, so nobody misses a word.
+- **The recording follows with zero restarts**: `drawRecordingFrame()`
+  paints the ACTIVE source — in screen mode it draws the shared screen
+  contain-fit (never cropped) inside the branded frame; in composite mode
+  the workspace canvas. The recorder's canvas track is continuous, so
+  nothing restarts.
+- Toolbar chip `#btnBcastMode` (🖥 Screen / 🧩 Composite) after End Live;
+  the settings-page broadcast select ALSO switches live on save. Screen
+  share ending (user stops sharing in the OS) auto-returns to composite
+  with "Nothing was interrupted." Every switch is audited
+  (`broadcast-switch`).
+
+## Item 3 — VLC seek stops (FIXED, root cause)
+
+MediaRecorder WebM has **no Cues (seek index) and an unknown Segment
+size** — the exact combination that makes VLC/Windows Media Player stop
+at every timestamp click. (The earlier MP4-first attempt was abandoned:
+Chrome's fragmented MP4 has no moov atom and cannot seek at all.)
+
+- `classdeck/js/webm-cues.js` (new, vendored, dependency-free): parses
+  the EBML cluster layout and APPENDS a real Cues element + writes the
+  true Segment size. Idempotent and best-effort — returns the input
+  unchanged when the file already has Cues or cannot be parsed.
+- `teach.js repairWebmForPlayers()`: at stop time the recording goes
+  through the vendored EBML duration fix first (when present), then the
+  Cues index. The recovered (crash-safe) recordings in enhancements.js
+  go through the same repair.
+- The extension now TELLS THE TRUTH: WebM bytes are saved as `.webm`
+  (the old code saved WebM under a hardcoded `.mp4` name — a container
+  lie that is itself a seek-stopper). Genuine MP4 muxing (Safari) keeps
+  `.mp4`.
+
+## Item 4 — Co-Tutor (ADDED, full tutor toolkit)
+
+`rtc.js setCoTutor()` promotes a student to Co-Tutor: co-host powers ON,
+kept distinct from an independent assistant-tutor role (`coHostKeep`) so
+demotion restores exactly what was there before. Attendance logs
+`cotutor-on/off`. The PRIVILEGED roster (peerIds + flags) is pushed only
+to promoted staff (`_privilegedRoster`/`_pushPrivileged`).
+
+The Co-Tutor console (join.js, supersedes the assistant panel) carries
+the full classroom toolkit: waiting-room admit/deny, per-student
+mic/camera/screen/class-screen control, kick, mute all, lower all hands,
+lock, spotlight, announcements, polls. Every action is authorised on the
+TEACHER'S room object — rtc.js honours `cohostAction` only from promoted
+peers, so the UI can never grant itself anything. Structural exceptions
+that stay Tutor-only by design (the Tutor owns the room): ending the
+class, promoting/demoting Co-Tutors, and the device-bound broadcast/
+recording settings.
+
+## Item 5 — screen/whiteboard quality (FIXED)
+
+- Sender side: student screen shares request 1920×1080 ideal at 12–15
+  fps with `contentHint "detail"` (tells the encoder to protect text
+  resolution). Teacher screen switch asks the same.
+- Receiver side: screen tiles are `object-fit: contain` in a 16:10 well
+  (letterboxed, never cropped), focus tiles get 16:9 + 42vh, and every
+  tile has a ⤢ theater button (`#cdTheater` full-viewport overlay).
+  Zooming out to read a student's screen is never needed again.
+
+## Item 6 — teacher-chosen audience (ADDED)
+
+- `requestStudentScreen(peerId, on, audience)`: the teacher's roster
+  screen button opens an audience chooser — *just me* or *the whole
+  class* — changeable while the share is live.
+- Class audience: `broadcastStudentScreen()` relays the student's stream
+  to every other student (`stuscreen-bcast` + `stuscreen-bcast-meta`
+  with the student's name); join.js shows it as a floating, fullscreenable
+  pane that removes itself when the meta goes off.
+- Consent, not ambush: the student's share dialog says WHO will see it
+  ("your teacher and the WHOLE CLASS" vs "only your teacher").
+- Whiteboards: `presentStudentBoard()` puts a student board on the class
+  stage; while presenting, `drawComposite()` paints the board contain-fit
+  under a "🎨 … is showing their board to the class" header — so the
+  presentation rides the broadcast AND the recording. `renderBoardsGrid()`
+  shows per-board present states with a stop banner.
+
+## Item 2 — CBT text clarity on every system (FIXED, root causes)
+
+Diagnosis (confirmed in the CSS): `.form-input`/`.card` hardcoded
+`background: white` while the dark theme flips `--gray-900` — white text
+on white fields (typing names invisible); no `color-scheme` — Chrome/UA
+autofill painted its own background over the text; the per-page brand
+override `:root{--primary:#0506ae}` is near-black indigo, invisible on
+dark surfaces (the exam code); no forced-colors handling; no font-size
+floors. Fixes in `assets/css/style.css`:
+
+- Theme-aware tokens `--field-bg/--field-fg/--field-placeholder/--card-bg`
+  wired into `.form-input`, `.form-textarea`, `.form-select`, `.card`,
+  with explicit `caret-color` and placeholder color.
+- `-webkit-autofill` handled: 1000px inset box-shadow of `--field-bg` +
+  `-webkit-text-fill-color: var(--field-fg)` + background transition
+  freeze — autofill can no longer repaint over the text in either theme.
+- `color-scheme: light` on `:root`, `color-scheme: dark` on
+  `[data-theme="dark"]`; the CBT pages also carry
+  `<meta name="color-scheme" content="light dark">` for correct
+  pre-CSS paint.
+- Dark theme REMAPS THE BRAND ACCENTS (`html[data-theme="dark"]`
+  outranks the per-page `:root` override): `--primary: #93a5ff`,
+  `--accent: #67e8f9` — the exam code and every primary control are
+  clearly visible on dark. theme-engine.js sets data-theme on
+  documentElement (verified), so the remap always wins.
+- `@media (forced-colors: active)`: fields keep their borders under
+  Windows High Contrast.
+- CBT readability floors: `.cbt-q p` 1.02rem/1.6, labels .98rem/1.55,
+  blockquotes and muted text floored.
+- **A− / A+ text-size stepper** on cbt-exam.html and cbt-multi.html:
+  scales the whole page container 80%–150%, persisted per browser
+  (`tc-text-scale`) — every eyesight, every screen.
+- Changed stylesheet cache-busted `?v=55` on all five CBT pages; portal
+  sw bumped `tc-shell-v24-20261010` so every device pulls fresh CSS.
+
+## Item 7 — every file, both repos
+
+Twin-synced (diff-verified identical, TC-only `tools/` aside):
+classdeck/js/{rtc,teach,join,webm-cues,enhancements}.js,
+classdeck/{teach.html, join.html}, classdeck/css/style.css,
+classdeck/{sw.js, version.json}, assets/css/style.css,
+{cbt-exam,cbt-multi,cbt-review,cbt-results,cbt-prompts}.html, sw.js.
+
+## Versions
+
+Deck `15.1.0` build 27, sw `hmg-classdeck-v15.1.0-r21-classflex`
+(webm-cues.js precached), all deck assets `?v=61` (70 refs swept),
+seven feature tags in version.json. Portal sw `tc-shell-v24-20261010`.
+
+## QA tally (round 21)
+
+New suites: `test_r21_classflex.js` (70 checks across all six items +
+version/syntax pins — includes inline-script parse checks of every
+patched HTML page) and `test_r21_webm_cues.js` (13 EBML unit checks:
+cluster parse, Cue-point math, idempotency, garbage tolerance).
+Battery: **31 suites × 1501 checks per repo, both repos, run twice —
+0 failures, deterministic.** PostgreSQL 17 harness: complete-schema.sql
+applies cleanly with the Supabase stubs (auth + storage) — 403 public
+objects — and drive-sync.sql, keep-alive.sql, my-work-board.sql all OK,
+on both repos. The battery's VM harness caught and fixed one real
+defect pre-ship (an undeclared `coRosterData`/`coTutorPanelEl` implicit
+global in join.js — declared properly now). Zips rebuilt
+(436 + 466 files).
