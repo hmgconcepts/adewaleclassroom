@@ -1300,3 +1300,119 @@ Portal ?v=52 / sw tc-shell-v21-20261010; deck ?v=55 /
 hmg-classdeck-v14.7.0-turnsync-truth / version.json 14.7.0 build 21.
 Twins synced byte-identical including tools/ (TC keeps only its
 generator fixtures-csv extra, which never flows back to AC).
+
+
+---
+
+# ROUND 17 AUDIT (2026-10-10)
+
+Scope: the user's seven items — (1) deck device B cannot restore a TURN
+key saved on device A; (2) "sync now" claims synced while "last sync"
+never moves, then Save fails "the cloud copy failed: unknown"; (3)
+admin-data "Last Backup" stuck on "never"; (4) teacher isolation +
+admin 360° monitors for tutors, students and parents; (5) audit every
+r16-and-prior feature; (6) expert re-understudy of every page and
+process; (7) every file in both repos updated.
+
+## Item 1 — device B "nothing saved yet": root cause chain
+
+The r16 fix made push() resolve uid first and await its callers — but
+three failure classes survived:
+
+- **Write path (the big one).** The REST upsert to `user_settings`
+  failed for reasons the client swallowed whole: RLS/permission errors,
+  a pre-V53 database without the table, a shape mismatch. The client
+  surfaced "the cloud copy failed: unknown" and — worse — pull()
+  compared cloud vs local with raw `JSON.stringify`, so **jsonb key
+  order** alone could report "credentials current" while the account
+  held nothing device B could restore.
+- **Read path.** pull() only recognised rows by legacy key names; a
+  shape change meant "Your account has nothing saved yet" even when the
+  row existed.
+
+**Fix (server + client, self-contained):** V53 adds security-definer
+`tc_set_user_setting`/`tc_get_user_settings` (owner-scoped,
+authenticated-only). `cloud-creds.js` writes and reads RPC-first (REST
+table-GET fallback for pre-V53 databases), reads and surfaces the real
+PostgREST error body (`message` + `hint` — "unknown" is gone),
+canonicalises (deep key-sort) before any comparison, and stamps the
+sync clock + "Account holds" the moment a push lands. teach.js re-renders
+the sync card after every Generate/Save outcome and states plainly when
+the device has no portal account linked. Verified by PG harness
+scenario 12: RPC round-trip, cross-account isolation (learner cannot
+read tutor's key and vice versa), pre-V53 fallback path.
+
+## Item 2 — "synced - credentials current" + "last sync not yet"
+
+Both symptoms were one bug: syncNow's diff was order-sensitive string
+comparison, and a successful push never touched `state.lastSync` (only
+pull did). With canon() comparison + stampSync() on push success, the
+card's "last sync" updates on every successful write and the label
+cannot claim currency it does not have. Save failures now carry the
+actual server message plus the remedy (press sync now / check link).
+
+## Item 3 — admin-data "Last Backup: never"
+
+The r16 reader was honest, but the WRITER never ran: the download path
+called `stampBackup()` only on a code path that also assumed a plain
+`update()` — and both toolbar buttons ("Full backup" / "Restore")
+referenced `window.DataTools`, **which was never defined** — silent
+ReferenceError, no backup, no stamp, "never" forever. Fixed: `DataTools`
+is defined and wired to the real sealed-download and restore readers;
+the stamp is RPC-first via V53 `tc_stamp_backup` (manager-guarded,
+upserts practice_settings including the insert case) with an UPDATE
+fallback; a failed stamp prints its reason instead of vanishing. The
+Drive path stamps through the same RPC. A new auditor
+(`tools/audit_handlers.py`) now sweeps every page of both trees for
+dangling inline handlers so this class of bug cannot ship again — run
+it, it is green.
+
+## Item 4 — tutor isolation + the admin 360° monitors
+
+Server (V53): tutor-scoped read policies on `library_items`,
+`eresources`, `resources`, `lms_lessons` (own rows + taught engagements
++ the shared shelf; family reads preserved); manager-only
+`tc_tutor_monitor(uuid)` and `tc_parent_monitor(uuid)` aggregates.
+Tutor coverage: profile, subjects taught, students taught, sessions
+taken, recent + upcoming sessions, bookings completed / ongoing /
+earnings, topics covered, CBTs created, assignments set, library items
+authored, **salary payment history**. Parent coverage: children with
+classes and tutors, invoices, payment history, upcoming sessions.
+Client: `assets/js/staff-monitor.js` — a 📊 Monitor row action on
+Tutors and Parents opens a drawer with tiles per section, honest empty
+states ("No records yet — nothing of this kind exists"), and visible
+error cards if the RPC refuses. Learners/parents/tutors cannot call the
+monitor RPCs (server-refused, verified in scenario 12). Teachers
+continue to see only their own + assigned rows (r14 scoping kept).
+
+## Items 5+6 — the self-audit: real bugs found and fixed
+
+- **tz.js workStatus mixed clocks.** `m >= fm && p.minutes <= tm`
+  compared the wrapped minute against the raw one — 08:00 counted as
+  INSIDE 09:00–17:00, and 01:00 counted outside a 22:00–02:00 window.
+  Fixed to one clock (`m >= fm && m <= tm`); unit-proven 10/10 in the
+  r17 suite including past-midnight and non-working days.
+- **crud.js 3-arg _cell.** openRecord and printList dropped the new
+  viewerCanWrite argument, so staff saw family-safe labels ("🎓 your
+  class") in the edit drawer and printouts. Both now pass `can`
+  (printList takes it as a parameter; renderList supplies it).
+- **DataTools undefined** (item 3 above — found by the new handler
+  auditor, then fixed).
+- r16 features re-audited and kept sound: detectRole role-race wait
+  loop, renderLastBackup auth re-render, the empty-ref retry + auth
+  purge in crud.js, sessions dual-clock banner, the r16 deck truth
+  toasts. The r16 QA suite (104 checks) still passes unmodified apart
+  from whitelist widening.
+
+## Item 7 + QA tally
+
+Every file updated in both repos (twin sync verified by the r8 twin
+check + `diff -rq`); versions: portal `?v=53` / sw
+`tc-shell-v22-20261010`; deck `?v=56` /
+`hmg-classdeck-v14.8.0-turnsync-rpc` / version.json 14.8.0 build 22
+(feature tags `v14.8-*`). New QA suite `test_r17_portal.js` (70
+checks: V53 migration shape, RPC-first client patterns, monitor UI,
+the r16-fix pins with the TZ engine actually executed, version
+truth). Battery: 26 suites, **1181/1181 per repo, both repos, run
+twice**. PG harness: **12/12 scenarios clean**. Workspace budget
+checked and under the cap.
