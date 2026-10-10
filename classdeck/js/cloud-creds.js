@@ -87,7 +87,7 @@ window.CloudCreds = (function () {
   const SESSION_RE = /^sb-.*-auth-token$/;
   const SYNCED_AT = "cd-creds-cloud-at";          // per-channel last sync ms
   const STAMP_KEY = "cd-creds-sync-stamp";        // V54: persisted verified-sync truth
-  const BUILD = "v54.2-r18-write-probe";
+  const BUILD = "v55-r20-cloudboot-everywhere";
 
   const state = {
     ready: false, uid: null, url: null, anon: null,
@@ -367,7 +367,11 @@ window.CloudCreds = (function () {
         });
         return changed;
       },
-      isEmpty: function () { return !String(storeGet("cf_key", "") || ""); }
+      /* V55: relay-only devices count too. isEmpty looked ONLY at
+         cf_key, so a teacher who pasted a manual TURN/relay JSON (the
+         documented metered.ca fallback) was told they had "nothing" —
+         no self-heal upload, no 📤 hint, "nothing saved yet". */
+      isEmpty: function () { return !(String(storeGet("cf_key", "") || "") || String(storeGet("relay_servers", "") || "")); }
     },
     "cd-stream": {
       snapshot: function () {
@@ -635,6 +639,16 @@ window.CloudCreds = (function () {
     var out = { ok: false, pushed: [], pushFailed: [], reason: "" };
     try { await ensureToken(); } catch (e) {}
     var pulled = await pull();
+    /* V55 (round 20): if the fresh read FAILED, do not push anything.
+     The old flow diffed against the stale in-memory copy and pushed
+     anyway — a transient read failure could then upload an OUTDATED
+     local snapshot over newer account data (e.g. a relay token another
+     device had just renewed), silently breaking every other device. */
+    if (!pulled) {
+      out.reason = "the account could not be read — nothing was pushed (a push without a fresh read could overwrite newer data on the account): " +
+        (state.reason || "check the connection and press 🔄 Sync now again");
+      return out;
+    }
     Object.keys(CHANNELS).forEach(function (k) {
       var ch = CHANNELS[k];
       if (!ch || !ch.snapshot) return;
@@ -824,15 +838,29 @@ window.CloudCreds = (function () {
     if (!step("1 · portal session on this device", !!sess,
         sess ? ((sess.user && sess.user.email) || "token present (email unknown)") : "no saved portal login",
         "Sign in to ADEWALE CLASSROOM on this device — or open ⚙ Settings → ☁️ Cloud sync → Link account and use your portal email + password.")) return steps;
+    /* V55 (round 20): THE LOCAL INVENTORY. The one fact that decides
+       the two-device story is whether THIS browser even holds the
+       credentials — until now the report could not distinguish "wrong
+       device" from "silent failure", and the user went in circles. */
+    var held = holdsLocal();
+    var heldBits = [];
+    if (held.indexOf("cd-turn") > -1) {
+      var ts = CHANNELS["cd-turn"].snapshot();
+      heldBits.push("🔑 TURN credentials ✓ (" + (String(ts.cf_key || "") ? "Cloudflare key + token" : "relay servers JSON") + ")");
+    }
+    if (held.indexOf("cd-stream") > -1) heldBits.push("📡 stream setup ✓");
+    step("2 · this device's saved credentials", true,
+      heldBits.length ? heldBits.join(" · ") + " — this is the device that can upload them" : "none — THIS browser holds no TURN or stream credentials (if you expected the key here, it lives in a different browser or profile on this device, or was never saved)",
+      "");
     var ep = null;
     try { ep = await endpoint(); } catch (e) {}
-    if (!step("2 · portal address", !!ep && /^https:\/\//.test(String((ep || {}).url || "")),
+    if (!step("3 · portal address", !!ep && /^https:\/\//.test(String((ep || {}).url || "")),
         ep ? ep.url : "the deck could not discover the portal address",
         "Redeploy the deck together with the portal (js/config.js must be reachable), or open the deck from inside the portal once so the address is cached.")) return steps;
     state.reason = "";
     var tok = null;
     try { tok = await ensureToken(); } catch (e) {}
-    if (!step("3 · account token", !!tok, tok ? "token valid for " + (sess.user && sess.user.email ? sess.user.email : "this account") : (state.reason || "token refresh failed"),
+    if (!step("4 · account token", !!tok, tok ? "token valid for " + (sess.user && sess.user.email ? sess.user.email : "this account") : (state.reason || "token refresh failed"),
         "Sign out and back in to the portal on this device — the saved login has expired or was revoked.")) return steps;
     var rows = null;
     try { rows = await readRows(); } catch (e) {}
@@ -845,7 +873,7 @@ window.CloudCreds = (function () {
         hasV53 = rr.ok;
       }
     } catch (e) {}
-    step("4 · database read path" + (hasV53 ? " (V53 RPC ✓" + (rows ? ")" : " — but it returned no rows)") : " (pre-V53 — plain table read)"),
+    step("5 · database read path" + (hasV53 ? " (V53 RPC ✓" + (rows ? ")" : " — but it returned no rows)") : " (pre-V53 — plain table read)"),
       rows !== null,
       rows === null ? (state.reason || "the account could not be read") : (rows.length + " setting row(s) readable in your account"),
       "Run database/complete-schema.sql on the studio database — the user_settings table or its read policy is missing/refusing this account.");
@@ -860,7 +888,7 @@ window.CloudCreds = (function () {
          back → delete → confirm gone) proves the exact path Save uses,
          from any device, with no lasting side effects. */
       var pr = await probeWrite();
-      step("5 · database write path (safe probe: write → read back → delete)", pr.ok,
+      step("6 · database write path (safe probe: write → read back → delete)", pr.ok,
         pr.ok
           ? "probe written, read back and confirmed, then deleted" + (pr.cleaned ? " ✓ — the account can verifiably store credentials" : " — but the probe row could not be deleted (harmless: sync ignores it; delete rights are missing on user_settings)")
           : (pr.reason || "the probe was refused"),
@@ -868,10 +896,20 @@ window.CloudCreds = (function () {
       return steps;
     }
     var okPush = await push(chan);
-    step("5 · database write path (verified re-push of " + chan + ")", okPush,
+    step("6 · database write path (verified re-push of " + chan + ")", okPush,
       okPush ? "written, read back and verified ✓ — your account verifiably holds this device's credentials" : (state.reason || "the write was refused"),
       okPush ? "" : "Run database/complete-schema.sql (or v47-cloud-credentials.sql then v53-credential-truth-staff-monitor.sql) on the studio database, then press 🔄 Sync now.");
     return steps;
+  }
+
+  /* V55: which channels hold REAL data on THIS device (uses the
+     fixed isEmpty — relay-only counts). The boot UI, the 📤 hint and
+     the diagnosis verdict all ask this one question. */
+  function holdsLocal() {
+    return Object.keys(CHANNELS).filter(function (k) {
+      var ch = CHANNELS[k];
+      return !!(ch && ch.isEmpty && !ch.isEmpty());
+    });
   }
 
   function notify(applied) {
@@ -889,6 +927,8 @@ window.CloudCreds = (function () {
        so the boot UI can tell the teacher the account was just filled
        (or exactly why the upload failed). */
     selfHeal: function () { return state.selfHeal || { pushed: [], failed: [] }; },
+    /* V55: channels with real data on THIS device (relay-only counts) */
+    holdsLocal: holdsLocal,
     /* V51: what the account actually holds + when it was last read */
     cloud: function () { return state.cloud || {}; },
     cloudRows: function () { return state.cloudRows || {}; },

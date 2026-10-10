@@ -8,7 +8,7 @@
    requests, making the site feel native on repeat visits.
    Bump CACHE_VERSION whenever you deploy changes.
    ============================================================ */
-const CACHE_VERSION = "hmg-classdeck-v15.0.2-r18-write-probe";  /* bumped: V53 round 17 — credential writes go through the tc_set_user_setting RPC (the REST upsert class of silent failures is gone), sync card re-renders on push, honest not-linked warning on save */  /* bumped: V52 round 16 — cloud credential sync truth: push resolves uid BEFORE upload (the silent NULL-user 403 that left "nothing saved yet" on other devices), shape-based channel restore, real two-way Sync now, last-sync stamps on push */  /* bumped: v14.1 MicDoctor (laptop mic failures: constraint ladder, silence watchdog, recovery banner), CBT console + Archive Recovery Center on Quizzes, role-aware Homework page, V46 assignment automation */  /* bumped: v14 adds assistant tutors (co-hosts), mute-all/lower-hands/attendance CSV, scrollable zoomable whiteboard pages and PDF anchored zoom with visible scrollbars */
+const CACHE_VERSION = "hmg-classdeck-v15.0.3-r20-cloudboot";  /* bumped: V55 round 20 — the cloud sync boots on EVERY teacher-facing deck page (js/cloud-sync-boot.js: pull + visible self-heal + not-linked hint), a service-worker update banner ends the first-open-after-redeploy handover gap, diagnose gains the local-device inventory step, and relay-only devices count as holding credentials */  /* bumped: V53 round 17 — credential writes go through the tc_set_user_setting RPC (the REST upsert class of silent failures is gone), sync card re-renders on push, honest not-linked warning on save */  /* bumped: V52 round 16 — cloud credential sync truth: push resolves uid BEFORE upload (the silent NULL-user 403 that left "nothing saved yet" on other devices), shape-based channel restore, real two-way Sync now, last-sync stamps on push */  /* bumped: v14.1 MicDoctor (laptop mic failures: constraint ladder, silence watchdog, recovery banner), CBT console + Archive Recovery Center on Quizzes, role-aware Homework page, V46 assignment automation */  /* bumped: v14 adds assistant tutors (co-hosts), mute-all/lower-hands/attendance CSV, scrollable zoomable whiteboard pages and PDF anchored zoom with visible scrollbars */
 
 const SHELL = [
   "./",
@@ -37,6 +37,7 @@ const SHELL = [
   "./js/security-config.js",
   "./js/auth.js",
   "./js/cloud-creds.js",
+  "./js/cloud-sync-boot.js",
   "./js/join.js",
   "./js/portal-bridge.js",
   "./js/enhancements.js",
@@ -113,7 +114,9 @@ self.addEventListener("fetch", (e) => {
 
       if (isPage) {
         try {
-          const res = await fetch(e.request);
+          /* v15.0.3: bypass the HTTP cache for pages — network-first must
+             mean the NETWORK, not a stale intermediate copy. */
+          const res = await fetch(e.request, { cache: "no-cache" });
           if (res && res.ok) cache.put(e.request, res.clone());
           return res;
         } catch (err) {

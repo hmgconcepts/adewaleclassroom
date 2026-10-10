@@ -200,7 +200,7 @@ async function loginTeacher() {
           var h = (CloudCreds.selfHeal && CloudCreds.selfHeal()) || { pushed: [], failed: [] };
           if (typeof toast !== "function") return;
           if (h.pushed && h.pushed.length) {
-            toast("☁️ Signed in — and this device's " + h.pushed.join(", ") + " were uploaded to your account (it did not have them yet). Every device you sign in on now restores them.", "ok", 10000);
+            toast("☁️ Signed in — and this device's " + h.pushed.join(", ") + " were uploaded to " + ((CloudCreds.sessionEmail && CloudCreds.sessionEmail()) || "your account") + " (it did not have them yet). Every device you sign in on now restores them.", "ok", 10000);
           } else if (h.failed && h.failed.length) {
             toast("⚠️ Signed in, but uploading this device's credentials failed: " + (CloudCreds.status().reason || "unknown") + ". Open ⚙ Settings → ☁️ Cloud sync → 🔄 Sync now.", "err", 12000);
           } else if (pulled) {
