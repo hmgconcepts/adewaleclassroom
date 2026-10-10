@@ -75,8 +75,8 @@
 <script src="assets/js/record-actions.js?v=53"></script>
 <script src="assets/js/receipts.js?v=53"></script>
 <script src="assets/js/nav-model.js?v=53"></script>
-<script src="assets/js/data-portability.js?v=53"></script>
-<script src="assets/js/drive-sync.js?v=53"></script>
+<script src="assets/js/data-portability.js?v=54"></script>
+<script src="assets/js/drive-sync.js?v=54"></script>
 <script src="assets/js/app.js?v=53"></script>
 <script src="assets/js/rbac.js?v=53"></script>
 <script src="assets/js/cbt-marking.js?v=53"></script>
@@ -817,12 +817,52 @@ document.addEventListener('DOMContentLoaded', () => {
 <script>
 const GD={
   fmt(b){b=Number(b)||0;return b>1048576?(b/1048576).toFixed(2)+' MB':b>1024?(b/1024).toFixed(1)+' KB':b+' B';},
-  prog(m){const e=document.getElementById('gd-progress');if(e)e.textContent=m||'';},
+  /* V54 (round 18, item 3): a REAL progress panel — stage checklist,
+     percentage bar, live detail line (which table, which byte count).
+     Replaces the single motionless text line. */
+  prog(m,info){
+    const e=document.getElementById('gd-progress');if(!e)return;
+    info=info||{};
+    if(!m){e.innerHTML='';return;}
+    if(info.stage==='done'){
+      e.innerHTML='<div style="border:1px solid #bbf7d0;border-radius:10px;padding:10px 12px;background:#f0fdf4;font-size:.9rem">'+esc(m)+'</div>';
+      return;
+    }
+    const pct=(typeof info.pct==='number')?Math.max(2,Math.min(100,Math.round(info.pct))):3;
+    const stages=[['auth','Authorise'],['collect','Collect data'],['upload','Upload'],['stamp','Record']];
+    const order=['auth','folder','collect','upload','stamp','done'];
+    const cur=order.indexOf(info.stage);
+    const steps=stages.map(function(st,i){
+      const stPos=order.indexOf(st[0]);
+      const cls=stPos<cur?'done':(stPos===cur?'active':'todo');
+      return '<span style="white-space:nowrap;'+(cls==='done'?';color:#15803d;font-weight:600':cls==='active'?';color:#0f172a;font-weight:700':';color:#94a3b8')+'">'+(cls==='done'?'✓ ':'')+esc(st[1])+'</span>';
+    }).join('<span style="color:#cbd5e1;margin:0 4px">›</span>');
+    e.innerHTML='<div style="border:1px solid #dbe3ec;border-radius:10px;padding:10px 12px;background:#f8fafc">'
+      +'<div style="display:flex;justify-content:space-between;gap:10px;font-size:.86rem;font-weight:700"><span>'+esc(m)+'</span><span style="color:#0f766e">'+pct+'%</span></div>'
+      +'<div style="margin-top:8px;height:9px;border-radius:5px;background:#e2e8f0;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,#0ea5e9,#22c55e);border-radius:5px;transition:width .3s"></div></div>'
+      +'<div style="margin-top:7px;font-size:.78rem;display:flex;flex-wrap:wrap">'+steps+'</div>'
+      +(info.tables&&info.tables.total?'<div style="margin-top:4px;font-size:.78rem;color:#475569">'+info.tables.done+' of '+info.tables.total+' tables processed'+(info.tables.saved!==undefined?' · '+info.tables.saved+' rows saved':'')+'</div>':'')
+      +(info.upload&&info.upload.total?'<div style="margin-top:4px;font-size:.78rem;color:#475569">'+(info.upload.loaded/1048576).toFixed(2)+' of '+(info.upload.total/1048576).toFixed(2)+' MB uploaded</div>':'')
+      +'</div>';
+  },
   async refreshStatus(){await DriveSync.loadCfg();const e=document.getElementById('gd-status');if(!e)return;const c=DriveSync.cfg;const last=c.lastBackup?new Date(c.lastBackup).toLocaleString():'never';e.innerHTML='<div class="stats-grid"><div class="stat-card"><div class="stat-value" style="font-size:1rem">'+(c.clientId?'Configured ✓':'Not configured')+'</div><div class="stat-label">Google connection</div></div><div class="stat-card"><div class="stat-value" style="font-size:1rem">'+(c.enabled?'Every '+c.days+' day(s)':'Off')+'</div><div class="stat-label">Automatic sync</div></div><div class="stat-card"><div class="stat-value" style="font-size:1rem">'+esc(last)+'</div><div class="stat-label">Last Drive backup</div></div></div>';const ce=document.getElementById('gd-client'),en=document.getElementById('gd-enabled'),dy=document.getElementById('gd-days');if(ce&&!ce.value)ce.value=c.clientId||'';if(en)en.value=String(!!c.enabled);if(dy)dy.value=c.days||7;},
   async save(){try{await DriveSync.loadCfg();await DriveSync.saveCfg({clientId:document.getElementById('gd-client').value.trim(),enabled:document.getElementById('gd-enabled').value==='true',days:Math.max(1,Number(document.getElementById('gd-days').value)||7)});toast('Google Drive settings saved for the whole school ✓','success');this.refreshStatus();}catch(e){toast(e.message||e,'danger',8000);}},
-  async backup(){try{await DriveSync.loadCfg();this.prog('Starting backup…');const r=await DriveSync.backupNow({interactive:true,onProgress:m=>this.prog(m)});this.prog('');toast('✅ Backup uploaded to Google Drive: '+r.file.name+' ('+r.rows+' rows, '+this.fmt(r.bytes)+'). Find it in the “'+DriveSync.folderName()+'” folder of the authorised Google account.','success',10000);this.refreshStatus();this.list();if(window.renderLastBackup)window.renderLastBackup();}catch(e){this.prog('');toast(e.message||e,'danger',10000);}},  async list(){const b=document.getElementById('gd-list');b.textContent='Loading Drive backups…';try{await DriveSync.loadCfg();const files=await DriveSync.listBackups();if(!files.length){b.innerHTML='<p style="color:var(--gray-500)">No backups in Drive yet. Click “Back up now” to create the first one.</p>';return;}b.innerHTML='<div class="table-wrap"><table><thead><tr><th>Backup file</th><th>Size</th><th>Created</th><th>Actions</th></tr></thead><tbody>'+files.map(f=>'<tr><td style="word-break:break-all">'+esc(f.name)+'</td><td>'+this.fmt(f.size)+'</td><td>'+esc(String(f.createdTime).slice(0,16).replace('T',' '))+'</td><td style="white-space:nowrap"><button class="btn btn-sm btn-outline" onclick="GD.restore(\''+f.id+'\',\''+esc(f.name)+'\')">↩ Restore</button> <button class="btn btn-sm btn-outline" style="color:#0369a1;border-color:#0369a1" onclick="GD.recover(\''+f.id+'\',\''+esc(f.name)+'\')" title="Restore into a brand-new Supabase project (old project lost)">🚑 Recover to new project</button> <button class="btn btn-sm btn-outline" style="color:#dc2626;border-color:#dc2626" onclick="GD.del(\''+f.id+'\',\''+esc(f.name)+'\')">🗑</button></td></tr>').join('')+'</tbody></table></div>';}catch(e){b.innerHTML='<p style="color:#b91c1c">'+esc(e.message||e)+'</p>';}},
-  async recover(id,name){if(!confirm('🚑 DISASTER RECOVERY MODE\n\nUse this ONLY when restoring “'+name+'” into a BRAND-NEW Supabase project because the old project was paused too long or deleted.\n\nWhat it does:\n• Imports every school record (students, results, fees, CBT, settings…)\n• Skips old user accounts (they belong to the dead project — users simply sign up again and you re-approve them)\n• Clears stale ownership references so nothing is rejected\n• Retries row-by-row so one bad row never blocks the rest\n\nBEFORE clicking OK, make sure you have already run database/complete-schema.sql in the new project.\n\nProceed?'))return;try{this.prog('Disaster recovery: downloading from Drive and importing…');const rep=await DriveSync.restoreFrom(id,'recovery');this.prog('');const saved=rep.reduce((a,x)=>a+x.saved,0),failed=rep.reduce((a,x)=>a+x.failed,0);document.getElementById('gd-list').insertAdjacentHTML('afterbegin',DataPortability.reportHTML(rep));toast('🚑 Recovery finished: '+saved+' row(s) salvaged'+(failed?', '+failed+' skipped (see report — usually old account references)':'')+'. Next: ask staff/parents/students to sign up again, then re-approve them on Approvals.',failed?'warning':'success',12000);}catch(e){this.prog('');toast(e.message||e,'danger',10000);}},
-  async restore(id,name){if(!confirm('Restore “'+name+'” from Google Drive into the database?\n\nExisting rows with the same id are updated; missing rows are re-created. Nothing is deleted.'))return;try{this.prog('Downloading from Drive and importing…');const rep=await DriveSync.restoreFrom(id,'upsert');this.prog('');const saved=rep.reduce((a,x)=>a+x.saved,0),failed=rep.reduce((a,x)=>a+x.failed,0);document.getElementById('gd-list').insertAdjacentHTML('afterbegin',DataPortability.reportHTML(rep));toast('Restore finished: '+saved+' row(s) imported'+(failed?', '+failed+' failed (see report)':'')+' ✓',failed?'warning':'success',9000);}catch(e){this.prog('');toast(e.message||e,'danger',10000);}},
+  async backup(){
+    const btn=document.querySelector('[onclick="GD.backup()"]');
+    if(btn){btn.disabled=true;btn.style.opacity=.55;}
+    try{
+      await DriveSync.loadCfg();
+      this.prog('Starting backup…',{stage:'auth',pct:1});
+      const r=await DriveSync.backupNow({interactive:true,onProgress:(m,info)=>this.prog(m,info)});
+      const dur=r.ms?(r.ms>=60000?Math.round(r.ms/60000)+' min':Math.round(r.ms/1000)+' s'):'';
+      this.prog('✅ Backup complete — '+r.file.name+' · '+r.rows+' rows · '+this.fmt(r.bytes)+(dur?' · took '+dur:'')+'. It is in the “'+DriveSync.folderName()+'” folder of the authorised Google account, and the studio-wide “Last backup” record has been updated.',{stage:'done',pct:100});
+      toast('✅ Backup uploaded to Google Drive: '+r.file.name+' ('+r.rows+' rows, '+this.fmt(r.bytes)+(dur?', '+dur:'')+'). Find it in the “'+DriveSync.folderName()+'” folder of the authorised Google account.','success',10000);
+      this.refreshStatus();this.list();if(window.renderLastBackup)window.renderLastBackup();
+    }catch(e){this.prog('');toast(e.message||e,'danger',10000);}
+    finally{if(btn){btn.disabled=false;btn.style.opacity='';}}
+  },  async list(){const b=document.getElementById('gd-list');b.textContent='Loading Drive backups…';try{await DriveSync.loadCfg();const files=await DriveSync.listBackups();if(!files.length){b.innerHTML='<p style="color:var(--gray-500)">No backups in Drive yet. Click “Back up now” to create the first one.</p>';return;}b.innerHTML='<div class="table-wrap"><table><thead><tr><th>Backup file</th><th>Size</th><th>Created</th><th>Actions</th></tr></thead><tbody>'+files.map(f=>'<tr><td style="word-break:break-all">'+esc(f.name)+'</td><td>'+this.fmt(f.size)+'</td><td>'+esc(String(f.createdTime).slice(0,16).replace('T',' '))+'</td><td style="white-space:nowrap"><button class="btn btn-sm btn-outline" onclick="GD.restore(\''+f.id+'\',\''+esc(f.name)+'\')">↩ Restore</button> <button class="btn btn-sm btn-outline" style="color:#0369a1;border-color:#0369a1" onclick="GD.recover(\''+f.id+'\',\''+esc(f.name)+'\')" title="Restore into a brand-new Supabase project (old project lost)">🚑 Recover to new project</button> <button class="btn btn-sm btn-outline" style="color:#dc2626;border-color:#dc2626" onclick="GD.del(\''+f.id+'\',\''+esc(f.name)+'\')">🗑</button></td></tr>').join('')+'</tbody></table></div>';}catch(e){b.innerHTML='<p style="color:#b91c1c">'+esc(e.message||e)+'</p>';}},
+  async recover(id,name){if(!confirm('🚑 DISASTER RECOVERY MODE\n\nUse this ONLY when restoring “'+name+'” into a BRAND-NEW Supabase project because the old project was paused too long or deleted.\n\nWhat it does:\n• Imports every school record (students, results, fees, CBT, settings…)\n• Skips old user accounts (they belong to the dead project — users simply sign up again and you re-approve them)\n• Clears stale ownership references so nothing is rejected\n• Retries row-by-row so one bad row never blocks the rest\n\nBEFORE clicking OK, make sure you have already run database/complete-schema.sql in the new project.\n\nProceed?'))return;try{this.prog('Disaster recovery: downloading from Drive…',{stage:'download',pct:3});const rep=await DriveSync.restoreFrom(id,'recovery',(m,info)=>this.prog(m,Object.assign({},info,{stage:info.stage==='import'?'collect':info.stage})));this.prog('');const saved=rep.reduce((a,x)=>a+x.saved,0),failed=rep.reduce((a,x)=>a+x.failed,0);document.getElementById('gd-list').insertAdjacentHTML('afterbegin',DataPortability.reportHTML(rep));toast('🚑 Recovery finished: '+saved+' row(s) salvaged'+(failed?', '+failed+' skipped (see report — usually old account references)':'')+'. Next: ask staff/parents/students to sign up again, then re-approve them on Approvals.',failed?'warning':'success',12000);}catch(e){this.prog('');toast(e.message||e,'danger',10000);}},
+  async restore(id,name){if(!confirm('Restore “'+name+'” from Google Drive into the database?\n\nExisting rows with the same id are updated; missing rows are re-created. Nothing is deleted.'))return;try{this.prog('Downloading from Google Drive…',{stage:'download',pct:3});const rep=await DriveSync.restoreFrom(id,'upsert',(m,info)=>this.prog(m,Object.assign({},info,{stage:info.stage==='import'?'collect':info.stage})));this.prog('');const saved=rep.reduce((a,x)=>a+x.saved,0),failed=rep.reduce((a,x)=>a+x.failed,0);this.prog('✅ Restore complete — '+saved+' row(s) imported'+(failed?', '+failed+' skipped (see the report below)':'')+'.',{stage:'done',pct:100});document.getElementById('gd-list').insertAdjacentHTML('afterbegin',DataPortability.reportHTML(rep));toast('Restore finished: '+saved+' row(s) imported'+(failed?', '+failed+' failed (see report)':'')+' ✓',failed?'warning':'success',9000);}catch(e){this.prog('');toast(e.message||e,'danger',10000);}},
   async del(id,name){if(!confirm('Delete the Drive backup “'+name+'” permanently?'))return;try{await DriveSync.deleteBackup(id);toast('Drive backup deleted.','info');this.list();}catch(e){toast(e.message||e,'danger');}}
 };
 document.addEventListener('DOMContentLoaded',()=>{setTimeout(()=>GD.refreshStatus(),800);});

@@ -804,3 +804,66 @@ tools/audit_handlers.py`, then the QA battery (26 suites, 1181 checks
 per repo). Versions: portal `?v=53` / sw `tc-shell-v22-20261010`; deck
 `?v=56` / `hmg-classdeck-v14.8.0-turnsync-rpc` / version.json 14.8.0
 build 22.
+
+## V54 — verified credential sync, network-first pages, Drive backup progress (round 18)
+
+**No database change in this round** — V53's RPCs remain the server
+truth. This round is the client-side hardening that makes the sync
+*provable*, plus the delivery fix that explains why fixed bugs seemed
+to persist.
+
+**⚠️ THE REDEPLOY NOTE — read this first.** The deck's service worker
+used to serve the **cached page** on every visit and refresh only in
+the background. That means the FIRST visit after any redeploy still ran
+the PREVIOUS build — a fix that shipped could look unfixed until the
+second visit. If the "unknown" sync error or "nothing saved yet"
+reappeared after you deployed round 17, this is almost certainly what
+happened. Round 18 makes pages **network-first** (the cache is only
+the offline fallback), so from this build on every redeploy lands on
+the very next visit. After deploying this build, refresh the deck page
+**once** (or hard-refresh) to cross over, then check the sync card's
+footer: it must say `cloud-creds v54-r18-verified-sync`.
+
+**The verified-sync engine (`classdeck/js/cloud-creds.js`):**
+- **A write only counts when the account verifiably holds it.** Every
+  push (RPC or pre-V53 REST fallback) is followed by an immediate
+  read-back of the account and a canonical comparison — "saved" now
+  means *saved and verified*, structurally closing the "looked saved on
+  device A while device B saw nothing" class whatever the server did.
+- **Pushes are serialized per channel** (Save fires the relay push and
+  the key push back-to-back) and the **token refresh is single-flight**
+  — two parallel refreshes with the same refresh token are exactly what
+  Supabase's rotation-reuse detection revokes the whole session for.
+- **`state.reason` can never be empty on failure** — every path goes
+  through `fail(stage, message)` carrying the HTTP status and the
+  server's own error body; the round-16 "unknown" toast is dead.
+- **The sync clock is persisted** (`cd-creds-sync-stamp`): "last
+  verified sync" survives page reloads instead of resetting to "not
+  yet", and the account-holds line always follows the last successful
+  read (a credential cleared on another device stops showing ✓).
+- **"Sync now" diffs against a FRESH read** (pull first, then push what
+  really differs) — "credentials current" is a statement about the
+  account, not a stale in-memory copy.
+- **🔍 Diagnose button** on the sync card: walks the exact chain a real
+  sync uses (session → endpoint → token → database read → verified
+  write), stops at the first broken link and prints its exact remedy.
+  With real local credentials the final step is a genuine verified
+  re-push — the healing action for a half-migrated database.
+
+**Google Drive backup — real progress before completion (user item
+3):** the backup now reports a staged panel on admin-data (Authorise →
+Collect *table i of n* → Upload with **byte-level progress** → Record →
+done) — the upload switched from `fetch` to XHR because fetch cannot
+report upload progress. The automatic background sync shows the same
+truth as a floating pill, and restore/recovery report per-table import
+progress too. The completion line carries rows, size and duration.
+
+**Verify after deploying:** `bash tools/verify_schema_pg.sh` (12
+scenarios — unchanged this round), `python3
+tools/audit_selfcontained.py`, `python3 tools/audit_handlers.py`, then
+the QA battery (27 suites, 1268 checks per repo — the round-18 suite
+includes a behavioral test of the sync engine against a fake
+PostgREST). Versions: portal `?v=54` on the changed admin-data assets /
+sw `tc-shell-v23-20261010`; deck `?v=57` /
+`hmg-classdeck-v15.0.0-r18-verified-sync-netfirst` / version.json
+15.0.0 build 23.
