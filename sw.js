@@ -6,7 +6,7 @@
 // CLIENT build (builder.html / generator.js / wizard.js are generator-only and
 // must NOT be precached here). Each URL is cached individually so one missing
 // file never aborts the whole precache (cache.addAll is atomic).
-const CACHE = 'tc-shell-v20-20261009';   /* bumped: V51 round 15 — role-aware link names for the student portal, digital-library quiz + points workbench, homework points workbench, cloud last-backup, TURN-key save-to-cloud, Tablet Live field docs */
+const CACHE = 'tc-shell-v21-20261010';   /* bumped: V52 round 16 — timezone truth (dual studio+student times on every schedule page, meeting planner, world clocks), empty-ref-name race fix (auth-session gate + self-healing retry), family-safe link cells, App.detectRole, tc_last_backup (Last-backup card never 'never' again) */  /* was: tc-shell-v20-20261009; bumped: V51 round 15 — role-aware link names for the student portal, digital-library quiz + points workbench, homework points workbench, cloud last-backup, TURN-key save-to-cloud, Tablet Live field docs */
 
 // Files guaranteed to exist in every generated client studio.
 const CORE = [

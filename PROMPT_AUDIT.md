@@ -1183,3 +1183,120 @@ byte-identical including tools/.
      10-assertion behavioral run incl. the learner's own-class name
      resolution, the parent path, foreign-attempt RLS refusal, and the
      owner-settable last_backup_at)
+
+# ROUND 16 AUDIT (2026-10-10)
+
+The user's eleven-item report, and what each turned out to be.
+
+## Item 1 — Timezone desk: BOTH times, everywhere, forever
+
+The blueprint is now **tz.js**, the timezone truth engine, plus **V52**
+(tc_my_tz): the database answers, in one security-definer call, the
+studio's home zone (practice_settings.timezone → the is_default desk
+entry → Africa/Lagos) and the signed-in viewer's OWN zone (their desk
+entry → their role-table timezone column → null, and the client then
+falls back to the browser zone — pre-V52 databases degrade gracefully
+to "correct for the viewer", never broken). Every schedule-ish page —
+dashboard, sessions, bookings, the LMS/library/resources/e-resources/
+homework tables — renders datetimes through TZ.dualHtml(): 🏠 studio
+time · 👤 viewer time (+/−Nh badge), and ONLY when the two zones
+actually differ, so a Lagos–Lagos pair sees exactly what it always saw.
+The dashboard's Next-class card and the homework CBT opens/closes show
+the same dual line, primed BEFORE first paint. timezones.html gains the
+**meeting planner** (enter a time in ANY zone — it can be the
+student's — and read that moment in every studio zone at once, with
+🟢/🔴 working-hours flags, blackout notes, DST-correct in both
+directions via a drift loop), a **copy dual-time-line** button for
+pasting "4:00 PM Lagos = 9:00 AM Toronto" into a message, and **live
+1-second world clocks** — all of which re-prime themselves whenever a
+desk entry is edited above them (MutationObserver → TZ.refresh()).
+
+## Items 2–6 — the banner/cells family, root-caused and closed
+
+The Edit-button clue was decisive: Edit fixed the names because
+openForm does a FRESH table read, so the bug was never RLS — it was
+**crud.js's _refCache caching the EMPTY engagements map forever**. The
+first read ran before supabase-js finished restoring the session, RLS
+as anon returns 0 rows — not an error — so V13.1's error path never
+fired and the empty map was cached as truth. The r16 fix: renderList
+waits for auth.getSession() before the first read; an empty result now
+consults tc_ref_labels() before giving up, is marked __empty and kept
+separately (_refEmpty — NEVER cached), and _scheduleRefRetry()
+repaints every mounted list 2.5s later; onAuthStateChange purges all
+caches, so the anon→user transition can never leave stale empties.
+The student-portal half was a second race: App.currentRole arrived
+AFTER the pages' 4-second role-wait loop, the learner fell through to
+the staff crud table and saw the very banners the split prevents. The
+five pages now decide with **App.detectRole()** (10s wait →
+tc_current_role RPC tiebreak → cached-profile fallback) — truth, not
+timing. Family cells are viewer-aware: read-only viewers see "🎓 your
+class" for engagements and "linked ✓" for other refs, never "linked ·
+name unavailable", never ⚠, and both ref banners are suppressed for
+them entirely. The student shelf also gained a class filter (GOSA's
+class scoping, better — labels come from the role-aware RPC).
+
+## Item 7 — complete-schema.sql is all-inclusive
+
+V52 spliced at the tail with its own banner; tools/audit_selfcontained.py
+now proves **887 objects** (V52's tc_my_tz + tc_last_backup included),
+check_schema_order stays green, and the PG harness gained scenario 11
+(tcv_v52): an 8-assertion behavioral run — the learner's home+mine in
+one call, the owner's null mine, the desk entry outranking the
+role-table column, the anonymous home, and tc_last_backup answering
+for ANY authenticated member — on top of the 10 legacy scenarios, all
+clean on FRESH, LEGACY and RE-RUN databases.
+
+## Items 8+9 — ClassDeck cloud credentials, the silent-failure autopsy
+
+Device B honestly said "nothing saved yet" because **the account never
+received the key**: push() built its row with state.uid BEFORE any
+request ran, and the uid was only resolved lazily inside the request
+helpers — so the FIRST push of a session uploaded user_id NULL, the
+owner-only RLS policy refused it with 403, and push() returned false
+into the void. The key looked saved on device A while the cloud stayed
+empty. push() now resolves the token+uid FIRST (with a JWT-sub
+fallback for session shapes without user.id), and no TURN-key push is
+silent anymore: Generate AWAITS its push and toasts failures with the
+remedy, typed-key Save does the same. pull() matched rows to channels
+by exact key name only — any row saved under a different label was
+ignored; channels now resolve **by name OR data shape** (a value with
+cf_key/cf_token/relay_servers IS the cd-turn channel whatever the row
+is called). And "Sync now" only pulled — after generating credentials
+it reported "synced" while the new key never left the device and
+"last sync" stayed "not yet". **syncNow()** is a real two-way sync:
+channels this device holds that the cloud lacks — or holds differently
+(diffed against the exact cloud payload pull kept) — are pushed first,
+then pull brings back what THIS device lacks; a successful push now
+stamps the sync clock and the Account-holds line the moment it lands.
+
+## Item 10 — "Last backup: never", the anon race one page later
+
+The r15 reader ran ONCE at page load, usually before the session was
+restored: the practice_settings select ran as anon, RLS returned NULL
+(not an error), and the card froze at "never" on every device except
+the one that took the backup. The card is now a named, reusable
+**renderLastBackup()**: session-gated, served by the new
+security-definer **tc_last_backup()** RPC (any authenticated member
+reads the studio-wide truth regardless of practice_settings RLS — with
+the direct select kept as a pre-V52 fallback), re-rendered on every
+auth change (INITIAL_SESSION/SIGNED_IN/TOKEN_REFRESHED) and after
+EVERY backup path, merging local + studio + Drive timestamps (newest
+wins, tooltip names the source). Every backup path also stamps
+**backup_path** (V52 column) — "device: tutoring-connect-backup-….json"
+or "drive: school-connect-backup-….json" — so the card can say not
+just WHEN but WHERE the newest archive lives.
+
+## Round-16 QA tally (per repo, both repos green)
+
+    25 suites — 1110/1110 per repo × 2 repos
+    (+103 round-16 portal checks; PG harness now 11 scenarios — V52's
+     is an 8-assertion behavioral run incl. the learner home+mine
+     resolution, desk-entry precedence, the anonymous home, and
+     tc_last_backup for any authenticated member)
+
+## Round-16 versions
+
+Portal ?v=52 / sw tc-shell-v21-20261010; deck ?v=55 /
+hmg-classdeck-v14.7.0-turnsync-truth / version.json 14.7.0 build 21.
+Twins synced byte-identical including tools/ (TC keeps only its
+generator fixtures-csv extra, which never flows back to AC).
