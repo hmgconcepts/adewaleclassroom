@@ -814,13 +814,32 @@ window.CDSecurity = CDSecurity;
           for (const sid of sessionIds) {
              const chunks = all.filter(r => r.sessionId === sid).sort((a,b) => a.ts - b.ts).map(r => r.chunk);
              if (chunks.length > 0) {
-               const blob = new Blob(chunks, { type: 'video/webm' });
-               const fname = 'Recovered_Lesson_' + new Date().toISOString().slice(0,10) + '.webm';
-               const a = document.createElement('a');
-               a.href = URL.createObjectURL(blob);
-               a.download = fname;
-               a.click();
-               URL.revokeObjectURL(a.href);
+               /* r21 (item 3): recovered recordings get the SAME player-
+                  compatibility repair (duration + Cues seek index) before
+                  download - a crash is no reason to ship a file that stops
+                  at every seek. */
+               const doDownload = (blob) => {
+                 const fname = 'Recovered_Lesson_' + new Date().toISOString().slice(0,10) + '.webm';
+                 const a = document.createElement('a');
+                 a.href = URL.createObjectURL(blob);
+                 a.download = fname;
+                 a.click();
+                 URL.revokeObjectURL(a.href);
+               };
+               const raw = new Blob(chunks, { type: 'video/webm' });
+               let buf = null;
+               try { buf = new Uint8Array(await raw.arrayBuffer()); } catch (e) { buf = null; }
+               if (!buf) { doDownload(raw); continue; }
+               if (window.EBML && window.EBML.default) {
+                 try {
+                   const fixed = await window.EBML.default(new Blob([buf], { type: 'video/webm' }));
+                   if (fixed && fixed.size) buf = new Uint8Array(await fixed.arrayBuffer());
+                 } catch (e) {}
+               }
+               if (window.WebMCues && window.WebMCues.addCues) {
+                 try { const c = window.WebMCues.addCues(buf); if (c && c.length) buf = c; } catch (e) {}
+               }
+               doDownload(new Blob([buf], { type: 'video/webm' }));
              }
           }
         } catch(e) { console.error('Recovery failed', e); }

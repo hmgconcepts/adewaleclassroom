@@ -90,6 +90,15 @@ var micOn = false, camOn = false;
 var stageStream = null;
 var classStartTs = 0, classTickInt = null;
 var recorder = null, recChunks = [], recStream = null;
+/* r21 (round 21, item 1): LIVE BROADCAST MODE SWITCHING. The teacher can
+   switch composite <-> full screen share MID-CLASS without stopping the
+   recording or the live class: COMP.track holds the canvas capture track
+   (never stopped while live), room.updateStageVideo() replaceTracks on the
+   LIVE senders (captains re-serve the same track down the relay tree), and
+   drawRecordingFrame() draws the ACTIVE source so the recording follows. */
+var broadcastMode = "composite";
+var stageScreenStream = null;
+var screenMirrorEl = null;      /* hidden <video> decoding the shared screen for the recording canvas */
 var focusOn = false;
 var capRec = null, capOn = false, capLines = [];
 var pipVideo = null, pipStream = null, pipPump = null, pipActive = false;
@@ -1172,6 +1181,26 @@ function drawComposite() {
     drawPaneInto(ctx, "R", 0, 0, W, H, headH);
   }
 
+  /* r21 (item 6): while a student's board is being presented, the broadcast
+     (and the recording — same canvas pipeline) shows it large, with the
+     student's name. Zero new media paths: it rides the composite. */
+  if (presentingBoard && presentingBoard.canvas) {
+    const bc = presentingBoard.canvas;
+    const head2 = 44;
+    ctx.fillStyle = "#10142b";
+    ctx.fillRect(0, 0, W, head2);
+    ctx.fillStyle = "#ffb347";
+    ctx.font = "bold 20px system-ui, sans-serif";
+    ctx.textBaseline = "middle";
+    ctx.fillText("🎨 " + presentingBoard.name + " is showing their board to the class", 14, head2 / 2, W - 220);
+    const areaH = H - head2;
+    const sc = Math.min(W / bc.width, areaH / bc.height);
+    const dw = bc.width * sc, dh = bc.height * sc;
+    ctx.fillStyle = "#fff";
+    ctx.fillRect((W - dw) / 2, head2 + (areaH - dh) / 2, dw, dh);
+    try { ctx.drawImage(bc, (W - dw) / 2, head2 + (areaH - dh) / 2, dw, dh); } catch (e) {}
+  }
+
   /* v6 (issue 6): when the floating calculator is open, draw it into the
      broadcast so students see every keystroke of the working. */
   drawCalcIntoBroadcast(ctx, W, H);
@@ -1545,16 +1574,39 @@ async function goLive() {
 
     // build the stage stream
     const mode = Store.get("broadcast", "composite");
+    /* r21: the initial source runs through the SAME state machine as a
+       mid-class switch (broadcastMode + screenMirror + contentHint), so a
+       class that STARTS in screen mode can still switch seamlessly and the
+       recording still follows. */
+    broadcastMode = "composite";
     if (mode === "screen" && navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
       try {
-        stageStream = await navigator.mediaDevices.getDisplayMedia({
-          video: { frameRate: { ideal: COMP.fps, max: Math.max(COMP.fps, 15) } },
+        const s = await navigator.mediaDevices.getDisplayMedia({
+          video: { frameRate: { ideal: Math.max(COMP.fps, 10), max: 15 }, width: { ideal: 1920 }, height: { ideal: 1080 } },
           audio: true   // captures tab/system audio where the browser/OS permits it
         });
-        stageStream.getVideoTracks()[0].addEventListener("ended", () => {
+        const track = s.getVideoTracks()[0];
+        if (track.contentHint !== undefined) { try { track.contentHint = "detail"; } catch (e) {} }
+        if (!screenMirrorEl) {
+          screenMirrorEl = document.createElement("video");
+          screenMirrorEl.muted = true; screenMirrorEl.playsInline = true;
+          screenMirrorEl.style.cssText = "position:fixed;width:2px;height:2px;opacity:0;pointer-events:none;left:-10px;top:-10px;";
+          document.body.appendChild(screenMirrorEl);
+        }
+        screenMirrorEl.srcObject = s;
+        try { await screenMirrorEl.play(); } catch (e) {}
+        /* keep the composite engine warm for the switch back (COMP.track) */
+        if (!COMP.track) { try { const t0 = COMP.canvas.captureStream(1).getVideoTracks()[0]; COMP.track = t0; } catch (e) {} }
+        track.addEventListener("ended", () => {
           toast("Screen share ended — switching to composite mode", "err");
-          startCompositeStage();
+          switchBroadcastMode("composite");
         });
+        stageStream = new MediaStream([track]);
+        if (micStream) micStream.getAudioTracks().forEach((t) => stageStream.addTrack(t));
+        else { await ensureMic(true); if (micStream) micStream.getAudioTracks().forEach((t) => stageStream.addTrack(t)); }
+        broadcastMode = "screen";
+        stageScreenStream = s;
+        if (room) room.setStageStream(stageStream);
       } catch {
         toast("Screen share unavailable — using composite mode", "");
         startCompositeStage();
@@ -1563,6 +1615,7 @@ async function goLive() {
       startCompositeStage();
     }
     if (!stageStream) startCompositeStage();
+    updateBcastModeChip();
 
     // mic: ask once, attach to stage stream so students hear you
     await ensureMic(true);
@@ -1615,9 +1668,87 @@ function startCompositeStage() {
   drawComposite();
   COMP.raf = requestAnimationFrame(compositeLoop);
   const vidStream = COMP.canvas.captureStream(COMP.fps);
-  stageStream = new MediaStream(vidStream.getVideoTracks());
+  const vidTracks = vidStream.getVideoTracks();
+  /* r21: the canvas capture track is what we replaceTrack BACK to when a
+     screen share ends - keep it referenced, never stop it while live.
+     contentHint "detail" tells the encoder to protect resolution
+     (whiteboard text) over framerate. */
+  COMP.track = vidTracks[0] || COMP.track || null;
+  if (COMP.track && COMP.track.contentHint !== undefined) { try { COMP.track.contentHint = "detail"; } catch (e) {} }
+  stageStream = new MediaStream(vidTracks);
   if (micStream) micStream.getAudioTracks().forEach((t) => stageStream.addTrack(t));
   if (room) room.setStageStream(stageStream);
+}
+
+/* r21 (item 1): THE MID-CLASS SWITCHER. Returns true when the mode changed.
+   Works while live AND while only recording (the recording follows the
+   active source either way). Audio never changes (teacher mic). */
+async function switchBroadcastMode(mode) {
+  if (mode !== "screen" && mode !== "composite") mode = "composite";
+  if (mode === broadcastMode) { toast("Already in " + (mode === "screen" ? "screen share" : "composite") + " mode."); return false; }
+  if (mode === "screen") {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      toast("This browser cannot share the screen - staying on the composite workspace.", "err", 7000);
+      return false;
+    }
+    let s;
+    try {
+      s = await navigator.mediaDevices.getDisplayMedia({
+        video: { frameRate: { ideal: Math.max(COMP.fps, 10), max: 15 }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        audio: false   /* classroom audio stays the teacher mic - predictable, no double audio */
+      });
+    } catch (e) {
+      toast("Screen share cancelled - still on the composite workspace.", "", 5000);
+      return false;
+    }
+    const track = s.getVideoTracks()[0];
+    if (!track) { try { s.getTracks().forEach((t) => t.stop()); } catch (e) {} return false; }
+    if (track.contentHint !== undefined) { try { track.contentHint = "detail"; } catch (e) {} }
+    if (!screenMirrorEl) {
+      screenMirrorEl = document.createElement("video");
+      screenMirrorEl.muted = true; screenMirrorEl.playsInline = true;
+      screenMirrorEl.style.cssText = "position:fixed;width:2px;height:2px;opacity:0;pointer-events:none;left:-10px;top:-10px;";
+      document.body.appendChild(screenMirrorEl);
+    }
+    screenMirrorEl.srcObject = s;
+    try { await screenMirrorEl.play(); } catch (e) {}
+    track.addEventListener("ended", () => {
+      toast("Screen share ended - back to the composite workspace. Nothing was interrupted.", "ok", 6000);
+      switchBroadcastMode("composite");
+    });
+    broadcastMode = "screen";
+    stageScreenStream = s;
+    if (COMP.raf) { cancelAnimationFrame(COMP.raf); COMP.raf = null; }   /* save CPU; COMP.track is never stopped */
+    if (room && room.updateStageVideo) {
+      const n = room.updateStageVideo(track);
+      toast("Now sharing your screen with the class" + (recorder && recorder.state === "recording" ? " - the recording follows automatically, nothing stopped" : "") + (n ? "" : " (students are reconnecting to the new source)") + ".", "ok", 7000);
+    } else {
+      toast("Screen is now the recording source (you are not live).", "ok", 6000);
+    }
+    updateBcastModeChip();
+    audit("broadcast-switch", "composite to screen");
+    return true;
+  }
+  broadcastMode = "composite";
+  if (stageScreenStream) { try { stageScreenStream.getTracks().forEach((t) => t.stop()); } catch (e) {} stageScreenStream = null; }
+  if (screenMirrorEl) { try { screenMirrorEl.srcObject = null; } catch (e) {} }
+  if (!COMP.raf) { drawComposite(); COMP.raf = requestAnimationFrame(compositeLoop); }
+  if (room && room.updateStageVideo && COMP.track) {
+    room.updateStageVideo(COMP.track);
+    toast("Back to the composite workspace - the class and the recording followed seamlessly.", "ok", 6000);
+  }
+  updateBcastModeChip();
+  audit("broadcast-switch", "screen to composite");
+  return true;
+}
+function updateBcastModeChip() {
+  const chip = $("#btnBcastMode");
+  if (!chip) return;
+  chip.textContent = broadcastMode === "screen" ? "\u{1F5A5} Screen" : "\u{1F9E9} Composite";
+  chip.classList.toggle("active", broadcastMode === "screen");
+  chip.title = broadcastMode === "screen"
+    ? "Broadcasting your shared screen. Click to return to the composite workspace - nothing stops."
+    : "Broadcasting the ClassDeck workspace. Click to share your screen instead - nothing stops.";
 }
 
 /* ─────────────────────────────────────────────────────────────────────
@@ -1873,6 +2004,12 @@ function onRoomEvent(type, p) {
       renderRoster();
       if (p && p.on !== undefined) toast(p.on ? ("👑 " + p.name + " is now an assistant tutor") : (p.name + " is no longer an assistant tutor"), "ok", 5000);
       break;
+    case "cotutor":   /* r21 (item 4): Co-Tutor — full tutor privileges */
+      renderRoster();
+      if (p && p.on !== undefined) toast(p.on
+        ? ("🎓 " + p.name + " is now a CO-TUTOR — the full tutor toolkit: admit/deny, mute, mic & camera control, kick, lock, spotlight, announcements, polls, student screens and boards.")
+        : (p.name + " is no longer a Co-Tutor"), "ok", 7000);
+      break;
     case "cohost-action":
       audit("cohost", (p && p.name) + " → " + (p && p.action));
       renderRoster(); renderWaiting();
@@ -1890,11 +2027,13 @@ function onRoomEvent(type, p) {
     case "student-media":
       if (p.kind === "stucam") addCamTile(p.peerId, p.name, p.stream);
       if (p.kind === "stumic") playStudentAudio(p.peerId, p.stream);
-      if (p.kind === "stuscreen") {                    /* v5 (issue 1) */
-        addCamTile("scr-" + p.peerId, "🖥 " + p.name + " (screen)", p.stream);
+      if (p.kind === "stuscreen") {                    /* v5 → r21 */
+        addCamTile("scr-" + p.peerId, "\u{1F5A5} " + p.name + " (screen)", p.stream, { screen: true });
         const tile = camTiles.get("scr-" + p.peerId);
         if (tile) tile.classList.add("focus");          // screens open enlarged
-        toast("🖥 " + p.name + " is sharing their screen — see 👥 drawer", "ok", 5000);
+        const stu = room ? room.students.get(p.peerId) : null;
+        const aud = stu && stu.screenAudience === "class" ? " — showing to the WHOLE CLASS" : "";
+        toast("\u{1F5A5} " + p.name + " is sharing their screen" + aud + " — tap the tile to view it full size", "ok", 6000);
         if (!$("#drawerStudents").classList.contains("open")) toggleDrawer("#drawerStudents");
       }
       break;
@@ -1948,9 +2087,10 @@ function renderRosterNow() {
       <span class="name">${escapeHtml(stu.name)}${isCaptain(pid) ? ' <span title="class captain — helps carry the video">🛡</span>' : ""}</span>${rttBadge(stu)}` +
       (room ? `
       <button class="btn small" data-act="cam" title="Ask/stop camera">📷</button>
-      <button class="btn small" data-act="scr" title="Ask student to share their screen">🖥</button>
+      <button class="btn small" data-act="scr" title="Ask student to share their screen — you choose who sees it (just you, or the whole class)">🖥</button>
       <button class="btn small" data-act="mic" title="Allow/revoke mic">🎙</button>
       <button class="btn small" data-act="cohost" title="Make assistant tutor (co-host): can admit, mute all, kick and lock">👑</button>
+      <button class="btn small" data-act="cotutor" title="Make CO-TUTOR — the full tutor toolkit (equal to the tutor for everything classroom-side)">🎓</button>
       <button class="btn small danger" data-act="kick" title="Remove">✕</button>` : "");
     if (room) {
       /* v9: reflect the real state (permission memory + live calls) instead of
@@ -1962,8 +2102,15 @@ function renderRosterNow() {
       if (micB) micB.classList.toggle("active", !!stu.micAllowed);
       const chB = row.querySelector('[data-act="cohost"]');
       if (chB) chB.classList.toggle("active", !!stu.coHost);
+      const ctB = row.querySelector('[data-act="cotutor"]');
+      if (ctB) ctB.classList.toggle("active", !!stu.coTutor);
       if (camB) camB.classList.toggle("active", stu.mediaCalls.some((c) => c._hmgKind === "stucam"));
-      if (scrB) scrB.classList.toggle("active", stu.mediaCalls.some((c) => c._hmgKind === "stuscreen"));
+      if (scrB) {
+        const sharing = stu.mediaCalls.some((c) => c._hmgKind === "stuscreen");
+        scrB.classList.toggle("active", sharing);
+        if (sharing && stu.screenAudience === "class") scrB.title = stu.name + "'s screen is being shown to the WHOLE CLASS — click to change or stop";
+        else if (sharing) scrB.title = stu.name + "'s screen is visible to YOU only — click to change or stop";
+      }
       row.querySelector('[data-act="cam"]').addEventListener("click", (e) => {
         const b = e.currentTarget;
         const on = !b.classList.contains("active");
@@ -1972,11 +2119,11 @@ function renderRosterNow() {
         toast(on ? "Asked " + stu.name + " to turn camera on" : "Asked " + stu.name + " to turn camera off");
       });
       row.querySelector('[data-act="scr"]').addEventListener("click", (e) => {
+        /* r21 (item 6): the teacher DECIDES the audience — "just me" or the
+           whole class — and can change it or stop while the share is live. */
         const b = e.currentTarget;
-        const on = !b.classList.contains("active");
-        b.classList.toggle("active", on);
-        room.requestStudentScreen(pid, on);
-        toast(on ? "Asked " + stu.name + " to share their screen" : "Asked " + stu.name + " to stop sharing");
+        const sharing = stu.mediaCalls.some((c) => c._hmgKind === "stuscreen");
+        openScreenAudienceChooser(stu, pid, sharing);
       });
       row.querySelector('[data-act="mic"]').addEventListener("click", (e) => {
         const b = e.currentTarget;
@@ -1989,25 +2136,78 @@ function renderRosterNow() {
         if (confirm("Remove " + stu.name + " from the class?")) room.kick(pid);
       });
       if (chB) chB.addEventListener("click", () => {
+        if (stu.coTutor) { toast(stu.name + " is a Co-Tutor already (that includes every assistant-tutor power). Demote 🎓 first if you want them to be a plain assistant tutor.", "", 7000); return; }
         room.setCoHost(pid, !stu.coHost);
         toast(!stu.coHost
           ? "👑 " + stu.name + " is now an assistant tutor — they can admit the waiting room, mute all, lower hands, kick and lock."
           : stu.name + " is no longer an assistant tutor", "ok", 6000);
         renderRoster();
       });
+      if (ctB) ctB.addEventListener("click", () => {
+        if (!stu.coTutor && !confirm("Make " + stu.name + " a CO-TUTOR?\n\nA Co-Tutor has the FULL tutor toolkit — equal to you for everything classroom-side: admit/deny, mute, mic & camera control, kick, lock, spotlight, announcements, polls, student screens and boards. Only you (the Tutor) can end the class, change Co-Tutors, or control this device's broadcast/recording settings.")) return;
+        room.setCoTutor(pid, !stu.coTutor);
+        renderRoster();
+      });
     }
     list.appendChild(row);
   }
 }
-function addCamTile(pid, name, stream) {
+function addCamTile(pid, name, stream, opts) {
   removeCamTile(pid);
+  opts = opts || {};
   const tile = document.createElement("div");
-  tile.className = "cam-tile";
-  tile.innerHTML = `<video autoplay playsinline muted></video><span class="label">${escapeHtml(name)}</span>`;
+  /* r21 (item 5): screens are NEVER cropped. object-fit: contain + the
+     screen-tile class (see css) — the teacher sees the WHOLE shared screen
+     at the best size; clicking opens the theater overlay full-viewport. */
+  tile.className = "cam-tile" + (opts.screen ? " screen-tile" : "");
+  tile.innerHTML = `<video autoplay playsinline muted></video><span class="label">${escapeHtml(name)}</span>` +
+    (opts.screen ? '<button class="tile-theater" title="View full size">⤢</button>' : "");
   tile.querySelector("video").srcObject = stream;
-  tile.addEventListener("click", () => tile.classList.toggle("focus"));
+  tile.addEventListener("click", (e) => {
+    if (e.target.classList && e.target.classList.contains("tile-theater")) return;
+    if (opts.screen) openTheater(stream, name);
+    else tile.classList.toggle("focus");
+  });
+  if (opts.screen) {
+    const tb = tile.querySelector(".tile-theater");
+    if (tb) tb.addEventListener("click", (e) => { e.stopPropagation(); openTheater(stream, name); });
+  }
   $("#camGrid").appendChild(tile);
   camTiles.set(pid, tile);
+}
+
+/* r21 (item 5): THE THEATER — a full-viewport, never-cropped viewer for
+   shared screens and student boards, with native fullscreen. This is the
+   fix for "what I am seeing at my end is small": one tap shows the shared
+   screen as large as the display allows. */
+function openTheater(source, title) {
+  closeTheater();
+  const ov = document.createElement("div");
+  ov.id = "cdTheater";
+  ov.innerHTML = "<video autoplay playsinline muted></video>" +
+    '<div class="bar"><span class="t"></span>' +
+    '<button class="fs" title="Fullscreen">⛶</button>' +
+    '<button class="x" title="Close">✕</button></div>';
+  document.body.appendChild(ov);
+  const v = ov.querySelector("video");
+  if (source instanceof MediaStream) v.srcObject = source;
+  else if (source && source.getContext && source.captureStream) v.srcObject = source.captureStream(10);   /* a live canvas (student board) */
+  ov.querySelector(".t").textContent = title || "";
+  ov.querySelector(".x").addEventListener("click", closeTheater);
+  ov.querySelector(".fs").addEventListener("click", () => {
+    try { if (document.fullscreenElement) document.exitFullscreen(); else ov.requestFullscreen(); } catch (e) {}
+  });
+  ov.addEventListener("click", (e) => { if (e.target === ov) closeTheater(); });
+  const esc = (e) => { if (e.key === "Escape") { closeTheater(); document.removeEventListener("keydown", esc); } };
+  document.addEventListener("keydown", esc);
+  return ov;
+}
+function closeTheater() {
+  const ov = document.getElementById("cdTheater");
+  if (ov) {
+    try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) {}
+    ov.remove();
+  }
 }
 function removeCamTile(pid) {
   const t = camTiles.get(pid);
@@ -2200,6 +2400,14 @@ function loadRecLogo() {
 }
 loadRecLogo();
 
+/* r21 (item 1): the broadcast-mode chip — one tap switches the live
+   broadcast (and the recording source) between the composite workspace and
+   a full screen share. Nothing stops: no re-call, no recorder restart. */
+on("#btnBcastMode", "click", () => {
+  if (broadcastMode === "composite") switchBroadcastMode("screen");
+  else switchBroadcastMode("composite");
+});
+
 on("#btnRec", "click", () => {
   if (recorder && recorder.state === "recording") { stopRecording(); return; }
   /* Auth-enforce first (same as recBegin in the classic dialog). */
@@ -2293,9 +2501,22 @@ function drawRecordingFrame() {
   ctx.textAlign = "right";
   ctx.fillText(recMeta.brand, W - 12, baseHeadH / 2, W * 0.26);
   ctx.textAlign = "left";
-  /* workspace (the live broadcast canvas) */
-  drawComposite(); // ensure COMP is fresh even if not live
-  ctx.drawImage(COMP.canvas, 0, headH, W, H - headH - footH);
+  /* workspace: the ACTIVE broadcast source (r21, item 1). In screen mode
+     the recording draws the shared screen (contain-fit, never cropped -
+     screens can be any aspect), otherwise the composite canvas. The
+     recording therefore FOLLOWS a mid-class mode switch seamlessly. */
+  const workW = W, workH = H - headH - footH;
+  if (broadcastMode === "screen" && screenMirrorEl && screenMirrorEl.videoWidth) {
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, headH, workW, workH);
+    const vw = screenMirrorEl.videoWidth, vh = screenMirrorEl.videoHeight;
+    const sc = Math.min(workW / vw, workH / vh);
+    const dw = vw * sc, dh = vh * sc;
+    ctx.drawImage(screenMirrorEl, (workW - dw) / 2, headH + (workH - dh) / 2, dw, dh);
+  } else {
+    drawComposite(); // ensure COMP is fresh even if not live
+    ctx.drawImage(COMP.canvas, 0, headH, workW, workH);
+  }
   /* teacher camera PiP bottom-right */
   const selfVid = $("#selfVideo");
   if (camOn && selfVid && selfVid.videoWidth) {
@@ -2347,6 +2568,31 @@ function recLoop(ts) {
   try { drawRecordingFrame(); } catch {}
 }
 
+/* r21 (item 3): the player-compatibility repair pipeline. WebM from
+   MediaRecorder carries no Cues (seek index) and an unknown Segment size -
+   the exact combination that makes VLC/Windows Media Player STOP at every
+   timestamp click. Fixed at stop time, best-effort, never destructive:
+   duration first (vendored EBML tool, when present), then the Cues index +
+   true segment size (js/webm-cues.js). Returns { blob, cues }. */
+async function repairWebmForPlayers(chunks, outType) {
+  let buf = new Uint8Array(await new Blob(chunks).arrayBuffer());
+  if (window.EBML && window.EBML.default) {
+    try {
+      const fixed = await window.EBML.default(new Blob([buf], { type: outType || "video/webm" }));
+      if (fixed && fixed.size) buf = new Uint8Array(await fixed.arrayBuffer());
+    } catch (e) {}
+  }
+  let cues = false;
+  if (window.WebMCues && window.WebMCues.addCues) {
+    try {
+      const withCues = window.WebMCues.addCues(buf);
+      if (withCues && withCues.length > buf.length) { buf = withCues; cues = true; }
+      else if (withCues && withCues.length === buf.length) { buf = withCues; }
+    } catch (e) {}
+  }
+  return { blob: new Blob([buf], { type: outType || "video/webm" }), cues };
+}
+
 async function startRecording() {
   if (typeof MediaRecorder === "undefined" || !recCanvasCaptureSupported()) {
     toast("Recording is not supported by this browser.", "err");
@@ -2396,45 +2642,32 @@ async function startRecording() {
     activeRecorder.onstop = () => {
       const safe = (value) => String(value || "").replace(/[^\w\- ]+/g, "").trim().replace(/\s+/g, "-");
       const outType = activeRecorder.mimeType || mime || "video/webm";
-      // The user explicitly demands the .mp4 extension for cross-platform file manager compatibility.
-      const ext = ".mp4"; 
+      /* r21 (item 3): the extension TELLS THE TRUTH about the container. The
+         old code saved WebM bytes under a hardcoded .mp4 name - a mismatch
+         that is exactly why laptop players (VLC/Windows Media) stopped
+         playing at every seek. WebM output now gets .webm (and a repaired,
+         Cues-indexed, duration-fixed file that seeks correctly everywhere);
+         if the browser can genuinely mux MP4 it gets .mp4. */
+      const ext = (outType.indexOf("mp4") > -1) ? ".mp4" : ".webm";
       const fname = [safe(recMeta.brand || "Lesson"), safe(recMeta.subject || ""), safe(recMeta.topic || ""), safe(recMeta.klass || ""), new Date().toISOString().slice(0, 10)].filter(Boolean).join("_") + ext;
       
       if (chunks.length) {
-        const rawBlob = new Blob(chunks, { type: outType });
-        if (outType.includes("webm") && window.EBML && window.EBML.default && window.HMG_REC_SESSION && window.HMG_REC_SESSION.startTs) {
-          try {
-            window.EBML.default(rawBlob).then(function(fixedBlob) {
-              const resBlob = fixedBlob || rawBlob;
-              if (resBlob === rawBlob) { downloadBlob(resBlob, fname); return; }
-              
-              // ANDROID EXOPLAYER FIX: Patch the "Unknown" Segment Size to the actual file size.
-              const reader = new FileReader();
-              reader.onload = function() {
-                const buf = new Uint8Array(reader.result);
-                for(let i=0; i<buf.length - 12; i++) {
-                  if(buf[i]===0x18 && buf[i+1]===0x53 && buf[i+2]===0x80 && buf[i+3]===0x67) {
-                    if(buf[i+4]===0x01 && buf[i+5]===0xFF && buf[i+6]===0xFF && buf[i+7]===0xFF) {
-                      const segmentSize = buf.length - (i + 12);
-                      let hex = segmentSize.toString(16).padStart(14, '0');
-                      buf[i+4] = 0x01; // Marker for 8-byte length
-                      for(let j=0; j<7; j++) {
-                        buf[i+5+j] = parseInt(hex.slice(j*2, j*2+2), 16);
-                      }
-                      break;
-                    }
-                  }
-                }
-                // Save it with the .mp4 extension as requested by the user
-                downloadBlob(new Blob([buf], { type: "video/mp4" }), fname);
-              };
-              reader.readAsArrayBuffer(resBlob);
-            }).catch(function(err) {
-              downloadBlob(rawBlob, fname);
-            });
-          } catch(err) { downloadBlob(rawBlob, fname); }
+        if (outType.indexOf("webm") > -1) {
+          /* r21 (item 3): EVERY WebM recording gets the full repair pipeline,
+             unconditionally: (1) the vendored fix-webm-duration (Duration),
+             (2) js/webm-cues.js - a real Cues seek index + true Segment size.
+             Together these are what laptop players need to seek without
+             stopping; the old byte-patch only fixed the segment size and the
+             extension lied about the container. */
+          repairWebmForPlayers(chunks, outType).then(function (res) {
+            downloadBlob(res.blob, fname);
+            if (res.cues) toast("\u2705 Recording saved with a full seek index - clicking any timestamp in VLC / Windows Media Player now jumps correctly.", "ok", 8000);
+            else toast("Recording saved. If seeking stumbles in an older player, play it in VLC or Chrome.", "ok", 8000);
+          }).catch(function () {
+            downloadBlob(new Blob(chunks, { type: outType }), fname);
+          });
         } else {
-          downloadBlob(new Blob(chunks, { type: "video/mp4" }), fname);
+          downloadBlob(new Blob(chunks, { type: outType || "video/mp4" }), fname);
         }
       }
       stopKeepAlive();
@@ -2810,7 +3043,19 @@ on("#btnTestRelay", "click", () => runRelayTest());
 on("#setSave", "click", () => {
   Store.set("teachername", $("#setName").value.trim());
   Store.set("roomname", $("#setRoomName").value.trim());
-  Store.set("broadcast", $("#setBroadcast").value);
+  {
+    const newMode = $("#setBroadcast").value;
+    const changed = newMode !== Store.get("broadcast", "composite");
+    Store.set("broadcast", newMode);
+    /* r21 (item 1): the broadcast mode applies IMMEDIATELY when the class
+       (or a recording) is running - no more "stop everything, change the
+       setting, start again". */
+    if (changed && (room || (recorder && recorder.state === "recording"))) {
+      switchBroadcastMode(newMode);
+    } else if (changed) {
+      toast("Broadcast mode saved - it will be used when you go live or record.", "ok", 5000);
+    }
+  }
   Store.set("quality", $("#setQuality").value);
   if ($("#setMassBroadcastUrl")) Store.set("mass_url", $("#setMassBroadcastUrl").value.trim());
   Store.set("wake", $("#setWake").checked);
@@ -4464,16 +4709,11 @@ async function tryFullTabletScreenShare() {
     Store.set("broadcast", "composite");
     return;
   }
-  try {
-    const s = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: COMP.fps || 10 } }, audio: true });
-    if (!room) { s.getTracks().forEach((t) => t.stop()); Store.set("broadcast", "screen"); toast("Full screen sharing is supported. Tap ▶ Go Live to choose your screen.", "ok", 7000); return; }
-    stopStageSourceExceptMic(stageStream);
-    stageStream = s;
-    if (micStream) micStream.getAudioTracks().forEach((t) => stageStream.addTrack(t));
-    room.setStageStream(stageStream);
-    toast("🖥 Full screen is now being shared to ClassDeck students", "ok", 7000);
-    s.getVideoTracks()[0].addEventListener("ended", () => { toast("Full screen share ended — switching back to ClassDeck workspace", "err"); startCompositeStage(); });
-  } catch (e) { toast("Screen share cancelled/unavailable. Using ClassDeck workspace broadcast.", "err", 6000); }
+  /* r21: routed through the seamless switcher - no re-calls, no blink, the
+     recording follows. */
+  const before = broadcastMode;
+  const ok = await switchBroadcastMode("screen");
+  if (!ok && before === "composite" && !room) { Store.set("broadcast", "screen"); toast("Full screen sharing is supported. Tap ▶ Go Live to choose your screen.", "ok", 7000); }
 }
 if ($("#btnTabletLive")) on("#btnTabletLive", "click", () => {
   if (typeof authEnforce === "function" && !authEnforce()) return;
@@ -4856,21 +5096,152 @@ function currentBoardPNG() {
   } catch { return null; }
 }
 
+/* r21 (item 6): WHO sees a student's shared screen. Opens for both "start
+   a share" and "change/stop a live share". The choice is enforced
+   server-of-truth-wise in rtc.js (the teacher's room relays the stream to
+   the class only when audience === "class"). */
+function openScreenAudienceChooser(stu, pid, sharing) {
+  closeScreenAudienceChooser();
+  const ov = document.createElement("div");
+  ov.id = "cdScrAud";
+  ov.className = "modal-back open";
+  const cur = stu.screenAudience === "class" ? "class" : "me";
+  ov.innerHTML = '<div class="modal" style="max-width:430px;padding:22px">' +
+    "<h3 style='margin:0 0 6px'>🖥 " + escapeHtml(stu.name) + " — screen share</h3>" +
+    "<p style='margin:0 0 14px;font-size:.92em;opacity:.85'>" + (sharing ? "They are sharing now. Change who sees it, or stop the share." : "Ask " + escapeHtml(stu.name) + " to share their screen — and choose who sees it.") + "</p>" +
+    '<div style="display:flex;flex-direction:column;gap:10px">' +
+    '<button class="btn" id="scrAudMe" style="text-align:left">' + (cur === "me" && sharing ? "✅ " : "") + '👤 Show to ME only' + (cur === "me" && sharing ? " (current)" : "") + "</button>" +
+    '<button class="btn" id="scrAudClass" style="text-align:left">' + (cur === "class" && sharing ? "✅ " : "") + '👨‍👩‍👧 Show to the WHOLE CLASS' + (cur === "class" && sharing ? " (current)" : "") + "</button>" +
+    (sharing ? '<button class="btn danger" id="scrAudStop" style="text-align:left">⏹ Stop ' + escapeHtml(stu.name) + "'s screen share</button>" : "") +
+    '<button class="btn ghost" id="scrAudCancel">Cancel</button>' +
+    "</div></div>";
+  document.body.appendChild(ov);
+  const close = closeScreenAudienceChooser;
+  ov.querySelector("#scrAudCancel").addEventListener("click", close);
+  const me = ov.querySelector("#scrAudMe");
+  const cls = ov.querySelector("#scrAudClass");
+  const stop = ov.querySelector("#scrAudStop");
+  if (me) me.addEventListener("click", () => {
+    if (sharing) {
+      if (stu.screenAudience === "class") { room.broadcastStudentScreen(pid, false); stu.screenAudience = "me"; room.requestStudentScreen(pid, true, "me"); }
+      toast(stu.name + "'s screen is now visible to you only.", "ok", 6000);
+    } else room.requestStudentScreen(pid, true, "me");
+    close(); renderRoster();
+  });
+  if (cls) cls.addEventListener("click", () => {
+    if (sharing) {
+      if (stu.screenAudience !== "class") { stu.screenAudience = "class"; room.broadcastStudentScreen(pid, true); room.requestStudentScreen(pid, true, "class"); }
+      toast("🖥 " + stu.name + "'s screen is now shown to the WHOLE class.", "ok", 6000);
+    } else room.requestStudentScreen(pid, true, "class");
+    close(); renderRoster();
+  });
+  if (stop) stop.addEventListener("click", () => {
+    room.requestStudentScreen(pid, false);
+    room.broadcastStudentScreen(pid, false);
+    toast("Asked " + stu.name + " to stop sharing.", "", 5000);
+    close(); renderRoster();
+  });
+}
+function closeScreenAudienceChooser() {
+  const ov = document.getElementById("cdScrAud");
+  if (ov) ov.remove();
+}
+
+/* r21 (item 6): PRESENT A STUDENT'S BOARD TO THE CLASS. The student solves
+   on their own board; the teacher projects it: (1) onto the broadcast
+   composite (every student's stage + the recording), (2) as every student's
+   board background (their own board shows the work), (3) spotlighted, and
+   (4) large on the teacher's screen in the theater overlay. Zero new media
+   paths — it rides the existing broadcast, so captains/relay and the
+   recording all carry it automatically. */
+let presentingBoard = null;   /* { name, canvas } */
+function presentStudentBoard(pid) {
+  const sb = stuBoards.get(pid);
+  if (!sb || !room) { toast("Start boards first (🎨).", "err"); return; }
+  presentingBoard = { name: sb.name, canvas: sb.canvas };
+  try { room.pushBoardBg(boardCanvasToPNG(sb.canvas)); } catch (e) {}
+  try { room.spotlight(pid, sb.name); } catch (e) {}
+  try { room.sendAnnouncement("🎨 " + sb.name + " is showing their whiteboard to the class."); } catch (e) {}
+  openTheater(sb.canvas, "🎨 " + sb.name + "'s board — presenting to the class");
+  toast("🎨 Presenting " + sb.name + "'s board to the class — it is on everyone's stage and their boards. Close the theater or press Stop presenting to end.", "ok", 9000);
+  renderBoardsGrid();
+}
+function stopPresentingBoard() {
+  if (!presentingBoard) return;
+  presentingBoard = null;
+  closeTheater();
+  renderBoardsGrid();
+  toast("Stopped presenting the student board.", "ok", 5000);
+}
+function boardCanvasToPNG(canvas) {
+  const c = document.createElement("canvas");
+  const w = 960, h = Math.round(960 * canvas.height / Math.max(1, canvas.width));
+  c.width = w; c.height = h;
+  c.getContext("2d").drawImage(canvas, 0, 0, w, h);
+  return c.toDataURL("image/jpeg", 0.85);
+}
+
+function renderBoardsGrid() {
+  /* r21 (item 6): reflect the presenting state on every board tile and show
+     the global Stop-presenting control while a board is on the class stage. */
+  let bar = document.getElementById("cdPresentBar");
+  if (presentingBoard) {
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "cdPresentBar";
+      bar.style.cssText = "display:flex;gap:10px;align-items:center;justify-content:space-between;background:rgba(79,110,247,.15);border:1px solid rgba(79,110,247,.5);border-radius:10px;padding:8px 12px;margin:0 0 10px;font-size:.9em";
+      bar.innerHTML = "<span>📺 Presenting <b>" + escapeHtml(presentingBoard.name) + "</b>'s board to the class (stage + every student's board)</span>";
+      const stop = document.createElement("button");
+      stop.className = "btn small";
+      stop.textContent = "⏹ Stop presenting";
+      stop.addEventListener("click", stopPresentingBoard);
+      bar.appendChild(stop);
+      const grid = $("#boardsGrid");
+      if (grid) grid.parentNode.insertBefore(bar, grid);
+    } else {
+      bar.querySelector("b").textContent = presentingBoard.name;
+    }
+  } else if (bar) bar.remove();
+  for (const [pid, sb] of stuBoards) {
+    if (!sb.tile) continue;
+    const btn = sb.tile.querySelector(".tile-present");
+    if (btn) {
+      const on = !!(presentingBoard && presentingBoard.name === sb.name && presentingBoard.canvas === sb.canvas);
+      btn.classList.toggle("active", on);
+      btn.title = on ? "This board is being shown to the class — click to stop" : "Show this board to the whole class";
+      btn.textContent = on ? "⏹" : "📺";
+      btn.onclick = (e) => { e.stopPropagation(); if (on) stopPresentingBoard(); else presentStudentBoard(pid); };
+    }
+  }
+}
+
 function renderStudentBoard(p) {
   let sb = stuBoards.get(p.peerId);
   if (!sb) {
     const tile = document.createElement("div");
-    tile.className = "cam-tile";
+    /* r21 (item 5): boards are content — contain, never crop; click opens
+       the theater. r21 (item 6): a per-board "show to class" button. */
+    tile.className = "cam-tile screen-tile board-tile";
     tile.style.background = "#fff";
-    tile.innerHTML = '<canvas style="width:100%;height:100%"></canvas><span class="label">' + escapeHtml(p.name) + "</span>";
-    tile.addEventListener("click", () => tile.classList.toggle("focus"));
+    tile.innerHTML = '<canvas style="width:100%;height:100%"></canvas><span class="label">' + escapeHtml(p.name) + "</span>" +
+      '<button class="tile-present" title="Show this board to the whole class">📺</button>';
+    tile.addEventListener("click", (e) => {
+      if (e.target.classList && e.target.classList.contains("tile-present")) return;
+      openTheater(sb2.canvas, "🎨 " + sb2.name + "'s board");
+    });
+    tile.querySelector(".tile-present").addEventListener("click", (e) => {
+      e.stopPropagation();
+      presentStudentBoard(p.peerId);
+    });
     $("#boardsGrid").appendChild(tile);
     const canvas = tile.querySelector("canvas");
     canvas.width = 480; canvas.height = 360;
-    sb = { canvas, ctx: canvas.getContext("2d"), name: p.name, strokes: [] };
+    sb = { canvas, ctx: canvas.getContext("2d"), name: p.name, strokes: [], peerId: p.peerId, tile };
+    var sb2 = sb;
     sb.ctx.fillStyle = "#fff";
     sb.ctx.fillRect(0, 0, 480, 360);
     stuBoards.set(p.peerId, sb);
+    renderBoardsGrid();
   }
   if (p.full) { sb.strokes = p.strokes || []; }
   else sb.strokes.push(...(p.strokes || []));

@@ -1,6 +1,6 @@
 {
-  "version": "15.0.3",
-  "build": 26,
+  "version": "15.1.0",
+  "build": 27,
   "channel": "stable",
   "released": "2026-10-10",
   "features": [
@@ -88,6 +88,13 @@
     "v15.0.3-diagnose-device-inventory",
     "v15.0.3-update-banner",
     "v15.0.3-relay-only-truth",
-    "v15.0.3-sync-stale-read-guard"
+    "v15.0.3-sync-stale-read-guard",
+    "v15.1.0-live-broadcast-mode-switch",
+    "v15.1.0-recording-cues-seek-index",
+    "v15.1.0-cotutor-full-toolkit",
+    "v15.1.0-screen-share-uncropped-theater",
+    "v15.1.0-student-screen-audience",
+    "v15.1.0-present-student-board",
+    "v15.1.0-cbt-text-clarity"
   ]
 }

@@ -322,6 +322,8 @@ class TeacherRoom {
     this.peer = null;
     this.locked = false;
     this.coHosts = new Set();                        // v14: assistant tutors (Zoom-style co-hosts)
+    this.coTutors = new Set();                       // r21: Co-Tutors — FULL tutor privileges (superset of co-host)
+    this.stuScreenBcast = new Map();                 // r21: peerId -> [calls] relaying that student's screen to the class
     this.waitingRoom = false;                         // v4: Zoom-style waiting room
     this.autoAdmitRejoin = false;                    // enterprise: let previously admitted students re-enter after teacher resume
     this.pending = new Map();                         // v4: peers awaiting admission
@@ -496,9 +498,19 @@ class TeacherRoom {
       call._hmgKind = kind;
       call.answer(); // receive-only
       call.on("stream", (stream) => {
+        /* r21 (item 6): remember the student's screen stream so the teacher
+           can relay it to the whole class (and auto-relay on arrival if the
+           teacher already chose the "whole class" audience for them). */
+        if (kind === "stuscreen") {
+          stu.screenStream = stream;
+          if (stu.screenAudience === "class") this.broadcastStudentScreen(call.peer, true);
+        }
         this.onEvent("student-media", { peerId: call.peer, name: stu.name, kind, stream });
       });
-      call.on("close", () => this.onEvent("student-media-end", { peerId: call.peer, kind }));
+      call.on("close", () => {
+        if (kind === "stuscreen" && stu.screenAudience === "class") this.broadcastStudentScreen(call.peer, false);
+        this.onEvent("student-media-end", { peerId: call.peer, kind });
+      });
       stu.mediaCalls.push(call);
     });
   }
@@ -581,6 +593,64 @@ class TeacherRoom {
     this.attendance.push({ name: stu.name, event: on ? "cohost-on" : "cohost-off", time: nowStamp() });
     this.onEvent("cohost", { peerId, name: stu.name, on: !!on });
     this._broadcastRoster();
+  }
+  /* ── r21 (round 21, item 4): CO-TUTOR — full tutor privileges.
+     An assistant tutor (co-host) can admit/mute/kick/lock. A CO-TUTOR is the
+     tutor's equal for everything classroom-side: the full action set below
+     (spotlight, announcements, captions, chat as the class, per-student
+     cam/screen/mic control, polls, boards) — every action is still verified
+     HERE on the teacher's room object (a promoted peer id, nothing else),
+     and stamped into the attendance log. The structural exceptions (ending
+     the class, promoting/demoting Co-Tutors, device-bound broadcast/
+     recording settings) stay with the Tutor, who owns the room. */
+  setCoTutor(peerId, on) {
+    const stu = this.students.get(peerId);
+    if (!stu) return;
+    if (on) {
+      stu.coHostKeep = !!stu.coHost;      /* were they a co-host independently? */
+      stu.coTutor = true; stu.coHost = true;
+      this.coHosts.add(peerId); this.coTutors.add(peerId);
+    } else {
+      stu.coTutor = false; this.coTutors.delete(peerId);
+      if (!stu.coHostKeep) { stu.coHost = false; this.coHosts.delete(peerId); }
+    }
+    try { stu.conn.send({ t: "cotutor", on: !!on }); } catch {}
+    this.attendance.push({ name: stu.name, event: on ? "cotutor-on" : "cotutor-off", time: nowStamp() });
+    this.onEvent("cotutor", { peerId, name: stu.name, on: !!on });
+    this._broadcastRoster();
+  }
+  /* r21 (item 6): teacher chooses the AUDIENCE for a student's screen —
+     "me" (teacher only, the v5 behaviour) or "class" (the teacher relays the
+     student's stream to every other student; the teacher's uplink carries it
+     for the moments the class watches — a deliberate teacher action). */
+  requestStudentScreen(peerId, on, audience) {   // v5 → r21: audience added
+    const stu = this.students.get(peerId);
+    if (!stu) return;
+    if (audience) stu.screenAudience = String(audience) === "class" ? "class" : "me";
+    try { stu.conn.send({ t: "screenRequest", on: !!on, audience: stu.screenAudience || "me" }); } catch {}
+  }
+  broadcastStudentScreen(peerId, on) {
+    const calls = this.stuScreenBcast.get(peerId) || [];
+    for (const c of calls) { try { c.close(); } catch {} }
+    this.stuScreenBcast.delete(peerId);
+    const stu = this.students.get(peerId);
+    if (!on || !stu || !stu.screenStream) return 0;
+    const name = stu.name || "A student";
+    let n = 0;
+    for (const pid2 of this.students.keys()) {
+      if (pid2 === peerId) continue;
+      try {
+        const call = this.peer.call(pid2, stu.screenStream, { metadata: { kind: "stuscreen-bcast", name } });
+        const stu2 = this.students.get(pid2);
+        if (stu2) stu2.mediaCalls.push(call);
+        calls.push(call);
+        try { stu2.conn.send({ t: "stuscreen-bcast-meta", on: true, name }); } catch {}
+        n++;
+      } catch (e) {}
+    }
+    if (calls.length) this.stuScreenBcast.set(peerId, calls);
+    this.attendance.push({ name, event: on ? "screen-to-class-on" : "screen-to-class-off", time: nowStamp() });
+    return n;
   }
   muteAll() {
     for (const [pid, stu] of this.students) {
@@ -687,9 +757,10 @@ class TeacherRoom {
           }
         }
         break;
-      case "cohostAction": {   /* v14: honoured ONLY from promoted assistant tutors */
+      case "cohostAction": {   /* v14 → r21: honoured ONLY from promoted assistant tutors / Co-Tutors */
         if (!this.coHosts.has(conn.peer)) break;
         const by = stu.name;
+        const isCoTutor = this.coTutors.has(conn.peer);
         switch (d.action) {
           case "admit":      if (d.target && this.pending.has(d.target)) { this.admit(d.target); this.attendance.push({ name: by, event: "cohost-admit", time: nowStamp() }); } break;
           case "admitAll":   this.admitAll(); this.attendance.push({ name: by, event: "cohost-admit-all", time: nowStamp() }); break;
@@ -698,6 +769,23 @@ class TeacherRoom {
           case "muteAll":    this.muteAll(); break;
           case "lowerHands": this.lowerAllHands(); break;
           case "lock":       this.setLocked(!!d.on); this.attendance.push({ name: by, event: d.on ? "cohost-lock" : "cohost-unlock", time: nowStamp() }); break;
+          /* ── r21: the Co-Tutor action set (tutor-equal, co-tutor only) ── */
+          case "spotlight":  if (isCoTutor && d.name) this.spotlight(null, String(d.name).slice(0, 60)); break;
+          case "announce":   if (isCoTutor) this.sendAnnouncement(String(d.text || "").slice(0, 500)); break;
+          case "caption":    if (isCoTutor) this.sendCaption(String(d.text || "").slice(0, 500), true); break;
+          case "chat":       if (isCoTutor) this.sendChat(String(d.text || "").slice(0, 1000)); break;
+          case "requestCam": if (isCoTutor && d.target) this.requestStudentCam(d.target, !!d.on); break;
+          case "requestScr": if (isCoTutor && d.target) this.requestStudentScreen(d.target, !!d.on, d.audience); break;
+          case "allowMic":   if (isCoTutor && d.target) this.allowMic(d.target, !!d.on); break;
+          case "poll":       if (isCoTutor && d.def && d.def.question && Array.isArray(d.def.options)) this.startPoll(d.def.question, d.def.options); break;
+          case "pollEnd":    if (isCoTutor) this.endPoll(); break;
+          case "setCoHost":  if (isCoTutor && d.target && d.target !== conn.peer) this.setCoHost(d.target, !!d.on); break;
+          case "boardsOn":   if (isCoTutor) this.startBoards(null); break;
+          case "boardsOff":  if (isCoTutor) this.stopBoards(); break;
+          case "syncRoster": {   /* r21: the co-tutor console asks for the privileged roster + waiting list */
+            if (isCoTutor) try { conn.send({ t: "coRoster", students: this._privilegedRoster(), pending: this._pendingList() }); } catch (e) {}
+            break;
+          }
         }
         this.onEvent("cohost-action", { name: by, action: d.action });
         break;
@@ -941,8 +1029,27 @@ class TeacherRoom {
       try { stu.conn.send(msg); } catch {}
     }
   }
+  /* r21: the PRIVILEGED roster — peerIds, co-tutor flags — goes ONLY to
+     promoted assistant tutors / Co-Tutors (they need targets for per-student
+     actions). Everyone else keeps getting the anonymous name list. */
+  _privilegedRoster() {
+    return Array.from(this.students.values()).map((s) => ({
+      peerId: s.peerId || null, name: s.name, hand: !!s.hand,
+      coHost: !!s.coHost, coTutor: !!s.coTutor, micAllowed: !!s.micAllowed
+    }));
+  }
+  _pendingList() {
+    return Array.from(this.pending.values()).map((p) => ({ peerId: p.peerId || null, name: p.name }));
+  }
+  _pushPrivileged() {
+    const msg = { t: "coRoster", students: this._privilegedRoster(), pending: this._pendingList() };
+    for (const pid of this.coHosts) {
+      const stu = this.students.get(pid);
+      if (stu) try { stu.conn.send(msg); } catch (e) {}
+    }
+  }
   _broadcastRoster() {
-    const roster = Array.from(this.students.values()).map((s) => ({ name: s.name, hand: s.hand, coHost: !!s.coHost }));
+    const roster = Array.from(this.students.values()).map((s) => ({ name: s.name, hand: s.hand, coHost: !!s.coHost, coTutor: !!s.coTutor }));
     this.onEvent("roster", roster);           // local UI immediately…
     /* v12: …but throttle the NETWORK broadcast. With 200 students joining
        in two minutes the old per-join broadcast was O(n²) messages and
@@ -952,6 +1059,7 @@ class TeacherRoom {
     this._rosterTimer = setTimeout(() => {
       if (this._ended) return;
       this.broadcast({ t: "roster", roster, count: roster.length });
+      this._pushPrivileged();   /* r21: co-tutors keep their console in sync automatically */
     }, 400);
   }
 
@@ -979,6 +1087,45 @@ class TeacherRoom {
     }
     for (const pid of this.students.keys()) this._callStudent(pid, stream, "stage");
   }
+  /* ── r21 (round 21, item 1): SEAMLESS mid-class broadcast switching.
+     The old switch path (setStageStream) re-CALLED every student with a new
+     media call — a visible reconnect blink for the whole class, and the
+     teacher had to stop recording/live first. replaceTrack() on the LIVE
+     senders swaps the video source inside the existing RTP streams: no
+     re-negotiation, no blink, recording never touches it. In relay mode the
+     stageCalls map holds the captain calls — and because captains re-serve
+     the SAME received track down the tree, one replaceTrack here propagates
+     to every student behind every captain automatically. Audio is untouched
+     (the mic sender keeps flowing), so nobody misses a word. */
+  updateStageVideo(newTrack) {
+    if (!newTrack) return 0;
+    if (this.stageStream) {
+      try {
+        const keepAudio = this.stageStream.getAudioTracks();
+        const next = new MediaStream([newTrack]);
+        keepAudio.forEach((t) => next.addTrack(t));
+        this.stageStream = next;
+      } catch (e) {}
+    }
+    let ok = 0;
+    for (const [pid, call] of this.stageCalls) {
+      try {
+        const pc = call.peerConnection;
+        if (!pc) throw new Error("no pc");
+        const sender = pc.getSenders().find((s) => s.track && s.track.kind === "video");
+        if (!sender || !sender.replaceTrack) throw new Error("no replaceTrack");
+        sender.replaceTrack(newTrack).then(
+          () => {},
+          () => { try { this._callStudent(pid, this.stageStream, "stage"); } catch (e) {} }
+        );
+        ok++;
+      } catch (e) {
+        try { this._callStudent(pid, this.stageStream, "stage"); } catch (e2) {}
+      }
+    }
+    return ok;
+  }
+
   setCamStream(stream) {
     this.camStream = stream;
     if (stream) {
@@ -1419,6 +1566,9 @@ class StudentRoom {
         this.onEvent("boardsClear", d);
         break;
       case "cohost":    this.coHost = !!d.on; this.onEvent("cohost", d); break;   // v14: assistant tutor
+      case "cotutor":   this.coTutor = !!d.on; this.onEvent("cotutor", d); break;   // r21: Co-Tutor (full tutor privileges)
+      case "coRoster":  this.onEvent("coRoster", d); break;                        // r21: privileged roster for the co-tutor console
+      case "stuscreen-bcast-meta": this.onEvent("stuscreenBcast", d); break;       // r21: a classmate's screen is being shown
       case "handSync":  this.onEvent("handSync", d); break;                       // v14: teacher lowered my hand
       case "reaction":  this.onEvent("reaction", d); break;        // v4
       case "spotlight": this.onEvent("spotlight", d); break;       // v4
@@ -1485,10 +1635,16 @@ class StudentRoom {
       e.noDisplayMedia = true;
       throw e;
     }
+    /* r21 (item 5): ask for REAL screen resolution. The old request (no
+       size hint, 8fps) let the encoder downscale text to mush and the
+       teacher saw a small screen they had to zoom out for. 1080p ideal +
+       contentHint "detail" tells the encoder to protect resolution (text)
+       over framerate. */
     const stream = await navigator.mediaDevices.getDisplayMedia({
-      video: { frameRate: { ideal: 8 } }, audio: false
+      video: { frameRate: { ideal: 12, max: 15 }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false
     });
     this._screenStream = stream;
+    try { const vt = stream.getVideoTracks()[0]; if (vt && vt.contentHint !== undefined) vt.contentHint = "detail"; } catch (e) {}
     this._screenIsCamView = false;   /* real screen capture — no camera flip */
     stream.getVideoTracks()[0].addEventListener("ended", () => {
       this.shareScreen(false);

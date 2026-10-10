@@ -8,7 +8,7 @@
    requests, making the site feel native on repeat visits.
    Bump CACHE_VERSION whenever you deploy changes.
    ============================================================ */
-const CACHE_VERSION = "hmg-classdeck-v15.0.3-r20-cloudboot";  /* bumped: V55 round 20 — the cloud sync boots on EVERY teacher-facing deck page (js/cloud-sync-boot.js: pull + visible self-heal + not-linked hint), a service-worker update banner ends the first-open-after-redeploy handover gap, diagnose gains the local-device inventory step, and relay-only devices count as holding credentials */  /* bumped: V53 round 17 — credential writes go through the tc_set_user_setting RPC (the REST upsert class of silent failures is gone), sync card re-renders on push, honest not-linked warning on save */  /* bumped: V52 round 16 — cloud credential sync truth: push resolves uid BEFORE upload (the silent NULL-user 403 that left "nothing saved yet" on other devices), shape-based channel restore, real two-way Sync now, last-sync stamps on push */  /* bumped: v14.1 MicDoctor (laptop mic failures: constraint ladder, silence watchdog, recovery banner), CBT console + Archive Recovery Center on Quizzes, role-aware Homework page, V46 assignment automation */  /* bumped: v14 adds assistant tutors (co-hosts), mute-all/lower-hands/attendance CSV, scrollable zoomable whiteboard pages and PDF anchored zoom with visible scrollbars */
+const CACHE_VERSION = "hmg-classdeck-v15.1.0-r21-classflex";  /* bumped: r21 — seamless mid-class broadcast switching (replaceTrack, nothing stops), WebM recordings gain a real Cues seek index (VLC/laptop players seek without stopping), Co-Tutor role (full tutor toolkit), shared screens never cropped + 1080p detail + theater view, teacher chooses who sees a student screen (me / whole class) and can present a student board to the class, CBT text clarity pass */  /* bumped: V55 round 20 — the cloud sync boots on EVERY teacher-facing deck page (js/cloud-sync-boot.js: pull + visible self-heal + not-linked hint), a service-worker update banner ends the first-open-after-redeploy handover gap, diagnose gains the local-device inventory step, and relay-only devices count as holding credentials */  /* bumped: V53 round 17 — credential writes go through the tc_set_user_setting RPC (the REST upsert class of silent failures is gone), sync card re-renders on push, honest not-linked warning on save */  /* bumped: V52 round 16 — cloud credential sync truth: push resolves uid BEFORE upload (the silent NULL-user 403 that left "nothing saved yet" on other devices), shape-based channel restore, real two-way Sync now, last-sync stamps on push */  /* bumped: v14.1 MicDoctor (laptop mic failures: constraint ladder, silence watchdog, recovery banner), CBT console + Archive Recovery Center on Quizzes, role-aware Homework page, V46 assignment automation */  /* bumped: v14 adds assistant tutors (co-hosts), mute-all/lower-hands/attendance CSV, scrollable zoomable whiteboard pages and PDF anchored zoom with visible scrollbars */
 
 const SHELL = [
   "./",
@@ -38,6 +38,7 @@ const SHELL = [
   "./js/auth.js",
   "./js/cloud-creds.js",
   "./js/cloud-sync-boot.js",
+  "./js/webm-cues.js",
   "./js/join.js",
   "./js/portal-bridge.js",
   "./js/enhancements.js",

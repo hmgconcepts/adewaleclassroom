@@ -243,6 +243,67 @@ hr.sep { border: none; border-top: 1px solid var(--line); margin: 10px 0; }
 .cam-tile .label { position: absolute; left: 6px; bottom: 5px; font-size: 11px; background: rgba(0,0,0,.65); padding: 2px 7px; border-radius: 6px; }
 .cam-tile.focus { grid-column: 1 / -1; aspect-ratio: 16/9; }
 
+/* ── r21 (item 5): SHARED SCREENS AND BOARDS ARE NEVER CROPPED ──────────
+   The old rule gave every tile object-fit: cover — a student's shared
+   screen (any aspect) was cropped to 4:3, so the teacher literally could
+   not see the whole thing without zooming the browser out. Screens/boards
+   now letterbox (contain) at full tile size, get a bigger focus span, a
+   one-tap ⤢ theater button, and the sender asks for 1080p detail. */
+.cam-tile.screen-tile video { object-fit: contain; background: #000; }
+.cam-tile.screen-tile { aspect-ratio: 16/10; }
+.cam-tile.screen-tile.focus { grid-column: 1 / -1; aspect-ratio: 16/9; min-height: 42vh; }
+.cam-tile.board-tile canvas { width: 100%; height: 100%; object-fit: contain; display: block; }
+.tile-theater, .tile-present {
+  position: absolute; top: 6px; right: 6px; z-index: 5; border: 0; border-radius: 8px;
+  background: rgba(15,20,45,.82); color: #fff; font-size: 14px; line-height: 1;
+  padding: 6px 8px; cursor: pointer;
+}
+.tile-theater:hover, .tile-present:hover { background: rgba(79,110,247,.95); }
+.tile-present { top: 38px; }
+.tile-present.active { background: #b45309; }
+
+/* the theater: full-viewport never-cropped viewer for screens/boards */
+#cdTheater { position: fixed; inset: 0; z-index: 9500; background: rgba(4,6,20,.96);
+  display: flex; flex-direction: column; }
+#cdTheater video { flex: 1; width: 100%; min-height: 0; object-fit: contain; background: #000; }
+#cdTheater .bar { display: flex; gap: 10px; align-items: center; justify-content: space-between;
+  padding: 10px 14px; background: rgba(10,14,35,.95); color: #e7e9ff; font-size: 14px; }
+#cdTheater .bar .t { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#cdTheater .bar button { border: 0; border-radius: 8px; background: rgba(255,255,255,.14); color: #fff;
+  font-size: 15px; padding: 6px 12px; cursor: pointer; }
+#cdTheater .bar button:hover { background: rgba(255,255,255,.3); }
+
+/* the screen-audience chooser (teacher) */
+#cdScrAud .modal { background: var(--bg-2, #171c3a); border: 1px solid var(--line, #2c3360); border-radius: 14px; }
+#cdScrAud .btn { margin: 0; }
+
+/* ── r21 (item 4): the Co-Tutor console (student side) ─────────────────── */
+#coTutorPanel { position: fixed; right: 14px; top: 70px; z-index: 800; width: min(340px, 92vw);
+  max-height: 78vh; overflow: auto; background: #10142b; color: #e7e9ff;
+  border: 1px solid #3a4380; border-radius: 14px; padding: 12px 14px; box-shadow: 0 18px 50px rgba(0,0,0,.5);
+  font: 13px/1.5 system-ui, sans-serif; }
+#coTutorPanel h4 { margin: 0 0 10px; font-size: 14px; }
+#coTutorPanel .ct-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+#coTutorPanel button { border: 0; border-radius: 8px; background: rgba(255,255,255,.1); color: #fff;
+  padding: 6px 10px; font-size: 12px; cursor: pointer; }
+#coTutorPanel button:hover { background: rgba(255,255,255,.22); }
+#coTutorPanel .ct-roster b { display: block; margin: 8px 0 4px; font-size: 12px; }
+#coTutorPanel .ct-pending { margin-bottom: 8px; padding: 6px 8px; background: rgba(255,179,71,.12); border-radius: 8px; }
+#coTutorPanel .ct-stu { display: flex; align-items: center; gap: 5px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,.07); }
+#coTutorPanel .ct-stu span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── r21 (item 6): a classmate's screen shown to the class (student side) ── */
+#cdClassScreen { position: fixed; right: 12px; bottom: 74px; z-index: 700; width: min(480px, 94vw);
+  aspect-ratio: 16/10; background: #000; border: 2px solid #4f6ef7; border-radius: 12px; overflow: hidden;
+  box-shadow: 0 16px 44px rgba(0,0,0,.55); }
+#cdClassScreen video { width: 100%; height: 100%; object-fit: contain; display: block; }
+#cdClassScreen .bar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; gap: 8px; align-items: center;
+  padding: 6px 10px; background: rgba(8,11,30,.85); color: #fff; font-size: 12px; }
+#cdClassScreen .bar .t { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#cdClassScreen .bar button { border: 0; border-radius: 6px; background: rgba(255,255,255,.16); color: #fff; padding: 4px 8px; cursor: pointer; }
+#cdClassScreen.hide { display: none; }
+#cdClassScreen:fullscreen { width: 100vw; height: 100vh; aspect-ratio: auto; border: 0; border-radius: 0; }
+
 /* teacher self-view */
 .selfview { position: fixed; right: 14px; bottom: 14px; width: 150px; aspect-ratio: 4/3; border-radius: 12px;
   overflow: hidden; border: 2px solid var(--brand); box-shadow: var(--shadow); z-index: 500; background: #000; display: none; }

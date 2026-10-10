@@ -415,6 +415,9 @@ function onEvent(type, p) {
       toast(p.rejoined ? "Reconnected — waiting for the teacher's screen…" : "Joined! Waiting for the teacher's screen…", "ok");
       break;
     case "cohost": handleCoHost(p); break;                      /* v14: assistant tutor */
+    case "cotutor": handleCoTutor(p); break;                    /* r21: Co-Tutor (full tutor powers) */
+    case "coRoster": handleCoRoster(p); break;                  /* r21: privileged roster for the console */
+    case "stuscreenBcast": handleClassScreenMeta(p); break;     /* r21: a classmate's screen is on the class stage */
     case "micSilent":                                            /* v14.1: dead-mic detection */
       toast(p && p.reason === "system-muted"
         ? "🎙️ The system has muted your microphone — unmute it (mic-mute key / system settings), then tap the mic button twice (off and on) to retry."
@@ -448,6 +451,7 @@ function onEvent(type, p) {
     case "media":
       if (p.kind === "stage") { enterStage(); attachStage(p.stream); }
       else if (p.kind === "teachercam") attachTeacherCam(p.stream);
+      else if (p.kind === "stuscreen-bcast") attachClassScreen(p.stream, p.name);
       break;
     case "media-end":
       if (p.kind === "teachercam") $("#teacherPip").classList.remove("show");
@@ -486,8 +490,8 @@ function onEvent(type, p) {
       toast("🌟 " + p.name + ", it's your turn!", "ok", 6000);
       break;
     case "camRequest": handleCamRequest(p.on); break;
-    case "screenRequest":                              /* v5 → v9 chooser */
-      if (p.on && !myScreenOn) openScreenAsk();
+    case "screenRequest":                              /* v5 → r21 chooser + audience */
+      if (p.on && !myScreenOn) { pendingScreenAudience = (p.audience === "class" ? "class" : "me"); openScreenAsk(); }
       else if (!p.on && myScreenOn) { stopMyScreenShare(); }
       break;
     case "screenEnded":
@@ -744,6 +748,161 @@ function handleCamRequest(on) {
   }
 }
 
+/* ── r21 (item 6): A CLASSMATE'S SCREEN ON THE CLASS STAGE ──────────────
+   The teacher relays a student's screen (or presents their board); it
+   arrives as a normal media call and renders in a never-cropped floating
+   pane that can go fullscreen — the same quality rules as the teacher's own
+   view (item 5). */
+let classScreenEl = null;
+function attachClassScreen(stream, name) {
+  if (!classScreenEl) {
+    classScreenEl = document.createElement("div");
+    classScreenEl.id = "cdClassScreen";
+    classScreenEl.innerHTML = "<video autoplay playsinline></video>" +
+      '<div class="bar"><span class="t"></span><button class="fs" title="Fullscreen">\u26F6</button><button class="x" title="Hide">\u2715</button></div>';
+    document.body.appendChild(classScreenEl);
+    classScreenEl.querySelector(".x").addEventListener("click", () => {
+      classScreenEl.classList.add("hide");
+      toast("Hidden. It comes back if the teacher shows another screen.", "", 4000);
+    });
+    classScreenEl.querySelector(".fs").addEventListener("click", () => {
+      try { if (document.fullscreenElement) document.exitFullscreen(); else classScreenEl.requestFullscreen(); } catch (e) {}
+    });
+  }
+  classScreenEl.classList.remove("hide");
+  classScreenEl.querySelector("video").srcObject = stream;
+  classScreenEl.querySelector(".t").textContent = "\u{1F5A5} " + (name || "A classmate") + " — shown by the teacher";
+  toast("\u{1F5A5} " + (name || "A classmate") + " is showing their screen to the class", "ok", 6000);
+}
+function handleClassScreenMeta(d) {
+  if (d && d.on === false && classScreenEl) {
+    classScreenEl.remove();
+    classScreenEl = null;
+    toast("The class screen share ended.", "", 4000);
+  }
+}
+
+/* ── r21 (item 4): THE CO-TUTOR CONSOLE ─────────────────────────────────
+   A Co-Tutor has the FULL tutor toolkit from the student side: waiting-room
+   admit/deny, per-student mic/camera/screen control, kick, mute all, lower
+   hands, lock, spotlight, announcements, polls, and promoting assistant
+   tutors. Every action is authorised on the TEACHER'S room object (rtc.js
+   honours cohostAction only from promoted peers) — this UI only sends
+   requests; it can never grant itself anything. The privileged roster
+   (names + peerIds) arrives via "coRoster" and is shown to nobody else. */
+var coTutorOn = false, coTutorPanelEl = null;   /* r21: Co-Tutor console state */
+function handleCoTutor(d) {
+  coTutorOn = !!d.on;
+  if (!coTutorOn) {
+    if (coTutorPanelEl) { try { coTutorPanelEl.remove(); } catch (e) {} coTutorPanelEl = null; }
+    if (coHostPanelEl) { try { coHostPanelEl.remove(); } catch (e) {} coHostPanelEl = null; coHostOn = false; }
+    if (d && d.on === false) toast("You are no longer a Co-Tutor.", "", 5000);
+    return;
+  }
+  if (coTutorPanelEl) return;
+  /* the Co-Tutor console supersedes the plain assistant-tutor panel */
+  if (coHostPanelEl) { try { coHostPanelEl.remove(); } catch (e) {} coHostPanelEl = null; }
+  const panel = document.createElement("div");
+  panel.id = "coTutorPanel";
+  const mk = (label, title, fn) => {
+    const b = document.createElement("button");
+    b.textContent = label; b.title = title;
+    b.addEventListener("click", fn);
+    return b;
+  };
+  const act = (a, target, extra) => { try { sRoom.coHostAction(a, target, extra); } catch (e) {} };
+  const H = document.createElement("h4");
+  H.textContent = "\u{1F393} Co-Tutor console";
+  panel.appendChild(H);
+  const row1 = document.createElement("div");
+  row1.className = "ct-row";
+  row1.appendChild(mk("\u{1F6AA} Admit all", "Admit everyone waiting", () => { act("admitAll"); toast("Admitted everyone waiting.", "ok"); }));
+  row1.appendChild(mk("\u{1F507} Mute all", "Mute every student mic", () => { act("muteAll"); toast("Muted all student mics.", "ok"); }));
+  row1.appendChild(mk("\u{270B} Lower hands", "Lower all raised hands", () => { act("lowerHands"); }));
+  panel.appendChild(row1);
+  const row2 = document.createElement("div");
+  row2.className = "ct-row";
+  row2.appendChild(mk("\u{1F512} Lock / unlock", "Lock the class against new joins (or unlock)", () => {
+    coLockOn = !coLockOn;
+    act("lock", null, { on: coLockOn });
+    toast(coLockOn ? "Class locked — no new students can join" : "Class unlocked");
+  }));
+  row2.appendChild(mk("\u{1F4E3} Announce", "Send an announcement to the whole class", () => {
+    const t = prompt("Announcement to the class (max 500 chars):");
+    if (t && t.trim()) act("announce", null, { text: t.trim() });
+  }));
+  row2.appendChild(mk("\u{1F4CA} Poll", "Start a quick poll", () => {
+    const q = prompt("Poll question:");
+    if (!q || !q.trim()) return;
+    const os = prompt("Options, separated by commas (2 to 6):");
+    if (!os) return;
+    const opts = os.split(",").map((x) => x.trim()).filter(Boolean);
+    if (opts.length >= 2) act("poll", null, { def: { question: q.trim(), options: opts } });
+    else toast("A poll needs at least 2 options.", "err");
+  }));
+  panel.appendChild(row2);
+  const rosterBox = document.createElement("div");
+  rosterBox.className = "ct-roster";
+  panel.appendChild(rosterBox);
+  document.body.appendChild(panel);
+  coTutorPanelEl = panel;
+  try { sRoom.coHostAction("syncRoster"); } catch (e) {}
+  toast("\u{1F393} You are now a CO-TUTOR — the full tutor toolkit. Manage the class from the Co-Tutor console.", "ok", 9000);
+}
+function handleCoRoster(d) {
+  var coRosterData = { students: (d && d.students) || [], pending: (d && d.pending) || [] };
+  const box = coTutorPanelEl && coTutorPanelEl.querySelector(".ct-roster");
+  if (!box) return;
+  box.innerHTML = "";
+  if (coRosterData.pending.length) {
+    const ph = document.createElement("div");
+    ph.className = "ct-pending";
+    ph.innerHTML = "<b>\u23F3 Waiting room</b>";
+    coRosterData.pending.forEach((st) => {
+      const r = document.createElement("div");
+      r.className = "ct-stu";
+      const nm = document.createElement("span");
+      nm.textContent = st.name;
+      r.appendChild(nm);
+      const b1 = document.createElement("button"); b1.textContent = "Admit";
+      b1.addEventListener("click", () => { try { sRoom.coHostAction("admit", st.peerId); } catch (e) {} });
+      const b2 = document.createElement("button"); b2.textContent = "Deny";
+      b2.addEventListener("click", () => { try { sRoom.coHostAction("deny", st.peerId); } catch (e) {} });
+      r.appendChild(b1); r.appendChild(b2);
+      ph.appendChild(r);
+    });
+    box.appendChild(ph);
+  }
+  if (!coRosterData.students.length) {
+    box.innerHTML = "<p style='opacity:.7'>No students yet.</p>";
+    return;
+  }
+  const sh = document.createElement("b");
+  sh.textContent = "Students (" + coRosterData.students.length + ")";
+  box.appendChild(sh);
+  coRosterData.students.forEach((st) => {
+    const r = document.createElement("div");
+    r.className = "ct-stu";
+    const nm = document.createElement("span");
+    nm.textContent = (st.hand ? "\u270B " : "") + st.name + (st.coTutor ? " \u{1F393}" : st.coHost ? " \u{1F451}" : "");
+    r.appendChild(nm);
+    const mk2 = (label, title, fn) => {
+      const b = document.createElement("button");
+      b.textContent = label; b.title = title;
+      b.addEventListener("click", fn);
+      r.appendChild(b);
+    };
+    mk2("\u{1F3A4}", "Spotlight " + st.name, () => { try { sRoom.coHostAction("spotlight", null, { name: st.name }); } catch (e) {} });
+    mk2("\u{1F3A7}", st.micAllowed ? "Revoke mic" : "Allow mic", () => { try { sRoom.coHostAction("allowMic", st.peerId, { on: !st.micAllowed }); } catch (e) {} });
+    mk2("\u{1F4F7}", "Ask camera", () => { try { sRoom.coHostAction("requestCam", st.peerId, { on: true }); } catch (e) {} });
+    mk2("\u{1F5A5}", "Ask screen (class sees it)", () => { try { sRoom.coHostAction("requestScr", st.peerId, { on: true, audience: "class" }); } catch (e) {} });
+    mk2("\u2715", "Remove " + st.name + " from the class", () => {
+      if (confirm("Remove " + st.name + " from the class?")) { try { sRoom.coHostAction("kick", st.peerId); } catch (e) {} }
+    });
+    box.appendChild(r);
+  });
+}
+
 /* v5 (issue 1): student screen sharing — show your work to the teacher */
 let myScreenOn = false;
 $("#sBtnScreen").addEventListener("click", toggleMyScreen);
@@ -754,7 +913,9 @@ async function toggleMyScreen() {
       myScreenOn = true;
       myScreenIsCamView = false;
       $("#sBtnScreen").classList.add("active");
-      toast("🖥 You are sharing your screen with the teacher", "ok", 5000);
+      toast(pendingScreenAudience === "class"
+        ? "\u{1F5A5} Your screen is being shown to the WHOLE CLASS"
+        : "\u{1F5A5} You are sharing your screen with the teacher", "ok", 6000);
     } else {
       stopMyScreenShare();
     }
@@ -797,7 +958,18 @@ async function startCameraView() {
   }
 }
 /* v9 chooser: real screen share on desktop, camera fallback on phones. */
-function openScreenAsk() { openModal("#mScreenAsk"); }
+let pendingScreenAudience = "me";
+function openScreenAsk() {
+  /* r21 (item 6): the student is told WHO will see the share before they
+     choose — informed consent, no surprises. */
+  try {
+    const note = document.getElementById("scrAudNote");
+    if (note) note.textContent = pendingScreenAudience === "class"
+      ? "Your teacher wants to show your screen to the WHOLE CLASS."
+      : "Only your teacher will see it.";
+  } catch (e) {}
+  openModal("#mScreenAsk");
+}
 
 $("#sBtnMic").addEventListener("click", toggleMyMic);
 
