@@ -1416,3 +1416,109 @@ the r16-fix pins with the TZ engine actually executed, version
 truth). Battery: 26 suites, **1181/1181 per repo, both repos, run
 twice**. PG harness: **12/12 scenarios clean**. Workspace budget
 checked and under the cap.
+
+
+---
+
+# ROUND 18 AUDIT (2026-10-10)
+
+Scope: the user's seven items — (1) sync-now toast lies + "last sync
+not yet" + Save "cloud copy failed: unknown"; (2) device B restore
+"nothing saved yet"; (3) Google Drive backup progress before
+completion; (4) the TURN-key issue as a whole; (5) audit every enhanced
+pre-existing + new feature; (6) expert re-understudy of every page and
+process; (7) every file across all repos.
+
+## Items 1, 2 and 4 — the TURN key: the full autopsy
+
+The reported trio (toast "synced — credentials current" while the card
+said "not yet", Save failing "unknown", device B "nothing saved yet")
+was reproduced against the round-16 code and root-caused on THREE
+levels:
+
+1. **DELIVERY (why fixes looked unfixed):** the deck service worker
+   served the CACHED page on every visit (stale-while-revalidate for
+   HTML, returning `cached` immediately). The visit right after a
+   redeploy still ran the PREVIOUS build — so the r17 fixes could
+   genuinely ship while the user's next session ran r16 and reproduced
+   the r16 bugs. The handler also fetched every cached resource twice.
+   **Fix:** pages are network-first (cache only when offline), the
+   double-fetch is gone, `cloud-creds.js` joined the precache shell,
+   and the sync card prints its module build (`v54-r18-verified-sync`)
+   so a stale browser is identifiable at a glance.
+2. **REPORTING (the r16 "unknown"):** r16's push() swallowed exceptions
+   (`catch (e) { return false; }`) and left `state.reason` empty on any
+   non-404 HTTP error — a 42501 RLS refusal surfaced as "unknown".
+   **Fix:** every failure path funnels through `fail(stage, message)`
+   with the HTTP status and the server's error body (`message`, `hint`,
+   `details`, `error_description`); "unknown" is structurally dead.
+3. **TRUTH (the deepest fix):** no code path ever CONFIRMED the account
+   held what a write claimed. **Fix — the verified-sync engine:** every
+   write is followed by an immediate read-back and canonical
+   comparison; a push only reports success when the account verifiably
+   holds the snapshot. "Saved" now means "saved and verified".
+
+Additional structural fixes found during the autopsy: Save fires TWO
+pushes of the same channel (relay push + key push) — now serialized
+through a per-channel queue; concurrent token refreshes can trip
+Supabase's refresh-token rotation-reuse detection and revoke the whole
+session (portal logout!) — the refresh is now single-flight; the sync
+clock lived only in memory so a reload reset "last sync" to "not yet" —
+the verified stamp is persisted (`cd-creds-sync-stamp`) and seeds the
+next load; syncNow diffed against a possibly-stale in-memory copy — it
+now reads the account FIRST and pushes only real differences.
+
+**🔍 Diagnose** (new): a button on the sync card that walks the exact
+chain a real sync uses — session → endpoint → token → database read →
+verified write — stops at the first broken link, and prints the exact
+remedy (including which SQL pack to run). With real local credentials
+the write step is a genuine verified re-push: the healing action.
+
+**Behavioral proof:** the round-18 QA suite runs the engine against a
+fake PostgREST — verified write, server-ack-but-dropped (correctly
+FAILS with a read-back reason), 42501 with the RLS message + hint
+surfaced, single-flight (two racing pushes → ONE refresh), syncNow
+fresh-read diff, pre-V53 fallback still verifying, diagnose paths,
+persisted-stamp seeding, signOut clearing the claim. The round-11 suite
+was upgraded to a read-write mock (a real database shows writes to
+subsequent reads) and its tombstone/refresh checks now pass through the
+verified path.
+
+## Item 3 — Drive backup progress
+
+`fetch()` cannot report upload progress — the teacher watched a
+motionless "Uploading…" line. The upload is now XHR with
+`upload.onprogress`: a staged panel on admin-data (Authorise → Collect
+"table i of n" → Upload with live MB counters and a percentage →
+Record), the button locks while running, and the completion line
+carries rows + size + duration. The AUTOMATIC background sync (no
+button pressed) shows the same truth as a floating pill, and
+restore/recovery report per-table import progress. `collectFull` and
+`importArchive` grew optional per-table callbacks
+(backward-compatible).
+
+## Items 5+6 — the self-audit
+
+- `audit_handlers.py` re-run green (new inline handlers all resolve).
+- The renewal path (`maybeRenewCloudflareRelay`) pushes through the
+  verified queue — renewed credentials roam verified too.
+- A successful read now persists the FRESH account-holds (a credential
+  cleared on device B stops showing ✓ on device A after a reload —
+  found and fixed during this audit).
+- The r16/r17 QA suites were re-run and re-pinned where the r18
+  architecture legitimately changed the shape (queue wrapper,
+  `sameCanon` helper, pull-first syncNow); the r11 mock was upgraded to
+  database-real read-write behavior.
+- PG harness unchanged: 12/12 (no DB change this round — V53 remains
+  the server truth).
+
+## Item 7 + QA tally
+
+Every file updated in both repos (twin sync verified by the r8 twin
+check + `diff -rq`). Versions: deck `?v=57` / sw
+`hmg-classdeck-v15.0.0-r18-verified-sync-netfirst` / version.json
+15.0.0 build 23 (features `v15.0-*`); portal admin-data assets `?v=54`
+/ sw `tc-shell-v23-20261010`. New suite `test_r18_portal.js` (87
+checks incl. the behavioral engine test). Battery: 27 suites, 1268
+checks per repo, both repos, run twice. Workspace budget checked and
+under the cap.
