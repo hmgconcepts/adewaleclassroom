@@ -194,7 +194,16 @@ async function loginTeacher() {
            must know the TURN/streaming keys are already on this device,
            not wonder why the settings are empty a minute later. */
         return CloudCreds.pull().then(function (pulled) {
-          if (pulled && typeof toast === "function") {
+          /* V54.2: surface the self-heal too — signing in on the device
+             that HOLDS the credentials is exactly how an account left
+             empty by the old silent-failure bug gets filled. */
+          var h = (CloudCreds.selfHeal && CloudCreds.selfHeal()) || { pushed: [], failed: [] };
+          if (typeof toast !== "function") return;
+          if (h.pushed && h.pushed.length) {
+            toast("☁️ Signed in — and this device's " + h.pushed.join(", ") + " were uploaded to your account (it did not have them yet). Every device you sign in on now restores them.", "ok", 10000);
+          } else if (h.failed && h.failed.length) {
+            toast("⚠️ Signed in, but uploading this device's credentials failed: " + (CloudCreds.status().reason || "unknown") + ". Open ⚙ Settings → ☁️ Cloud sync → 🔄 Sync now.", "err", 12000);
+          } else if (pulled) {
             toast("☁️ Credentials restored from your ADEWALE CLASSROOM account — TURN and streaming keys are ready on this device.", "ok", 9000);
           }
         });

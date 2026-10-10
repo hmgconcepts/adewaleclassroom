@@ -2757,7 +2757,21 @@ if (window.CloudCreds && CloudCreds.signedIn()) {
      let the zero-maintenance renewal judge them */
     maybeRenewCloudflareRelay(false);
   });
-  CloudCreds.pull().then((ok) => { if (!ok) { /* portal unreachable / signed out — local credentials keep working */ } });
+  CloudCreds.pull().then((ok) => {
+    /* V54.2: the self-heal is now VISIBLE. pull() automatically uploads
+       credentials this device holds that the account lacks — that is how
+       an account left empty by the OLD version's silent save-failure
+       fills itself. Until now that upload was invisible, so "the sync is
+       still not working" was indistinguishable from "it worked". */
+    const h = (CloudCreds.selfHeal && CloudCreds.selfHeal()) || { pushed: [], failed: [] };
+    if (h.pushed && h.pushed.length) {
+      toast("☁️ Uploaded this device's " + h.pushed.join(", ") + " to your account — the account did not have them yet (an older version's save had silently failed). Every device you sign in on now restores them.", "ok", 10000);
+      try { renderCloudSyncCard(); } catch (e) {}
+    } else if (h.failed && h.failed.length) {
+      toast("⚠️ This device holds " + h.failed.join(", ") + " that your account doesn't have, but the upload failed: " + (CloudCreds.status().reason || "unknown") + ". Open ⚙ Settings → ☁️ Cloud sync → 🔄 Sync now to retry.", "err", 12000);
+      try { renderCloudSyncCard(); } catch (e) {}
+    } else if (!ok) { /* portal unreachable / signed out — local credentials keep working */ }
+  });
 }
 
 /* Real TURN test: gather RELAY-ONLY candidates. If this passes, students on
@@ -3982,6 +3996,13 @@ function renderCloudSyncCard() {
         (CloudCreds.cloud ? (CloudCreds.cloud()["cd-stream"] ? '<b style="color:#31c48d">📡 stream setup ✓</b>' : '<span style="opacity:.75">📡 stream setup — nothing saved yet</span>') : '') +
         '. ' + (st.lastSync ? 'Last real sync ' + esc(when) + '.' : 'Nothing stored yet — save once (⚙ Settings → Save) and every future device gets it.') + '</div>' +
       (st.reason ? '<div class="warn" style="margin-top:6px">⚠️ ' + esc(st.reason) + "</div>" : "") +
+      /* V54.2: if this device holds credentials the account lacks, SAY it
+         and point at the button — the account cannot be filled by any
+         other device, and silence here read as "sync broken". */
+      (((CloudCreds.turnSnapshot && CloudCreds.turnSnapshot().cf_key) && !CloudCreds.cloud()["cd-turn"]) ||
+       ((CloudCreds.streamSnapshot && CloudCreds.streamSnapshot().gateway) && !CloudCreds.cloud()["cd-stream"])
+        ? '<div class="warn" style="margin-top:6px;background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.4)">📤 This device holds credentials your account doesn\'t have yet — press 🔄 Sync now to upload them (every other device then restores them automatically).</div>'
+        : "") +
       '<div id="cloudDiagOut"></div>' +
       '<div class="sub" style="margin-top:4px;opacity:.55">cloud-creds ' + esc(st.build || "") + " — if this line does not say v54, this browser is still running an older cached build: reload the page once.</div>";
     $("#cloudSyncNow").onclick = async () => {
@@ -4025,7 +4046,9 @@ function renderCloudSyncCard() {
           '<div style="margin-top:10px;padding:10px 14px;border:1px solid rgba(120,120,120,.35);border-radius:10px;background:rgba(120,120,120,.06)">' +
           "<b>🔍 Cloud sync diagnosis</b>" + lines +
           (lastOk
-            ? '<div class="sub" style="margin-top:8px">✅ Everything checked out — cloud sync is fully working on this device.</div>'
+            ? ((CloudCreds.cloud && Object.keys(CloudCreds.cloud()).length)
+              ? '<div class="sub" style="margin-top:8px">✅ Everything checked out — cloud sync is fully working on this device, and your account holds your credentials.</div>'
+              : '<div class="sub" style="margin-top:8px">✅ Every step works — including the write path, just proven with a safe probe (written, read back, deleted). Your account is empty simply because <b>no device has uploaded credentials to it yet</b>: the version running when you first saved your TURN key silently failed to upload it. Open the classroom deck on the device that has your key — it uploads automatically the moment it opens (you will see the ☁️ confirmation) — or enter the key once on any device and press Save. Also confirm the ☁️ card on that device shows this same account email.</div>')
             : '<div class="sub" style="margin-top:8px">⚠️ Fix the failed step above (its remedy is printed under it), then press 🔄 Sync now.</div>') +
           "</div>";
         if (!lastOk) toast("⚠️ Cloud sync problem found — the diagnosis is shown below the buttons.", "err", 10000);
@@ -4522,7 +4545,7 @@ async function restoreCredsFromCloud() {
   if ((Store.get("tablet_live", {}) || {}).gateway) bits.push("streaming gateway ✓");
   toast(bits.length
     ? "☁️ Restored from your account — " + bits.join(" · ") + "."
-    : "☁️ Your account has nothing saved yet. Enter the TURN key (or the stream setup) on THIS device and press Save — it uploads automatically (verified by reading it back) and every future device restores it. If you EXPECTED something here, press 🔍 Diagnose in the ☁️ Cloud sync section — it names the exact broken step.", "ok", 14000);
+    : "☁️ Your account has nothing saved yet — the write path itself is fine (🔍 Diagnose proves it with a safe probe). The key you saved earlier never reached the account: the version running then silently failed the upload, and only the device you saved it on still holds it. Fix: open the classroom deck on THAT device once — it uploads automatically the moment it opens (watch for the ☁️ confirmation; the ☁️ card there must show this same email) — or re-enter the key once here and press Save.", "ok", 16000);
 }
 if ($("#tlRestore")) on("#tlRestore", "click", restoreCredsFromCloud);
 if ($("#btnRestoreCreds")) on("#btnRestoreCreds", "click", restoreCredsFromCloud);
@@ -4543,7 +4566,7 @@ if ($("#btnRestoreCfKey")) on("#btnRestoreCfKey", "click", async () => {
   prefillTurnBoxes();
   try { renderCloudSyncCard(); } catch (e) {}
   if (Store.get("cf_key", "")) toast("☁️ TURN Token ID + API token restored into the boxes above — press ⚡ Generate whenever you need fresh relay credentials.", "ok", 9000);
-  else toast("☁️ Restored — but no TURN key is saved in your account yet. Fill the boxes once and press ⚡ Generate; every future device then restores it automatically.", "ok", 12000);
+  else toast("☁️ Restored — but no TURN key is saved in your account yet (the write path is fine; the old version's save never uploaded it). Open the classroom deck on the device where you entered the key — it uploads automatically when it opens — or fill the boxes once here and press ⚡ Generate.", "ok", 14000);
 });
 
 /* V47: never let a live social stream die silently with a closed tab */
