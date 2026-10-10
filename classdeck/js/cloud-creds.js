@@ -1,5 +1,5 @@
 /* =====================================================================
-   cloud-creds.js — ADEWALE CLASSROOM DECK · V47 round 11
+   cloud-creds.js — ADEWALE CLASSROOM DECK · V47 round 11 → V54 round 18
    =====================================================================
    THE BUG THIS FILE FIXES (round 11, item 1):
    ClassDeck stored the Cloudflare TURN key, the generated relay
@@ -13,7 +13,7 @@
    signed in to ADEWALE CLASSROOM, the portal session token is in
    localStorage. This module uses it to sync credentials through the
    portal database's per-account user_settings table (owner-only at the
-   policy level — v47):
+   policy level — v47), with the v53 security-definer RPCs preferred:
 
      sign in on any device → pull() → credentials are back.
 
@@ -32,24 +32,52 @@
        working setup is never silently overwritten by a stale one.
      · PUSH is last-write-wins per channel.
 
-   V52 (round 16, items 8+9) — the "saved on A, empty on B" autopsy:
-     · push() built its row with state.uid BEFORE any request ran, and
-       the uid was only resolved lazily inside the request helpers — so
-       the FIRST push of a session uploaded user_id NULL, RLS refused
-       it, and the failure was SILENT. The key looked saved on device A
-       while the account never received it; device B's Restore then
-       honestly said "nothing saved yet". push() now resolves the token
-       and uid FIRST, and never fails silently (state.reason is set and
-       callers can toast it).
-     · pull() matched rows to channels by exact key name only; any row
-       saved under a different label was ignored. Channels now resolve
-       by NAME OR DATA SHAPE (a value with cf_key/cf_token/relay_servers
-       IS the TURN channel whatever its row is called).
-     · push() never counted as a sync, and "Sync now" only pulled — so
-       right after generating credentials the card said "synced" while
-       "last sync" stayed "not yet" and "Account holds" stayed empty.
-       A successful push now stamps the sync clock, and syncNow() (the
-       Sync-now button) pushes this device's differences BEFORE pulling.
+   V52 (round 16) — the "saved on A, empty on B" autopsy: push() built
+   its row with state.uid before any request ran (uid resolved lazily →
+   user_id NULL → RLS refused silently); pull() matched rows by exact
+   key name only; a push never counted as a sync.
+
+   V53 (round 17) — the write went RPC-first (tc_set_user_setting) and
+   the PostgREST error BODY started being read, so most "unknown"
+   failures became specific.
+
+   V54 (round 18) — THE VERIFIED-SYNC ENGINE. The persisting field
+   reports ("last sync not yet" after "synced", "the cloud copy failed:
+   unknown", "nothing saved yet" on device B) shared one shape: the
+   module REPORTED success it had not verified and failure it had not
+   explained. Five structural fixes:
+     1. PUSH IS SERIALIZED AND COALESCED. Save used to fire two
+        concurrent pushes of the same channel (the relay push + the key
+        push); both refreshed the portal token at once, and Supabase's
+        refresh-token rotation can treat the second refresh as reuse and
+        revoke the session — the portal then signs the teacher out and
+        every later call fails as "refused". Pushes now run through a
+        per-channel queue (a rapid double-save uploads the final state
+        once), and the token refresh is SINGLE-FLIGHT (one shared
+        in-flight refresh, no matter how many callers race).
+     2. A WRITE ONLY COUNTS WHEN THE ACCOUNT VERIFIABLY HOLDS IT.
+        Every successful write is followed by an immediate read-back of
+        the account (same RPC/table path the next device will use) and a
+        canonical comparison. "Saved" now means "saved and verified" —
+        the entire "looked saved on A while B saw nothing" class is
+        structurally impossible, whatever the server did.
+     3. state.reason CAN NEVER BE EMPTY ON FAILURE. Every failure path
+        goes through fail(stage, message) with the HTTP status and the
+        server's own error body; the toasts keep `|| "unknown"` only as
+        a belt-and-braces default that no longer fires.
+     4. THE SYNC CLOCK IS PERSISTED. stampSync writes
+        cd-creds-sync-stamp (last verified sync, per-channel holds,
+        account email) to localStorage, and a fresh page load seeds the
+        card from it — "last sync" survives the reload instead of
+        resetting to "not yet".
+     5. SYNC NOW DIFFS AGAINST A FRESH READ. The button pulls FIRST
+        (the account's actual current state), then pushes every channel
+        that really differs, so "credentials current" is a statement
+        about the account, not about a stale in-memory copy.
+     Plus diagnose() — a step-by-step probe (session → endpoint →
+     token → RPC read → table read → verified write) that names the
+     first failing stage and its exact remedy, surfaced as a 🔍 button
+     on the sync card.
    Sensitive values are never logged.
    ===================================================================== */
 "use strict";
@@ -58,18 +86,57 @@ window.CloudCreds = (function () {
   const ENDPOINT_CACHE = "cd-portal-endpoint";   // {url, anon}
   const SESSION_RE = /^sb-.*-auth-token$/;
   const SYNCED_AT = "cd-creds-cloud-at";          // per-channel last sync ms
+  const STAMP_KEY = "cd-creds-sync-stamp";        // V54: persisted verified-sync truth
+  const BUILD = "v54-r18-verified-sync";
 
   const state = {
     ready: false, uid: null, url: null, anon: null,
-    reason: "",                                    // why sync is off (UI)
-    _endpointPromise: null, _listeners: []
+    reason: "",                                    // why sync is off (UI) — never empty on failure
+    _endpointPromise: null, _listeners: [],
+    _refreshInFlight: null,                        // V54: single-flight token refresh
+    _pushTail: {}                                  // V54: per-channel push queue
   };
+
+  /* V54: seed the sync clock + account-holds from the persisted stamp so
+     the card is honest across page reloads (a verified sync from the
+     previous visit is still a verified sync). Overwritten by the first
+     successful read of this visit. */
+  (function seed() {
+    var p = lsJSON(STAMP_KEY, null);
+    if (!p) return;
+    state.lastSync = Number(p.lastSync) || 0;
+    state.cloud = {};
+    Object.keys(p.cloudHolds || {}).forEach(function (k) { state.cloud[k] = true; });
+    state.lastChecked = state.lastSync;
+  })();
 
   function lsGet(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } }
   function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
   function lsJSON(k, d) { try { return JSON.parse(localStorage.getItem(k) || "null") || d; } catch (e) { return d; } }
   function storeGet(k, d) { try { return window.Store ? (Store.get(k, d) !== undefined ? Store.get(k, d) : d) : d; } catch (e) { return d; } }
   function storeSet(k, v) { try { if (window.Store) Store.set(k, v); } catch (e) {} }
+
+  /* V54: the one failure gate. state.reason is ALWAYS set to a non-empty,
+     human-readable message that names the stage and the server's answer. */
+  function fail(stage, msg) {
+    var m = String(msg == null ? "" : msg).trim() ||
+      ("the " + stage + " failed without an error message — check the browser console and the studio database");
+    state.reason = m;
+    return false;
+  }
+  /* V54: read a PostgREST/GoTrue error body into a precise message. */
+  async function bodyReason(res, fallback) {
+    var msg = String(fallback || ("portal answered " + res.status));
+    try {
+      var err = await res.json();
+      if (err && (err.message || err.hint || err.details || err.error_description)) {
+        msg = (err.message || err.error_description || "") +
+          (err.hint ? " — " + err.hint : "") +
+          (err.details ? " (" + err.details + ")" : "");
+      }
+    } catch (e) {}
+    return msg;
+  }
 
   /* ── portal session (same origin) ───────────────────────────────────
      The portal stores its session under sb-<ref>-auth-token. We never
@@ -165,6 +232,8 @@ window.CloudCreds = (function () {
     } catch (e) {}
     var ep = lsJSON(ENDPOINT_CACHE, null);
     try { if (ep) localStorage.removeItem(sessionKey(ep)); } catch (e) {}
+    try { localStorage.removeItem(STAMP_KEY); } catch (e) {}   /* V54: unlinked — stop claiming a verified sync */
+    state.lastSync = 0; state.cloud = {}; state.cloudRows = {}; state.reason = "";
   }
 
   function sessionEmail() {
@@ -188,32 +257,49 @@ window.CloudCreds = (function () {
   function uidFromSession(sess, token) {
     return (sess.user && sess.user.id) || sess.user_id || uidFromToken(token) || null;
   }
+
+  /* V54: the actual refresh exchange, isolated so ensureToken can make
+     it single-flight. Writes the refreshed session back under the SAME
+     localStorage key — one session, kept alive from either side. */
+  async function doRefresh(sess) {
+    var ep = await endpoint();
+    var res = await fetch(ep.url + "/auth/v1/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", apikey: ep.anon },
+      body: JSON.stringify({ grant_type: "refresh_token", refresh_token: sess.refresh_token })
+    });
+    if (!res.ok) throw new Error("refresh " + res.status + (res.status === 400 ? " — the saved login was revoked (two devices refreshed at once); sign in to the portal once" : ""));
+    var data = await res.json();
+    if (!data || !data.access_token) throw new Error("no token in refresh response");
+    var next = Object.assign({}, sess, data);
+    try { localStorage.setItem(sess._lsKey, JSON.stringify(next)); } catch (e) {}
+    state.uid = uidFromSession(data, data.access_token);
+    if (!state.uid) throw new Error("portal session has no user — sign in again");
+    return data.access_token;
+  }
+
   async function ensureToken() {
     var sess = readSession();
-    if (!sess) { state.reason = "not signed in to the portal on this device"; return null; }
+    if (!sess) return fail("session", "not signed in to the portal on this device");
     var fresh = sess.access_token && sess.expires_at && (sess.expires_at * 1000) > Date.now() + 60000;
-    if (fresh) { state.uid = uidFromSession(sess, sess.access_token); if (!state.uid) { state.reason = "portal session has no user — sign in again"; return null; } return sess.access_token; }
-    if (!sess.refresh_token) { state.reason = "portal session expired — sign in to the portal once"; return null; }
+    if (fresh) {
+      state.uid = uidFromSession(sess, sess.access_token);
+      if (!state.uid) return fail("session", "portal session has no user — sign in again");
+      return sess.access_token;
+    }
+    if (!sess.refresh_token) return fail("session", "portal session expired — sign in to the portal once");
+    /* V54: SINGLE-FLIGHT REFRESH. Save/Generate/Sync fire several cloud
+       calls at once; two parallel refreshes with the same refresh token
+       are exactly what Supabase's rotation-reuse detection revokes the
+       whole session for — the teacher then finds the portal itself
+       signed out. One shared in-flight promise now serves every racer. */
+    if (!state._refreshInFlight) {
+      state._refreshInFlight = doRefresh(sess).finally(function () { state._refreshInFlight = null; });
+    }
     try {
-      var ep = await endpoint();
-      var res = await fetch(ep.url + "/auth/v1/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", apikey: ep.anon },
-        body: JSON.stringify({ grant_type: "refresh_token", refresh_token: sess.refresh_token })
-      });
-      if (!res.ok) throw new Error("refresh " + res.status);
-      var data = await res.json();
-      if (!data || !data.access_token) throw new Error("no token in refresh response");
-      /* write the refreshed session back under the SAME key, so the
-         portal picks it up too — one session, kept alive from either side */
-      var next = Object.assign({}, sess, data);
-      try { localStorage.setItem(sess._lsKey, JSON.stringify(next)); } catch (e) {}
-      state.uid = uidFromSession(data, data.access_token);
-      if (!state.uid) { state.reason = "portal session has no user — sign in again"; return null; }
-      return data.access_token;
+      return await state._refreshInFlight;
     } catch (e) {
-      state.reason = "portal session expired — sign in to the portal once";
-      return null;
+      return fail("session", "portal session expired — sign in to the portal once (" + (e && e.message ? e.message : "network") + ")");
     }
   }
 
@@ -307,7 +393,7 @@ window.CloudCreds = (function () {
     }
   };
 
-  /* V52 (round 16, items 8+9) — canonical channel resolution.
+  /* V52 — canonical channel resolution.
      The account's user_settings rows should be keyed "cd-turn"/"cd-stream",
      but any device that ever saved under a different label (an older build,
      a hand-run SQL insert, a renamed channel) produced rows that pull()
@@ -334,7 +420,7 @@ window.CloudCreds = (function () {
       Object.keys(value).some(function (k) { return String(value[k] || "") !== ""; }));
   }
 
-  /* V52 (round 17): canonical comparison — jsonb re-orders keys, so a raw
+  /* V52→V53: canonical comparison — jsonb re-orders keys, so a raw
      JSON.stringify(local) !== JSON.stringify(cloud) fired even when the
      data was identical. Keys are sorted (deeply) before comparing. */
   function canon(v) {
@@ -344,74 +430,88 @@ window.CloudCreds = (function () {
     Object.keys(v).sort().forEach(function (k) { out[k] = canon(v[k]); });
     return out;
   }
+  function sameCanon(a, b) {
+    return JSON.stringify(canon(a)) === JSON.stringify(canon(b));
+  }
+
+  /* ── the account read, shared by pull() and the V54 verification ──── */
+  async function readRows() {
+    var h = await authedHeaders();
+    if (h) {
+      var ep = await endpoint();
+      try {
+        var rres = await fetch(ep.url + "/rest/v1/rpc/tc_get_user_settings", {
+          method: "POST", headers: h, body: "{}"
+        });
+        if (rres.ok) {
+          var rows = await rres.json();
+          if (Array.isArray(rows)) { state.missing = false; return rows; }
+        } else if (rres.status === 401 || rres.status === 403) {
+          state.reason = "the portal refused the sync (signed in?)";
+          return null;
+        }
+        /* 404 = pre-V53 database → fall through to the table GET */
+      } catch (eRpc) {}
+    }
+    var res = await get("/user_settings?select=key,value,updated_at");
+    if (!res) return null;
+    try {
+      var rows2 = await res.json();
+      return Array.isArray(rows2) ? rows2 : null;
+    } catch (e) { return null; }
+  }
 
   /* ── public API ──────────────────────────────────────────────────── */
 
-  /* V53 (round 17, items 1+2) — THE SILENT-FAILURE FIX, server side.
-     The deck used to write credentials with a REST upsert
-     (`POST /user_settings?on_conflict=user_id,key` + a Prefer header).
-     That request is fragile against real databases: any drift between
-     what the request assumes and what the live table actually has —
-     a different constraint, a missing column, a PostgREST quirk —
-     comes back as a bare 4xx whose BODY the deck never read, so the
-     push failed with "unknown", the account stayed empty, and every
-     other device honestly said "nothing saved yet". The write now goes
-     through the V53 security-definer RPC tc_set_user_setting(p_key,
-     p_value): the database does the upsert against its own primary
-     key, and the deck reads and surfaces the exact error when anything
-     still goes wrong. The old upsert remains as a pre-V53 fallback. */
+  /* V53: the write goes through the security-definer RPC
+     tc_set_user_setting(p_key, p_value): the database upserts against
+     its own primary key, and the deck reads and surfaces the exact
+     error when anything goes wrong. The old REST upsert remains as a
+     pre-V53 fallback. */
   async function rpcSet(key, value) {
     var h = await authedHeaders({ "Content-Type": "application/json" });
-    if (!h) return { ok: false, missing: true };
+    if (!h) return { ok: false, reason: state.reason || "not signed in to the portal on this device" };
     var ep = await endpoint();
     var res = await fetch(ep.url + "/rest/v1/rpc/tc_set_user_setting", {
       method: "POST", headers: h,
       body: JSON.stringify({ p_key: key, p_value: value })
     });
     if (res.status === 404) return { ok: false, missing: true };   /* pre-V53 database */
-    if (!res.ok) {
-      var msg = "portal answered " + res.status;
-      try {
-        var err = await res.json();
-        if (err && (err.message || err.hint || err.details)) {
-          msg = (err.message || "") + (err.hint ? " — " + err.hint : "") + (err.details ? " (" + err.details + ")" : "");
-        }
-      } catch (e2) {}
-      return { ok: false, reason: msg };
-    }
+    if (!res.ok) return { ok: false, reason: await bodyReason(res, "portal answered " + res.status + " for the credential upload") };
     return { ok: true };
+  }
+
+  /* V54: THE VERIFICATION READ-BACK. A write that the server ACKNOWLEDGED
+     is not yet a write the NEXT DEVICE will see — RLS edges, partial
+     migrations and silent rollbacks all live in that gap, and it is
+     exactly where "saved on A, empty on B" was born. After every write
+     the account is read back through the same path the next device
+     uses, and the channel's row must canonically match what we sent. */
+  async function verifyChannel(key, snap) {
+    try {
+      var rows = await readRows();
+      if (rows === null) {
+        return fail("verify " + key, "the credential was sent, but the read-back could not confirm it (" +
+          (state.reason || "the account could not be read") + "). Press ☁️ Sync now — if it persists, run database/complete-schema.sql on the studio database");
+      }
+      var hit = null, hitKey = null;
+      rows.forEach(function (r) {
+        if (!r || !r.key) return;
+        if (channelForKey(r.key, r.value) === key) { hit = r.value; hitKey = r.key; }
+      });
+      if (hit !== null && sameCanon(hit, snap)) return true;
+      return fail("verify " + key, hit
+        ? "the portal accepted the write but the account reads back different data (row “" + hitKey + "”) — press ☁️ Sync now again; if it persists the database is mid-migration, run database/complete-schema.sql"
+        : "the portal accepted the write but the account reads back NOTHING for this device — the database is refusing to store it. Run database/complete-schema.sql (or v47-cloud-credentials.sql then v53-credential-truth-staff-monitor.sql) on the studio database, then press ☁️ Sync now");
+    } catch (e) {
+      return fail("verify " + key, "the verification read failed (" + (e && e.message ? e.message : "network") + ")");
+    }
   }
 
   async function pull() {
     try {
-      /* V53: reads also prefer the RPC (tc_get_user_settings) — same
-         security-definer truth, one call, and it keeps working even if
-         the table's SELECT policy is ever tightened. Falls back to the
-         plain table GET on a pre-V53 database. */
-      var rows = null;
-      var h = await authedHeaders();
-      if (h) {
-        var ep = await endpoint();
-        try {
-          var rres = await fetch(ep.url + "/rest/v1/rpc/tc_get_user_settings", {
-            method: "POST", headers: h, body: "{}"
-          });
-          if (rres.ok) {
-            rows = await rres.json();
-            if (!Array.isArray(rows)) rows = null;
-          } else if (rres.status === 401 || rres.status === 403) {
-            state.reason = "the portal refused the sync (signed in?)";
-            return false;
-          }
-          /* 404 = pre-V53 database → fall through to the table GET */
-        } catch (eRpc) {}
-      }
-      if (!rows) {
-        var res = await get("/user_settings?select=key,value,updated_at");
-        if (!res) return false;
-        rows = await res.json();
-        if (!Array.isArray(rows)) return false;
-      }
+      var rows = await readRows();
+      if (rows === null) return false;
       var applied = [];
       var cloudKeys = {};
       state.cloud = {};     /* WHAT the account holds, by canonical channel */
@@ -450,114 +550,138 @@ window.CloudCreds = (function () {
       state.ready = true;
       state.missing = false;
       state.lastChecked = Date.now();
-      /* V51: "last sync" only counts when data actually moved: something
+      /* V51→V54: "last sync" only counts when data actually moved: something
          was applied from the cloud, this device published credentials the
-         cloud had not seen, or the account genuinely holds credentials
+         cloud had not seen, or the account verifiably holds credentials
          (a read that CONFIRMED agreement with a non-empty account is a
          real sync of real data — not a login read of an empty account). */
       if (applied.length || pushResults.some(function (ok) { return ok; }) || Object.keys(state.cloud).length) {
         state.lastSync = Date.now();
       }
+      /* V54: the persisted truth always follows a SUCCESSFUL read — even
+         when the read says the account now holds nothing (a credential
+         cleared on another device must not keep showing ✓ on this one
+         after a reload). The clock itself only advances when data moved
+         or the account verifiably holds something. */
+      persistStamp();
       if (applied.length) notify(applied);
       return true;
     } catch (e) {
-      state.reason = "portal unreachable";
-      return false;
+      return fail("pull", "portal unreachable (" + (e && e.message ? e.message : "network") + ")");
     }
   }
 
-  /* V52 (round 16, item 9) — "Sync now" is now a REAL two-way sync:
-     1. every channel this device holds that the cloud lacks, or holds
-        DIFFERENTLY (canonical diff — key order no longer lies), is
-        pushed first (the local truth wins on a manual sync — the teacher
-        pressed the button on the device that has the working setup);
-     2. then pull() brings back anything THIS device lacks.
-     V53: the pushes go through the RPC, so they can no longer fail
-     silently with "unknown". */
+  /* V52→V54 — "Sync now" is a REAL, VERIFIED two-way sync:
+     1. pull() FIRST — the diff must be against the account's ACTUAL
+        current state, never a stale in-memory copy (the r16/r17 "synced —
+        credentials current" lie while "last sync" said "not yet" was
+        exactly a stale-copy diff);
+     2. every channel this device holds that the fresh read says the
+        cloud lacks — or holds DIFFERENTLY (canonical diff, key order
+        can't lie) — is pushed (the local truth wins on a manual sync);
+     3. every push is verified by reading the account back, so the sync
+        clock only advances on truth. */
   async function syncNow() {
-    var pushed = [];
-    try {
-      await ensureToken();
-    } catch (e) {}
+    var out = { ok: false, pushed: [], pushFailed: [], reason: "" };
+    try { await ensureToken(); } catch (e) {}
+    var pulled = await pull();
     Object.keys(CHANNELS).forEach(function (k) {
       var ch = CHANNELS[k];
       if (!ch || !ch.snapshot) return;
       if (ch.isEmpty && ch.isEmpty()) return;          /* nothing local to offer */
       var localSnap = ch.snapshot();
       var cloudVal = (state.cloudRows || {})[k];
-      var differs = !cloudVal ||
-        JSON.stringify(canon(cloudVal)) !== JSON.stringify(canon(localSnap));
-      if (differs) pushed.push(k);
+      var differs = !cloudVal || !sameCanon(cloudVal, localSnap);
+      if (differs) out.pushed.push(k);
     });
     var results = [];
-    for (var i = 0; i < pushed.length; i++) {
-      results.push(await push(pushed[i]));
+    for (var i = 0; i < out.pushed.length; i++) {
+      results.push(await push(out.pushed[i]));
     }
-    var ok = await pull();
+    out.pushFailed = out.pushed.filter(function (k, i2) { return !results[i2]; });
+    out.ok = pulled || results.some(function (r) { return r; });
     if (results.some(function (r) { return r; }) || Object.keys(state.cloud || {}).length) {
       state.lastSync = Date.now();
+      persistStamp();
     }
-    return { ok: ok, pushed: pushed, pushFailed: pushed.filter(function (k, i2) { return !results[i2]; }) };
+    out.reason = state.reason || "";
+    return out;
   }
 
-  async function push(key, force) {
+  /* V54: pushes are SERIALIZED per channel. Save fires the relay push and
+     the key push back-to-back; Generate pushes while Save's push may still
+     be in flight. Concurrent pushes meant concurrent token refreshes (the
+     rotation-reuse revocation) and last-write races between snapshots of
+     the same channel. The queue coalesces them: each queued push snapshots
+     FRESH data when it actually runs, so a rapid double-save uploads the
+     final state. */
+  function push(key, force) {
+    var ch = CHANNELS[key];
+    if (!ch) return Promise.resolve(false);
+    var prev = state._pushTail[key] || Promise.resolve(false);
+    var run = prev.catch(function () {}).then(function () { return rawPush(key, force); });
+    state._pushTail[key] = run;
+    return run;
+  }
+
+  async function rawPush(key, force) {
     var ch = CHANNELS[key];
     if (!ch) return false;
     try {
-      /* V52 (round 16, item 8) — the token (and with it the uid) is
-         resolved BEFORE the payload is built. The original built the row
-         with state.uid while it was still null, uploaded user_id NULL,
-         and the RLS policy refused it invisibly. */
+      /* V52 — the token (and with it the uid) is resolved BEFORE the
+         payload is built. The original built the row with state.uid
+         while it was still null, uploaded user_id NULL, and the RLS
+         policy refused it invisibly. */
       var token = await ensureToken();
       if (!token || !state.uid) {
-        state.reason = state.reason || "not signed in to the portal on this device";
-        return false;
+        return fail("write " + key, state.reason || "not signed in to the portal on this device");
       }
       var snap = ch.snapshot();
       /* force=true pushes even an EMPTY snapshot — the deliberate-clear
          tombstone, so removed credentials are not resurrected on the
          next pull from another device. */
-      if (!force && ch.isEmpty && ch.isEmpty()) return false;
-      /* V53 (round 17): RPC-first write — the database upserts against
-         its own primary key; no client-side on_conflict assumptions. */
+      if (!force && ch.isEmpty && ch.isEmpty()) return false;   /* nothing to offer — not a failure */
+      /* V53: RPC-first write — the database upserts against its own
+         primary key; no client-side on_conflict assumptions.
+         V54: the write only counts once the account VERIFIABLY holds
+         it (read-back + canonical comparison). */
       var viaRpc = await rpcSet(key, snap);
       if (viaRpc.ok) {
-        lsSet(SYNCED_AT + ":" + key, String(Date.now()));
-        stampSync(key, snap);
-        return true;
+        if (await verifyChannel(key, snap)) {
+          lsSet(SYNCED_AT + ":" + key, String(Date.now()));
+          stampSync(key, snap);
+          return true;
+        }
+        return false;   /* verifyChannel set the reason */
       }
-      if (viaRpc.reason) { state.reason = viaRpc.reason; return false; }
+      if (viaRpc.reason) return fail("write " + key, viaRpc.reason);
       /* pre-V53 database: the old upsert, but with the error body read */
       var res = await post("/user_settings?on_conflict=user_id,key",
         { user_id: state.uid, key: key, value: snap, updated_at: new Date().toISOString() },
         { Prefer: "resolution=merge-duplicates" });   /* upsert, not 409 */
       if (res && res.ok) {
-        lsSet(SYNCED_AT + ":" + key, String(Date.now()));
-        stampSync(key, snap);
-        return true;
+        if (await verifyChannel(key, snap)) {
+          lsSet(SYNCED_AT + ":" + key, String(Date.now()));
+          stampSync(key, snap);
+          return true;
+        }
+        return false;
       }
       if (res && res.status === 404) {
-        state.reason = "database update needed — run database/v47-cloud-credentials.sql (and V53 for the sync RPCs)";
         state.missing = true;
-      } else if (res) {
-        state.reason = "portal answered " + res.status + " — run database/complete-schema.sql on the studio database";
-        try {
-          var err = await res.json();
-          if (err && (err.message || err.hint)) {
-            state.reason = (err.message || "") + (err.hint ? " — " + err.hint : "");
-          }
-        } catch (e3) {}
-      } else if (!viaRpc.missing) {
-        state.reason = state.reason || "the portal refused the sync (signed in?)";
+        return fail("write " + key, "the user_settings table is missing — run database/complete-schema.sql (or v47-cloud-credentials.sql, then v53) on the studio database and press ☁️ Sync now");
       }
-      return false;
+      if (res) {
+        return fail("write " + key, await bodyReason(res, "portal answered " + res.status + " for the credential upload — run database/complete-schema.sql on the studio database if it persists"));
+      }
+      return fail("write " + key, state.reason || "the portal refused the credential upload (signed in?)");
     } catch (e) {
-      state.reason = "portal unreachable (" + (e && e.message ? e.message : "network") + ")";
-      return false;
+      return fail("write " + key, "portal unreachable (" + (e && e.message ? e.message : "network") + ")");
     }
   }
 
-  /* V53: a successful push IS a sync — update the card's truth at once. */
+  /* V53→V54: a VERIFIED successful push IS a sync — update the card's
+     truth at once, and persist it so a page reload keeps showing it. */
   function stampSync(key, snap) {
     state.lastSync = Date.now();
     state.lastChecked = Date.now();
@@ -571,6 +695,81 @@ window.CloudCreds = (function () {
       state.cloudRows[key] = snap;
     }
     state.reason = "";
+    persistStamp();
+  }
+
+  /* V54: persist the verified-sync truth. The card seeds from this on the
+     next page load — "last sync" survives reloads (the r17 "not yet after
+     a reload" gap), and the account-holds line stays honest because it is
+     only ever written after a verified write or a successful read. */
+  function persistStamp() {
+    try {
+      var holds = {};
+      Object.keys(state.cloud || {}).forEach(function (k) { holds[k] = state.lastSync; });
+      lsSet(STAMP_KEY, JSON.stringify({
+        lastSync: state.lastSync || 0, cloudHolds: holds,
+        email: sessionEmail(), build: BUILD
+      }));
+    } catch (e) {}
+  }
+
+  /* V54 — diagnose(): the step-by-step probe behind the 🔍 button.
+     Walks the exact chain a real sync uses and stops at the first broken
+     link, naming it and its remedy. Read-only unless a real channel with
+     real data exists — in that case the final step is a genuine VERIFIED
+     re-push (which is also the healing action for a half-migrated
+     database). Returns the step list for the UI. */
+  async function diagnose() {
+    var steps = [];
+    function step(name, ok, detail, remedy) {
+      steps.push({ name: name, ok: !!ok, detail: String(detail || ""), remedy: String(remedy || "") });
+      return !!ok;
+    }
+    var sess = readSession();
+    if (!step("1 · portal session on this device", !!sess,
+        sess ? ((sess.user && sess.user.email) || "token present (email unknown)") : "no saved portal login",
+        "Sign in to ADEWALE CLASSROOM on this device — or open ⚙ Settings → ☁️ Cloud sync → Link account and use your portal email + password.")) return steps;
+    var ep = null;
+    try { ep = await endpoint(); } catch (e) {}
+    if (!step("2 · portal address", !!ep && /^https:\/\//.test(String((ep || {}).url || "")),
+        ep ? ep.url : "the deck could not discover the portal address",
+        "Redeploy the deck together with the portal (js/config.js must be reachable), or open the deck from inside the portal once so the address is cached.")) return steps;
+    state.reason = "";
+    var tok = null;
+    try { tok = await ensureToken(); } catch (e) {}
+    if (!step("3 · account token", !!tok, tok ? "token valid for " + (sess.user && sess.user.email ? sess.user.email : "this account") : (state.reason || "token refresh failed"),
+        "Sign out and back in to the portal on this device — the saved login has expired or was revoked.")) return steps;
+    var rows = null;
+    try { rows = await readRows(); } catch (e) {}
+    var hasV53 = false;
+    try {
+      var h = await authedHeaders();
+      if (h) {
+        var ep2 = await endpoint();
+        var rr = await fetch(ep2.url + "/rest/v1/rpc/tc_get_user_settings", { method: "POST", headers: h, body: "{}" });
+        hasV53 = rr.ok;
+      }
+    } catch (e) {}
+    step("4 · database read path" + (hasV53 ? " (V53 RPC ✓" + (rows ? ")" : " — but it returned no rows)") : " (pre-V53 — plain table read)"),
+      rows !== null,
+      rows === null ? (state.reason || "the account could not be read") : (rows.length + " setting row(s) readable in your account"),
+      "Run database/complete-schema.sql on the studio database — the user_settings table or its read policy is missing/refusing this account.");
+    if (rows === null) return steps;
+    /* 5 — the write path. Only tested with REAL data this device actually
+       holds (a genuine, healing re-push with verification). Nothing is
+       written when the device holds nothing worth syncing. */
+    var chan = null;
+    Object.keys(CHANNELS).forEach(function (k) { if (!chan && CHANNELS[k] && !CHANNELS[k].isEmpty()) chan = k; });
+    if (!chan) {
+      step("5 · database write path", true, "skipped — this device holds no credentials yet, so nothing was written. Save your TURN key once and press 🔍 again to test the write.",
+        "");
+      return steps;
+    }
+    var okPush = await push(chan);
+    step("5 · database write path (verified re-push of " + chan + ")", okPush,
+      okPush ? "written, read back and verified ✓ — your account verifiably holds this device's credentials" : (state.reason || "the write was refused"),
+      okPush ? "" : "Run database/complete-schema.sql (or v47-cloud-credentials.sql then v53-credential-truth-staff-monitor.sql) on the studio database, then press 🔄 Sync now.");
+    return steps;
   }
 
   function notify(applied) {
@@ -580,16 +779,17 @@ window.CloudCreds = (function () {
   return {
     /* CloudCreds.pull() — call on deck boot when a portal session exists */
     pull: pull,
-    /* V52 (round 16, item 9): the REAL two-way sync behind "Sync now" —
-       pushes what this device holds that the cloud lacks (or holds
-       differently), then pulls. Returns {ok, pushed, pushFailed}. */
+    /* "Sync now" — read first, push real differences, verify, stamp */
     syncNow: syncNow,
+    /* V54: the step-by-step probe for the 🔍 Diagnose button */
+    diagnose: diagnose,
     /* V51: what the account actually holds + when it was last read */
     cloud: function () { return state.cloud || {}; },
     cloudRows: function () { return state.cloudRows || {}; },
     lastChecked: function () { return state.lastChecked || 0; },
     /* CloudCreds.push('cd-turn' | 'cd-stream', force?) — call after
-       saving (force=true also pushes a deliberate clear) */
+       saving (force=true also pushes a deliberate clear). Serialized +
+       verified. */
     push: push,
     /* CloudCreds.onApply(fn) — fn(listOfAppliedChannels) after a pull
        that changed local state (refresh Settings UI etc.) */
@@ -605,7 +805,8 @@ window.CloudCreds = (function () {
     status: function () {
       return { ready: state.ready, reason: state.reason, uid: state.uid,
                missing: !!state.missing, lastSync: state.lastSync || 0,
-               cloud: state.cloud || {}, lastChecked: state.lastChecked || 0 };
+               cloud: state.cloud || {}, lastChecked: state.lastChecked || 0,
+               build: BUILD };
     }
   };
 })();

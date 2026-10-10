@@ -8,7 +8,7 @@
    requests, making the site feel native on repeat visits.
    Bump CACHE_VERSION whenever you deploy changes.
    ============================================================ */
-const CACHE_VERSION = "hmg-classdeck-v14.8.0-turnsync-rpc";  /* bumped: V53 round 17 — credential writes go through the tc_set_user_setting RPC (the REST upsert class of silent failures is gone), sync card re-renders on push, honest not-linked warning on save */  /* bumped: V52 round 16 — cloud credential sync truth: push resolves uid BEFORE upload (the silent NULL-user 403 that left "nothing saved yet" on other devices), shape-based channel restore, real two-way Sync now, last-sync stamps on push */  /* bumped: v14.1 MicDoctor (laptop mic failures: constraint ladder, silence watchdog, recovery banner), CBT console + Archive Recovery Center on Quizzes, role-aware Homework page, V46 assignment automation */  /* bumped: v14 adds assistant tutors (co-hosts), mute-all/lower-hands/attendance CSV, scrollable zoomable whiteboard pages and PDF anchored zoom with visible scrollbars */
+const CACHE_VERSION = "hmg-classdeck-v15.0.0-r18-verified-sync-netfirst";  /* bumped: V53 round 17 — credential writes go through the tc_set_user_setting RPC (the REST upsert class of silent failures is gone), sync card re-renders on push, honest not-linked warning on save */  /* bumped: V52 round 16 — cloud credential sync truth: push resolves uid BEFORE upload (the silent NULL-user 403 that left "nothing saved yet" on other devices), shape-based channel restore, real two-way Sync now, last-sync stamps on push */  /* bumped: v14.1 MicDoctor (laptop mic failures: constraint ladder, silence watchdog, recovery banner), CBT console + Archive Recovery Center on Quizzes, role-aware Homework page, V46 assignment automation */  /* bumped: v14 adds assistant tutors (co-hosts), mute-all/lower-hands/attendance CSV, scrollable zoomable whiteboard pages and PDF anchored zoom with visible scrollbars */
 
 const SHELL = [
   "./",
@@ -36,6 +36,7 @@ const SHELL = [
   "./js/toolkit-ext.js",
   "./js/security-config.js",
   "./js/auth.js",
+  "./js/cloud-creds.js",
   "./js/join.js",
   "./js/portal-bridge.js",
   "./js/enhancements.js",
@@ -91,19 +92,45 @@ self.addEventListener("fetch", (e) => {
   if (url.origin !== location.origin) return;
   if (e.request.method !== "GET") return;
 
+  /* v15 (round 18) — NETWORK-FIRST FOR PAGES. The old handler was
+     stale-while-revalidate for EVERYTHING, HTML included: it served the
+     CACHED page on every visit and refreshed only in the background.
+     That is precisely why fixed bugs "persisted" for users — the visit
+     right after a redeploy still ran the PREVIOUS build's teach.html
+     (and with it the previous JS), and the fix only arrived on the
+     visit after that. Documents now go to the NETWORK first and fall
+     back to the cache only when offline; versioned assets (?v=NN are
+     immutable by construction) stay cache-first. The old handler also
+     fetched every served-from-cache resource TWICE (once for
+     fetchPromise, once inside the cached branch) — fixed. */
+  const isPage = e.request.mode === "navigate" ||
+    (e.request.destination || "") === "document" ||
+    (/\.html?$/.test(url.pathname) && url.search.indexOf("v=") === -1);
+
   e.respondWith(
     (async () => {
       const cache = await caches.open(CACHE_VERSION);
+
+      if (isPage) {
+        try {
+          const res = await fetch(e.request);
+          if (res && res.ok) cache.put(e.request, res.clone());
+          return res;
+        } catch (err) {
+          /* offline (or the server is down): the cached page still opens */
+          const same = await cache.match(e.request) || await cache.match(url.pathname);
+          const fallback = same || await cache.match("./index.html");
+          if (fallback) return fallback;
+          return Response.error();
+        }
+      }
+
       /* v10: exact match — a new ?v= query is a cache MISS, so updated JS
          reaches students on their very next load. (ignoreSearch served the
          stale precached copy forever and defeated every version bump.) */
       const cached = await cache.match(e.request) || (url.search === "" ? await cache.match(url.pathname) : null);
-      const fetchPromise = fetch(e.request).then(res => {
-        if (res && res.ok) cache.put(e.request, res.clone());
-        return res;
-      }).catch(() => cached);
 
-      // Stale-while-revalidate: serve cached instantly, refresh in background
+      // Stale-while-revalidate (assets only): serve cached instantly, refresh once in background
       if (cached) {
         fetch(e.request).then(res => {
           if (res && res.ok) cache.put(e.request, res);
@@ -112,15 +139,10 @@ self.addEventListener("fetch", (e) => {
       }
 
       try {
-        return await fetchPromise;
+        const res = await fetch(e.request);
+        if (res && res.ok) cache.put(e.request, res.clone());
+        return res;
       } catch (err) {
-        // For navigation requests, return index.html as offline fallback
-        if (e.request.mode === "navigate") {
-          /* v10: fall back to the SAME page (offline), not the homepage */
-          const same = await cache.match(url.pathname);
-          const fallback = same || await cache.match("./index.html");
-          if (fallback) return fallback;
-        }
         return Response.error();
       }
     })()

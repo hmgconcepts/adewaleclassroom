@@ -3962,37 +3962,78 @@ function renderCloudSyncCard() {
   if (!card || !window.CloudCreds) return;
   if (CloudCreds.signedIn()) {
     const st = CloudCreds.status();
+    /* V54 (round 18): "last verified sync" — the clock advances only on
+       a WRITE THAT WAS READ BACK AND CONFIRMED, or a successful read of
+       an account that verifiably holds credentials, and it is persisted
+       so it survives page reloads (the r17 "not yet after reload" gap). */
     const when = st.lastSync ? new Date(st.lastSync).toLocaleTimeString() : "not yet";
     card.innerHTML =
       '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">' +
       '<span>\u2601\ufe0f Synced with <b>' + esc(CloudCreds.sessionEmail() || "your ADEWALE CLASSROOM account") + '</b></span>' +
-      '<span class="sub">\u00b7 last sync ' + esc(when) + '</span>' +
+      '<span class="sub">\u00b7 last verified sync ' + esc(when) + '</span>' +
       '<button class="btn small" id="cloudSyncNow">🔄 Sync now</button>' +
+      '<button class="btn small ghost" id="cloudDiag" title="Test every step of the cloud sync — session, portal, token, database read, verified write — and name the first broken link with its exact fix">🔍 Diagnose</button>' +
       '<button class="btn small ghost" id="cloudUnlink">Unlink</button>' +
       "</div>" +
-      '<div class="sub" style="margin-top:6px">Your TURN key, relay credentials and streaming keys are pulled to every device you sign in from — and pushed back whenever they change.</div>' +
+      '<div class="sub" style="margin-top:6px">Your TURN key, relay credentials and streaming keys are pulled to every device you sign in from — and pushed back whenever they change. Every save is <b>verified</b>: the account is read back before "saved" is claimed, so a save that silently failed is impossible.</div>' +
       '<div class="sub" style="margin-top:4px">☁️ Account holds: ' +
         (CloudCreds.cloud ? (CloudCreds.cloud()["cd-turn"] ? '<b style="color:#31c48d">🔑 TURN key ✓</b>' : '<span style="color:var(--warn)">🔑 TURN key — nothing saved yet</span>') : '') +
         ' · ' +
         (CloudCreds.cloud ? (CloudCreds.cloud()["cd-stream"] ? '<b style="color:#31c48d">📡 stream setup ✓</b>' : '<span style="opacity:.75">📡 stream setup — nothing saved yet</span>') : '') +
         '. ' + (st.lastSync ? 'Last real sync ' + esc(when) + '.' : 'Nothing stored yet — save once (⚙ Settings → Save) and every future device gets it.') + '</div>' +
-      (st.reason ? '<div class="warn" style="margin-top:6px">⚠️ ' + esc(st.reason) + "</div>" : "");
+      (st.reason ? '<div class="warn" style="margin-top:6px">⚠️ ' + esc(st.reason) + "</div>" : "") +
+      '<div id="cloudDiagOut"></div>' +
+      '<div class="sub" style="margin-top:4px;opacity:.55">cloud-creds ' + esc(st.build || "") + " — if this line does not say v54, this browser is still running an older cached build: reload the page once.</div>";
     $("#cloudSyncNow").onclick = async () => {
       const btn = $("#cloudSyncNow");
       if (btn) { btn.disabled = true; btn.textContent = "🔄 Syncing…"; }
-      const r = await CloudCreds.syncNow();   /* V52: push-if-dirty THEN pull — a real two-way sync */
+      /* V54: syncNow reads the account FIRST, pushes only what really
+         differs, and verifies every push by reading it back — so each
+         toast below is a statement about the account, not a guess. */
+      const r = await CloudCreds.syncNow();
       const st2 = CloudCreds.status();
       if (btn) { btn.disabled = false; btn.textContent = "🔄 Sync now"; }
       if (!r || !r.ok || st2.missing) {
-        toast("Sync problem: " + (st2.reason || "unknown"), "err", 10000);
+        toast("Sync problem: " + (st2.reason || r && r.reason || "unknown — press 🔍 Diagnose next to this button"), "err", 10000);
       } else if (r.pushFailed && r.pushFailed.length) {
-        toast("⚠️ Pulled the account's credentials, but could not upload this device's " + r.pushFailed.join(", ") + " — " + (st2.reason || "try signing in to the portal again"), "err", 12000);
+        toast("⚠️ Pulled the account's credentials, but could not upload this device's " + r.pushFailed.join(", ") + " — " + (st2.reason || r.reason || "try signing in to the portal again"), "err", 12000);
       } else if (r.pushed && r.pushed.length) {
-        toast("☁️ Synced — uploaded " + r.pushed.join(", ") + " to your account and pulled the account's credentials back.", "ok", 9000);
+        toast("☁️ Synced — uploaded " + r.pushed.join(", ") + " to your account and verified it by reading it back.", "ok", 9000);
       } else {
-        toast("☁️ Synced — credentials on this device are current with your account.", "ok", 8000);
+        toast("☁️ Synced — credentials on this device are current with your account (fresh read: nothing to upload).", "ok", 8000);
       }
       renderCloudSyncCard();
+    };
+    /* V54 (round 18, item 4): 🔍 Diagnose — the expert in the card. Runs
+       the exact chain a real sync uses, stops at the first broken link,
+       names it and prints the remedy. When this device holds real
+       credentials, the final step is a genuine VERIFIED re-push — which
+       is also the healing action for a half-migrated database. */
+    $("#cloudDiag").onclick = async () => {
+      const btn = $("#cloudDiag"), out = $("#cloudDiagOut");
+      if (btn) { btn.disabled = true; btn.textContent = "🔍 Diagnosing…"; }
+      if (out) out.innerHTML = '<div class="sub" style="margin-top:8px">🔎 Running the sync checks…</div>';
+      try {
+        const steps = await CloudCreds.diagnose();
+        const lastOk = steps.length ? steps[steps.length - 1].ok : false;
+        const lines = steps.map((stp) =>
+          '<div style="margin-top:5px">' + (stp.ok ? "✅" : "❌") + " <b>" + esc(stp.name) + "</b>" +
+          (stp.detail ? " — " + esc(stp.detail) : "") +
+          ((!stp.ok && stp.remedy) ? '<div class="sub" style="margin:2px 0 0 20px">➜ ' + esc(stp.remedy) + "</div>" : "") +
+          "</div>").join("");
+        if (out) out.innerHTML =
+          '<div style="margin-top:10px;padding:10px 14px;border:1px solid rgba(120,120,120,.35);border-radius:10px;background:rgba(120,120,120,.06)">' +
+          "<b>🔍 Cloud sync diagnosis</b>" + lines +
+          (lastOk
+            ? '<div class="sub" style="margin-top:8px">✅ Everything checked out — cloud sync is fully working on this device.</div>'
+            : '<div class="sub" style="margin-top:8px">⚠️ Fix the failed step above (its remedy is printed under it), then press 🔄 Sync now.</div>') +
+          "</div>";
+        if (!lastOk) toast("⚠️ Cloud sync problem found — the diagnosis is shown below the buttons.", "err", 10000);
+      } catch (e) {
+        if (out) out.innerHTML = "";
+        toast("Diagnose failed: " + (e && e.message ? e.message : e), "err", 8000);
+      }
+      if (btn) { btn.disabled = false; btn.textContent = "🔍 Diagnose"; }
     };
     $("#cloudUnlink").onclick = () => {
       if (!confirm("Unlink cloud sync on this device? Your saved credentials stay; they just stop following your login.")) return;
@@ -4481,7 +4522,7 @@ async function restoreCredsFromCloud() {
   if ((Store.get("tablet_live", {}) || {}).gateway) bits.push("streaming gateway ✓");
   toast(bits.length
     ? "☁️ Restored from your account — " + bits.join(" · ") + "."
-    : "☁️ Your account has nothing saved yet. Enter the TURN key (or the stream setup) on THIS device and press Save — it uploads automatically and every future device restores it.", "ok", 12000);
+    : "☁️ Your account has nothing saved yet. Enter the TURN key (or the stream setup) on THIS device and press Save — it uploads automatically (verified by reading it back) and every future device restores it. If you EXPECTED something here, press 🔍 Diagnose in the ☁️ Cloud sync section — it names the exact broken step.", "ok", 14000);
 }
 if ($("#tlRestore")) on("#tlRestore", "click", restoreCredsFromCloud);
 if ($("#btnRestoreCreds")) on("#btnRestoreCreds", "click", restoreCredsFromCloud);
