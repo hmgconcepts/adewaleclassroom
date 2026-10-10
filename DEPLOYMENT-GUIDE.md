@@ -858,12 +858,66 @@ report upload progress. The automatic background sync shows the same
 truth as a floating pill, and restore/recovery report per-table import
 progress too. The completion line carries rows, size and duration.
 
+**V54.2 (round-18 final) — the write probe, the visible self-heal, and
+the live-account verification.** The field report: the 🔍 Diagnose on an
+empty device showed all-green while the TURN key was still missing. The
+diagnosis had SKIPPED the only test that mattered (the write path — "no
+credentials on this device, nothing to write") and then declared
+"fully working". Verified LIVE against the production deployment before
+fixing anything: the deck at adewaleclassroom.vercel.app runs the r18
+build; both V53 RPCs exist and are anon-revoked; the account reads **0
+user_settings rows**; and a full authenticated **write → read-back →
+delete → confirm-gone cycle through `tc_set_user_setting` succeeded**.
+Conclusion: the server and the new code are healthy — the account is
+empty because the ORIGINAL save ran on the old code whose upload
+silently failed, and the key still exists only in that device's
+browser. Three fixes:
+1. **Diagnose never skips the write test.** On a device with no
+   credentials it now runs a SAFE PROBE: write a `cd-diag` row through
+   the exact path Save uses, read it back, DELETE it, confirm gone. The
+   probe row matches no sync channel and is deleted, so it can run on
+   any device at any time. "Fully working" is now always earned.
+2. **The self-heal is visible.** Opening the deck on a device that
+   holds credentials the account lacks uploads them automatically —
+   and now SAYS so ("☁️ Uploaded this device's cd-turn — the account
+   did not have them yet…"), or states the exact reason the upload
+   failed. The same happens at deck sign-in. The sync card also shows
+   an explicit 📤 hint while the account lacks what this device holds.
+3. **Empty-account messages tell the two-device truth** instead of just
+   "enter the key here": open the deck on the device that has the key
+   (it uploads the moment it opens — watch for the ☁️ confirmation;
+   check the ☁️ card shows the same account email), or re-enter once
+   on any device.
+
+**V54.1 (round-18 completion) — legacy alias rows can no longer shadow
+the truth.** An account that also holds a legacy alias row (an older
+build or a hand-run insert — e.g. a `cf-creds` row alongside `cd-turn`)
+would have made the round-18 verification read the ALIAS back (it sorts
+last), see stale data, and report failure on every save while the
+account was actually fine. The channel's truth is now the NEWEST row
+by `updated_at`, the exact canonical key winning ties — shared by
+`pull()` and `verifyChannel()` so they can never disagree — and the
+merge applies rows newest-first so a stale alias cannot pre-fill an
+empty field. Proven by three new behavioral scenarios (stale alias +
+fresh canonical, alias-only account, genuinely-newer alias).
+
+**Round-18 audit extensions (shipped in `tools/audit_handlers.py`):**
+JS-generated inline handlers (the `GD.restore` class — handlers built
+inside JS strings) and broken asset references (every `src=`/`href=` on
+every page, portal root and classdeck/) are now audited too. The
+reference sweep caught a real pre-existing bug — assignments.html
+linked to `cbt-manage.html`, which does not exist (the CBT builder is
+`cbt-multi.html`); fixed. The portal service worker was re-verified
+network-first for navigations, so the portal has none of the deck's
+stale-page trap.
+
 **Verify after deploying:** `bash tools/verify_schema_pg.sh` (12
 scenarios — unchanged this round), `python3
 tools/audit_selfcontained.py`, `python3 tools/audit_handlers.py`, then
-the QA battery (27 suites, 1268 checks per repo — the round-18 suite
+the QA battery (27 suites, 1295 checks per repo — the round-18 suite
 includes a behavioral test of the sync engine against a fake
 PostgREST). Versions: portal `?v=54` on the changed admin-data assets /
-sw `tc-shell-v23-20261010`; deck `?v=57` /
-`hmg-classdeck-v15.0.0-r18-verified-sync-netfirst` / version.json
-15.0.0 build 23.
+sw `tc-shell-v23-20261010`; deck `?v=59` /
+`hmg-classdeck-v15.0.2-r18-write-probe` / version.json
+15.0.2 build 25. The Drive progress behavior is documented in
+`docs/GOOGLE-DRIVE-SYNC-GUIDE.md` (Parts 3 and 4).
