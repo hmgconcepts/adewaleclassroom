@@ -669,3 +669,65 @@ every other device said "nothing saved there yet"). The cloud-sync card
 shows what the account actually holds, "last sync" only counts when data
 moved, and the Tablet Live modal documents every field with examples
 and ✅/❌ guidance.
+
+## V52 — timezone truth, empty-ref race, TURN-sync truth, last-backup truth (round 16)
+
+**One database step:** run `database/complete-schema.sql` (all-inclusive —
+887 objects, nothing else needed). On an existing V51 project you may run
+`database/v52-timezone-truth.sql` alone instead: it installs
+`tc_my_tz()` (the viewer's home+own zone in one security-definer call),
+`tc_last_backup()` (the studio-wide backup truth for any authenticated
+member) and the `practice_settings.backup_path` column, then reloads
+PostgREST.
+
+**Every schedule time now shows BOTH zones.** The new `assets/js/tz.js`
+engine + `tc_my_tz()` render schedule datetimes — sessions, bookings,
+dashboard Next-class, homework CBT opens/closes, the LMS/library/
+resources/e-resources tables — as 🏠 studio time · 👤 viewer time with
+the ±Nh delta, but ONLY when the two zones actually differ (a
+Lagos–Lagos pair sees the familiar single time). Record each
+international student's, tutor's and parent's zone once on the
+**Timezone desk** (timezones.html) — it also hosts the meeting planner
+(one moment shown in every studio zone, with 🟢/🔴 working-hours flags,
+blackout notes and a copy-ready dual-time line) and live 1-second world
+clocks. Zones resolve: desk entry → role-table column → browser zone;
+pre-V52 databases degrade gracefully.
+
+**The "🔗 Link names are not loading" banner family is closed at the
+root.** The cause was never RLS: crud.js cached the EMPTY engagements
+map when the first read raced the session restore (RLS-as-anon returns
+0 rows, not an error). Reads are now session-gated, empties consult the
+tc_ref_labels RPC, empty maps are never cached, a 2.5s self-healing
+repaint recovers, and any auth-state change purges the caches. The five
+role-split pages (LMS, library, resources, e-resources, homework) now
+decide with `App.detectRole()` — up to 10s, then the tc_current_role
+RPC, then the cached profile — so a slow session restore can no longer
+drop a learner onto the staff table. Read-only viewers see "🎓 your
+class" / "linked ✓" cells and no ref banners at all; the student shelf
+gained a class filter.
+
+**ClassDeck 14.7.0 — saved on A, actually restored on B.** The round-16
+autopsy found push() uploaded user_id NULL whenever it was the session's
+first cloud call (the uid was resolved lazily, after the row was built)
+— RLS refused it and the failure was silent, so device A believed the
+key was saved while the account stayed empty. push() now resolves the
+token+uid first (JWT-sub fallback included), Generate/Save AWAIT their
+pushes and toast failures with the remedy, pull() recognises credential
+rows by name OR data shape (any legacy label still restores), and
+**Sync now** is a real two-way sync: it pushes channels the cloud lacks
+or holds differently, then pulls — "last sync" and "Account holds"
+update the moment a push lands.
+
+**"Last backup" can no longer say "never" on the wrong device.** The
+card is session-gated, reads the studio truth through tc_last_backup()
+(any authenticated member), re-renders on every auth change and after
+every backup path, and merges local + studio + Drive timestamps (newest
+wins, tooltip names the source). Backup paths also record WHERE the
+newest archive lives (`backup_path`: device filename or Drive file
+name).
+
+**Verify after deploying:** `bash tools/verify_schema_pg.sh` (11
+scenarios), `python3 tools/audit_selfcontained.py`, then the QA battery
+(25 suites, 1110 checks per repo). Versions: portal `?v=52` / sw
+`tc-shell-v21-20261010`; deck `?v=55` / `hmg-classdeck-v14.7.0-turnsync-truth`
+/ version.json 14.7.0 build 21.
