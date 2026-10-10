@@ -858,6 +858,48 @@ report upload progress. The automatic background sync shows the same
 truth as a floating pill, and restore/recovery report per-table import
 progress too. The completion line carries rows, size and duration.
 
+**V55 (round 20) — the persisting sync: the remedy chain itself was
+broken.** The field report after V54.2 shipped: the diagnosis showed
+every step ✅ including the safe write probe — and the account still
+held 0 rows ("It is not working"). Live verification confirmed the
+deployment, the healthy RPCs and the genuinely empty account; what kept
+the issue alive was everything AROUND the engine:
+1. **The one-page trap.** cloud-creds.js booted ONLY on teach.html —
+   but the PWA's start_url is index.html. "Open the classroom deck on
+   the device that has your key" opened a page where no pull, no
+   self-heal and no toast could ever run. New `js/cloud-sync-boot.js`
+   boots the sync on EVERY teacher-facing page (index, teach, admin,
+   stream, classroom, community, generate) — with a Store shim and a
+   mini-toast so pages without common.js behave identically.
+2. **The handover gap.** The first open after a redeploy still ran the
+   OLD build (the old service worker served the old cached page; the
+   new worker only controls the next load), and a long-lived PWA never
+   learned an update existed. Now: an update banner ("🔄 A new version
+   is ready — Reload now / Later"), re-checks on visibility change and
+   every 6 hours, and the page fetch bypasses the HTTP cache
+   (`cache: "no-cache"`). The remedy texts also say plainly: if nothing
+   shows the first time, reload once.
+3. **The silent unlinked branch.** A device holding credentials with
+   NO portal session did nothing and said nothing. It now says (once a
+   day) that its credentials exist only on that device and how to link
+   the account.
+4. **Relay-only blindness.** `isEmpty()` looked only at `cf_key`, so a
+   manual TURN/relay JSON (the documented fallback) counted as
+   "nothing saved" — no self-heal, no 📤 hint. `holdsLocal()` now
+   treats relay servers as real TURN data everywhere.
+5. **The blind report.** Diagnose gains a LOCAL inventory step (now 6
+   steps): "this device's saved credentials — 🔑 ✓ / none". The verdict
+   then decides: THIS device holds what the account lacks → press 🔄
+   Sync now; nothing local → the key lives where step 2 shows 🔑
+   (possibly a different browser/profile), with the exact re-enter
+   path.
+6. **The stale-read push (latent).** `syncNow()` pushed against the
+   stale in-memory copy when the fresh read failed — an outdated local
+   snapshot could overwrite newer account data. It now refuses to push
+   and says why.
+   The self-heal toasts also NAME the account, so a wrong-account
+   upload is instantly visible.
+
 **V54.2 (round-18 final) — the write probe, the visible self-heal, and
 the live-account verification.** The field report: the 🔍 Diagnose on an
 empty device showed all-green while the TURN key was still missing. The
@@ -914,10 +956,11 @@ stale-page trap.
 **Verify after deploying:** `bash tools/verify_schema_pg.sh` (12
 scenarios — unchanged this round), `python3
 tools/audit_selfcontained.py`, `python3 tools/audit_handlers.py`, then
-the QA battery (27 suites, 1295 checks per repo — the round-18 suite
-includes a behavioral test of the sync engine against a fake
-PostgREST). Versions: portal `?v=54` on the changed admin-data assets /
-sw `tc-shell-v23-20261010`; deck `?v=59` /
-`hmg-classdeck-v15.0.2-r18-write-probe` / version.json
-15.0.2 build 25. The Drive progress behavior is documented in
+the QA battery (29 suites, 1422 checks per repo — including
+`test_r18_engine.js`, a 67-scenario behavioral test of the sync engine
+against a fake PostgREST, and `test_r20_portal.js`, the round-20
+persistence suite). Versions: portal `?v=54` on the changed admin-data assets /
+sw `tc-shell-v23-20261010`; deck `?v=60` /
+`hmg-classdeck-v15.0.3-r20-cloudboot` / version.json
+15.0.3 build 26. The Drive progress behavior is documented in
 `docs/GOOGLE-DRIVE-SYNC-GUIDE.md` (Parts 3 and 4).
