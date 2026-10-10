@@ -1,6 +1,6 @@
 {
-  "version": "14.7.0",
-  "build": 21,
+  "version": "14.8.0",
+  "build": 22,
   "channel": "stable",
   "released": "2026-10-10",
   "features": [
@@ -73,6 +73,9 @@
     "v14.7-turnsync-uid-resolved-before-push",
     "v14.7-shape-based-credential-restore",
     "v14.7-real-two-way-sync-now",
-    "v14.7-last-sync-stamps-on-push"
+    "v14.7-last-sync-stamps-on-push",
+    "v14.8-credential-writes-via-rpc",
+    "v14.8-sync-card-renders-on-push",
+    "v14.8-honest-not-linked-save-warning"
   ]
 }

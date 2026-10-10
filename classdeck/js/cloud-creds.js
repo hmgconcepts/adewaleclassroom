@@ -307,8 +307,6 @@ window.CloudCreds = (function () {
     }
   };
 
-  /* ── public API ──────────────────────────────────────────────────── */
-
   /* V52 (round 16, items 8+9) — canonical channel resolution.
      The account's user_settings rows should be keyed "cd-turn"/"cd-stream",
      but any device that ever saved under a different label (an older build,
@@ -336,18 +334,89 @@ window.CloudCreds = (function () {
       Object.keys(value).some(function (k) { return String(value[k] || "") !== ""; }));
   }
 
+  /* V52 (round 17): canonical comparison — jsonb re-orders keys, so a raw
+     JSON.stringify(local) !== JSON.stringify(cloud) fired even when the
+     data was identical. Keys are sorted (deeply) before comparing. */
+  function canon(v) {
+    if (v === null || typeof v !== "object") return v;
+    if (Array.isArray(v)) return v.map(canon);
+    var out = {};
+    Object.keys(v).sort().forEach(function (k) { out[k] = canon(v[k]); });
+    return out;
+  }
+
+  /* ── public API ──────────────────────────────────────────────────── */
+
+  /* V53 (round 17, items 1+2) — THE SILENT-FAILURE FIX, server side.
+     The deck used to write credentials with a REST upsert
+     (`POST /user_settings?on_conflict=user_id,key` + a Prefer header).
+     That request is fragile against real databases: any drift between
+     what the request assumes and what the live table actually has —
+     a different constraint, a missing column, a PostgREST quirk —
+     comes back as a bare 4xx whose BODY the deck never read, so the
+     push failed with "unknown", the account stayed empty, and every
+     other device honestly said "nothing saved yet". The write now goes
+     through the V53 security-definer RPC tc_set_user_setting(p_key,
+     p_value): the database does the upsert against its own primary
+     key, and the deck reads and surfaces the exact error when anything
+     still goes wrong. The old upsert remains as a pre-V53 fallback. */
+  async function rpcSet(key, value) {
+    var h = await authedHeaders({ "Content-Type": "application/json" });
+    if (!h) return { ok: false, missing: true };
+    var ep = await endpoint();
+    var res = await fetch(ep.url + "/rest/v1/rpc/tc_set_user_setting", {
+      method: "POST", headers: h,
+      body: JSON.stringify({ p_key: key, p_value: value })
+    });
+    if (res.status === 404) return { ok: false, missing: true };   /* pre-V53 database */
+    if (!res.ok) {
+      var msg = "portal answered " + res.status;
+      try {
+        var err = await res.json();
+        if (err && (err.message || err.hint || err.details)) {
+          msg = (err.message || "") + (err.hint ? " — " + err.hint : "") + (err.details ? " (" + err.details + ")" : "");
+        }
+      } catch (e2) {}
+      return { ok: false, reason: msg };
+    }
+    return { ok: true };
+  }
+
   async function pull() {
     try {
-      var res = await get("/user_settings?select=key,value,updated_at");
-      if (!res) return false;
-      var rows = await res.json();
-      if (!Array.isArray(rows)) return false;
+      /* V53: reads also prefer the RPC (tc_get_user_settings) — same
+         security-definer truth, one call, and it keeps working even if
+         the table's SELECT policy is ever tightened. Falls back to the
+         plain table GET on a pre-V53 database. */
+      var rows = null;
+      var h = await authedHeaders();
+      if (h) {
+        var ep = await endpoint();
+        try {
+          var rres = await fetch(ep.url + "/rest/v1/rpc/tc_get_user_settings", {
+            method: "POST", headers: h, body: "{}"
+          });
+          if (rres.ok) {
+            rows = await rres.json();
+            if (!Array.isArray(rows)) rows = null;
+          } else if (rres.status === 401 || rres.status === 403) {
+            state.reason = "the portal refused the sync (signed in?)";
+            return false;
+          }
+          /* 404 = pre-V53 database → fall through to the table GET */
+        } catch (eRpc) {}
+      }
+      if (!rows) {
+        var res = await get("/user_settings?select=key,value,updated_at");
+        if (!res) return false;
+        rows = await res.json();
+        if (!Array.isArray(rows)) return false;
+      }
       var applied = [];
       var cloudKeys = {};
       state.cloud = {};     /* WHAT the account holds, by canonical channel */
-      state.cloudRows = {}; /* V52: the exact cloud payload per channel —
-                               syncNow() diffs against it to decide whether
-                               this device has something newer to publish. */
+      state.cloudRows = {}; /* the exact cloud payload per channel — what
+                               syncNow() diffs against */
       rows.forEach(function (r) {
         if (!r || !r.key) return;
         var canonical = channelForKey(r.key, r.value);
@@ -367,9 +436,10 @@ window.CloudCreds = (function () {
       /* round-12: a device that has credentials the cloud has NOT seen
          (saved before the V47 update ran, or created offline) publishes
          them now — the working setup wins, so the NEXT device is covered.
-         This closes the "saved it on the tablet, still empty on the
-         laptop" hole for credentials saved before syncing existed.
-         Awaited so that when pull() resolves, the sync is actually done. */
+         This is also the self-healing path: the first deck boot after the
+         V53 update pushes whatever this device holds, so an account that
+         previous silent failures left empty fills itself without the
+         teacher doing anything. */
       var pushes = [];
       Object.keys(CHANNELS).forEach(function (k) {
         if (cloudKeys[k]) return;
@@ -378,7 +448,6 @@ window.CloudCreds = (function () {
       });
       var pushResults = await Promise.all(pushes);
       state.ready = true;
-      if (!state.reason) state.reason = "";
       state.missing = false;
       state.lastChecked = Date.now();
       /* V51: "last sync" only counts when data actually moved: something
@@ -399,13 +468,12 @@ window.CloudCreds = (function () {
 
   /* V52 (round 16, item 9) — "Sync now" is now a REAL two-way sync:
      1. every channel this device holds that the cloud lacks, or holds
-        DIFFERENTLY (this device's snapshot ≠ the cloud payload), is
+        DIFFERENTLY (canonical diff — key order no longer lies), is
         pushed first (the local truth wins on a manual sync — the teacher
         pressed the button on the device that has the working setup);
      2. then pull() brings back anything THIS device lacks.
-     Before, "Sync now" only pulled — so on the device where the TURN key
-        was just generated it cheerfully reported "synced" while the new
-        key never left the device, and "last sync" stayed "not yet". */
+     V53: the pushes go through the RPC, so they can no longer fail
+     silently with "unknown". */
   async function syncNow() {
     var pushed = [];
     try {
@@ -417,7 +485,8 @@ window.CloudCreds = (function () {
       if (ch.isEmpty && ch.isEmpty()) return;          /* nothing local to offer */
       var localSnap = ch.snapshot();
       var cloudVal = (state.cloudRows || {})[k];
-      var differs = !cloudVal || JSON.stringify(cloudVal) !== JSON.stringify(localSnap);
+      var differs = !cloudVal ||
+        JSON.stringify(canon(cloudVal)) !== JSON.stringify(canon(localSnap));
       if (differs) pushed.push(k);
     });
     var results = [];
@@ -435,15 +504,10 @@ window.CloudCreds = (function () {
     var ch = CHANNELS[key];
     if (!ch) return false;
     try {
-      /* V52 (round 16, item 8) — THE SILENT-FAILURE FIX. The body used to
-         be built with state.uid BEFORE any request ran, and state.uid was
-         only resolved lazily inside post()→authedHeaders()→ensureToken().
-         When Save/Generate made the FIRST cloud call of the session, the
-         row went up with user_id NULL, the owner-only RLS policy refused
-         it (403), push() returned false — and nobody was told. The key
-         looked saved on device A while the account never received it, so
-         device B's Restore honestly said "nothing saved yet". The token
-         (and with it the uid) is now resolved BEFORE the body is built. */
+      /* V52 (round 16, item 8) — the token (and with it the uid) is
+         resolved BEFORE the payload is built. The original built the row
+         with state.uid while it was still null, uploaded user_id NULL,
+         and the RLS policy refused it invisibly. */
       var token = await ensureToken();
       if (!token || !state.uid) {
         state.reason = state.reason || "not signed in to the portal on this device";
@@ -454,31 +518,59 @@ window.CloudCreds = (function () {
          tombstone, so removed credentials are not resurrected on the
          next pull from another device. */
       if (!force && ch.isEmpty && ch.isEmpty()) return false;
+      /* V53 (round 17): RPC-first write — the database upserts against
+         its own primary key; no client-side on_conflict assumptions. */
+      var viaRpc = await rpcSet(key, snap);
+      if (viaRpc.ok) {
+        lsSet(SYNCED_AT + ":" + key, String(Date.now()));
+        stampSync(key, snap);
+        return true;
+      }
+      if (viaRpc.reason) { state.reason = viaRpc.reason; return false; }
+      /* pre-V53 database: the old upsert, but with the error body read */
       var res = await post("/user_settings?on_conflict=user_id,key",
         { user_id: state.uid, key: key, value: snap, updated_at: new Date().toISOString() },
         { Prefer: "resolution=merge-duplicates" });   /* upsert, not 409 */
       if (res && res.ok) {
         lsSet(SYNCED_AT + ":" + key, String(Date.now()));
-        /* V52 (item 9): a successful push IS a sync — the card's
-           "last sync" and "Account holds" now update the moment the key
-           is saved, not only after some later pull. */
-        state.lastSync = Date.now();
-        state.lastChecked = Date.now();
-        state.cloud = state.cloud || {};
-        state.cloudRows = state.cloudRows || {};
-        if (channelHasData(snap)) {
-          state.cloud[key] = true;
-          state.cloudRows[key] = snap;
-        } else {
-          delete state.cloud[key];
-          state.cloudRows[key] = snap;
-        }
-        state.reason = "";
+        stampSync(key, snap);
         return true;
       }
-      if (res && res.status === 404) { state.reason = "database update needed — run database/v47-cloud-credentials.sql"; state.missing = true; }
+      if (res && res.status === 404) {
+        state.reason = "database update needed — run database/v47-cloud-credentials.sql (and V53 for the sync RPCs)";
+        state.missing = true;
+      } else if (res) {
+        state.reason = "portal answered " + res.status + " — run database/complete-schema.sql on the studio database";
+        try {
+          var err = await res.json();
+          if (err && (err.message || err.hint)) {
+            state.reason = (err.message || "") + (err.hint ? " — " + err.hint : "");
+          }
+        } catch (e3) {}
+      } else if (!viaRpc.missing) {
+        state.reason = state.reason || "the portal refused the sync (signed in?)";
+      }
       return false;
-    } catch (e) { return false; }
+    } catch (e) {
+      state.reason = "portal unreachable (" + (e && e.message ? e.message : "network") + ")";
+      return false;
+    }
+  }
+
+  /* V53: a successful push IS a sync — update the card's truth at once. */
+  function stampSync(key, snap) {
+    state.lastSync = Date.now();
+    state.lastChecked = Date.now();
+    state.cloud = state.cloud || {};
+    state.cloudRows = state.cloudRows || {};
+    if (channelHasData(snap)) {
+      state.cloud[key] = true;
+      state.cloudRows[key] = snap;
+    } else {
+      delete state.cloud[key];
+      state.cloudRows[key] = snap;
+    }
+    state.reason = "";
   }
 
   function notify(applied) {

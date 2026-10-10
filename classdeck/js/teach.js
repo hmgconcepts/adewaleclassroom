@@ -2677,9 +2677,12 @@ on("#btnCfGen", "click", async () => {
     Store.set("cf_token", token);
     /* V52 (item 8): this push is AWAITED and its failure is never silent —
        the old fire-and-forget push could upload user_id NULL (uid not yet
-       resolved), get refused by RLS, and the teacher still saw "saved". */
+       resolved), get refused by RLS, and the teacher still saw "saved".
+       V53: the write goes through the tc_set_user_setting RPC, and the
+       sync card re-renders so "last sync" + "Account holds" move at once. */
     if (window.CloudCreds && CloudCreds.signedIn()) {
       const okPush = await CloudCreds.push("cd-turn");
+      try { renderCloudSyncCard(); } catch (e) {}
       if (!okPush) toast("⚠️ Credentials generated HERE, but the cloud copy failed: " + (CloudCreds.status().reason || "unknown") + ". Press ☁️ Sync now after fixing it — otherwise other devices stay empty.", "err", 12000);
       else toast("☁️ TURN credentials also saved to your account — every device you sign in on restores them.", "ok", 8000);
     }   /* V47: roam */
@@ -2887,12 +2890,23 @@ on("#setSave", "click", () => {
       if (window.CloudCreds && CloudCreds.signedIn()) {
         if (k2 || t2) {
           CloudCreds.push("cd-turn").then((ok) => {
-            if (ok) toast("☁️ TURN key saved to your account — every device you sign in on now restores it automatically.", "ok", 8000);
-            else toast("⚠️ TURN key saved on THIS device only — the cloud copy failed: " + (CloudCreds.status().reason || "unknown") + ". Press ☁️ Sync now to retry.", "err", 12000);
+            if (ok) {
+              toast("☁️ TURN key saved to your account — every device you sign in on now restores it automatically.", "ok", 8000);
+              try { renderCloudSyncCard(); } catch (e) {}
+            } else {
+              toast("⚠️ TURN key saved on THIS device only — the cloud copy failed: " + (CloudCreds.status().reason || "unknown") + ". Press ☁️ Sync now to retry.", "err", 12000);
+              try { renderCloudSyncCard(); } catch (e) {}
+            }
           });
         } else if (hadKey) {
           CloudCreds.push("cd-turn", true);
         }
+      } else if (k2 || t2) {
+        /* V53 (round 17, item 1): the honesty gap. Before this, saving a
+           key while NOT linked to the portal said nothing — the teacher
+           believed "saved" meant "saved to my account", and every other
+           device then honestly said "nothing saved yet". Say it plainly. */
+        toast("💾 Saved on THIS device only — no cloud account is linked here. Open ☁️ Cloud sync below, link your portal login once, and every device you sign in on restores this key automatically.", "err", 12000);
       }
     }
   }
