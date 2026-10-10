@@ -120,17 +120,34 @@ You need a free Google Cloud project. No billing, no card.
 ## Part 3 · Run and verify your first backup
 
 1. Press **☁️ Back up now**.
-2. Wait a few seconds. You should see:
-   `✅ Backed up 1,432 rows (612 KB) as tutoring-connect-backup-2026-08-16T20-31-05.json`
+2. **Watch the progress panel** (round 18): the backup reports every stage
+   before it completes, so you always know it is alive and how far along
+   it is —
+   * **Authorise → Collect data → Upload → Record**, with a live
+     percentage bar and a stage checklist,
+   * during collection: *“Collecting ‘learners’ — table 7 of 32…”*,
+   * during upload: the REAL byte count — *“Uploading 2.41 of 4.80 MB
+     (50%)…”* (the upload reports actual bytes sent, not a guess),
+   * when it finishes: *“✅ Backup complete — <file> · 1,432 rows ·
+     612 KB · took 18 s”*, plus the usual success toast.
+   The button locks while the backup runs so you cannot start two at
+   once. The **automatic** background backup shows the same truth as a
+   small floating pill in the corner of the screen — a backup is never
+   invisible while it runs.
 3. Press **📂 List backups** — the file appears with size and timestamp.
 4. Press **↗ Open Drive folder** — confirm it in Google Drive.
 
 **You are done.** With automatic backups on, any admin visit that finds a backup
-overdue will run one quietly in the background.
+overdue will run one quietly in the background (with its progress pill).
 
 ---
 
-## Part 4 · Restoring
+## Part 4 · Restoring (with progress, round 18)
+
+Restoring reports the same staged progress — *“Downloading the backup
+from Google Drive…”*, then *“Importing ‘learners’ — table 5 of 32…”*
+with a live count of rows saved — and finishes with
+*“✅ Restore complete — 1,432 row(s) imported.”*
 
 1. **Admin data** → **📂 List backups**.
 2. Find the backup you want → **Restore**.
