@@ -1,8 +1,8 @@
 {
-  "version": "14.6.0",
-  "build": 20,
+  "version": "14.7.0",
+  "build": 21,
   "channel": "stable",
-  "released": "2026-10-09",
+  "released": "2026-10-10",
   "features": [
     "custom-room-codes",
     "two-folder-generator",
@@ -69,6 +69,10 @@
     "v14.5-stream-page-deep-docs-checklist",
     "v14.6-turn-key-saved-to-cloud-on-save",
     "v14.6-honest-cloud-sync-card",
-    "v14.6-tablet-live-field-by-field-docs"
+    "v14.6-tablet-live-field-by-field-docs",
+    "v14.7-turnsync-uid-resolved-before-push",
+    "v14.7-shape-based-credential-restore",
+    "v14.7-real-two-way-sync-now",
+    "v14.7-last-sync-stamps-on-push"
   ]
 }

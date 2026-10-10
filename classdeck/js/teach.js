@@ -2675,7 +2675,14 @@ on("#btnCfGen", "click", async () => {
     Store.set("relay_expiry", Date.now() + ttl * 1000);
     Store.set("cf_key", keyId);
     Store.set("cf_token", token);
-    if (window.CloudCreds && CloudCreds.signedIn()) CloudCreds.push("cd-turn");   /* V47: roam */
+    /* V52 (item 8): this push is AWAITED and its failure is never silent —
+       the old fire-and-forget push could upload user_id NULL (uid not yet
+       resolved), get refused by RLS, and the teacher still saw "saved". */
+    if (window.CloudCreds && CloudCreds.signedIn()) {
+      const okPush = await CloudCreds.push("cd-turn");
+      if (!okPush) toast("⚠️ Credentials generated HERE, but the cloud copy failed: " + (CloudCreds.status().reason || "unknown") + ". Press ☁️ Sync now after fixing it — otherwise other devices stay empty.", "err", 12000);
+      else toast("☁️ TURN credentials also saved to your account — every device you sign in on restores them.", "ok", 8000);
+    }   /* V47: roam */
     updateRelayPreview();
     const hrs = Math.round(ttl / 3600);
     toast("✅ Cloudflare TURN credentials generated (" + hrs + "h) — press Save. From now on the studio RENEWS them automatically before they expire, so you only ever do this once.", "ok", 12000);
@@ -2881,6 +2888,7 @@ on("#setSave", "click", () => {
         if (k2 || t2) {
           CloudCreds.push("cd-turn").then((ok) => {
             if (ok) toast("☁️ TURN key saved to your account — every device you sign in on now restores it automatically.", "ok", 8000);
+            else toast("⚠️ TURN key saved on THIS device only — the cloud copy failed: " + (CloudCreds.status().reason || "unknown") + ". Press ☁️ Sync now to retry.", "err", 12000);
           });
         } else if (hadKey) {
           CloudCreds.push("cd-turn", true);
@@ -3956,9 +3964,20 @@ function renderCloudSyncCard() {
         '. ' + (st.lastSync ? 'Last real sync ' + esc(when) + '.' : 'Nothing stored yet — save once (⚙ Settings → Save) and every future device gets it.') + '</div>' +
       (st.reason ? '<div class="warn" style="margin-top:6px">⚠️ ' + esc(st.reason) + "</div>" : "");
     $("#cloudSyncNow").onclick = async () => {
-      const ok = await CloudCreds.pull();
+      const btn = $("#cloudSyncNow");
+      if (btn) { btn.disabled = true; btn.textContent = "🔄 Syncing…"; }
+      const r = await CloudCreds.syncNow();   /* V52: push-if-dirty THEN pull — a real two-way sync */
       const st2 = CloudCreds.status();
-      toast(ok && !st2.missing ? "☁️ Synced — credentials on this device are current." : "Sync problem: " + (st2.reason || "unknown"), ok ? "ok" : "err", 8000);
+      if (btn) { btn.disabled = false; btn.textContent = "🔄 Sync now"; }
+      if (!r || !r.ok || st2.missing) {
+        toast("Sync problem: " + (st2.reason || "unknown"), "err", 10000);
+      } else if (r.pushFailed && r.pushFailed.length) {
+        toast("⚠️ Pulled the account's credentials, but could not upload this device's " + r.pushFailed.join(", ") + " — " + (st2.reason || "try signing in to the portal again"), "err", 12000);
+      } else if (r.pushed && r.pushed.length) {
+        toast("☁️ Synced — uploaded " + r.pushed.join(", ") + " to your account and pulled the account's credentials back.", "ok", 9000);
+      } else {
+        toast("☁️ Synced — credentials on this device are current with your account.", "ok", 8000);
+      }
       renderCloudSyncCard();
     };
     $("#cloudUnlink").onclick = () => {

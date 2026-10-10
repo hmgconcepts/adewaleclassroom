@@ -31,6 +31,25 @@
        credentials the cloud has not seen WINS and pushes them up — so a
        working setup is never silently overwritten by a stale one.
      · PUSH is last-write-wins per channel.
+
+   V52 (round 16, items 8+9) — the "saved on A, empty on B" autopsy:
+     · push() built its row with state.uid BEFORE any request ran, and
+       the uid was only resolved lazily inside the request helpers — so
+       the FIRST push of a session uploaded user_id NULL, RLS refused
+       it, and the failure was SILENT. The key looked saved on device A
+       while the account never received it; device B's Restore then
+       honestly said "nothing saved yet". push() now resolves the token
+       and uid FIRST, and never fails silently (state.reason is set and
+       callers can toast it).
+     · pull() matched rows to channels by exact key name only; any row
+       saved under a different label was ignored. Channels now resolve
+       by NAME OR DATA SHAPE (a value with cf_key/cf_token/relay_servers
+       IS the TURN channel whatever its row is called).
+     · push() never counted as a sync, and "Sync now" only pulled — so
+       right after generating credentials the card said "synced" while
+       "last sync" stayed "not yet" and "Account holds" stayed empty.
+       A successful push now stamps the sync clock, and syncNow() (the
+       Sync-now button) pushes this device's differences BEFORE pulling.
    Sensitive values are never logged.
    ===================================================================== */
 "use strict";
@@ -155,11 +174,25 @@ window.CloudCreds = (function () {
 
   /* ── token: refresh it ourselves if expired (supabase-js is not
      loaded in the deck, so the portal cannot do it for us) ─────────── */
+  /* V52: uid extraction is belt-and-braces — the session normally has
+     user.id, but the JWT "sub" claim is the same truth and survives
+     session shapes that omit the embedded user object. */
+  function uidFromToken(token) {
+    try {
+      var parts = String(token || "").split(".");
+      if (parts.length < 2) return null;
+      var payload = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
+      return payload && payload.sub ? payload.sub : null;
+    } catch (e) { return null; }
+  }
+  function uidFromSession(sess, token) {
+    return (sess.user && sess.user.id) || sess.user_id || uidFromToken(token) || null;
+  }
   async function ensureToken() {
     var sess = readSession();
     if (!sess) { state.reason = "not signed in to the portal on this device"; return null; }
     var fresh = sess.access_token && sess.expires_at && (sess.expires_at * 1000) > Date.now() + 60000;
-    if (fresh) { state.uid = sess.user && sess.user.id ? sess.user.id : (sess.user_id || null); return sess.access_token; }
+    if (fresh) { state.uid = uidFromSession(sess, sess.access_token); if (!state.uid) { state.reason = "portal session has no user — sign in again"; return null; } return sess.access_token; }
     if (!sess.refresh_token) { state.reason = "portal session expired — sign in to the portal once"; return null; }
     try {
       var ep = await endpoint();
@@ -175,7 +208,8 @@ window.CloudCreds = (function () {
          portal picks it up too — one session, kept alive from either side */
       var next = Object.assign({}, sess, data);
       try { localStorage.setItem(sess._lsKey, JSON.stringify(next)); } catch (e) {}
-      state.uid = (data.user && data.user.id) || sess.user_id || null;
+      state.uid = uidFromSession(data, data.access_token);
+      if (!state.uid) { state.reason = "portal session has no user — sign in again"; return null; }
       return data.access_token;
     } catch (e) {
       state.reason = "portal session expired — sign in to the portal once";
@@ -274,6 +308,34 @@ window.CloudCreds = (function () {
   };
 
   /* ── public API ──────────────────────────────────────────────────── */
+
+  /* V52 (round 16, items 8+9) — canonical channel resolution.
+     The account's user_settings rows should be keyed "cd-turn"/"cd-stream",
+     but any device that ever saved under a different label (an older build,
+     a hand-run SQL insert, a renamed channel) produced rows that pull()
+     silently ignored — device B then reported "nothing saved yet" although
+     device A had saved. Resolution is now by NAME *or by DATA SHAPE*:
+     a row whose key mentions turn/relay, or whose value looks like
+     {cf_key, cf_token, relay_servers…}, IS the cd-turn channel regardless
+     of what it is called. The cloud truth is applied, never skipped. */
+  function channelForKey(key, value) {
+    if (CHANNELS[key]) return key;
+    var k = String(key || "").toLowerCase();
+    if (k.indexOf("turn") > -1 || k.indexOf("relay") > -1 ||
+        k === "cf" || k === "cf-creds" || k === "cfcreds") return "cd-turn";
+    if (k.indexOf("stream") > -1 || k.indexOf("tablet") > -1 || k.indexOf("live") > -1) return "cd-stream";
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      var ks = Object.keys(value);
+      if (ks.indexOf("cf_key") > -1 || ks.indexOf("cf_token") > -1 || ks.indexOf("relay_servers") > -1) return "cd-turn";
+      if (ks.indexOf("gateway") > -1 || ks.indexOf("destinations") > -1) return "cd-stream";
+    }
+    return null;
+  }
+  function channelHasData(value) {
+    return !!(value && typeof value === "object" &&
+      Object.keys(value).some(function (k) { return String(value[k] || "") !== ""; }));
+  }
+
   async function pull() {
     try {
       var res = await get("/user_settings?select=key,value,updated_at");
@@ -282,18 +344,25 @@ window.CloudCreds = (function () {
       if (!Array.isArray(rows)) return false;
       var applied = [];
       var cloudKeys = {};
-      state.cloud = {};   /* V51: WHAT the account holds — the sync card and
-                             the restore buttons report this honestly instead
-                             of implying "synced" for an empty account. */
+      state.cloud = {};     /* WHAT the account holds, by canonical channel */
+      state.cloudRows = {}; /* V52: the exact cloud payload per channel —
+                               syncNow() diffs against it to decide whether
+                               this device has something newer to publish. */
       rows.forEach(function (r) {
-        cloudKeys[r.key] = true;
-        if (r.key && r.value && typeof r.value === "object" &&
-            Object.keys(r.value).some(function (k) { return String(r.value[k] || "") !== ""; })) {
-          state.cloud[r.key] = true;
+        if (!r || !r.key) return;
+        var canonical = channelForKey(r.key, r.value);
+        if (canonical) {
+          cloudKeys[canonical] = true;
+          if (channelHasData(r.value)) {
+            state.cloud[canonical] = true;
+            state.cloudRows[canonical] = r.value;
+          } else {
+            state.cloudRows[canonical] = state.cloudRows[canonical] || r.value;  /* tombstone */
+          }
+          var ch = CHANNELS[canonical];
+          if (ch && ch.apply(r.value)) applied.push(canonical);
+          lsSet(SYNCED_AT + ":" + canonical, String(Date.now()));
         }
-        var ch = CHANNELS[r.key];
-        if (ch && ch.apply(r.value)) applied.push(r.key);
-        if (r.key) lsSet(SYNCED_AT + ":" + r.key, String(Date.now()));
       });
       /* round-12: a device that has credentials the cloud has NOT seen
          (saved before the V47 update ran, or created offline) publishes
@@ -307,17 +376,17 @@ window.CloudCreds = (function () {
         var ch = CHANNELS[k];
         if (ch && !ch.isEmpty()) pushes.push(push(k));
       });
-      await Promise.all(pushes);
+      var pushResults = await Promise.all(pushes);
       state.ready = true;
-      state.reason = "";
+      if (!state.reason) state.reason = "";
       state.missing = false;
       state.lastChecked = Date.now();
-      /* V51: "last sync" used to stamp on EVERY read — including login
-         reads of an EMPTY account, which read as "it is synchronising
-         empty details". It now only counts as a sync when data actually
-         moved: something was applied from the cloud, or this device
-         published credentials the cloud had not seen. */
-      if (applied.length || pushes.length || Object.keys(state.cloud).length) {
+      /* V51: "last sync" only counts when data actually moved: something
+         was applied from the cloud, this device published credentials the
+         cloud had not seen, or the account genuinely holds credentials
+         (a read that CONFIRMED agreement with a non-empty account is a
+         real sync of real data — not a login read of an empty account). */
+      if (applied.length || pushResults.some(function (ok) { return ok; }) || Object.keys(state.cloud).length) {
         state.lastSync = Date.now();
       }
       if (applied.length) notify(applied);
@@ -328,10 +397,58 @@ window.CloudCreds = (function () {
     }
   }
 
+  /* V52 (round 16, item 9) — "Sync now" is now a REAL two-way sync:
+     1. every channel this device holds that the cloud lacks, or holds
+        DIFFERENTLY (this device's snapshot ≠ the cloud payload), is
+        pushed first (the local truth wins on a manual sync — the teacher
+        pressed the button on the device that has the working setup);
+     2. then pull() brings back anything THIS device lacks.
+     Before, "Sync now" only pulled — so on the device where the TURN key
+        was just generated it cheerfully reported "synced" while the new
+        key never left the device, and "last sync" stayed "not yet". */
+  async function syncNow() {
+    var pushed = [];
+    try {
+      await ensureToken();
+    } catch (e) {}
+    Object.keys(CHANNELS).forEach(function (k) {
+      var ch = CHANNELS[k];
+      if (!ch || !ch.snapshot) return;
+      if (ch.isEmpty && ch.isEmpty()) return;          /* nothing local to offer */
+      var localSnap = ch.snapshot();
+      var cloudVal = (state.cloudRows || {})[k];
+      var differs = !cloudVal || JSON.stringify(cloudVal) !== JSON.stringify(localSnap);
+      if (differs) pushed.push(k);
+    });
+    var results = [];
+    for (var i = 0; i < pushed.length; i++) {
+      results.push(await push(pushed[i]));
+    }
+    var ok = await pull();
+    if (results.some(function (r) { return r; }) || Object.keys(state.cloud || {}).length) {
+      state.lastSync = Date.now();
+    }
+    return { ok: ok, pushed: pushed, pushFailed: pushed.filter(function (k, i2) { return !results[i2]; }) };
+  }
+
   async function push(key, force) {
     var ch = CHANNELS[key];
     if (!ch) return false;
     try {
+      /* V52 (round 16, item 8) — THE SILENT-FAILURE FIX. The body used to
+         be built with state.uid BEFORE any request ran, and state.uid was
+         only resolved lazily inside post()→authedHeaders()→ensureToken().
+         When Save/Generate made the FIRST cloud call of the session, the
+         row went up with user_id NULL, the owner-only RLS policy refused
+         it (403), push() returned false — and nobody was told. The key
+         looked saved on device A while the account never received it, so
+         device B's Restore honestly said "nothing saved yet". The token
+         (and with it the uid) is now resolved BEFORE the body is built. */
+      var token = await ensureToken();
+      if (!token || !state.uid) {
+        state.reason = state.reason || "not signed in to the portal on this device";
+        return false;
+      }
       var snap = ch.snapshot();
       /* force=true pushes even an EMPTY snapshot — the deliberate-clear
          tombstone, so removed credentials are not resurrected on the
@@ -340,7 +457,26 @@ window.CloudCreds = (function () {
       var res = await post("/user_settings?on_conflict=user_id,key",
         { user_id: state.uid, key: key, value: snap, updated_at: new Date().toISOString() },
         { Prefer: "resolution=merge-duplicates" });   /* upsert, not 409 */
-      if (res && res.ok) { lsSet(SYNCED_AT + ":" + key, String(Date.now())); return true; }
+      if (res && res.ok) {
+        lsSet(SYNCED_AT + ":" + key, String(Date.now()));
+        /* V52 (item 9): a successful push IS a sync — the card's
+           "last sync" and "Account holds" now update the moment the key
+           is saved, not only after some later pull. */
+        state.lastSync = Date.now();
+        state.lastChecked = Date.now();
+        state.cloud = state.cloud || {};
+        state.cloudRows = state.cloudRows || {};
+        if (channelHasData(snap)) {
+          state.cloud[key] = true;
+          state.cloudRows[key] = snap;
+        } else {
+          delete state.cloud[key];
+          state.cloudRows[key] = snap;
+        }
+        state.reason = "";
+        return true;
+      }
+      if (res && res.status === 404) { state.reason = "database update needed — run database/v47-cloud-credentials.sql"; state.missing = true; }
       return false;
     } catch (e) { return false; }
   }
@@ -352,8 +488,13 @@ window.CloudCreds = (function () {
   return {
     /* CloudCreds.pull() — call on deck boot when a portal session exists */
     pull: pull,
+    /* V52 (round 16, item 9): the REAL two-way sync behind "Sync now" —
+       pushes what this device holds that the cloud lacks (or holds
+       differently), then pulls. Returns {ok, pushed, pushFailed}. */
+    syncNow: syncNow,
     /* V51: what the account actually holds + when it was last read */
     cloud: function () { return state.cloud || {}; },
+    cloudRows: function () { return state.cloudRows || {}; },
     lastChecked: function () { return state.lastChecked || 0; },
     /* CloudCreds.push('cd-turn' | 'cd-stream', force?) — call after
        saving (force=true also pushes a deliberate clear) */
