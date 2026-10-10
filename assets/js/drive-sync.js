@@ -137,26 +137,46 @@ const DriveSync = {
   },
 
   /* ---------- ONE-CLICK BACKUP ---------- */
+  /* V54 (round 18, item 3) — the backup now reports REAL progress before
+     completion, at every stage, on every path (manual AND automatic):
+       1 Authorise · 2-5 Collect (per table, i of n) · 81-96 Upload (REAL
+     byte-level progress via XHR — fetch cannot report upload progress)
+     · 97 Record (studio stamp) · 100 done.
+     Callers pass onProgress(label, info); with no consumer a floating
+     pill shows the same truth so even the silent background sync is
+     visible while it runs. */
   async backupNow(opts) {
     opts = opts || {};
+    const t0 = Date.now();
     if (!this.sb()) throw new Error('Database not configured.');
     if (!window.DataPortability) throw new Error('Data portability engine not loaded yet — try again in a few seconds.');
     DataPortability.init(this.sb());
-    this._progress(opts, 'Authorising with Google…');
+    this._progress(opts, 'Authorising with Google…', { stage: 'auth', pct: 2 });
     const folderId = await this.ensureFolder(opts.interactive !== false);
-    this._progress(opts, 'Collecting all tables (this can take a minute)…');
-    const env = await DataPortability.collectFull();
+    this._progress(opts, 'Backup folder ready…', { stage: 'folder', pct: 5 });
+    const env = await DataPortability.collectFull(null, (i, n, table) => {
+      this._progress(opts, 'Collecting \u201c' + table + '\u201d — table ' + i + ' of ' + n + '…', {
+        stage: 'collect', pct: 5 + Math.round(75 * i / n), tables: { done: i, total: n, current: table } });
+    });
     const json = JSON.stringify(env);
     const name = 'school-connect-backup-' + new Date().toISOString().replace(/[:]/g, '-').slice(0, 19) + '-' + env.meta.row_count + 'rows.json';
-    this._progress(opts, 'Uploading ' + (json.length / 1048576).toFixed(2) + ' MB to Google Drive…');
+    this._progress(opts, 'Uploading ' + (json.length / 1048576).toFixed(2) + ' MB to Google Drive…', { stage: 'upload', pct: 81 });
     const boundary = 'scb' + Date.now() + Math.random().toString(36).slice(2);
     const body = '--' + boundary + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' +
       JSON.stringify({ name, parents: [folderId], mimeType: 'application/json',
         description: 'Tutoring Connect portable backup — ' + ((window.SCHOOL && window.SCHOOL.name) || '') + ' — restorable from admin-data.html' }) +
       '\r\n--' + boundary + '\r\nContent-Type: application/json\r\n\r\n' + json + '\r\n--' + boundary + '--';
-    const up = await (await this.api('/upload/drive/v3/files?uploadType=multipart&fields=id,name,size', {
-      method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + boundary }, body, _interactive: opts.interactive !== false
-    })).json();
+    /* XHR, not fetch: fetch() cannot report UPLOAD progress — the teacher
+       watched a motionless "Uploading…" line for minutes on big archives. */
+    const token = await this.getToken(opts.interactive !== false);
+    const up = await this.xhrUpload('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,size', {
+      'Authorization': 'Bearer ' + token,
+      'Content-Type': 'multipart/related; boundary=' + boundary
+    }, body, (loaded, total) => {
+      const mb = (x) => (x / 1048576).toFixed(2);
+      this._progress(opts, 'Uploading ' + mb(loaded) + ' of ' + mb(total) + ' MB (' + Math.round(100 * loaded / Math.max(1, total)) + '%)…', {
+        stage: 'upload', pct: 81 + Math.round(15 * loaded / Math.max(1, total)), upload: { loaded, total } });
+    });
     try { await this.saveCfg({ lastBackup: new Date().toISOString() }); } catch (_) {}
     /* V51: the unified studio record — every backup path writes this one
        column, and every device reads it on the admin-data page.
@@ -179,9 +199,32 @@ const DriveSync = {
       }
     } catch (_) {}
     this.setState({ lastBackupLocal: Date.now() });
+    this._progress(opts, 'Recording the backup in the studio records…', { stage: 'stamp', pct: 97 });
     this.trimOld(folderId).catch(() => {});
-    this._progress(opts, '');
-    return { file: up, rows: env.meta.row_count, bytes: json.length };
+    this._progress(opts, '', { stage: 'done', pct: 100 });
+    return { file: up, rows: env.meta.row_count, bytes: json.length, ms: Date.now() - t0 };
+  },
+  /* V54: the byte-level uploader behind the real progress bar. */
+  xhrUpload(url, headers, body, onProgress) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', url, true);
+      Object.keys(headers || {}).forEach((h) => xhr.setRequestHeader(h, headers[h]));
+      xhr.upload.onprogress = (ev) => { if (onProgress && ev.lengthComputable) onProgress(ev.loaded, ev.total); };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try { resolve(JSON.parse(xhr.responseText)); }
+          catch (_) { reject(new Error('Google Drive returned an unreadable success response.')); }
+        } else {
+          let m = 'Google Drive error HTTP ' + xhr.status;
+          try { const j = JSON.parse(xhr.responseText); m = (j.error && j.error.message) || m; } catch (_) {}
+          reject(new Error(m));
+        }
+      };
+      xhr.onerror = () => reject(new Error('The upload to Google Drive failed (network error).'));
+      xhr.onabort = () => reject(new Error('The upload to Google Drive was aborted.'));
+      xhr.send(body);
+    });
   },
   async trimOld(folderId) {
     const list = await this.listBackups(folderId);
@@ -197,13 +240,22 @@ const DriveSync = {
     const r = await (await this.api('/drive/v3/files?q=' + q + '&orderBy=createdTime desc&pageSize=100&fields=files(id,name,size,createdTime)')).json();
     return r.files || [];
   },
-  async restoreFrom(fileId, mode) {
+  /* V54 (round 18, item 3): restore reports progress too — download
+     first, then per-table import counts. */
+  async restoreFrom(fileId, mode, onProgress) {
     if (!window.DataPortability) throw new Error('Data portability engine not loaded yet.');
     DataPortability.init(this.sb());
+    const rep = { onProgress };
+    this._progress(rep, 'Downloading the backup from Google Drive…', { stage: 'download', pct: 5 });
     const r = await this.api('/drive/v3/files/' + fileId + '?alt=media');
     let env; try { env = JSON.parse(await r.text()); } catch (_) { throw new Error('That file is not a valid Tutoring Connect backup.'); }
     if (!env || !env.tables) throw new Error('That file is not a Tutoring Connect portable archive.');
-    return DataPortability.importArchive(env, mode || 'upsert');
+    const report = await DataPortability.importArchive(env, mode || 'upsert', (i, n, table, saved) => {
+      this._progress(rep, 'Importing \u201c' + table + '\u201d — table ' + i + ' of ' + n + '…', {
+        stage: 'import', pct: 10 + Math.round(85 * i / Math.max(1, n)), tables: { done: i, total: n, current: table, saved } });
+    });
+    this._progress(rep, '', { stage: 'done', pct: 100 });
+    return report;
   },
   async deleteBackup(fileId) { await this.api('/drive/v3/files/' + fileId, { method: 'DELETE' }); },
 
@@ -287,9 +339,38 @@ const DriveSync = {
       document.body.appendChild(el);
     } catch (_) {}
   },
-  _progress(opts, msg) {
-    if (opts && typeof opts.onProgress === 'function') { try { opts.onProgress(msg); } catch (_) {} }
-    else if (msg && typeof toast === 'function' && opts && opts.interactive !== false) toast(msg, 'info', 2500);
+  /* V54 (round 18, item 3): progress is now (label, info) — info carries
+     {stage, pct, tables?, upload?}. With an onProgress consumer the caller
+     renders it; WITHOUT one (the automatic background sync, or any future
+     call site) a small floating pill shows the same live truth, so a
+     backup is NEVER invisible while it runs. */
+  _progress(opts, msg, info) {
+    info = info || {};
+    if (opts && typeof opts.onProgress === 'function') {
+      try { opts.onProgress(msg, info); } catch (_) {}
+      return;
+    }
+    this._pill(msg, info);
+  },
+  /* the floating progress pill (auto-sync and any consumer-less path) */
+  _pill(label, info) {
+    try {
+      let el = document.getElementById('sc-drive-progress');
+      if (!label) { if (el) el.remove(); return; }
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'sc-drive-progress';
+        el.style.cssText = 'position:fixed;bottom:14px;right:14px;z-index:2147481000;background:#0f172a;color:#fff;font:600 12.5px/1.5 system-ui;padding:10px 14px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.35);max-width:320px';
+        el.innerHTML = '<div id="sc-drive-progress-label" style="margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>' +
+          '<div style="height:6px;border-radius:3px;background:rgba(255,255,255,.25);overflow:hidden">' +
+          '<div id="sc-drive-progress-bar" style="height:100%;width:2%;background:#31c48d;border-radius:3px;transition:width .25s"></div></div>';
+        document.body.appendChild(el);
+      }
+      const lab = document.getElementById('sc-drive-progress-label');
+      const bar = document.getElementById('sc-drive-progress-bar');
+      if (lab) lab.textContent = '\u2601\ufe0f ' + label;
+      if (bar && typeof info.pct === 'number') bar.style.width = Math.max(2, Math.min(100, info.pct)) + '%';
+    } catch (_) {}
   }
 };
 window.DriveSync = DriveSync;

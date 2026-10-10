@@ -53,10 +53,15 @@ const DataPortability = {
     }
     return rows;
   },
-  async collectFull(selected) {
+  /* V54 (round 18, item 3): onTable(i, n, table) — the live progress
+     callback the Drive backup panel renders ("Collecting X — table 3 of
+     32…"). Optional and backward-compatible. */
+  async collectFull(selected, onTable) {
     const names = selected && selected.length ? selected : this.TABLES;
     const tables = {}, errors = {};
-    for (const t of names) {
+    for (let ti = 0; ti < names.length; ti++) {
+      const t = names[ti];
+      if (onTable) { try { onTable(ti + 1, names.length, t); } catch (_) {} }
       try { tables[t] = await this.fetchAll(t); }
       catch (e) { errors[t] = e.message || String(e); tables[t] = []; }
     }
@@ -88,10 +93,15 @@ const DataPortability = {
     if (mode === 'recovery') this.RECOVERY_STRIP.forEach(k => { if (k in out) out[k] = null; });
     return out;
   },
-  async importArchive(env, mode) {
+  /* V54 (round 18, item 3): onTable(i, n, table, saved) — live restore
+     progress for the Drive restore panel. Optional. */
+  async importArchive(env, mode, onTable) {
     const seal = await this.verifySeal(env);
     if (seal.sealed && !seal.ok) throw Error('Archive seal mismatch — file may be corrupted.');
     const report = [];
+    const todo = this.TABLES.filter(t => (env.tables && env.tables[t] && env.tables[t].length) ||
+      !(mode === 'recovery' && this.RECOVERY_SKIP.includes(t)));
+    let ti = 0;
     for (const table of this.TABLES) {
       if (mode === 'recovery' && this.RECOVERY_SKIP.includes(table)) { report.push({ table, saved: 0, note: 'skipped in recovery' }); continue; }
       const rows = (env.tables && env.tables[table]) || [];
@@ -104,6 +114,8 @@ const DataPortability = {
         if (r.error) failed += chunk.length; else saved += chunk.length;
       }
       report.push({ table, saved, failed });
+      ti++;
+      if (onTable) { try { onTable(ti, todo.length, table, saved); } catch (_) {} }
     }
     return report;
   },
