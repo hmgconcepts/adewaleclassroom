@@ -7,9 +7,10 @@
 <title>Multi-subject CBT • ADEWALE CLASSROOM</title>
 <meta name="robots" content="noindex,nofollow">
 <meta name="description" content="UTME-style sitting. Shared timer. Per-subject and overall scores. Registered papers use student ID only. Each subject pushes its own scoresheet row.">
-<meta name="theme-color" content="#0506ae">
+<meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#0506ae">
 <link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/style.css?v=55">
 <link rel="stylesheet" href="assets/css/layouts.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/js/config.js?v=53"></script>
@@ -351,7 +352,7 @@ const MM = {
 
   async save(){
     const say = (h, bad) => document.getElementById('mm-status').innerHTML =
-      '<div style="padding:10px 12px;border-radius:10px;background:#fff;border-left:4px solid ' +
+      '<div style="padding:10px 12px;border-radius:10px;background:var(--card-bg,#fff);border-left:4px solid ' +
       (bad ? '#b42318' : '#047857') + '">' + h + '</div>';
     const title = document.getElementById('mm-title').value.trim();
     const code  = document.getElementById('mm-code').value.trim().toUpperCase();
@@ -421,7 +422,7 @@ const MM = {
       '<th></th><th style="text-align:left;padding:6px 8px">Paper</th><th style="text-align:left;padding:6px 8px">Code</th>' +
       '<th style="text-align:left;padding:6px 8px">Kind</th><th style="text-align:left;padding:6px 8px">Subject name for this sitting</th>' +
       '</tr></thead><tbody>' +
-      data.map((p, i) => '<tr style="border-bottom:1px solid #f1f5f9">' +
+      data.map((p, i) => '<tr style="border-bottom:1px solid var(--gray-100,#f1f5f9)">' +
         '<td style="padding:6px 8px"><input type="checkbox" data-mmc="' + i + '"></td>' +
         '<td style="padding:6px 8px"><b>' + this.esc(p.title) + '</b></td>' +
         '<td style="padding:6px 8px"><code>' + this.esc(p.code || '') + '</code></td>' +
@@ -823,6 +824,38 @@ const MM = {
 };
 window.MM = MM;
 document.addEventListener('DOMContentLoaded', () => { try { CBT.init(window.sb); } catch(_){} MM.init(); });
+</script>
+
+<!-- r21 (item 2): text-size stepper — every system, every eyesight, crisp text.
+     Persisted per browser; scales the whole page container (zoom reflows, it
+     is not a transform, so nothing is cut off). -->
+<div id="tcTextSize" style="position:fixed;left:14px;bottom:14px;z-index:9992;display:flex;align-items:center;gap:2px;background:var(--card-bg,#fff);border:1px solid var(--gray-300,#cbd5e1);border-radius:999px;padding:4px 6px;box-shadow:0 4px 14px rgba(0,0,0,.18)">
+  <button type="button" id="tcTsMinus" title="Smaller text" style="border:0;background:none;font-size:15px;font-weight:800;color:var(--field-fg,#1e293b);cursor:pointer;padding:4px 8px">A−</button>
+  <span id="tcTsVal" style="font-size:11px;font-weight:700;color:var(--field-fg,#1e293b);min-width:34px;text-align:center">100%</span>
+  <button type="button" id="tcTsPlus" title="Larger text" style="border:0;background:none;font-size:17px;font-weight:800;color:var(--field-fg,#1e293b);cursor:pointer;padding:4px 8px">A+</button>
+  <button type="button" id="tcTsReset" title="Reset to 100%" style="border:0;background:none;font-size:11px;color:var(--field-fg,#1e293b);cursor:pointer;padding:4px 6px;opacity:.7">reset</button>
+</div>
+<script>
+(function () {
+  var KEY = 'tc-text-scale';
+  var scale = 1;
+  try { scale = Math.max(0.8, Math.min(1.5, Number(localStorage.getItem(KEY)) || 1)); } catch (e) { scale = 1; }
+  function apply() {
+    var main = document.querySelector('main.container') || document.body;
+    try { main.style.zoom = scale; } catch (e) {}
+    var v = document.getElementById('tcTsVal');
+    if (v) v.textContent = Math.round(scale * 100) + '%';
+    try { localStorage.setItem(KEY, String(scale)); } catch (e) {}
+  }
+  function bind() {
+    var p = document.getElementById('tcTsPlus'), m = document.getElementById('tcTsMinus'), r = document.getElementById('tcTsReset');
+    if (p) p.addEventListener('click', function () { scale = Math.min(1.5, Math.round((scale + 0.1) * 10) / 10); apply(); });
+    if (m) m.addEventListener('click', function () { scale = Math.max(0.8, Math.round((scale - 0.1) * 10) / 10); apply(); });
+    if (r) r.addEventListener('click', function () { scale = 1; apply(); });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function () { bind(); apply(); });
+  else { bind(); apply(); }
+})();
 </script>
 </body>
 </html>
