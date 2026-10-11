@@ -1782,7 +1782,9 @@ Workspace budget checked and under the cap.
 
 ---
 
-# ROUND 21 AUDIT (2026-10-10)
+---
+
+# ROUND 21 AUDIT (2026-10-11)
 
 ## The report — seven items
 
@@ -1864,13 +1866,17 @@ to promoted staff (`_privilegedRoster`/`_pushPrivileged`).
 
 The Co-Tutor console (join.js, supersedes the assistant panel) carries
 the full classroom toolkit: waiting-room admit/deny, per-student
-mic/camera/screen/class-screen control, kick, mute all, lower all hands,
-lock, spotlight, announcements, polls. Every action is authorised on the
-TEACHER'S room object — rtc.js honours `cohostAction` only from promoted
-peers, so the UI can never grant itself anything. Structural exceptions
-that stay Tutor-only by design (the Tutor owns the room): ending the
-class, promoting/demoting Co-Tutors, and the device-bound broadcast/
-recording settings.
+mic/camera/screen control, kick, mute all, lower all hands, lock,
+spotlight, announcements, polls. **The Co-Tutor's screen control offers
+the SAME audience choice as the Tutor's** — a chooser (`.ct-scr-aud`)
+with "Teacher only" / "The WHOLE CLASS (you included)" / "Stop", honest
+about who sees what: a teacher-only share rides the host pipe, a class
+share is relayed to everyone including the Co-Tutor. Every action is
+authorised on the TEACHER'S room object — rtc.js honours `cohostAction`
+only from promoted peers, so the UI can never grant itself anything.
+Structural exceptions that stay Tutor-only by design (the Tutor owns the
+room): ending the class, promoting/demoting Co-Tutors, and the
+device-bound broadcast/recording settings.
 
 ## Item 5 — screen/whiteboard quality (FIXED)
 
@@ -1931,6 +1937,22 @@ floors. Fixes in `assets/css/style.css`:
 - **A− / A+ text-size stepper** on cbt-exam.html and cbt-multi.html:
   scales the whole page container 80%–150%, persisted per browser
   (`tc-text-scale`) — every eyesight, every screen.
+
+The CBT pages' OWN surfaces were swept too (the second half of the
+diagnosis):
+
+- `assets/js/cbt-exam-kit.js` `injectCSS`: all 23 `tc-*` surfaces (the
+  calculator, science keyboard, question palette, tool panels, brand
+  banner) now ride the theme tokens (`--card-bg`, `--field-bg`,
+  `--field-fg`, `--gray-*`, `--primary`, `--white` — each with a
+  light-mode fallback) instead of hardcoded `#fff`/`#0506ae`/`#0f172a`.
+- `cbt-multi.html`: the builder's save-status box (`background:#fff`)
+  and paper-table rows now ride `var(--card-bg)` / `var(--gray-100)` —
+  the same white-on-white class of bug as the invisible typed names.
+- Verified clean: `cbt.js` `renderQuestion` (themed `.card cbt-q` +
+  `var(--accent)`), the exam `#code` gate (a themed `.form-input`), and
+  the deck's `#cdScrAud` chooser (`.modal-back`/`.modal`/`.btn.danger`/
+  `.btn.ghost` all present in the deck CSS).
 - Changed stylesheet cache-busted `?v=55` on all five CBT pages; portal
   sw bumped `tc-shell-v24-20261010` so every device pulls fresh CSS.
 
@@ -1940,25 +1962,62 @@ Twin-synced (diff-verified identical, TC-only `tools/` aside):
 classdeck/js/{rtc,teach,join,webm-cues,enhancements}.js,
 classdeck/{teach.html, join.html}, classdeck/css/style.css,
 classdeck/{sw.js, version.json}, assets/css/style.css,
-{cbt-exam,cbt-multi,cbt-review,cbt-results,cbt-prompts}.html, sw.js.
+assets/js/cbt-exam-kit.js, {cbt-exam,cbt-multi,cbt-review,cbt-results,
+cbt-prompts}.html, sw.js, PROMPT_AUDIT.md, docs/PAGE-DIRECTORY.md.
+
+## Generator tooling defects found and fixed during the round
+
+- `tools/test_v27_verify.js` had two brittle literals (the rbac SHELL
+  array matched only one exact whitespace layout; public-book was pinned
+  to a "7 → 28 classes" phrasing that no longer exists) — both fail on
+  r20 HEAD too. Replaced with content-true checks.
+- `tools/test_v28_verify.js` matched only one schema-registry tuple
+  format; the consolidated schema ships two (`('rooms','capacity','why')`
+  registry rows and `('badges', 'awarded_on date')` enrichment rows).
+  The regex now accepts both; the empirical PG harness (which applies
+  the real schema) had already proven the schema itself clean.
+- `tools/sync_all.sh` brand-bake guard rejected the three pages with
+  custom font links (index.html wght@300..800, site-index.html +
+  Fraunces, payment-required.html 400;600;700) on EVERY run, so the
+  strip-and-re-add churned blank lines into them and the mirror copied
+  them back and forth. The guard now accepts any Plus Jakarta Sans link;
+  the churned blank-line runs were collapsed; idempotency proven by
+  re-run (0 copied, 0 re-baked).
+- The same script's workspace-budget guard counted `.npm`/`.cache`
+  (never persisted by the snapshot policy), so a fresh `npm install
+  jsdom` alone reported 134 MB while the true persisted size was ~91 MB.
+  It now measures what actually persists.
+- Doc-structure audit: PAGE-DIRECTORY.md still documented `builder.html`
+  (deleted from the site by the owner in Aug 2026) — the section is now
+  an explicit RETIRED entry and the 10 neighbour lists were corrected.
 
 ## Versions
 
-Deck `15.1.0` build 27, sw `hmg-classdeck-v15.1.0-r21-classflex`
-(webm-cues.js precached), all deck assets `?v=61` (70 refs swept),
-seven feature tags in version.json. Portal sw `tc-shell-v24-20261010`.
+Deck `15.1.0` build 27 (released 2026-10-11), sw
+`hmg-classdeck-v15.1.0-r21-classflex` (webm-cues.js precached), all deck
+assets `?v=61` (70 refs swept, zero `?v=60` left), seven feature tags in
+version.json. Portal sw `tc-shell-v24-20261010`; CBT stylesheets `?v=55`.
 
-## QA tally (round 21)
+## QA tally (round 21 — final)
 
-New suites: `test_r21_classflex.js` (70 checks across all six items +
-version/syntax pins — includes inline-script parse checks of every
-patched HTML page) and `test_r21_webm_cues.js` (13 EBML unit checks:
-cluster parse, Cue-point math, idempotency, garbage tolerance).
-Battery: **31 suites × 1501 checks per repo, both repos, run twice —
-0 failures, deterministic.** PostgreSQL 17 harness: complete-schema.sql
-applies cleanly with the Supabase stubs (auth + storage) — 403 public
-objects — and drive-sync.sql, keep-alive.sql, my-work-board.sql all OK,
-on both repos. The battery's VM harness caught and fixed one real
-defect pre-ship (an undeclared `coRosterData`/`coTutorPanelEl` implicit
-global in join.js — declared properly now). Zips rebuilt
-(436 + 466 files).
+New suites: `test_r21_classflex.js` (79 checks across all six items +
+the CBT-page surfaces + version/syntax pins, including inline-script
+parse checks of every patched HTML page) and `test_r21_webm_cues.js`
+(13 EBML unit checks: cluster parse, cue-point math, segment-size
+rewrite, idempotency, garbage tolerance).
+
+Battery: **31 suites × 1513 checks per repo, both repos, run twice —
+0 failures, deterministic** (the round-9 schema suite now runs its full
+empirical PostgreSQL verification: FRESH / LEGACY / RE-RUN / MIGRATIONS
+all clean against a real PostgreSQL 17 cluster; the consolidated schema
+applies with 403 public objects and drive-sync / keep-alive /
+my-work-board all OK on both repos).
+
+The battery's VM harness caught and fixed one real defect pre-ship (an
+undeclared `coRosterData`/`coTutorPanelEl` implicit global in join.js —
+declared properly now). Generator tools: 6 verify scripts × both repos
+all pass after un-brittling. Zips rebuilt from the final content:
+adewaleclassroom_patched.zip (436 files), tutoringconnect_patched.zip
+(466 files), deliverables/tutoring-connect-suite.zip (1034 entries,
+18 MB). Workspace 93 MB persisted (110 MB guard). Both repo trees clean
+after commit.
