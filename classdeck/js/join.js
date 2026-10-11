@@ -895,7 +895,29 @@ function handleCoRoster(d) {
     mk2("\u{1F3A4}", "Spotlight " + st.name, () => { try { sRoom.coHostAction("spotlight", null, { name: st.name }); } catch (e) {} });
     mk2("\u{1F3A7}", st.micAllowed ? "Revoke mic" : "Allow mic", () => { try { sRoom.coHostAction("allowMic", st.peerId, { on: !st.micAllowed }); } catch (e) {} });
     mk2("\u{1F4F7}", "Ask camera", () => { try { sRoom.coHostAction("requestCam", st.peerId, { on: true }); } catch (e) {} });
-    mk2("\u{1F5A5}", "Ask screen (class sees it)", () => { try { sRoom.coHostAction("requestScr", st.peerId, { on: true, audience: "class" }); } catch (e) {} });
+    /* r21 (item 4 × item 6): a Co-Tutor has the SAME audience choice as the
+       Tutor — "teacher only" or "the whole class" — instead of a hardcoded
+       one. The chooser is honest about who sees what: a teacher-only share
+       goes to the Tutor's host pipe; a class share is relayed to everyone
+       (this Co-Tutor included). */
+    mk2("\u{1F5A5}", "Ask " + st.name + "'s screen — choose who sees it", () => {
+      let ch = r.nextElementSibling;
+      if (ch && ch.classList && ch.classList.contains("ct-scr-aud")) { ch.remove(); return; }
+      document.querySelectorAll(".ct-scr-aud").forEach((n) => { try { n.remove(); } catch (e) {} });
+      ch = document.createElement("div");
+      ch.className = "ct-scr-aud";
+      ch.style.cssText = "display:flex;flex-direction:column;gap:4px;margin:4px 0 6px;padding:6px;border:1px solid rgba(148,163,184,.4);border-radius:8px";
+      const opt = (label, fn) => {
+        const b = document.createElement("button");
+        b.textContent = label;
+        b.addEventListener("click", () => { try { fn(); } catch (e) {} try { ch.remove(); } catch (e) {} });
+        ch.appendChild(b);
+      };
+      opt("\u{1F464} Teacher only", () => sRoom.coHostAction("requestScr", st.peerId, { on: true, audience: "me" }));
+      opt("\u{1F468}\u{200D}\u{1F469}\u{200D}\u{1F467} The WHOLE CLASS (you included)", () => sRoom.coHostAction("requestScr", st.peerId, { on: true, audience: "class" }));
+      opt("\u23F9 Stop " + st.name + "'s screen", () => sRoom.coHostAction("requestScr", st.peerId, { on: false }));
+      r.insertAdjacentElement("afterend", ch);
+    });
     mk2("\u2715", "Remove " + st.name + " from the class", () => {
       if (confirm("Remove " + st.name + " from the class?")) { try { sRoom.coHostAction("kick", st.peerId); } catch (e) {} }
     });

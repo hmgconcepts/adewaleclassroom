@@ -291,6 +291,7 @@ hr.sep { border: none; border-top: 1px solid var(--line); margin: 10px 0; }
 #coTutorPanel .ct-pending { margin-bottom: 8px; padding: 6px 8px; background: rgba(255,179,71,.12); border-radius: 8px; }
 #coTutorPanel .ct-stu { display: flex; align-items: center; gap: 5px; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,.07); }
 #coTutorPanel .ct-stu span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#coTutorPanel .ct-scr-aud button { text-align: left; }   /* r21: Co-Tutor screen-audience chooser */
 
 /* ── r21 (item 6): a classmate's screen shown to the class (student side) ── */
 #cdClassScreen { position: fixed; right: 12px; bottom: 74px; z-index: 700; width: min(480px, 94vw);

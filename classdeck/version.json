@@ -2,7 +2,7 @@
   "version": "15.1.0",
   "build": 27,
   "channel": "stable",
-  "released": "2026-10-10",
+  "released": "2026-10-11",
   "features": [
     "custom-room-codes",
     "two-folder-generator",
