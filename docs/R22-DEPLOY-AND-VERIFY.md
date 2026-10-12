@@ -68,19 +68,29 @@ After the commit, watch the Vercel dashboard until the deployment turns
    NEW file in VLC and click timestamps — it jumps. (If your browser blocked
    the automatic download, the Save button always works.)
 
-## 4. The seek fix — how to confirm it on your laptop
+## 4. The format fix — how to confirm it on your laptop
 
-- **NEW recordings** (made after deploying build 28): the repair runs
-  automatically the moment you stop recording. Download one, open it in
-  VLC/Windows Media Player, and click timestamps at 10s, 1min, mid-video —
-  it must jump cleanly. (Verified here with ffmpeg 7.1.5 on real
-  MediaRecorder-style files: 22/22 seek points clean, bit-identical decode.)
-- **OLD recordings** (saved with build 27 or earlier): they were written by
-  the old pipeline and stay broken **as files** — repair them once with the
-  built-in tool: teacher console → **⚙ Settings → "🛠 Repair a recording
-  (fixes 'click a timestamp and it stops' in VLC / Windows Media Player)"**
-  → choose the file → the seekable copy downloads. Real MP4s are detected
-  and left alone, with an explanation.
+**The full root cause of the 0xc00d3e8c error:** Windows' built-in players
+(Windows Media Player, Movies & TV) do not play WebM/VP9/Opus AT ALL — that
+error means "unsupported format", not "broken file". A perfectly valid WebM
+gets the same error. This is why the repaired WebM played in VLC but not in
+your Windows player. The fix has two halves:
+
+- **NEW recordings (after deploying build 28): automatically MP4/H.264+AAC**
+  on Chrome 126+/Edge/Safari — the one format every player opens (Windows
+  Media Player, Movies & TV, VLC, QuickTime, phones). On stop, the true
+  duration is written into the MP4 header, so the length shows correctly and
+  every timestamp is clickable. Firefox/exotic devices fall back to WebM +
+  the automatic full repair (valid WebM — plays in VLC/Chrome).
+- **OLD WebM recordings: repair, then convert.** ⚙ Settings → 🛠 Repair a
+  recording → the progress report runs → the NEW `-REPAIRED-…webm` file is
+  saved → then click **🎬 Also make a universal MP4** in the same panel:
+  a hardware-accelerated conversion (H.264/AAC) runs on your laptop and
+  saves `<name>-MP4-<date>_<time>.mp4`. THAT file plays and seeks in
+  Windows Media Player / Movies & TV. (Needs Chrome or Edge on the laptop —
+  the button hides itself where the browser cannot convert, and says why.)
+- Real MP4 files brought to the repair tool are detected and refused with
+  an explanation; `.mkv` is accepted; the original file is never modified.
 
 ## 5. The files changed since the deployed build 27
 
