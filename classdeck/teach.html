@@ -624,6 +624,7 @@
     <div id="repairDone" class="hide">
       <div id="repairSummary" style="font-size:13.5px;line-height:1.55"></div>
       <a id="repairSaveBtn" class="btn primary" style="display:block;text-align:center;margin-top:12px;text-decoration:none">💾 Save the repaired copy</a>
+      <a id="repairMp4Btn" class="btn hide" style="display:block;text-align:center;margin-top:8px;text-decoration:none" title="Converts this recording to H.264/AAC MP4 — the format Windows Media Player and Movies &amp; TV actually open (they never play WebM). Uses your device's hardware encoders; nothing leaves this laptop.">🎬 Also make a universal MP4 (plays in Windows Media Player)</a>
       <p style="font-size:11.5px;color:var(--text-dim);margin-top:8px">If nothing downloaded automatically (browsers sometimes block that), the button above always works — it is a direct save link. The file also appears in your browser's Downloads (Ctrl+J).</p>
       <div class="row" style="margin-top:10px"><button class="btn" id="repairClose">Done</button></div>
     </div>
@@ -963,7 +964,7 @@ Not sure</textarea>
     </div>
     <hr class="sep" />
     <label>🛠 Repair a recording (fixes "click a timestamp and it stops" in VLC / Windows Media Player)</label>
-    <div style="font-size:.82em;opacity:.75;margin:4px 0 6px">Shows a live progress report while it works, then saves a <b>NEW</b> file named <code>&lt;original&gt;-REPAIRED-&lt;date&gt;_&lt;time&gt;.webm</code> — the old file is never modified. Play the new file.</div>
+    <div style="font-size:.82em;opacity:.75;margin:4px 0 6px">Shows a live progress report while it works, then saves a <b>NEW</b> file named <code>&lt;original&gt;-REPAIRED-&lt;date&gt;_&lt;time&gt;.webm</code> — the old file is never modified. Play the new file. Then use <b>🎬 Also make a universal MP4</b> if you need it in Windows Media Player / Movies &amp; TV (those players do not open WebM at all — error 0xc00d3e8c). New recordings are MP4 automatically on Chrome/Edge/Safari.</div>
     <div class="row">
       <button class="btn small" id="setRepairRec">🛠 Repair a recording file</button>
       <input type="file" id="setRepairFile" class="hide" accept="video/webm,video/mp4,video/x-matroska,video/*,.webm,.mp4,.mkv" />
@@ -1033,24 +1034,24 @@ Not sure</textarea>
 
 <!-- v6: full-screen teacher auth gate (signup / login / license) -->
 <!-- authGate removed: ADEWALE CLASSROOM DECK uses portal session only -->
-<script src="vendor/peerjs.min.js?v=64"></script>
-<script src="vendor/pdf.min.js?v=64"></script>
-<script src="vendor/qrcode.min.js?v=64"></script>
-<script src="js/common.js?v=64"></script>
-<script src="js/config.js?v=64"></script>
-<script src="js/portal-bridge.js?v=64"></script>
-<script src="js/license.js?v=64"></script>
-<script src="js/whiteboard.js?v=64"></script>
-<script src="js/webcast.js?v=64"></script>
-<script src="js/toolkit.js?v=64"></script>
-<script src="js/toolkit-data.js?v=64"></script>
-<script src="js/toolkit-data2.js?v=64"></script>
-<script src="js/toolkit-data3.js?v=64"></script>
-<script src="js/toolkit-ext.js?v=64"></script>
-<script src="js/security-config.js?v=64"></script>
-<script src="js/auth.js?v=64"></script>
-<script src="js/rtc.js?v=64"></script>
-<script src="js/teach-toolbar-fix.js?v=64"></script>
+<script src="vendor/peerjs.min.js?v=65"></script>
+<script src="vendor/pdf.min.js?v=65"></script>
+<script src="vendor/qrcode.min.js?v=65"></script>
+<script src="js/common.js?v=65"></script>
+<script src="js/config.js?v=65"></script>
+<script src="js/portal-bridge.js?v=65"></script>
+<script src="js/license.js?v=65"></script>
+<script src="js/whiteboard.js?v=65"></script>
+<script src="js/webcast.js?v=65"></script>
+<script src="js/toolkit.js?v=65"></script>
+<script src="js/toolkit-data.js?v=65"></script>
+<script src="js/toolkit-data2.js?v=65"></script>
+<script src="js/toolkit-data3.js?v=65"></script>
+<script src="js/toolkit-ext.js?v=65"></script>
+<script src="js/security-config.js?v=65"></script>
+<script src="js/auth.js?v=65"></script>
+<script src="js/rtc.js?v=65"></script>
+<script src="js/teach-toolbar-fix.js?v=65"></script>
 <div id="mTimer" class="modal-back">
   <div class="modal" style="max-width:360px">
     <h3 style="margin:0 0 10px">⏱ Class countdown</h3>
@@ -1329,14 +1330,15 @@ Not sure</textarea>
     </div>
   </div>
 </div>
-<script src="js/cloud-creds.js?v=64"></script>
-<script src="js/stream-kit.js?v=64"></script>
-<script src="js/webm-cues.js?v=64"></script>
-<script src="js/teach.js?v=64"></script>
-<script src="js/cloud-sync-boot.js?v=64"></script>
-<script src="js/enhancements.js?v=64"></script>
-<script src="js/ecosystem-branding.js?v=64"></script>
-<script src="js/enterprise-enhanced.js?v=64"></script>
+<script src="js/cloud-creds.js?v=65"></script>
+<script src="js/stream-kit.js?v=65"></script>
+<script src="js/webm-cues.js?v=65"></script>
+<script src="js/mp4-kit.js?v=65"></script>   <!-- r22-universal: MP4 finisher + muxer + WebCodecs transcode (Windows players don't play WebM: 0xc00d3e8c) -->
+<script src="js/teach.js?v=65"></script>
+<script src="js/cloud-sync-boot.js?v=65"></script>
+<script src="js/enhancements.js?v=65"></script>
+<script src="js/ecosystem-branding.js?v=65"></script>
+<script src="js/enterprise-enhanced.js?v=65"></script>
 <div id="hmgEcosystemFooterCompact" style="max-width:100%;padding:0 14px"></div>
 <!-- r22: floating reactions layer (pointer-transparent) -->
 <div id="reactFloat" style="position:fixed;left:0;right:0;bottom:90px;z-index:9500;pointer-events:none;text-align:center"></div>

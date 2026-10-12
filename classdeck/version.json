@@ -116,6 +116,9 @@
     "15.1.0-poll-to-breakout-rooms",
     "15.1.0-breakout-room-timer",
     "15.1.0-room-scoped-chat",
-    "15.1.0-repair-tool-progress-newfile"
+    "15.1.0-repair-tool-progress-newfile",
+    "15.1.0-universal-mp4-recordings",
+    "15.1.0-mp4-duration-finisher",
+    "15.1.0-webm-to-mp4-transcode"
   ]
 }

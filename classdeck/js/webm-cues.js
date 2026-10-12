@@ -524,6 +524,123 @@
     return r.value;
   }
 
+  /* ---- r22-repair-5: full SAMPLE-LEVEL demux (feeds the MP4 transcoder) ----
+     Returns { timecodeScale, tracks:[{trackNumber,type,codec,codecPrivate}],
+               samples: Map(trackNumber -> [{ts, dur, key, data}]) } where ts/dur
+     are in timecode-scale units and data is a subarray view (no copy). */
+  function extract(buf) {
+    if (!buf || !buf.length) return null;
+    try {
+      let pos = 0, segment = null;
+      const children = [];
+      while (pos < buf.length - 1) {
+        const t = readId(buf, pos);
+        if (!t) break;
+        const s = readVintSize(buf, pos + t.length);
+        if (!s) break;
+        const dataStart = pos + t.length + s.length;
+        children.push({ id: t.id, start: pos, dataStart, size: s.value });
+        if (s.value === -1) { if (t.id === ID_SEGMENT) { segment = { dataStart }; pos = dataStart; continue; } break; }
+        pos = dataStart + s.value;
+      }
+      if (!segment) return null;
+      const segDataEnd = segment.size >= 0 ? Math.min(segment.dataStart + segment.size, buf.length) : buf.length;
+      const info = children.find((c) => c.id === ID_INFO && c.start < segDataEnd);
+      const tracksEl = children.find((c) => c.id === ID_TRACKS);
+      if (!info) return null;
+      let timecodeScale = 1000000;
+      {
+        let p = info.dataStart;
+        const end = Math.min(info.dataStart + (info.size >= 0 ? info.size : segDataEnd - info.dataStart), segDataEnd);
+        while (p < end - 1) {
+          const t = readId(buf, p); if (!t) break;
+          const s = readVintSize(buf, p + t.length); if (!s) break;
+          if (t.id === 0x2AD7B1) { const v = readUInt(buf, p + t.length + s.length, s.value); if (v > 0) timecodeScale = v; }
+          if (s.value === -1) break;
+          p += t.length + s.length + s.value;
+        }
+      }
+      const tracks = [];
+      if (tracksEl) {
+        let p = tracksEl.dataStart;
+        const end = Math.min(tracksEl.dataStart + (tracksEl.size >= 0 ? tracksEl.size : segDataEnd - tracksEl.dataStart), segDataEnd);
+        while (p < end - 1) {
+          const t = readId(buf, p); if (!t) break;
+          const s = readVintSize(buf, p + t.length); if (!s) break;
+          const dEnd = s.value >= 0 ? Math.min(p + t.length + s.length + s.value, end) : end;
+          if (t.id === 0xAE) {                          /* TrackEntry */
+            let tn = null, type = null, codec = null, priv = null;
+            let q = p + t.length + s.length;
+            while (q < dEnd - 1) {
+              const tt = readId(buf, q); if (!tt) break;
+              const ss = readVintSize(buf, q + tt.length); if (!ss) break;
+              const dd = q + tt.length + ss.length;
+              const de = ss.value >= 0 ? Math.min(dd + ss.value, dEnd) : dEnd;
+              if (tt.id === 0xD7) tn = readUInt(buf, dd, ss.value);
+              else if (tt.id === 0x83) type = readUInt(buf, dd, ss.value);
+              else if (tt.id === 0x86) { let c2 = ""; for (let i = dd; i < de; i++) c2 += String.fromCharCode(buf[i]); codec = c2; }
+              else if (tt.id === 0x63A2) priv = buf.slice(dd, de);
+              if (ss.value === -1) break;
+              q = de;
+            }
+            if (tn != null) tracks.push({ trackNumber: tn, type: type, codec: codec, codecPrivate: priv || null });
+          }
+          if (s.value === -1) break;
+          p += t.length + s.length + s.value;
+        }
+      }
+      const samples = new Map();
+      for (const tr of tracks) samples.set(tr.trackNumber, []);
+      for (const c of children) {
+        if (c.id !== ID_CLUSTER || c.start < segment.dataStart || c.start >= segDataEnd) continue;
+        let tc = null, afterTs = c.dataStart;
+        {
+          let p = c.dataStart;
+          const cEnd = c.size >= 0 ? Math.min(c.dataStart + c.size, segDataEnd) : segDataEnd;
+          while (p < cEnd - 1) {
+            const t = readId(buf, p); if (!t) break;
+            const s = readVintSize(buf, p + t.length); if (!s) break;
+            if (t.id === ID_TIMESTAMP) { tc = readUInt(buf, p + t.length + s.length, s.value); afterTs = p + t.length + s.length + s.value; break; }
+            if (s.value === -1) break;
+            p += t.length + s.length + s.value;
+          }
+          if (tc === null) continue;
+          let q = afterTs;
+          while (q < cEnd - 1) {
+            const bt = readId(buf, q); if (!bt) break;
+            const bs = readVintSize(buf, q + bt.length); if (!bs) break;
+            const bd = q + bt.length + bs.length;
+            const be = bs.value >= 0 ? Math.min(bd + bs.value, cEnd) : cEnd;
+            if ((bt.id === 0xA3 || bt.id === 0xA0) && bs.value >= 3) {   /* SimpleBlock / Block */
+              const tl = vintDataLen(buf[bd]);
+              if (bd + tl + 3 <= be) {
+                const trackNum = tl === 1 ? (buf[bd] & 0x7F) : ((buf[bd] & 0x3F) * 256 + buf[bd + 1]);
+                let rel = (buf[bd + tl] << 8) | buf[bd + tl + 1];
+                if (rel & 0x8000) rel -= 0x10000;
+                const flags = buf[bd + tl + 2];
+                const data = buf.subarray(bd + tl + 3, be);
+                const arr = samples.get(trackNum);
+                if (arr) arr.push({ ts: tc + rel, key: !!(flags & 0x80), data });
+              }
+            }
+            if (bs.value === -1) break;
+            q = be;
+          }
+        }
+      }
+      /* durations: delta to the next sample of the same track */
+      for (const arr of samples.values()) {
+        arr.sort((a, b) => a.ts - b.ts);
+        for (let i = 0; i < arr.length; i++) {
+          const next = arr[i + 1];
+          if (i === 0) arr[i].dur = next ? Math.max(1, next.ts - arr[i].ts) : 33;
+          else arr[i].dur = next ? Math.max(1, next.ts - arr[i].ts) : (arr[i - 1].dur || 33);
+        }
+      }
+      return { timecodeScale, tracks, samples };
+    } catch (e) { return null; }
+  }
+
   /* r21 compatibility shim: bytes in, bytes out */
   function addCues(buf) {
     const r = repair(buf);
@@ -535,6 +652,7 @@
     repair: repair,
     repairAsync: repairAsync,
     addCues: addCues,
-    version: "r22-repair-4"   /* +3: keyframe-gated cues (ffprobe-validated) + cooperative progress (repairAsync) */
+    extract: extract,
+    version: "r22-repair-5"   /* +4: sample-level extract() feeds the universal-MP4 transcoder */
   };
 })();
