@@ -2305,3 +2305,94 @@ new feature tags (rename-student, qa-questions-answers, chat-modes,
 allow-self-unmute, enter-exit-chime, chat-export-txt,
 poll-to-breakout-rooms, breakout-room-timer, room-scoped-chat,
 webm-cuetime-keyframe-pts).
+
+## Round 22 — repair-tool pass (the "no new file appeared" field bug)
+
+Field report: the Settings repair tool said "successfully repaired" but no
+new file appeared, and clicking timestamps on the OLD file still failed.
+Deep audit of the whole repair/download flow found ELEVEN defects; research
+(ffprobe/ffmpeg behaviour, blob-download failure reports across
+Firefox/Safari/Chrome) confirmed the mechanisms:
+
+1. `downloadBlob` revoked the object URL after 1.5 s — the documented
+   silent-download killer (Firefox truncates large files, Safari can drop
+   the download) while the page claimed success.
+2. The crash-recovery path revoked the URL IMMEDIATELY after click() and
+   never attached the anchor (Safari requires it) — worst-case variant.
+3. Success was a transient toast: no modal, no persistent Save button —
+   no user-gesture fallback when Chrome silently blocks an automatic
+   download ("multiple files" guard).
+4. The repair ran synchronously: multi-hundred-MB class recordings froze
+   the tab with no progress report.
+5. The file READ had no progress either.
+6. `alreadyFixed` files produced NO output file at all.
+7. The new file name (`-SEEKABLE.webm`) carried no timestamp — collides
+   with earlier repairs and is hard to distinguish from the original.
+8. `.mkv` recordings were not accepted by the picker.
+9. The fresh-recording stop path had the same freeze + toast-only UX.
+10. Recovery failures surfaced only via console.error.
+11. Multi-session recovery downloads fired back-to-back — Chrome's
+    multi-download block, unexplained.
+
+Fixes (all in, all tested): `webm-cues.js` r22-repair-4 — the core became
+a generator that yields `{stage, frac}` at every heavy milestone; `repair()`
+stays byte-identical synchronous (back-compat), new `repairAsync()`
+runs the same core cooperatively with a live progress callback (a throwing
+callback can never break the repair). The Settings tool now opens a real
+progress modal (read % via FileReader.onprogress → scan % → write %) and
+ALWAYS ends with a NEW file `<original>-REPAIRED-<date>_<time>.webm`
+(unchanged original; honest already-fixed copy; honest .mp4-named-WebM
+note; real MP4 refused with an explanation; .mkv accepted). The completion
+panel names the file, its size, lesson length and seek points,
+auto-downloads it AND keeps a direct 💾 Save button (a user-gesture link
+that always works) — plus a "check Ctrl+J / allow automatic downloads"
+hint. `downloadBlob` holds URLs 60 s and revokes the previous one.
+The recording-stop finish uses the same modal. The crash-recovery path
+attaches the anchor, holds the URL 60 s, spaces multi-session downloads,
+names files with timestamps, shows errors as toasts, and no longer
+deletes the saved chunks when recovery fails.
+
+Validation: ffprobe/ffmpeg 7.1.5 on a regenerated `-live 1` VP9+Opus
+fixture — `repairAsync` output is byte-identical to `repair`, progress is
+monotonic to 1, and the seek battery stays 22/22 clean. Suites:
+`test_r22_webm_repair` 40 → 47 (repairAsync battery: export, 140-cluster
+scan-stage yields, monotonic progress, async==sync bytes, throwing
+callback survival, null-progress parity); `test_r22_platform_features`
+158 → 169 (11 new pins: modal ids, mkv acceptance, new-file generator,
+cooperative engine usage, always-a-file semantics, 60 s revoke in both
+download paths, recovery hardening, version tag); r21 classflex pin
+updated for the evolved `repairWebmForPlayers(chunks, outType, onProgress)`
+signature; r18/r20/r21 asset pins moved to `?v=64`; sw cache
+`hmg-classdeck-v15.1.0-r22-platform-3`; version.json tag
+`15.1.0-repair-tool-progress-newfile` (113 tags). Battery: **32 suites ×
+1717 checks × both repos × run twice — 0 failures** (r9=16 with live
+PostgreSQL). Twins byte-identical; sync_all verifiers 12× fail-0; suite
+zip 1036 entries; workspace 94 MB (guard 110).
+
+### Completion: the download-hardening sweep (30 sites / 24 files, both repos)
+
+The "update every file accordingly" mandate applied to the WHOLE product,
+so every download surface was audited for the same silent-download bug
+class fixed in the repair tool. Found and fixed: **five synchronous
+`a.click(); URL.revokeObjectURL(a.href)` sites** (practice template,
+voting poll results, cbt-multi template, cbt-prompts CSV, classwork CSV),
+**fifteen no-revoke/no-attach sites** (analytics academic+raw exports,
+enterprise audit trail, security-centre downloads, cbt-results package
++ results CSV, admin-data full backup / anonymised export / table peek /
+DSR export / row export, blog backup, paid-class registrations, CRUD
+CSV, free-class registrations, .ics calendar, cbt-manage package), and
+**eight short-delay (1–4 s) revokes** — including the two most critical
+downloads in the product: the generator ZIP (classdeck/generate.html)
+and the full data-portability backups. Every site now attaches the
+anchor (Safari), clicks, removes it, and revokes the URL after 60 s
+inside a try/catch (the r5_blog VM harness exposed that a bare revoke
+can throw in exotic environments — a nicety must never break a flow).
+flyer-maker.js was audited and left as-is (its blob URL only feeds an
+already-loaded Image; the download itself uses a data URL). Two new
+suite pins enforce the sweep repo-wide (no synchronous/short-delay
+revoke anywhere; 60 s hold + attached anchor at every site); the
+settings label for the repair tool and R22-DEPLOY-AND-VERIFY.md were
+updated to describe the progress report + NEW-file behaviour, and the
+deploy doc now recommends full-site replacement for this build.
+Final battery: **32 suites × 1720 checks × both repos × run twice —
+0 failures**.

@@ -373,7 +373,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob);
     a.download='tutoring-connect-question-template.csv';
-    a.click(); URL.revokeObjectURL(a.href);
+    document.body.appendChild(a); a.click(); setTimeout(function () { try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
     toast('Template downloaded — fill it in and upload it back.','success');
   };
   const clr=document.getElementById('clearcsv');

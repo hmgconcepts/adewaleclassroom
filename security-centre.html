@@ -259,7 +259,7 @@
   function say(m,t){if(window.toast)toast(m,t||'success');else alert(m);}
   function dl(name,obj){
     var b=new Blob([JSON.stringify(obj,null,2)],{type:'application/json'});
-    var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name; a.click();
+    var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name; document.body.appendChild(a); a.click(); setTimeout(function(){ try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
   }
   function notInstalled(e){
     return '<p style="color:#b45309"><b>Not installed yet.</b> Run <code>database/complete-schema.sql</code> '+
