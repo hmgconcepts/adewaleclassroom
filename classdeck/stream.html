@@ -42,11 +42,11 @@
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"SoftwareApplication","name":"ADEWALE CLASSROOM DECK Tablet Social Live","applicationCategory":"EducationalApplication","operatingSystem":"Web","creator":{"@type":"Person","name":"Adewale Samson Adeagbo","url":"https://cssadewale.pages.dev"},"publisher":{"@type":"Organization","name":"ADEWALE CLASSROOM","url":"https://adewaleclassroom.pages.dev"},"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
-<script src="js/config.js?v=63"></script>
-<script src="js/cloud-creds.js?v=63"></script>
-<script src="js/cloud-sync-boot.js?v=63"></script>
-<script src="js/portal-bridge.js?v=63"></script>
-<script src="js/common.js?v=63"></script>
+<script src="js/config.js?v=64"></script>
+<script src="js/cloud-creds.js?v=64"></script>
+<script src="js/cloud-sync-boot.js?v=64"></script>
+<script src="js/portal-bridge.js?v=64"></script>
+<script src="js/common.js?v=64"></script>
 </head>
 <body>
 <div class="wrap">
@@ -273,7 +273,7 @@ $("#copyRelay").onclick=async()=>{const txt="https://YOUR-RELAY-DOMAIN/rtc/v1/wh
   paint();
 })();
 function plan(){return ["HMG CLASSDECK TABLET SOCIAL LIVE PLAN","","THE 3 THINGS YOU NEED:","1. A relay address  (relay/no-obs-social-relay/ deployed on a free HTTPS host)","2. A fresh stream key from each platform's live page","3. This tablet, signed in to your ADEWALE CLASSROOM account","","SETUP (once):","1. Deploy relay/no-obs-social-relay on a free/low-cost HTTPS host.","2. Open teach.html on the tablet and sign in.","3. Settings -> Tablet Live.","4. Gateway URL: https://YOUR-RELAY-DOMAIN   (https only; just the domain root)","5. Gateway secret: the relay SECRET env var (leave blank if none)","6. Stream name: classdeck-ROOMCODE  (letters/digits/dashes; unique per teacher)","7. Destinations: pick the platform by name, paste ONLY the stream key (server auto-fills)","8. Format: 16:9 for YouTube/Facebook/Twitch -> 9:16 for TikTok/Instagram -> 15 fps recommended (10 on weak upload)","9. Save settings; dry run: Start -> confirm platform preview -> Stop","10. On a new tablet: sign in, press Restore from cloud, done.","","WHERE THE KEY LIVES:","- YouTube:    studio.youtube.com -> Go Live -> Streaming software -> Stream key","- Facebook:   facebook.com/live/producer -> Streaming software -> key","- TikTok:     livecenter.tiktok.com -> RTMP (LIVE-eligible accounts; vertical 9:16)","- Instagram:  Live producer on desktop (professional account; fresh key per session)","- Twitch:     dashboard.twitch.tv -> Settings -> Stream -> Primary Stream key","","IF SOMETHING GOES WRONG:","- Gateway does not answer -> wake the free-tier relay (open its URL once), re-check address","- No preview on platform -> copy a FRESH key, Save, Stop, Start again","- Lag/stutter -> drop to 10 fps, or stream to one platform instead of several","- TikTok black bars -> switch Format to Vertical 9:16","- 401 from relay -> gateway secret must match the relay SECRET env var exactly","","Reminder: protect stream keys and obtain consent before public streaming minors."].join("\n")}
-$("#downloadPlan").onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([plan()],{type:'text/plain'}));a.download='classdeck-tablet-social-live-plan.txt';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500)};
+$("#downloadPlan").onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([plan()],{type:'text/plain'}));a.download='classdeck-tablet-social-live-plan.txt';document.body.appendChild(a);a.click();setTimeout(()=>{ try { URL.revokeObjectURL(a.href); } catch (e) {} },60000)};
 </script>
 </body>
 </html>

@@ -229,6 +229,8 @@ Everything below runs peer-to-peer from the teacher's browser — no server, no 
 
 **Recording seek repair (root cause fixed)** — recorded class videos now seek cleanly on every laptop player: the repair writes Duration + SeekHead + Cues + a finite Segment, and every CueTime is the **keyframe's own presentation timestamp** (a CueTime at the cluster timecode made ffmpeg-family players skip the keyframe and decode mid-GOP frames — the "stops/crashes when clicking timestamps" bug).
 
+**The repair TOOL (⚙ Settings → 🛠 Repair a recording)** — full progress report while it works (reading the file % → scanning clusters → writing the index), then it always produces a **NEW file** named `<original>-REPAIRED-<date>_<time>.webm`, clearly separate from the old one: a completion panel shows the new name, size, lesson length and seek-point count, the file auto-downloads AND a direct **💾 Save** button stays available (browsers silently block automatic downloads — the documented cause of "it said success but no file appeared"; the button is a user-gesture link that always works). The original file is never modified. WebM-saved-as-.mp4 files are detected and named honestly; real MP4s are refused with an explanation; .mkv is accepted too. Crash-recovery downloads got the same hardening (object URLs held 60 s, anchor attached for Safari, spaced multi-downloads, visible errors — and failed recoveries no longer delete the saved chunks).
+
 ---
 
 ## L. DEPLOYMENT (free, unambiguous)

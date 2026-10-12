@@ -611,6 +611,25 @@
   </div>
 </aside>
 
+<!-- r22-repair-4: the repair tool gets a REAL progress report and a guaranteed NEW file -->
+<div class="modal-back" id="mRepair">
+  <div class="modal" style="max-width:560px">
+    <h3 id="repairTitle">🛠 Repair a recording</h3>
+    <div id="repairProgress">
+      <div class="row" style="display:flex;justify-content:space-between;font-size:13px;align-items:center"><b id="repairFileLabel" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></b><span id="repairPct" style="font-weight:700">0%</span></div>
+      <div style="height:14px;border-radius:999px;background:var(--bg-3,#1c2340);overflow:hidden;margin:8px 0"><div id="repairBarFill" style="height:100%;width:0%;background:var(--primary,#0506ae);transition:width .15s"></div></div>
+      <p id="repairStage" style="font-size:13px;color:var(--text-dim);min-height:18px">Starting…</p>
+      <p style="font-size:11.5px;color:var(--text-dim)">The repair runs entirely on this device — the recording never leaves your laptop, and the original file is never modified.</p>
+    </div>
+    <div id="repairDone" class="hide">
+      <div id="repairSummary" style="font-size:13.5px;line-height:1.55"></div>
+      <a id="repairSaveBtn" class="btn primary" style="display:block;text-align:center;margin-top:12px;text-decoration:none">💾 Save the repaired copy</a>
+      <p style="font-size:11.5px;color:var(--text-dim);margin-top:8px">If nothing downloaded automatically (browsers sometimes block that), the button above always works — it is a direct save link. The file also appears in your browser's Downloads (Ctrl+J).</p>
+      <div class="row" style="margin-top:10px"><button class="btn" id="repairClose">Done</button></div>
+    </div>
+  </div>
+</div>
+
 <!-- r22 completion: Q&A drawer (Google Meet / Zoho Meeting style) -->
 <aside class="drawer" id="drawerQa">
   <div class="drawer-head">🙋 Q&amp;A <button class="btn small ghost drawer-close">✕</button></div>
@@ -944,9 +963,10 @@ Not sure</textarea>
     </div>
     <hr class="sep" />
     <label>🛠 Repair a recording (fixes "click a timestamp and it stops" in VLC / Windows Media Player)</label>
+    <div style="font-size:.82em;opacity:.75;margin:4px 0 6px">Shows a live progress report while it works, then saves a <b>NEW</b> file named <code>&lt;original&gt;-REPAIRED-&lt;date&gt;_&lt;time&gt;.webm</code> — the old file is never modified. Play the new file.</div>
     <div class="row">
       <button class="btn small" id="setRepairRec">🛠 Repair a recording file</button>
-      <input type="file" id="setRepairFile" class="hide" accept="video/webm,video/mp4,video/*,.webm,.mp4" />
+      <input type="file" id="setRepairFile" class="hide" accept="video/webm,video/mp4,video/x-matroska,video/*,.webm,.mp4,.mkv" />
     </div>
     <p style="font-size:11.5px;color:var(--text-dim);margin:4px 0 0">New recordings are repaired automatically when you stop them. Use this for OLDER recordings (including ones named <b>.mp4</b> that VLC struggles to seek): pick the file, and a fully indexed <b>-SEEKABLE.webm</b> copy is downloaded. Works fully offline on this device — the original file is never touched.</p>
     <hr class="sep" />
@@ -1013,24 +1033,24 @@ Not sure</textarea>
 
 <!-- v6: full-screen teacher auth gate (signup / login / license) -->
 <!-- authGate removed: ADEWALE CLASSROOM DECK uses portal session only -->
-<script src="vendor/peerjs.min.js?v=63"></script>
-<script src="vendor/pdf.min.js?v=63"></script>
-<script src="vendor/qrcode.min.js?v=63"></script>
-<script src="js/common.js?v=63"></script>
-<script src="js/config.js?v=63"></script>
-<script src="js/portal-bridge.js?v=63"></script>
-<script src="js/license.js?v=63"></script>
-<script src="js/whiteboard.js?v=63"></script>
-<script src="js/webcast.js?v=63"></script>
-<script src="js/toolkit.js?v=63"></script>
-<script src="js/toolkit-data.js?v=63"></script>
-<script src="js/toolkit-data2.js?v=63"></script>
-<script src="js/toolkit-data3.js?v=63"></script>
-<script src="js/toolkit-ext.js?v=63"></script>
-<script src="js/security-config.js?v=63"></script>
-<script src="js/auth.js?v=63"></script>
-<script src="js/rtc.js?v=63"></script>
-<script src="js/teach-toolbar-fix.js?v=63"></script>
+<script src="vendor/peerjs.min.js?v=64"></script>
+<script src="vendor/pdf.min.js?v=64"></script>
+<script src="vendor/qrcode.min.js?v=64"></script>
+<script src="js/common.js?v=64"></script>
+<script src="js/config.js?v=64"></script>
+<script src="js/portal-bridge.js?v=64"></script>
+<script src="js/license.js?v=64"></script>
+<script src="js/whiteboard.js?v=64"></script>
+<script src="js/webcast.js?v=64"></script>
+<script src="js/toolkit.js?v=64"></script>
+<script src="js/toolkit-data.js?v=64"></script>
+<script src="js/toolkit-data2.js?v=64"></script>
+<script src="js/toolkit-data3.js?v=64"></script>
+<script src="js/toolkit-ext.js?v=64"></script>
+<script src="js/security-config.js?v=64"></script>
+<script src="js/auth.js?v=64"></script>
+<script src="js/rtc.js?v=64"></script>
+<script src="js/teach-toolbar-fix.js?v=64"></script>
 <div id="mTimer" class="modal-back">
   <div class="modal" style="max-width:360px">
     <h3 style="margin:0 0 10px">⏱ Class countdown</h3>
@@ -1309,14 +1329,14 @@ Not sure</textarea>
     </div>
   </div>
 </div>
-<script src="js/cloud-creds.js?v=63"></script>
-<script src="js/stream-kit.js?v=63"></script>
-<script src="js/webm-cues.js?v=63"></script>
-<script src="js/teach.js?v=63"></script>
-<script src="js/cloud-sync-boot.js?v=63"></script>
-<script src="js/enhancements.js?v=63"></script>
-<script src="js/ecosystem-branding.js?v=63"></script>
-<script src="js/enterprise-enhanced.js?v=63"></script>
+<script src="js/cloud-creds.js?v=64"></script>
+<script src="js/stream-kit.js?v=64"></script>
+<script src="js/webm-cues.js?v=64"></script>
+<script src="js/teach.js?v=64"></script>
+<script src="js/cloud-sync-boot.js?v=64"></script>
+<script src="js/enhancements.js?v=64"></script>
+<script src="js/ecosystem-branding.js?v=64"></script>
+<script src="js/enterprise-enhanced.js?v=64"></script>
 <div id="hmgEcosystemFooterCompact" style="max-width:100%;padding:0 14px"></div>
 <!-- r22: floating reactions layer (pointer-transparent) -->
 <div id="reactFloat" style="position:fixed;left:0;right:0;bottom:90px;z-index:9500;pointer-events:none;text-align:center"></div>

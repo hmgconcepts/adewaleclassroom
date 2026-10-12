@@ -255,8 +255,14 @@
     return { maxEnd, firstVideoKey, firstVideoKeyRel };
   }
 
-  /* ---- the full repair ---- */
-  function repair(buf) {
+  /* ---- the full repair ----
+     r22-repair-4: the core is a GENERATOR that yields progress objects
+     ({stage, frac}) at every heavy milestone. repair() runs it to completion
+     synchronously (identical to every earlier build); repairAsync() runs the
+     SAME core cooperatively, yielding to the UI between chunks so a real
+     progress bar can paint while a multi-hundred-MB class recording is
+     scanned (the sync version froze the tab with no feedback). */
+  function* repairGen(buf) {
     if (!buf || !buf.length) return null;
     try {
       /* ============ pass 1: top-level walk ============ */
@@ -312,6 +318,8 @@
       const clusters = children.filter((c) => c.id === ID_CLUSTER);
       if (!info) return null;
 
+      yield { stage: "parse", frac: 0.05 };             /* structure walked */
+
       /* ============ pass 2: Info — timecode scale + existing duration ============ */
       let timecodeScale = 1000000;
       let existingDuration = null;
@@ -351,7 +359,10 @@
       let maxEndUnits = 0;
       let lastTC = 0;
       const allClusters = [];
+      let _seen = 0;
       for (const c of clusters) {
+        if ((++_seen & 63) === 0)                       /* every 64 clusters: report + breathe */
+          yield { stage: "scan", frac: 0.05 + 0.85 * Math.min(1, c.start / buf.length) };
         let tc = null;
         {
           let p = c.dataStart;
@@ -450,6 +461,8 @@
         return el([0x11, 0x4D, 0x9B, 0x74], concat(entries));
       }
 
+      yield { stage: "build", frac: 0.92 };             /* cues chosen, writing output */
+
       /* layout: sizes first (SeekHead size is position-independent) */
       const seekHeadLen = seekHeadOf(0, 0, 0).length;
       const tracksLen = tracks ? (tracks.end - tracks.start) : 0;
@@ -474,11 +487,41 @@
       parts.push(cues);
       const result = concat(parts);
 
+      yield { stage: "finalize", frac: 0.98 };
+
       return { bytes: result, alreadyFixed: false, durationMs: durationMs,
                cuePoints: cueClusters.length, seekHead: true };
     } catch (e) {
       return null;    /* repair is best-effort: the recording still plays */
     }
+  }
+
+  /* sync wrapper — the exact behaviour every earlier build had */
+  function repair(buf) {
+    try {
+      const g = repairGen(buf);
+      let r = g.next();
+      while (!r.done) r = g.next();
+      return r.value;
+    } catch (e) { return null; }
+  }
+
+  /* r22-repair-4: cooperative version with a live progress report.
+     onProgress receives {stage, frac} ('start'/'parse'/'scan'/'build'/
+     'finalize'/'done'; frac 0..1). A throwing onProgress can never break
+     the repair itself. */
+  async function repairAsync(buf, onProgress) {
+    const tell = (p) => { if (typeof onProgress === "function") { try { onProgress(p); } catch (e) {} } };
+    tell({ stage: "start", frac: 0 });
+    const g = repairGen(buf);
+    let r = g.next();
+    while (!r.done) {
+      tell(r.value);
+      await new Promise((res) => setTimeout(res, 0));   /* let the UI paint */
+      r = g.next();
+    }
+    tell({ stage: "done", frac: 1 });
+    return r.value;
   }
 
   /* r21 compatibility shim: bytes in, bytes out */
@@ -490,7 +533,8 @@
 
   window.WebMCues = {
     repair: repair,
+    repairAsync: repairAsync,
     addCues: addCues,
-    version: "r22-repair-3"   /* +2: keyframe-gated cue points (ffprobe-validated) */
+    version: "r22-repair-4"   /* +3: keyframe-gated cues (ffprobe-validated) + cooperative progress (repairAsync) */
   };
 })();

@@ -3040,12 +3040,14 @@ function recLoop(ts) {
    a word. WebMCues.repair (js/webm-cues.js r22) now writes all four in
    one pass with zero dependencies, and FAILURES ARE SPOKEN, never silent.
    Returns { blob, ok, durationMs, cuePoints, alreadyFixed } - never throws. */
-async function repairWebmForPlayers(chunks, outType) {
+async function repairWebmForPlayers(chunks, outType, onProgress) {
   const fallback = { blob: new Blob(chunks, { type: outType || "video/webm" }), ok: false, durationMs: 0, cuePoints: 0, alreadyFixed: false };
   try {
     const buf = new Uint8Array(await new Blob(chunks).arrayBuffer());
-    if (!window.WebMCues || typeof window.WebMCues.repair !== "function") return fallback;
-    const r = window.WebMCues.repair(buf);
+    if (!window.WebMCues || typeof window.WebMCues.repairAsync !== "function") return fallback;
+    /* r22-repair-4: cooperative repair with a live progress report — the
+       sync version froze the tab for the whole scan on long classes. */
+    const r = await window.WebMCues.repairAsync(buf, onProgress || null);
     if (!r) return fallback;
     return { blob: new Blob([r.bytes], { type: outType || "video/webm" }), ok: true,
              durationMs: r.durationMs || 0, cuePoints: r.cuePoints || 0, alreadyFixed: !!r.alreadyFixed };
@@ -3054,38 +3056,150 @@ async function repairWebmForPlayers(chunks, outType) {
   }
 }
 
-/* r22 (item 1): rescue tool for recordings that ALREADY exist on the
-   teacher's laptop - including the pre-r21 generation that was saved as
-   WebM bytes under an .mp4 name. Runs the same full repair on any chosen
-   file and downloads the seekable result. Honest about what it sees:
-   real MP4 (ftyp magic) is left alone with an explanation. */
+/* ═══════════════ r22-repair-4: the repair TOOL, rebuilt ═══════════════
+   Field report: "it said it repaired successfully but I did not see the
+   new repair file." Three real causes, all fixed here:
+   1. The download was fire-and-forget — browsers silently block automatic
+      downloads (Chrome "multiple files" guard) and revoke-too-early killed
+      large files (Firefox/Safari) — while the page claimed success.
+   2. Success was a transient toast only: no artifact, no save button, no
+      file name in a persistent place.
+   3. No progress: the synchronous repair froze the tab for seconds on long
+      recordings, which reads as "nothing happened".
+   Now: a real progress modal (read % → scan % → write %), then a completion
+   panel that names the NEW file (original-REPAIRED-date-time.webm), shows
+   its size/duration/seek points, auto-downloads it AND keeps a direct
+   💾 Save button (a user-gesture link that always works). The OLD file is
+   never touched — the repaired copy is always a separate new file. */
+let _repairSaveUrl = null;
+
+function repairedFileName(origName) {
+  const base = (String(origName || "recording").replace(/\.[^.]+$/, "").slice(0, 80)) || "recording";
+  const d = new Date();
+  const p2 = (n) => String(n).padStart(2, "0");
+  return base + "-REPAIRED-" + d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate()) + "_" + p2(d.getHours()) + p2(d.getMinutes()) + ".webm";
+}
+function readFileWithProgress(file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onprogress = (e) => { if (e.lengthComputable && onProgress) { try { onProgress(e.loaded / e.total); } catch (e2) {} } };
+    fr.onload = () => { try { resolve(new Uint8Array(fr.result)); } catch (e) { reject(e); } };
+    fr.onerror = () => reject(new Error("the file could not be read from disk"));
+    fr.readAsArrayBuffer(file);
+  });
+}
+function repairModalOpen(title, fileLabel) {
+  const m = $("#mRepair");
+  if (!m) { toast("The repair panel is missing on this page - reload and try again.", "err"); return false; }
+  $("#repairTitle").textContent = title;
+  $("#repairFileLabel").textContent = fileLabel;
+  $("#repairProgress").classList.remove("hide");
+  $("#repairDone").classList.add("hide");
+  repairModalProgress(0, "Starting…");
+  openModal("#mRepair");
+  return true;
+}
+function repairModalProgress(frac, stageText) {
+  const f = Math.max(0, Math.min(1, frac || 0));
+  const bar = $("#repairBarFill"), pct = $("#repairPct"), st = $("#repairStage");
+  if (bar) bar.style.width = Math.round(f * 100) + "%";
+  if (pct) pct.textContent = Math.round(f * 100) + "%";
+  if (st && stageText) st.textContent = stageText;
+}
+function repairModalError(html) {
+  const m = $("#mRepair");
+  if (!m) { toast(String(html).replace(/<[^>]+>/g, ""), "err", 12000); return; }
+  $("#repairProgress").classList.add("hide");
+  $("#repairDone").classList.remove("hide");
+  $("#repairSummary").innerHTML = '<div style="color:var(--warn,#b45309)">⚠ ' + html + "</div>";
+  const btn = $("#repairSaveBtn");
+  if (btn) { btn.style.display = "none"; }
+  const note = $("#repairDone").querySelector("p");
+  if (note) note.textContent = "The original file on your disk was not modified.";
+  const done = $("#repairClose");
+  if (done) done.textContent = "Close";
+}
+function repairModalDone(summaryHtml, blob, fname) {
+  const m = $("#mRepair");
+  if (!m) return;
+  $("#repairProgress").classList.add("hide");
+  $("#repairDone").classList.remove("hide");
+  $("#repairSummary").innerHTML = summaryHtml;
+  const btn = $("#repairSaveBtn");
+  if (_repairSaveUrl) { try { URL.revokeObjectURL(_repairSaveUrl); } catch (e) {} _repairSaveUrl = null; }
+  if (btn && blob) {
+    btn.style.display = "";
+    _repairSaveUrl = URL.createObjectURL(blob);
+    btn.href = _repairSaveUrl;
+    btn.download = fname;
+    btn.textContent = "💾 Save \"" + fname + "\"";
+  }
+  const done = $("#repairClose");
+  if (done) done.textContent = "Done";
+}
+on("#repairClose", "click", () => {
+  closeModal("#mRepair");
+  if (_repairSaveUrl) { setTimeout(() => { try { URL.revokeObjectURL(_repairSaveUrl); } catch (e) {} _repairSaveUrl = null; }, 60000); }
+});
+
 async function repairExistingRecording(file) {
   if (!file) return;
-  toast("\u{1F6E0} Repairing \"" + file.name + "\" - a full seek index (Duration + SeekHead + Cues) is being written so players can jump to any timestamp…", "", 9000);
+  const mb = (file.size / 1048576).toFixed(1);
+  if (!repairModalOpen("🛠 Repair a recording", file.name + " · " + mb + " MB")) return;
   try {
-    const buf = new Uint8Array(await file.arrayBuffer());
-    if (buf.length < 12) { toast("That file is too small to be a recording.", "err"); return; }
+    /* stage 1 — READ the file with a real progress percentage */
+    repairModalProgress(0, "Reading \"" + file.name + "\" from disk…");
+    const buf = await readFileWithProgress(file, (frac) => repairModalProgress(frac * 0.45, "Reading the file… " + Math.round(frac * 100) + "% of " + mb + " MB"));
+    if (!buf || buf.length < 12) { repairModalError("That file is too small to be a recording."); return; }
     const isEbml = buf[0] === 0x1A && buf[1] === 0x45 && buf[2] === 0xDF && buf[3] === 0xA3;
     const isMp4 = buf[4] === 0x66 && buf[5] === 0x74 && buf[6] === 0x79 && buf[7] === 0x70;
     if (!isEbml) {
-      if (isMp4) toast("\"" + file.name + "\" is a genuine MP4 file - its index is built in, nothing to repair. (Old ClassDeck recordings named .mp4 that VLC struggles to seek are actually WebM - those DO get repaired here.)", "", 10000);
-      else toast("\"" + file.name + "\" is not a WebM/Matroska recording - left unchanged.", "err", 8000);
+      if (isMp4) repairModalError("\"" + file.name + "\" is a genuine MP4 file - its seek index is built in, nothing to repair.<br><br>Old ClassDeck recordings that were named <b>.mp4</b> but stop at every timestamp in VLC are actually <b>WebM</b> video - those DO get repaired here.");
+      else repairModalError("\"" + file.name + "\" is not a WebM/Matroska recording - it was left unchanged.");
       return;
     }
-    if (!window.WebMCues || typeof window.WebMCues.repair !== "function") {
-      toast("The repair tool is not loaded on this page - reload and try again.", "err");
+    if (!window.WebMCues || typeof window.WebMCues.repairAsync !== "function") {
+      repairModalError("The repair tool is not loaded on this page - reload the page and try again.");
       return;
     }
-    const r = window.WebMCues.repair(buf);
-    if (!r) { toast("\u26A0 Could not parse \"" + file.name + "\" as a repairable recording - the original is untouched.", "err", 9000); return; }
-    if (r.alreadyFixed) { toast("\u2705 \"" + file.name + "\" already carries a full seek index (Duration + SeekHead + Cues) - nothing to do.", "ok", 8000); return; }
-    const base = file.name.replace(/\.[^.]+$/, "");
+    /* stage 2 — REPAIR with live progress (the tab stays responsive) */
+    const r = await window.WebMCues.repairAsync(buf, (p) => {
+      const txt = p.stage === "parse" ? "Scanning the file structure…" :
+                  p.stage === "scan" ? "Scanning the video clusters — collecting every keyframe…" :
+                  p.stage === "build" ? "Writing the seek index (Duration + SeekHead + Cues)…" :
+                  p.stage === "finalize" ? "Assembling the repaired copy…" : "Working…";
+      repairModalProgress(0.45 + (p.frac || 0) * 0.5, txt);
+    });
+    if (!r || !r.bytes || !r.bytes.length) {
+      repairModalError("Could not parse \"" + file.name + "\" as a repairable WebM/Matroska recording. The original is untouched.");
+      return;
+    }
+    /* stage 3 — the NEW file (the old one is never modified) */
+    const fname = repairedFileName(file.name);
+    const blob = new Blob([r.bytes], { type: "video/webm" });
+    const sizeMB = (blob.size / 1048576).toFixed(1);
     const secs = Math.round((r.durationMs || 0) / 1000);
     const mm = Math.floor(secs / 60), ss = String(secs % 60).padStart(2, "0");
-    downloadBlob(new Blob([r.bytes], { type: "video/webm" }), base + "-SEEKABLE.webm");
-    toast("\u2705 Saved \"" + base + "-SEEKABLE.webm\" - " + (r.durationMs ? mm + ":" + ss + " of lesson, " : "") + r.cuePoints + " seek points. Click any timestamp in VLC / Windows Media Player: it jumps instead of stopping. Keep the new file; the original is untouched.", "ok", 12000);
+    const wasMp4Named = /\.mp4$/i.test(file.name || "");
+    let summary = "<div style='color:var(--ok,#15803d);font-weight:700'>✅ Repaired copy ready — a NEW file, separate from the old one</div>" +
+      "<table style='margin-top:8px;font-size:13px;border-collapse:collapse'>" +
+      "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>New file</td><td><b>" + escapeHtml(fname) + "</b> (" + sizeMB + " MB)</td></tr>" +
+      "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>Original</td><td>" + escapeHtml(file.name) + " (" + mb + " MB) — <b>untouched</b></td></tr>" +
+      (r.durationMs ? "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>Lesson length</td><td>" + mm + ":" + ss + "</td></tr>" : "") +
+      "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>Seek points</td><td>" + r.cuePoints + " — click any timestamp in VLC / Windows Media Player and it jumps there</td></tr></table>";
+    if (r.alreadyFixed) {
+      summary = "<div style='color:var(--ok,#15803d);font-weight:700'>✅ This recording already carries a complete seek index</div>" +
+        "<p style='margin:6px 0'>Nothing needed repairing — but a fresh copy is generated anyway so this flow always ends with a file:</p>" + summary;
+    }
+    if (wasMp4Named) {
+      summary += "<p style='margin:8px 0 0;color:var(--warn,#b45309)'>ℹ This file was <b>WebM video saved with an .mp4 name</b> (the old ClassDeck behaviour) — that mismatch alone breaks seeking in laptop players. The repaired copy uses the correct <b>.webm</b> extension.</p>";
+    }
+    summary += "<p style='margin:8px 0 0'>Keep the new file; play the NEW file, not the old one. The old file stays exactly as it was on your disk.</p>";
+    repairModalProgress(1, "Done");
+    repairModalDone(summary, blob, fname);
+    downloadBlob(blob, fname);          /* best-effort auto-download; the Save button is the guaranteed path */
   } catch (e) {
-    toast("\u26A0 The repair failed: " + (e && e.message ? e.message : "unknown error") + ". The original file is untouched.", "err", 9000);
+    repairModalError("The repair failed: " + (e && e.message ? e.message : "unknown error") + ". The original file is untouched.");
   }
 }
 
@@ -3153,19 +3267,42 @@ async function startRecording() {
              repair, unconditionally and self-contained: js/webm-cues.js
              writes Duration + SeekHead + Cues + a finite Segment size in
              one pass. That is the full set of four things laptop players
-             (VLC / Windows Media) need to seek without stopping. */
-          toast("\u{1F6E0} Finishing the recording - writing Duration + SeekHead + seek index so it plays and seeks correctly in every player…", "", 6000);
-          repairWebmForPlayers(chunks, outType).then(function (res) {
+             (VLC / Windows Media) need to seek without stopping.
+             r22-repair-4: the finish now shows a REAL progress modal and
+             ends with a Save button + auto-download (a frozen toast that
+             claimed success while no file appeared was the field bug). */
+          const totalMB = (chunks.reduce((a, c) => a + (c && c.size ? c.size : 0), 0) / 1048576).toFixed(1);
+          repairModalOpen("\u{23F9} Finishing your recording", fname + " · " + totalMB + " MB");
+          repairWebmForPlayers(chunks, outType, (pr) => {
+            const txt = pr.stage === "parse" ? "Scanning the recording…" :
+                        pr.stage === "scan" ? "Scanning the video clusters — collecting every keyframe…" :
+                        pr.stage === "build" ? "Writing the seek index (Duration + SeekHead + Cues)…" :
+                        pr.stage === "finalize" ? "Assembling the finished file…" : "Working…";
+            repairModalProgress((pr.frac || 0) * 0.95, txt);
+          }).then(function (res) {
             downloadBlob(res.blob, fname);
             if (res.ok) {
               const secs = Math.round((res.durationMs || 0) / 1000);
               const mm = Math.floor(secs / 60), ss = String(secs % 60).padStart(2, "0");
-              toast(res.alreadyFixed
-                ? "\u2705 Recording saved (" + mm + ":" + ss + ") - it already carried a full seek index."
-                : "\u2705 Recording saved (" + (res.durationMs ? mm + ":" + ss + ", " : "") + res.cuePoints + " seek points) - clicking any timestamp in VLC / Windows Media Player now jumps correctly.", "ok", 9000);
+              const sizeMB = (res.blob.size / 1048576).toFixed(1);
+              repairModalProgress(1, "Done");
+              repairModalDone(
+                "<div style='color:var(--ok,#15803d);font-weight:700'>\u2705 Recording saved — every timestamp is clickable</div>" +
+                "<table style='margin-top:8px;font-size:13px;border-collapse:collapse'>" +
+                "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>File</td><td><b>" + escapeHtml(fname) + "</b> (" + sizeMB + " MB)</td></tr>" +
+                (res.durationMs ? "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>Lesson length</td><td>" + mm + ":" + ss + "</td></tr>" : "") +
+                "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>Seek points</td><td>" + (res.alreadyFixed ? "already complete" : res.cuePoints) + "</td></tr></table>" +
+                "<p style='margin:8px 0 0'>Play it in VLC / Windows Media Player and click any timestamp — it jumps there instead of stopping.</p>",
+                res.blob, fname);
+              toast("\u2705 Recording saved (" + (res.durationMs ? mm + ":" + ss + ", " : "") + (res.alreadyFixed ? "index already complete" : res.cuePoints + " seek points") + ").", "ok", 9000);
             } else {
               /* r22: NEVER silent. The file still plays start-to-finish, but
                  the teacher is told the index is missing AND how to fix it. */
+              repairModalProgress(1, "Saved without index");
+              repairModalDone(
+                "<div style='color:var(--warn,#b45309);font-weight:700'>\u26A0 Recording saved, but the seek-index repair could not run on this device</div>" +
+                "<p style='margin:8px 0'>The file is downloading and plays fine start-to-finish. To make every timestamp clickable in VLC, run <b>\u{2699} Settings → \u{1F6E0} Repair a recording</b> on it from a laptop.</p>",
+                res.blob, fname);
               toast("\u26A0 Recording saved, but the seek-index repair could not run on this device (it plays fine start-to-finish). To make every timestamp clickable in VLC, run ⚙ Settings → \u{1F6E0} Repair a recording on it from a laptop.", "err", 14000);
             }
           });

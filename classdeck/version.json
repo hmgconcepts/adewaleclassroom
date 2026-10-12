@@ -115,6 +115,7 @@
     "15.1.0-chat-export-txt",
     "15.1.0-poll-to-breakout-rooms",
     "15.1.0-breakout-room-timer",
-    "15.1.0-room-scoped-chat"
+    "15.1.0-room-scoped-chat",
+    "15.1.0-repair-tool-progress-newfile"
   ]
 }

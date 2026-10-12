@@ -64,12 +64,24 @@ function nowStamp() {
 
 function downloadBlob(blob, filename) {
   if (!blob) { toast("Nothing is available to download yet.", "err"); return; }
+  /* r22-repair-4: hold the object URL for 60 s, not 1.5 s. Revoking early is
+     the documented SILENT download killer — Firefox truncates large files
+     (>40 MB) at random offsets and Safari can drop the download entirely,
+     while the page keeps claiming success. A class recording is exactly the
+     large file that triggers it. The previous URL is revoked on the next
+     call so nothing leaks. Callers that need a guaranteed save show their
+     own persistent <a download> button (see the repair tool). */
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
+  const url = URL.createObjectURL(blob);
+  a.href = url;
   a.download = filename;
+  a.rel = "noopener";
   document.body.appendChild(a);
   a.click();
-  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  setTimeout(() => { a.remove(); }, 1000);
+  if (downloadBlob._lastUrl && downloadBlob._lastUrl !== url) { try { URL.revokeObjectURL(downloadBlob._lastUrl); } catch (e) {} }
+  downloadBlob._lastUrl = url;
+  setTimeout(() => { try { if (downloadBlob._lastUrl === url) { URL.revokeObjectURL(url); downloadBlob._lastUrl = null; } } catch (e) {} }, 60000);
 }
 
 function escapeHtml(s) {

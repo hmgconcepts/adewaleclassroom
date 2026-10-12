@@ -59,10 +59,10 @@
   .hmg-footer{text-align:center;color:var(--text-dim);font-size:12px;padding:20px;border-top:1px solid var(--line);margin-top:24px}
   .hmg-footer a{color:var(--brand)}
 </style>
-<script src="js/config.js?v=63"></script>
-<script src="js/cloud-creds.js?v=63"></script>
-<script src="js/cloud-sync-boot.js?v=63"></script>
-<script src="js/portal-bridge.js?v=63"></script>
+<script src="js/config.js?v=64"></script>
+<script src="js/cloud-creds.js?v=64"></script>
+<script src="js/cloud-sync-boot.js?v=64"></script>
+<script src="js/portal-bridge.js?v=64"></script>
 </head>
 <body>
 <div class="gen-wrap">
@@ -370,8 +370,8 @@
   </div>
 </div>
 
-<script src="js/common.js?v=63"></script>
-<script src="js/generator.js?v=63"></script>
+<script src="js/common.js?v=64"></script>
+<script src="js/generator.js?v=64"></script>
 <script>
 "use strict";
 
@@ -608,7 +608,7 @@ document.getElementById('downloadBtn').addEventListener('click', function() {
   a.download = generatedFileName;
   document.body.appendChild(a);
   a.click();
-  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  setTimeout(() => { try { URL.revokeObjectURL(a.href); a.remove(); } catch (e) {} }, 60000);
   toast('📥 Downloading ' + generatedFileName, 'ok');
 });
 

@@ -801,53 +801,76 @@ window.CDSecurity = CDSecurity;
       document.body.appendChild(bar);
       document.getElementById('recRecoverYes').addEventListener('click', async () => {
         bar.remove();
-        toast('Recovery in progress...', 'ok', 3000);
-        // The chunks are in IndexedDB — the user can download them
-        // The chunks are in IndexedDB — the user can download them
+        /* r22-repair-4: recovery is no longer a silent best-effort fire.
+           Field bug class: the download URL was revoked IMMEDIATELY after
+           click() and the anchor was never attached to the document — the
+           documented silent-download-killer (Safari drops it, Firefox can
+           truncate big files). Progress is reported, the file names carry a
+           time stamp, multi-session downloads are spaced out (Chrome blocks
+           rapid automatic multi-downloads), and failures are SHOWN, not
+           buried in the console. */
+        const tell = (msg, kind) => { try { toast(msg, kind || 'ok', 6000); } catch (e) {} };
+        const doDownload = (blob, fname) => {
+          const a = document.createElement('a');
+          const url = URL.createObjectURL(blob);
+          a.href = url;
+          a.download = fname;
+          a.rel = 'noopener';
+          document.body.appendChild(a);            /* Safari needs the anchor in the DOM */
+          a.click();
+          setTimeout(() => { a.remove(); }, 1000);
+          setTimeout(() => { try { URL.revokeObjectURL(url); } catch (e) {} }, 60000);  /* NEVER revoke immediately */
+          return fname;
+        };
+        tell('Recovering the recording that was saved before the app closed…');
+        const saved = [];
         try {
           const db = await CDCrashSafe.openDB();
           const tx = db.transaction(CDCrashSafe.storeName, 'readonly');
           const store = tx.objectStore(CDCrashSafe.storeName);
           const all = await new Promise(r => { const q = store.getAll(); q.onsuccess = () => r(q.result); });
-          
           const sessionIds = [...new Set(all.map(r => r.sessionId))];
           for (const sid of sessionIds) {
              const chunks = all.filter(r => r.sessionId === sid).sort((a,b) => a.ts - b.ts).map(r => r.chunk);
              if (chunks.length > 0) {
-               /* r21 (item 3): recovered recordings get the SAME player-
-                  compatibility repair (duration + Cues seek index) before
-                  download - a crash is no reason to ship a file that stops
-                  at every seek. */
-               const doDownload = (blob) => {
-                 const fname = 'Recovered_Lesson_' + new Date().toISOString().slice(0,10) + '.webm';
-                 const a = document.createElement('a');
-                 a.href = URL.createObjectURL(blob);
-                 a.download = fname;
-                 a.click();
-                 URL.revokeObjectURL(a.href);
-               };
+               const d = new Date();
+               const p2 = (n) => String(n).padStart(2, '0');
+               const fname = 'Recovered_Lesson_' + d.toISOString().slice(0,10) + '_' + p2(d.getHours()) + p2(d.getMinutes()) + (sessionIds.length > 1 ? '_' + String(sid).slice(-4) : '') + '.webm';
                const raw = new Blob(chunks, { type: 'video/webm' });
+               const mb = (raw.size / 1048576).toFixed(1);
+               tell('Reading ' + mb + ' MB of saved chunks' + (sessionIds.length > 1 ? ' (session ' + String(sid).slice(-4) + ')' : '') + '…');
                let buf = null;
                try { buf = new Uint8Array(await raw.arrayBuffer()); } catch (e) { buf = null; }
-               if (!buf) { doDownload(raw); continue; }
+               if (!buf) { saved.push(doDownload(raw, fname)); continue; }
                /* r22 (item 1): the recovered recording gets the SAME complete
                   repair as a fresh stop - Duration + SeekHead + Cues + finite
-                  Segment, self-contained (js/webm-cues.js r22). The old path
-                  chained a duration tool that can silently no-op with an
-                  index-only patch after it, so recovered files could still
-                  stop at every timestamp click in VLC. */
-               if (window.WebMCues && typeof window.WebMCues.repair === 'function') {
+                  Segment, self-contained (js/webm-cues.js r22-repair-4). The
+                  old path chained a duration tool that can silently no-op
+                  with an index-only patch after it, so recovered files could
+                  still stop at every timestamp click in VLC. */
+               if (window.WebMCues && typeof window.WebMCues.repairAsync === 'function') {
+                 tell('Writing the seek index (' + mb + ' MB)…');
                  try {
-                   const r = window.WebMCues.repair(buf);
+                   const r = await window.WebMCues.repairAsync(buf, null);
                    if (r && r.bytes && r.bytes.length) buf = r.bytes;
                  } catch (e) {}
                } else if (window.WebMCues && window.WebMCues.addCues) {
                  try { const c = window.WebMCues.addCues(buf); if (c && c.length) buf = c; } catch (e) {}
                }
-               doDownload(new Blob([buf], { type: 'video/webm' }));
+               saved.push(doDownload(new Blob([buf], { type: 'video/webm' }), fname));
+               if (sessionIds.length > 1) await new Promise(r => setTimeout(r, 700));   /* space multi-downloads so Chrome does not block them */
              }
           }
-        } catch(e) { console.error('Recovery failed', e); }
+          if (saved.length) {
+            tell('\u2705 Recovered ' + saved.length + ' recording' + (saved.length > 1 ? 's' : '') + ': ' + saved.join(', ') + '. Check your Downloads (Ctrl+J). If nothing appeared, your browser blocked the automatic download — click the \u{1F6A6} shield in the address bar and choose Allow.', 'ok', 12000);
+          } else {
+            tell('No recoverable recording chunks were found.', 'err', 8000);
+          }
+        } catch(e) {
+          console.error('Recovery failed', e);
+          tell('\u26A0 Recovery failed: ' + (e && e.message ? e.message : 'unknown error') + '. The saved chunks were kept — reload the page and try again.', 'err', 10000);
+          return;   /* do NOT clear the session on failure — the chunks stay recoverable */
+        }
         CDCrashSafe.clearSession('all');
       });
       document.getElementById('recRecoverNo').addEventListener('click', () => {
