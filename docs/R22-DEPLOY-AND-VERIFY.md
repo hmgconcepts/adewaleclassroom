@@ -61,6 +61,12 @@ After the commit, watch the Vercel dashboard until the deployment turns
 5. Student side (join a room from another device/window): the chat drawer
    has **🙋 Ask the teacher a question**; inside a breakout room the room
    bar has the **room chat input** and the **⏱ countdown** when a timer runs.
+6. **The repair tool** (⚙ Settings → 🛠 Repair a recording): pick one of your
+   OLD broken recordings. You must see a progress bar (reading % → scanning
+   → writing the index) and then a completion panel naming a NEW file
+   `<original>-REPAIRED-<date>_<time>.webm`, with a 💾 Save button. Open the
+   NEW file in VLC and click timestamps — it jumps. (If your browser blocked
+   the automatic download, the Save button always works.)
 
 ## 4. The seek fix — how to confirm it on your laptop
 
@@ -76,29 +82,41 @@ After the commit, watch the Vercel dashboard until the deployment turns
   → choose the file → the seekable copy downloads. Real MP4s are detected
   and left alone, with an explanation.
 
-## 5. The 22 files changed since the deployed build 27
+## 5. The files changed since the deployed build 27
+
+The classdeck core (24 files):
 
 ```
 PROMPT_AUDIT.md
-classdeck/404.html            classdeck/js/enhancements.js
-classdeck/admin.html          classdeck/js/fix-webm-duration.js
-classdeck/cbt.html            classdeck/js/join.js
-classdeck/classroom.html      classdeck/js/rtc.js
-classdeck/community.html      classdeck/js/teach.js
-classdeck/css/style.css       classdeck/js/webm-cues.js
-classdeck/docs/FEATURES.md    classdeck/parent.html
-classdeck/generate.html       classdeck/stream.html
-classdeck/index.html          classdeck/sw.js
-classdeck/join.html           classdeck/teach.html
-classdeck/version.json
+classdeck/404.html            classdeck/js/common.js
+classdeck/admin.html          classdeck/js/enhancements.js
+classdeck/cbt.html            classdeck/js/fix-webm-duration.js
+classdeck/classroom.html      classdeck/js/join.js
+classdeck/community.html      classdeck/js/rtc.js
+classdeck/css/style.css       classdeck/js/teach.js
+classdeck/docs/FEATURES.md    classdeck/js/webm-cues.js
+classdeck/generate.html       classdeck/parent.html
+classdeck/index.html          classdeck/stream.html
+classdeck/join.html           classdeck/sw.js
+classdeck/teach.html          classdeck/version.json
+docs/R22-DEPLOY-AND-VERIFY.md
 ```
+
+Plus a **download-hardening sweep** (2026-10-12, same build): every download
+on the portal side was audited for the silent-download bug class (object
+URLs revoked too early, anchors never attached to the document). 30 sites
+across 24 files were hardened — the generator ZIP download, the full
+data-backup / anonymised / DSR exports, attendance and results CSVs, poll
+results, blog and CBT backups, calendar (.ics) files, classwork and
+practice templates. Because of this sweep, **replacing the whole site
+(Option A) is the recommended deploy method** for this build.
 
 (The HTML pages change only because every asset reference moved to
 `?v=63` so no browser serves you a stale cached script after the deploy.)
 
 ## 6. Quality record (what stands behind build 28)
 
-32 test suites × 1699 checks × both repositories × 2 runs — 0 failures
+32 test suites × **1717** checks × both repositories × 2 runs — 0 failures
 (with live PostgreSQL). The seek repair was validated by an independent
 third party (ffprobe/ffmpeg 7.1.5): correct duration, bit-identical
 sequential decode, and a clean seek at every keyframe interval. Two real
@@ -106,3 +124,17 @@ engine bugs were found and fixed beyond the feature work: the CueTime
 root cause above, and an unterminated comment in `rtc.js` that had
 silently disabled eight student-side message handlers (mic permission,
 kick/reject/admission notices) since the first r22 commit.
+
+**Repair-tool pass (2026-10-12, same build):** after the field report
+"it said it repaired successfully but I did not see the new repair file",
+a deep audit of the whole repair/download flow found ELEVEN defects —
+the two silent-download killers (object URL revoked after 1.5 s /
+immediately on the recovery path), success claimed by transient toast
+with no Save button, a synchronous repair that froze the tab with no
+progress, no output file for already-indexed recordings, timestamp-less
+output names, .mkv rejection, unexplained Chrome multi-download blocks,
+and console-only recovery errors. All fixed: the tool now shows a real
+progress report (read % → scan % → write %) and ALWAYS ends with a NEW
+`<original>-REPAIRED-<date>_<time>.webm` file — auto-downloaded AND
+available from a persistent 💾 Save button. Suites grew to 47 (webm) and
+169 (platform) checks accordingly.
