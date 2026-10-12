@@ -2396,3 +2396,80 @@ updated to describe the progress report + NEW-file behaviour, and the
 deploy doc now recommends full-site replacement for this build.
 Final battery: **32 suites × 1720 checks × both repos × run twice —
 0 failures**.
+
+### Completion #2: behavioral proof + remaining-file audit
+
+Three gaps closed. (1) The repair tool's FLOW was only source-pinned —
+it is now EXECUTED: the platform suite (section J, J1–J13) extracts the
+real modal helpers + `repairExistingRecording` from teach.js and runs
+them in a VM with a stubbed DOM, driving every teacher scenario: the
+progress modal opens and streams read→scan→write stages with a bar that
+fills to 100%; completion names a NEW `-REPAIRED-<date>_<time>.webm`
+with a direct blob-href Save button AND an auto-download; the summary
+names both files and marks the original untouched; genuine MP4 (real
+ftyp fixture) is refused without ever calling the engine; unrepairable
+and unreadable files produce honest errors with no Save button;
+already-indexed files still end with a file; .mp4-named WebM gets the
+extension-mismatch explanation. (2) The tutoringconnect-only file list
+was audited (31 files: tools + fixtures + package.json — the download
+sweep had covered every shared page; the generator-only files contain
+no download code). The eight dormant one-time page builders now carry
+DO-NOT-RUN warnings at the top — running them would overwrite
+hand-maintained pages with stale templates (a real landmine, now
+labelled; they still parse as valid Python). (3) The QA README was
+stale at round 21 — it now records the whole of round 22 including the
+four-pass history and current tallies. Final battery: **32 suites ×
+1734 checks × both repos × run twice — 0 failures** (webm 47, platform
+186).
+
+## Round 22 — universal-player pass (the 0xc00d3e8c root cause)
+
+Field report: the repaired WebM still failed in the teacher's Windows
+media player with error 0xc00d3e8c "Can't play because the item's file
+format isn't supported." Deep research confirmed the true root cause —
+Windows' built-in players (Windows Media Player, Movies & TV) do not
+play WebM/VP9/Opus AT ALL; the error means "unsupported format", not
+"broken file" (a perfectly valid WebM gets it too; VLC/Chrome are fine).
+The professional solution, as converged on by every recording platform:
+deliver MP4/H.264+AAC — and Chrome 126+/Edge/Safari can now record that
+natively via MediaRecorder.
+
+Shipped (all in `js/mp4-kit.js`, self-contained, plus wiring):
+
+1. **New recordings are MP4-first.** The recorder's MIME candidate list
+   now tries `video/mp4;codecs=avc1.42E01E,mp4a.40.2` (and variants)
+   BEFORE WebM; Firefox/exotic devices still fall back to WebM + the
+   full repair. The MP4 output is fragmented (durations 0 in the
+   header), so on stop the new **finisher** (`patchMp4Durations`) walks
+   the moof/trun fragments, computes the real per-track ends, and
+   patches mvhd/tkhd/mdhd in place; the stop modal reports duration and
+   format. Truncated/invalid MP4s are detected and reported honestly.
+2. **Old WebM recordings → universal MP4.** The repair panel gained
+   "🎬 Also make a universal MP4": `WebMCues.extract()` (new
+   sample-level demux in webm-cues.js r22-repair-5) feeds a WebCodecs
+   pipeline (`MP4Kit.transcodeToMp4`) that decodes VP8/VP9 and re-encodes
+   H.264 (device hardware where available) plus Opus→AAC, muxed by a
+   from-scratch **progressive MP4 muxer** (ftyp+moov+mdat, full stbl
+   tables, keyframe index). Fully progress-reported; runs on the
+   teacher's laptop; the button hides itself with the reason where the
+   browser cannot convert; failure keeps the repaired WebM safe.
+3. **Validation by the independent judge.** The new suite
+   `test_r22_mp4_kit.js` (32 checks) feeds the REAL muxer genuine
+   ffmpeg-produced H.264 + AAC elementary streams and validates the
+   output with ffprobe/ffmpeg: correct streams/dimensions/duration,
+   a 7-point seek battery with zero decoder errors, and a BIT-IDENTICAL
+   framemd5 decode against the source stream. The finisher is validated
+   on a real fragmented MP4 (empty moov): duration patched in place
+   (byte length unchanged), seeks clean. Writing this suite caught and
+   fixed three real defects pre-ship (avcC numPPS byte, stts
+   count/delta order, tfhd baseMediaDecodeTime gating) — exactly why
+   independent validation matters. `extract()` is verified against a
+   synthetic MediaRecorder-style file (track/codec/OpusHead/sample/
+   keyframe/duration semantics).
+
+Assets `?v=65` (71 refs), sw `hmg-classdeck-v15.1.0-r22-platform-4`,
+version.json tags `universal-mp4-recordings`,
+`mp4-duration-finisher`, `webm-to-mp4-transcode` (116 total). FEATURES.md
+and R22-DEPLOY-AND-VERIFY.md §4 rewritten around the real root cause.
+Battery: **33 suites × 1775 checks × both repos × run twice — 0
+failures** (webm 47, platform 195, mp4-kit 32).
