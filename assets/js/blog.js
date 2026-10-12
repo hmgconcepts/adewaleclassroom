@@ -676,7 +676,7 @@
         var a = d.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = 'blog-backup-' + new Date().toISOString().slice(0, 10) + '.json';
-        a.click();
+        document.body.appendChild(a); a.click(); setTimeout(function () { try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
         if (w.toast) w.toast('Exported ' + posts.length + ' posts ✅', 'success');
       } catch (e) { if (w.toast) w.toast('Export failed: ' + (e.message || e), 'danger'); }
     },

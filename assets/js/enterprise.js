@@ -333,7 +333,7 @@ const Enterprise = {
         const sc = window.PRACTICE || {};
         const meta = { exported_at: new Date().toISOString(), school_name: sc.name || 'School', total_records: (data || []).length, tamper_evident_verified: true, logs: data || [] };
         const blob = new Blob([JSON.stringify(meta, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'tamper-evident-audit-trail-' + new Date().toISOString().slice(0, 10) + '.json'; a.click();
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'tamper-evident-audit-trail-' + new Date().toISOString().slice(0, 10) + '.json'; document.body.appendChild(a); a.click(); setTimeout(function () { try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
       } catch (e) { alert('Export failed: ' + e.message); }
     }
   },

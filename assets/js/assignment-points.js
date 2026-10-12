@@ -244,8 +244,8 @@ window.ASSIGN_POINTS = (function () {
     var a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }));
     a.download = 'homework-term-score-sheet.csv';
-    a.click();
-    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1500);
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
   }
 
   async function fillClasses() {

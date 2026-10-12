@@ -118,8 +118,8 @@ window.ActivityLog = (function () {
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'activity-log-' + new Date().toISOString().slice(0, 10) + '.csv';
-    a.click();
-    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
   }
 
   function init() {

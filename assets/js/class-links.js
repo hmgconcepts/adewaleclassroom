@@ -313,7 +313,7 @@
               var a = document.createElement('a');
               a.href = URL.createObjectURL(blob);
               a.download = 'Paid-Class-Registrations-' + id + '.csv';
-              a.click();
+              document.body.appendChild(a); a.click(); setTimeout(function () { try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
             });
           }
           panel.querySelectorAll('[data-reg-status]').forEach(function (sel) {

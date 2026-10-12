@@ -1630,7 +1630,7 @@ const CRUD = {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = (schema.table || 'export') + '-' + new Date().toISOString().slice(0,10) + '.csv';
-    a.click();
+    document.body.appendChild(a); a.click(); setTimeout(function () { try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
   },
 
   async openForm(moduleId, row) {

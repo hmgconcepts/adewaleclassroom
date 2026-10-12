@@ -523,7 +523,7 @@
         var a = d.createElement('a');
         a.href = URL.createObjectURL(blob);
         a.download = (c.code || 'free-class') + '-registrations.csv';
-        a.click();
+        document.body.appendChild(a); a.click(); setTimeout(function () { try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
       });
 
       box.querySelectorAll('[data-reg-save]').forEach(function (b) {

@@ -453,7 +453,7 @@ const VT = {
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'poll-results-' + String(poll.title || pollId).toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) + '.csv';
-      a.click(); URL.revokeObjectURL(a.href);
+      document.body.appendChild(a); a.click(); setTimeout(function () { try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
       if (window.toast) toast('Results exported.', 'success');
     } catch (e) { if (window.toast) toast('Export failed: ' + (e.message || e), 'danger'); }
   },

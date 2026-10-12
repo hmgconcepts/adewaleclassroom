@@ -40,7 +40,7 @@ const ICS = {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = filename || 'tutoring-connect.ics';
-    a.click();
+    document.body.appendChild(a); a.click(); setTimeout(function () { try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
   },
   async fromBookingClasses(rows, name) {
     const ev = (rows || []).map(c => ({

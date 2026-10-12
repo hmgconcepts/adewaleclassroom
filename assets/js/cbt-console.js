@@ -303,8 +303,8 @@ window.CBTConsole = (function () {
           var link = document.createElement('a');
           link.href = URL.createObjectURL(blob);
           link.download = 'cbt-archive-backup-' + new Date().toISOString().slice(0, 10) + '.json';
-          link.click();
-          setTimeout(function () { URL.revokeObjectURL(link.href); }, 4000);
+          document.body.appendChild(link); link.click();
+          setTimeout(function () { try { link.remove(); URL.revokeObjectURL(link.href); } catch (e) {} }, 60000);
           log(host, 'Exported ' + archived.length + ' archived paper(s) as a portable backup.', true);
           return;
         }

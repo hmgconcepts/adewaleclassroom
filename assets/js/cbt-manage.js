@@ -521,7 +521,7 @@
       var a = d.createElement('a');
       a.href = URL.createObjectURL(new Blob([JSON.stringify(pack, null, 2)], { type: 'application/json' }));
       a.download = 'cbt_' + safe + '_package.json';
-      d.body.appendChild(a); a.click(); a.remove();
+      d.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { try { URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
       toast('📦 Paper package exported (' + qs.length + ' questions). Re-import it from the builder page or another install.', 'success', 8000);
     },
 
