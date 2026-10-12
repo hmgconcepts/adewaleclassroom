@@ -268,7 +268,7 @@ const MM = {
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = 'subject-questions-template.csv';
-      a.click(); URL.revokeObjectURL(a.href);
+      document.body.appendChild(a); a.click(); setTimeout(function () { try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
     };
     box.querySelector('.mm-file').addEventListener('change', e => {
       const f = e.target.files && e.target.files[0]; if (!f) return;

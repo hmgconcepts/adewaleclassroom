@@ -467,7 +467,7 @@
             var a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = 'tutoring-connect-backup-' + new Date().toISOString().slice(0, 10) + '.json';
-            a.click();
+            document.body.appendChild(a); a.click(); setTimeout(function () { try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
             try { localStorage.setItem('tc-last-backup', new Date().toISOString()); } catch (e) {}
             /* V51: persist the timestamp to the studio record so every device
                (and the Drive panel) agrees — localStorage alone was the bug.
@@ -511,7 +511,7 @@
             var a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = 'tutoring-connect-anonymised-' + new Date().toISOString().slice(0, 10) + '.json';
-            a.click();
+            document.body.appendChild(a); a.click(); setTimeout(function () { try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
             say('ad-out', '<p style="color:#065f46"><b>✅ Anonymised export downloaded.</b> ' +
               'Names, contact details, photographs and dates of birth are replaced with stable pseudonyms, ' +
               'so the shape of the data survives but no individual can be identified.</p>');
@@ -535,7 +535,7 @@
           var a = document.createElement('a');
           a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
           a.download = t + '-' + new Date().toISOString().slice(0, 10) + '.csv';
-          a.click();
+          document.body.appendChild(a); a.click(); setTimeout(function () { try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
           say('ad-peek-out', '<p style="color:#065f46">Exported ' + rows.length + ' row(s) from ' + esc(t) + '.</p>');
         });
 
@@ -632,7 +632,7 @@
               { subject: nm, generated: new Date().toISOString(), tables: hit }, null, 1)],
               { type: 'application/json' }));
             a.download = 'dsr-' + nm.replace(/\W+/g, '-').toLowerCase() + '.json';
-            a.click();
+            document.body.appendChild(a); a.click(); setTimeout(function () { try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
             say('ad-dsr-out', '<p style="color:#065f46">Request logged, and everything held on <b>' +
               esc(nm) + '</b> has been downloaded — ' + Object.keys(hit).length + ' table(s).</p>');
           } else {
@@ -1027,7 +1027,7 @@ const ADBrowse = {
     const lines = this._rows.map(r => cols.map(c => '"' + String(r[c]==null?'':r[c]).replace(/"/g,'""') + '"').join(','));
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([cols.join(',') + '\n' + lines.join('\n')], { type:'text/csv' }));
-    a.download = t + '-export.csv'; a.click();
+    a.download = t + '-export.csv'; document.body.appendChild(a); a.click(); setTimeout(function () { try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
   },
   async del(t, id){
     if (!id) return toast('This row has no id column — delete it from the SQL editor.', 'warning');

@@ -523,7 +523,7 @@ document.getElementById('copy').onclick=async()=>{
       .toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40);
     const blob=new Blob([t],{type:'text/csv;charset=utf-8'});
     const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob); a.download=topic+'.csv'; a.click(); URL.revokeObjectURL(a.href);
+    a.href=URL.createObjectURL(blob); a.download=topic+'.csv'; document.body.appendChild(a); a.click(); setTimeout(function(){ try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
     const n=t.split(/\r?\n/).filter(Boolean).length-1;
     toast('Saved '+topic+'.csv ('+n+' question rows). Upload it on the Quizzes page.','success',7000);
   };

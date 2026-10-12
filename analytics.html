@@ -478,12 +478,12 @@ const AN = {
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([JSON.stringify(this.academicExport, null, 2)], { type: 'application/json' }));
     a.download = 'academic-performance-' + new Date().toISOString().slice(0,10) + '.json';
-    a.click();
+    document.body.appendChild(a); a.click(); setTimeout(function () { try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
   },
   exportCSV(){
     const blob = new Blob([JSON.stringify(this.data, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = 'analytics-raw.json'; a.click();
+    a.href = URL.createObjectURL(blob); a.download = 'analytics-raw.json'; document.body.appendChild(a); a.click(); setTimeout(function () { try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
     toast('📥 Raw data exported.', 'success');
   },
   exportPDF(){ window.print(); }

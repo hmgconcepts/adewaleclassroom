@@ -340,7 +340,7 @@
           var pkg = { exported_at: new Date().toISOString(), exam: x, questions: bank };
           var bl = new Blob([JSON.stringify(pkg, null, 2)], { type: 'application/json' });
           var an = document.createElement('a');
-          an.href = URL.createObjectURL(bl); an.download = (x.code || 'paper') + '-package.json'; an.click();
+          an.href = URL.createObjectURL(bl); an.download = (x.code || 'paper') + '-package.json'; document.body.appendChild(an); an.click(); setTimeout(function () { try { an.remove(); URL.revokeObjectURL(an.href); } catch (e) {} }, 60000);
           return;
         }
         if (a === 'preview') {
@@ -627,7 +627,7 @@
     var a = document.createElement('a');
     a.href = URL.createObjectURL(b);
     a.download = 'results-' + CURRENT.id.slice(0, 8) + '.csv';
-    a.click();
+    document.body.appendChild(a); a.click(); setTimeout(function () { try { a.remove(); URL.revokeObjectURL(a.href); } catch (e) {} }, 60000);
   };
 
   $('cr-close').onclick = function () { $('cr-panel').hidden = true; CURRENT = null; };
