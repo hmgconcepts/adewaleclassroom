@@ -94,6 +94,26 @@
   <span class="badge" id="countChip">👥 1</span>
 </div>
 
+<!-- r22: breakout room bar + room grid (visible when the teacher opens rooms) -->
+<div id="brBar" class="hide">
+  <span class="br-title">🎨 <span id="brRoomName"></span></span>
+  <span id="brPeers" style="font-size:12px;color:var(--text-dim)"></span>
+  <button class="btn small" id="sBtnTalk" title="Talk with your room — your mic goes directly to your room-mates (not the whole class)">🎙 Talk</button>
+  <button class="btn small" id="sBtnBrCam" title="Show your camera to your room (adds video to your room talk)">📷 Camera</button>
+  <button class="btn small" id="sBtnBrHelp" title="Tell the teacher you need help in this room">🙋 Ask teacher</button>
+  <input class="input" id="brChatInp" placeholder="Chat with your room…" maxlength="500" style="width:170px;padding:5px 8px;font-size:13px" />
+  <button class="btn small" id="brChatSend" title="Send to everyone in THIS room only (not the whole class)">➤</button>
+  <span id="brTimerSpan" style="font-size:12.5px;font-weight:700;color:var(--warn,#b45309)"></span>
+  <span id="brMsgSlot" style="font-size:12.5px;font-weight:700"></span>
+</div>
+<div id="brGrid" class="hide"></div>
+
+<!-- r22 (item 3): the class gallery — classmates the teacher has made visible -->
+<div id="cdGalleryWrap" class="hide" style="max-width:860px;margin:4px auto 0;padding:0 10px">
+  <div style="font-size:12px;color:var(--text-dim)">👥 Classmates (your teacher decides who is shown)</div>
+  <div id="cdGallery"></div>
+</div>
+
 <!-- tap-to-unmute overlay (autoplay policy) -->
 <div class="modal-back" id="mUnmute">
   <div class="modal" style="text-align:center">
@@ -124,10 +144,15 @@
     <label style="display:flex;gap:6px;align-items:center;font-size:12px;color:var(--text-dim);margin-bottom:6px">
       <input type="checkbox" id="sChatPriv" /> 🔒 Send privately to teacher only
     </label>
+    <select class="input" id="sChatTo" style="margin-bottom:6px;display:none">
+      <option value="">Everyone (public chat)</option>
+    </select>
+    <p id="sChatModeNote" style="font-size:11.5px;color:var(--text-dim);margin:0 0 6px"></p>
     <div class="chat-input-row">
       <input class="input" id="sChatInput" placeholder="Ask a question…" maxlength="500" />
       <button class="btn primary" id="sChatSend">➤</button>
     </div>
+    <button class="btn small ghost" id="sBtnQa" style="margin-top:8px" title="Ask the teacher a question in the Q&A — they can answer it for the whole class (Google Meet / Zoho style)">🙋 Ask the teacher a question</button>
   </div>
 </aside>
 
@@ -194,6 +219,11 @@
   <button class="btn icon ghost react-emo">🎉</button>
   <button class="btn icon ghost react-emo">😮</button>
   <button class="btn icon ghost react-emo">👏</button>
+  <div style="width:1px;align-self:stretch;background:var(--line);margin:0 2px"></div>
+  <button class="btn icon ghost nv-emo" data-kind="yes" title="Nonverbal: YES">👍</button>
+  <button class="btn icon ghost nv-emo" data-kind="no" title="Nonverbal: NO">👎</button>
+  <button class="btn icon ghost nv-emo" data-kind="slower" title="Nonverbal: go SLOWER">🐢</button>
+  <button class="btn icon ghost nv-emo" data-kind="faster" title="Nonverbal: go FASTER">🐇</button>
 </div>
 
 <!-- v4: waiting room overlay -->
@@ -257,13 +287,13 @@
   </div>
 </div>
 
-<script src="vendor/peerjs.min.js?v=61"></script>
-<script src="js/common.js?v=61"></script>
-<script src="js/config.js?v=61"></script>
-<script src="js/portal-bridge.js?v=61"></script>
-<script src="js/license.js?v=61"></script>
-<script src="js/rtc.js?v=61"></script>
-<script src="js/join.js?v=61"></script>
+<script src="vendor/peerjs.min.js?v=63"></script>
+<script src="js/common.js?v=63"></script>
+<script src="js/config.js?v=63"></script>
+<script src="js/portal-bridge.js?v=63"></script>
+<script src="js/license.js?v=63"></script>
+<script src="js/rtc.js?v=63"></script>
+<script src="js/join.js?v=63"></script>
 <script>
 /* Issue #9: force install banner on the join page (re-appears until installed). */
 function joinInstall() {

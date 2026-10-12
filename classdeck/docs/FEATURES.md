@@ -196,6 +196,41 @@ Output: a **ZIP with two folders** — `<CLIENT>-CLASSDECK/` (the deployable bra
 
 ---
 
+## M. LIVE-CLASS PLATFORM FEATURES (Zoom / Meet / Zoho / FreeConference parity, r22)
+
+Everything below runs peer-to-peer from the teacher's browser — no server, no paid API.
+
+**Breakout rooms (Zoom-style)**
+- Create 1–20 rooms, automatic (even spread) or manual (move students live, any time).
+- **Rooms from poll**: one room per poll option; every student who answered lands in that option's room; non-answerers stay in the main class.
+- **Room timer**: countdown every student sees, automatic 60-second warning, auto-close with everyone returned to the main class.
+- **Room-scoped chat**: students chat only with their room-mates; the teacher (and Co-Tutors) keep the full log.
+- Broadcast to one room or all rooms; ask-for-help marker; rename rooms live.
+
+**Talking & moderation**
+- **Allow self-unmute** toggle — turning it off mutes everyone and locks student mic buttons (hands still work).
+- Mute all / lower all hands / lock room / waiting room with per-student admission.
+- **Rename student** (✏️ on each roster row) — everyone's roster, DM lists and logs switch instantly.
+- Suspend-all-activities one-tap lockdown.
+
+**Chat**
+- **Chat modes**: Everyone · Teacher & Co-Tutors only · No one — enforced on the teacher's device (the hub), mirrored honestly in student UIs.
+- Permitted student-to-student DMs (the teacher allows each pair individually).
+- **Save chat (.txt)** — public, private, DMs and room chats, timestamps included.
+
+**Q&A (Google Meet / Zoho style)**
+- Students ask from their chat drawer (🙋 button); the teacher answers in one tap and the whole class sees the answer; dismiss or clear questions; open/close the Q&A.
+
+**Feedback**
+- Reactions, non-verbal feedback (yes / no / slower / faster), raise hand, spotlight.
+- **Enter/exit chime** on the teacher device (toggleable, remembered).
+
+**Co-Tutor parity** — every one of these powers (rename, chat modes, self-unmute, Q&A answer/dismiss/clear/open, rooms-from-poll, room timer, room chat visibility) is available to a promoted Co-Tutor, exactly like the tutor.
+
+**Recording seek repair (root cause fixed)** — recorded class videos now seek cleanly on every laptop player: the repair writes Duration + SeekHead + Cues + a finite Segment, and every CueTime is the **keyframe's own presentation timestamp** (a CueTime at the cluster timecode made ffmpeg-family players skip the keyframe and decode mid-GOP frames — the "stops/crashes when clicking timestamps" bug).
+
+---
+
 ## L. DEPLOYMENT (free, unambiguous)
 
 See **`DEPLOYMENT-GUIDE.md`** — GitHub upload → Vercel/Netlify/Cloudflare/GitHub Pages → owner login → checklist. All free tiers; no AI APIs; no database.

@@ -336,7 +336,7 @@ class TeacherRoom {
     this.stageCalls = new Map();                      // enterprise fix: close old teacher→student stage calls when switching source
     this._permMem = new Map();                        // v9: permission memory by student name — survives reconnects
     this.camCalls = new Map();                        // enterprise fix: close old teacher camera calls cleanly
-    this.stats = { start: 0, peak: 0, joins: 0, chats: 0, polls: [], quizzes: [], reactions: 0, hands: 0, captions: 0 }; // analytics
+    this.stats = { start: 0, peak: 0, joins: 0, chats: 0, polls: [], quizzes: [], reactions: 0, hands: 0, captions: 0, qa: 0 }; // analytics
     this._reconnectTimer = null;
     this._startTimer = null;
     this._ended = false;
@@ -354,6 +354,32 @@ class TeacherRoom {
     this.maxStudents = 300;
     this.relayMode = false;
     this.captains = new Map();       // teacherPeerId -> {id, stu, capacity, children:Set}
+    /* r22 (round 22, items 2+3): the platform-feature engine state.
+       breakouts: Zoom-style rooms; seeEachOther + stuBcastCalls: the
+       teacher-controlled class gallery (students seeing each other);
+       every per-student permission lives on the student record where the
+       roster renderer can read it. */
+    this.breakouts = new Map();       // roomId -> {id, name, members:Set(peerId)}
+    this.breakoutsOn = false;
+    /* ── r22 completion: the remaining Zoom/Meet/Zoho/FreeConference matrix ──
+       chat modes, the self-unmute gate, Q&A, the chat log (for the .txt
+       export), poll->breakout assignment, the breakout timer and
+       room-scoped chat. All teacher-authoritative, all mirrored for the
+       Co-Tutor, all enforced on THIS side (students only send requests). */
+    this.chatMode = "class";        // 'off' | 'host' | 'class' — who may chat
+    this.allowSelfUnmute = true;    // false = student mic buttons are locked
+    this.qaOpen = true;             // Q&A open for new questions?
+    this.qa = [];                   // [{id, from, fromPeer, text, at, answered, answer, answeredBy}]
+    this._qaSeq = 0;
+    this.chatLog = [];              // every message the .txt export needs
+    this._lastPoll = null;          // {question, options, choices:Map(peerId->optionIndex)}
+    this._brEndsAt = 0;             // breakout countdown target (epoch ms)
+    this._brTimerId = null;
+    this._brWarned = false;
+    this._brSeq = 0;
+    this._brRound = 0;
+    this.seeEachOther = false;        // item 3: can students see/hear each other?
+    this.stuBcastCalls = new Map();   // peerId -> Map(targetPeerId -> [calls])
     this._capSeq = 0;
     this.captainCapacity = 8;        /* streams each captain re-serves (~1.2 Mbps) */
     this._pingTimer = null;
@@ -505,10 +531,23 @@ class TeacherRoom {
           stu.screenStream = stream;
           if (stu.screenAudience === "class") this.broadcastStudentScreen(call.peer, true);
         }
+        /* r22 (item 3): remember the camera/mic streams so the teacher can
+           relay them to the class gallery ("students see each other"). */
+        if (kind === "stucam") {
+          stu.camStream = stream;
+          if (this.seeEachOther && !stu.visibleToClass) stu.visibleToClass = true;
+          if (this.seeEachOther) this._syncGallery();
+        }
+        if (kind === "stumic") {
+          stu.micStream = stream;
+          if (this.seeEachOther && stu.visibleToClass) this._syncGallery();
+        }
         this.onEvent("student-media", { peerId: call.peer, name: stu.name, kind, stream });
       });
       call.on("close", () => {
         if (kind === "stuscreen" && stu.screenAudience === "class") this.broadcastStudentScreen(call.peer, false);
+        if (kind === "stucam") { stu.camStream = null; this._stopGalleryFor(call.peer); }
+        if (kind === "stumic") { stu.micStream = null; if (!stu.camStream) this._stopGalleryFor(call.peer); }
         this.onEvent("student-media-end", { peerId: call.peer, kind });
       });
       stu.mediaCalls.push(call);
@@ -517,7 +556,8 @@ class TeacherRoom {
 
   /* v4: admit a student (directly, or from the waiting room) */
   _admit(conn, name) {
-    const stu = { conn, name, joinedAt: Date.now(), hand: false, micAllowed: false, mediaCalls: [], score: 0 };
+    const stu = { conn, peerId: conn.peer, name, joinedAt: Date.now(), hand: false, micAllowed: false, mediaCalls: [], score: 0,
+                   visibleToClass: false, dmAllowed: new Set(), breakout: null, brHelp: false };   /* r22: peerId (was missing — the co-tutor roster targets were null) + feature state */
     /* v9: if this student had mic permission before a network blip / reload,
        re-apply it automatically so the teacher never has to re-click. */
     const permKey = String(name || "").trim().toLowerCase();
@@ -529,8 +569,21 @@ class TeacherRoom {
     this.stats.peak = Math.max(this.stats.peak, this.students.size);
     conn.send({ t: "welcome", roomName: this.roomName || this.code, count: this.students.size, rejoined: !!(conn.metadata && conn.metadata.rejoin) });
     if (stu.micAllowed) { try { conn.send({ t: "micAllow", on: true }); } catch {} }
+    /* r22 completion: late joiners inherit the live chat mode, the
+       self-unmute gate, and the answered part of the Q&A list. */
+    try {
+      conn.send({ t: "chatMode", mode: this.chatMode });
+      conn.send({ t: "selfUnmute", on: this.allowSelfUnmute });
+      conn.send({ t: "qaState", open: this.qaOpen, questions: this._qaPublic() });
+    } catch (e) {}
     this._broadcastRoster();
     this.onEvent("student-joined", { peerId: conn.peer, name });
+    /* r22: a late joiner gets the current class state: their (empty) DM
+       partner list, and — when the class gallery is on — the streams of
+       every student the teacher has made visible. Breakout assignment
+       stays a deliberate teacher action (Zoom behaviour). */
+    this._sendDmList(stu);
+    if (this.seeEachOther) this._syncGallery();
     
     // Mass Broadcast URL - push embedded iframe string if provided
     if (this.massUrl) {
@@ -652,6 +705,465 @@ class TeacherRoom {
     this.attendance.push({ name, event: on ? "screen-to-class-on" : "screen-to-class-off", time: nowStamp() });
     return n;
   }
+  /* ═══════════════════════════════════════════════════════════════════
+     r22 (round 22, items 2 + 3) — THE PLATFORM FEATURE ENGINE
+     Breakout rooms (Zoom-parity), reactions, the teacher-controlled class
+     gallery and teacher-granted student DMs. Every action is authorised
+     HERE on the teacher's room object, stamped into the attendance log,
+     and reflected in the roster — a student UI can never grant itself
+     anything.
+     ═══════════════════════════════════════════════════════════════════ */
+
+  /* ---- BREAKOUT ROOMS (Zoom parity) --------------------------------
+     The teacher splits the class into named rooms (auto round-robin or
+     manual), moves students live, broadcasts to one/all rooms, watches
+     help requests, and closes everything with one tap. Room media is a
+     DIRECT student↔student mesh — the same P2P path class captains
+     already prove at scale — so the teacher's uplink is never touched:
+     the teacher names the peers, each member calls them, everyone answers
+     (rtc.js StudentRoom answers every call already). The teacher keeps
+     every member's existing camera/mic pipes, so monitoring a room is the
+     existing tiles grouped by room. */
+  createBreakouts(defs, mode, preassign) {
+    if (!Array.isArray(defs) || !defs.length || defs.length > 20) return { ok: false, error: "Create between 1 and 20 rooms." };
+    const nStudents = this.students.size;
+    if (!nStudents) return { ok: false, error: "No students to send into rooms yet." };
+    this.endBreakouts(true);
+    const rooms = [];
+    for (let i = 0; i < defs.length; i++) {
+      const room = { id: "br" + (++this._brSeq), name: String((defs[i] && defs[i].name) || ("Breakout " + (i + 1))).trim().slice(0, 40) || ("Breakout " + (i + 1)), members: new Set() };
+      this.breakouts.set(room.id, room);
+      rooms.push(room);
+    }
+    if ((mode === "manual" || mode === "poll") && preassign && typeof preassign === "object") {
+      for (const pid of Object.keys(preassign)) {
+        const v = preassign[pid];
+        /* r22 completion: poll mode passes OPTION INDEXES (room ids do not
+           exist yet); manual mode passes room ids as before. */
+        const room = (typeof v === "number") ? rooms[v] : this.breakouts.get(v);
+        if (room && this.students.has(pid)) room.members.add(pid);
+      }
+    }
+    if (mode !== "poll") {
+      /* poll mode: only the students who answered are placed (Zoom's
+         "create rooms from poll" semantics); everyone else stays in the
+         main room until moved by hand. */
+      for (const pid of this.students.keys()) {
+        let placed = false;
+        for (const r of rooms) if (r.members.has(pid)) { placed = true; break; }
+        if (!placed) rooms[this._brRound++ % rooms.length].members.add(pid);
+      }
+    }
+    this.breakoutsOn = true;
+    for (const r of rooms) {
+      for (const pid of r.members) {
+        const stu = this.students.get(pid);
+        if (!stu) continue;
+        stu.breakout = r.id; stu.brHelp = false;
+        this._sendBreakoutState(stu, r);
+        this.attendance.push({ name: stu.name, event: "breakout-join:" + r.name, time: nowStamp() });
+      }
+    }
+    this._broadcastRoster();
+    this.onEvent("breakouts", this.breakoutSummary());
+    return { ok: true, rooms: this.breakoutSummary() };
+  }
+  _sendBreakoutState(stu, room) {
+    const peers = [];
+    for (const pid of room.members) {
+      if (pid === stu.peerId) continue;
+      const other = this.students.get(pid);
+      if (other) peers.push({ peerId: pid, name: other.name });
+    }
+    try { stu.conn.send({ t: "brState", on: true, roomId: room.id, roomName: room.name, peers }); } catch {}
+  }
+  moveStudent(peerId, roomId) {
+    const stu = this.students.get(peerId);
+    if (!stu) return false;
+    for (const r of this.breakouts.values()) r.members.delete(peerId);
+    const room = this.breakouts.get(roomId);
+    if (!room) {
+      stu.breakout = null;
+      try { stu.conn.send({ t: "brState", on: false }); } catch {}
+      this.onEvent("breakouts", this.breakoutSummary());
+      return true;
+    }
+    room.members.add(peerId);
+    stu.breakout = roomId;
+    for (const pid of room.members) {                    /* everyone's mesh list changes */
+      const other = this.students.get(pid);
+      if (other) this._sendBreakoutState(other, room);
+    }
+    this.attendance.push({ name: stu.name, event: "breakout-move:" + room.name, time: nowStamp() });
+    this._broadcastRoster();
+    this.onEvent("breakouts", this.breakoutSummary());
+    return true;
+  }
+  broadcastToRooms(text, roomId) {
+    const clean = String(text || "").slice(0, 300);
+    if (!clean) return 0;
+    let n = 0;
+    for (const r of this.breakouts.values()) {
+      if (roomId && r.id !== roomId) continue;
+      for (const pid of r.members) {
+        const stu = this.students.get(pid);
+        if (stu) { try { stu.conn.send({ t: "brMsg", text: clean, roomName: r.name }); n++; } catch {} }
+      }
+    }
+    this.attendance.push({ name: "(class)", event: "breakout-broadcast", time: nowStamp() });
+    return n;
+  }
+  endBreakouts(silent) {
+    if (!this.breakouts.size) return;
+    for (const r of this.breakouts.values()) {
+      for (const pid of r.members) {
+        const stu = this.students.get(pid);
+        if (!stu) continue;
+        stu.breakout = null; stu.brHelp = false;
+        try { stu.conn.send({ t: "brState", on: false }); } catch {}
+        this.attendance.push({ name: stu.name, event: "breakout-leave:" + r.name, time: nowStamp() });
+      }
+    }
+    this.breakouts.clear();
+    this.breakoutsOn = false;
+    this._brRound = 0;
+    this._clearBrTimer(true);   /* r22 completion: no countdown past the close */
+    if (!silent) { this._broadcastRoster(); this.onEvent("breakouts", []); }
+  }
+  renameBreakout(roomId, name) {
+    const room = this.breakouts.get(roomId);
+    const clean = String(name || "").slice(0, 40);
+    if (!room || !clean) return false;
+    room.name = clean;
+    for (const pid of room.members) {
+      const stu = this.students.get(pid);
+      if (stu) this._sendBreakoutState(stu, room);
+    }
+    this.onEvent("breakouts", this.breakoutSummary());
+    return true;
+  }
+  breakoutSummary() {
+    return Array.from(this.breakouts.values()).map((r) => ({
+      id: r.id, name: r.name,
+      members: Array.from(r.members).map((pid) => {
+        const stu = this.students.get(pid);
+        return stu ? { peerId: pid, name: stu.name, help: !!stu.brHelp } : null;
+      }).filter(Boolean)
+    }));
+  }
+  clearBrHelp(peerId) {
+    const stu = this.students.get(peerId);
+    if (stu) { stu.brHelp = false; this.onEvent("breakouts", this.breakoutSummary()); }
+  }
+
+  /* ---- REACTIONS (Zoom/Meet parity) --------------------------------- */
+  sendReaction(emoji) {
+    const e = String(emoji || "").slice(0, 8);
+    if (!e) return;
+    this.broadcast({ t: "reaction", emoji: e, from: "Teacher" });
+    this.onEvent("reaction", { from: "Teacher", emoji: e });
+  }
+
+  /* ---- SUSPEND ACTIVITIES (Zoom host tools parity) ------------------
+     One tap: mute everyone, lower hands, stop every class-screen share,
+     gallery off, breakouts closed, room locked. Broadcast + recording
+     (the teacher's own pipes) are untouched. */
+  suspendActivities() {
+    this.muteAll();
+    this.lowerAllHands();
+    this.setLocked(true);
+    this.setSeeEachOther(false);
+    this.endBreakouts(true);
+    for (const [pid, stu] of this.students) {
+      if (stu.mediaCalls.some((c) => c._hmgKind === "stuscreen") || stu.screenStream) {
+        this.requestStudentScreen(pid, false);
+        this.broadcastStudentScreen(pid, false);
+      }
+    }
+    this.broadcast({ t: "suspended" });
+    this.attendance.push({ name: "(class)", event: "activities-suspended", time: nowStamp() });
+    this.onEvent("suspended", {});
+  }
+
+  /* ---- THE CLASS GALLERY — "students can see each other" (item 3) ----
+     The teacher decides, globally AND per student. Visible students'
+     camera+mic are relayed by the teacher to every other student
+     (metadata kind "stu-bcast" + a name), exactly like the r21 class
+     screen share but for people. The relay set is reconciled on every
+     change (camera on/off, join/leave, teacher toggles) — nothing ever
+     dangles. Students in a breakout are skipped (their room IS their
+     gallery). The teacher's uplink carries one stream per visible
+     student — the roster shows the count so the choice is informed. */
+  setSeeEachOther(on) {
+    this.seeEachOther = !!on;
+    if (!on) {
+      for (const stu of this.students.values()) stu.visibleToClass = false;
+      this._stopAllGallery();
+      this._broadcastRoster();
+      this.onEvent("see-each-other", false);
+      return;
+    }
+    for (const stu of this.students.values()) {
+      if (stu.camStream || stu.micStream) stu.visibleToClass = true;   /* sharing now = visible */
+    }
+    this._syncGallery();
+    this._broadcastRoster();
+    this.onEvent("see-each-other", true);
+  }
+  setStudentVisible(peerId, on) {
+    const stu = this.students.get(peerId);
+    if (!stu) return;
+    if (on && !this.seeEachOther) this.setSeeEachOther(true);
+    stu.visibleToClass = !!on;
+    this._syncGallery();
+    this._broadcastRoster();
+  }
+  _studentBcastStream(stu) {
+    if (!stu.camStream && !stu.micStream) return null;
+    /* camera + mic combined; if one is missing, relay the other directly */
+    if (!stu.camStream) return stu.micStream;
+    if (!stu.micStream) return stu.camStream;
+    if (typeof MediaStream !== "function") return stu.camStream;   /* exotic runtimes: relay as-is */
+    const ms = new MediaStream();
+    try { for (const t of stu.camStream.getVideoTracks()) ms.addTrack(t); } catch (e) {}
+    try { for (const t of stu.micStream.getAudioTracks()) ms.addTrack(t); } catch (e) {}
+    return ms.getTracks().length ? ms : stu.camStream;
+  }
+  _syncGallery() {
+    for (const [pid, calls] of this.stuBcastCalls) {
+      const stu = this.students.get(pid);
+      const want = stu && this.seeEachOther && stu.visibleToClass && !stu.breakout && this._studentBcastStream(stu);
+      if (!want) this._stopGalleryFor(pid);
+    }
+    for (const stu of this.students.values()) {
+      if (!this.seeEachOther || !stu.visibleToClass || stu.breakout) continue;
+      const stream = this._studentBcastStream(stu);
+      if (!stream) continue;
+      let calls = this.stuBcastCalls.get(stu.peerId);
+      if (!calls) { calls = new Map(); this.stuBcastCalls.set(stu.peerId, calls); }
+      for (const [tpid, target] of this.students) {
+        if (tpid === stu.peerId || target.breakout) continue;
+        if (calls.get(tpid)) continue;                       /* already flowing */
+        try {
+          const call = this.peer.call(tpid, stream, { metadata: { kind: "stu-bcast", name: stu.name, srcPid: stu.peerId } });
+          target.mediaCalls.push(call);
+          const arr = [call];
+          calls.set(tpid, arr);
+          const clear = () => { const a = calls.get(tpid); if (a === arr) calls.delete(tpid); };
+          call.on("close", clear); call.on("error", clear);
+          try { target.conn.send({ t: "stuBcast", on: true, name: stu.name, srcPid: stu.peerId }); } catch {}
+        } catch (e) {}
+      }
+    }
+  }
+  _stopGalleryFor(peerId) {
+    const calls = this.stuBcastCalls.get(peerId);
+    if (!calls) return;
+    for (const arr of calls.values()) for (const c of arr) { try { c.close(); } catch {} }
+    this.stuBcastCalls.delete(peerId);
+    const stu = this.students.get(peerId);
+    if (stu) { try { stu.conn.send({ t: "stuBcast", on: false, name: stu.name, srcPid: peerId }); } catch {} }
+  }
+  _stopAllGallery() {
+    for (const pid of Array.from(this.stuBcastCalls.keys())) this._stopGalleryFor(pid);
+  }
+
+  /* ---- STUDENT-TO-STUDENT DMs (item 3) --------------------------------
+     Directional permissions the teacher grants per pair; every message
+     routes THROUGH this room object so the teacher keeps the log and
+     nothing unpermitted ever reaches a student. */
+  allowDm(fromPid, toPid, on) {
+    const from = this.students.get(fromPid);
+    const to = this.students.get(toPid);
+    if (!from || !to || fromPid === toPid) return false;
+    if (on) from.dmAllowed.add(toPid);
+    else from.dmAllowed.delete(toPid);
+    this._sendDmList(from);
+    this.attendance.push({ name: from.name, event: (on ? "dm-allowed:" : "dm-revoked:") + to.name, time: nowStamp() });
+    this.onEvent("dm-perms", { from: from.name, to: to.name, on: !!on });
+    this._pushPrivileged();
+    return true;
+  }
+  _sendDmList(stu) {
+    const partners = [];
+    if (stu.dmAllowed) for (const pid of stu.dmAllowed) {
+      const other = this.students.get(pid);
+      if (other) partners.push({ peerId: pid, name: other.name });
+    }
+    try { stu.conn.send({ t: "dmList", partners }); } catch {}
+  }
+
+  /* ═══════════════ r22 completion: the remaining platform matrix ═══════════════
+     rename, chat modes, self-unmute gate, Q&A, chat export, poll->rooms,
+     the breakout timer. Every method is teacher/Co-Tutor only (enforced at
+     the cohostAction switch) and every state change is pushed to students
+     AND reflected in the roster/attendance logs. */
+
+  /* Zoom "Rename": the teacher (or Co-Tutor) renames a student; everyone's
+     roster updates. v9 permission MEMORY follows the person: its key is the
+     lowercased name, so the rename migrates the entry. */
+  renameStudent(peerId, name) {
+    const stu = this.students.get(peerId);
+    if (!stu) return false;
+    const clean = String(name || "").replace(/[\r\n\t]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 40);
+    if (!clean) return false;
+    const oldName = stu.name;
+    const oldKey = String(oldName || "").trim().toLowerCase();
+    const newKey = clean.toLowerCase();
+    if (oldKey && newKey && oldKey !== newKey && this._permMem.has(oldKey)) {
+      this._permMem.set(newKey, this._permMem.get(oldKey));
+      this._permMem.delete(oldKey);
+    }
+    stu.name = clean;
+    try { stu.conn.send({ t: "renamed", name: clean, was: oldName }); } catch {}
+    this.attendance.push({ name: clean, event: "renamed-from:" + oldName, time: nowStamp() });
+    this.onEvent("renamed", { peerId, from: oldName, to: clean });
+    this._broadcastRoster();
+    this._pushPrivileged();
+    return true;
+  }
+
+  /* Zoom "Participants can chat with: No one / Host only / Everyone" */
+  setChatMode(mode) {
+    if (["off", "host", "class"].indexOf(mode) < 0) return false;
+    this.chatMode = mode;
+    this.broadcast({ t: "chatMode", mode });
+    this.attendance.push({ name: "(class)", event: "chat-mode:" + mode, time: nowStamp() });
+    this.onEvent("chat-mode", { mode });
+    return true;
+  }
+
+  /* Zoom "Allow participants to unmute themselves" — turning it OFF mutes
+     everyone and locks the student mic buttons. */
+  setAllowSelfUnmute(on) {
+    this.allowSelfUnmute = !!on;
+    if (!on) this.muteAllStudents();
+    this.broadcast({ t: "selfUnmute", on: this.allowSelfUnmute });
+    this.attendance.push({ name: "(class)", event: "self-unmute:" + (this.allowSelfUnmute ? "on" : "off"), time: nowStamp() });
+    this.onEvent("self-unmute", { on: this.allowSelfUnmute });
+    return true;
+  }
+
+  /* Q&A (Meet/Zoho style): answer goes to EVERYONE (like Meet's answered
+     list); dismiss removes the question. */
+  _qaPublic() {
+    return this.qa.filter((q) => q.answered)
+      .map((q) => ({ id: q.id, from: q.from, text: q.text, answer: q.answer, answeredBy: q.answeredBy, at: q.at }));
+  }
+  _pushQa() {
+    const priv = this.qa.map((q) => ({ id: q.id, from: q.from, fromPeer: q.fromPeer, text: q.text, at: q.at, answered: q.answered, answer: q.answer, answeredBy: q.answeredBy }));
+    for (const pid of this.coHosts) {
+      const ct = this.students.get(pid);
+      if (ct) { try { ct.conn.send({ t: "qaState", open: this.qaOpen, questions: priv }); } catch {} }
+    }
+  }
+  qaAnswer(id, text) {
+    const q = this.qa.find((x) => x.id === id);
+    const clean = String(text || "").trim().slice(0, 1000);
+    if (!q || !clean) return false;
+    q.answered = true; q.answer = clean; q.answeredBy = "Teacher";
+    this.broadcast({ t: "qaAnswer", id: q.id, from: q.from, question: q.text, answer: clean, by: q.answeredBy });
+    this.attendance.push({ name: q.from, event: "qa-answered", time: nowStamp() });
+    this._pushQa();
+    this.onEvent("qa", this.qa.slice());
+    return true;
+  }
+  qaDismiss(id) {
+    const i = this.qa.findIndex((x) => x.id === id);
+    if (i < 0) return false;
+    this.qa.splice(i, 1);
+    this.broadcast({ t: "qaDismiss", id });
+    this._pushQa();
+    this.onEvent("qa", this.qa.slice());
+    return true;
+  }
+  qaClear() {
+    this.qa = [];
+    this.broadcast({ t: "qaClear" });
+    this._pushQa();
+    this.onEvent("qa", []);
+    return true;
+  }
+  qaSetOpen(open) {
+    this.qaOpen = !!open;
+    this.broadcast({ t: "qaMode", open: this.qaOpen });
+    this._pushQa();
+    this.onEvent("qa", this.qa.slice());
+    return true;
+  }
+
+  /* Zoom "Create breakout rooms from poll results" — one room per poll
+     option; every student who answered lands in that option's room. */
+  pollToBreakouts() {
+    if (!this._lastPoll || !this._lastPoll.choices || !this._lastPoll.choices.size)
+      return { ok: false, error: "Run a poll first — rooms are built from who answered what." };
+    if (!this.students.size) return { ok: false, error: "No students to send into rooms yet." };
+    const lp = this._lastPoll;
+    const defs = lp.options.map((o, i) => ({ name: (String(o).trim().slice(0, 40)) || ("Room " + (i + 1)) }));
+    const preassign = {};
+    let placed = 0;
+    for (const [pid, i] of lp.choices) {
+      if (!this.students.has(pid) || !defs[i]) continue;
+      preassign[pid] = i;                 /* option INDEX — createBreakouts maps it */
+      placed++;
+    }
+    if (!placed) return { ok: false, error: "Nobody answered the last poll yet." };
+    const res = this.createBreakouts(defs, "poll", preassign);
+    if (res && res.ok) this.attendance.push({ name: "(class)", event: "breakout-from-poll:" + placed, time: nowStamp() });
+    return res;
+  }
+
+  /* Breakout timer (Zoom): countdown every student sees; 60s warning;
+     auto-close at zero. */
+  startBrTimer(minutes) {
+    const mins = Math.min(240, Math.max(1, Math.floor(Number(minutes) || 0)));
+    if (!mins) return { ok: false, error: "Set the timer between 1 and 240 minutes." };
+    if (!this.breakouts.size) return { ok: false, error: "Open breakout rooms first." };
+    this._clearBrTimer(true);
+    this._brEndsAt = Date.now() + mins * 60000;
+    this._brWarned = false;
+    this.broadcast({ t: "brTimer", endsAt: this._brEndsAt });
+    this.onEvent("brTimer", { endsAt: this._brEndsAt, minutes: mins });
+    this.attendance.push({ name: "(class)", event: "breakout-timer:" + mins + "min", time: nowStamp() });
+    this._brTimerId = setInterval(() => {
+      const rem = this._brEndsAt - Date.now();
+      if (rem <= 0) {
+        this._clearBrTimer(true);
+        this.broadcast({ t: "brTimer", endsAt: 0, closed: true });
+        this.endBreakouts();
+        this.onEvent("brTimer", { endsAt: 0, closed: true });
+        return;
+      }
+      if (rem <= 60000 && !this._brWarned) {
+        this._brWarned = true;
+        this.broadcastToRooms("One minute left - wrap up your discussion!");
+        this.broadcast({ t: "brTimer", endsAt: this._brEndsAt, warn: true });
+        this.onEvent("brTimer", { endsAt: this._brEndsAt, warn: true });
+      }
+    }, 1000);
+    return { ok: true, endsAt: this._brEndsAt, minutes: mins };
+  }
+  cancelBrTimer() {
+    if (!this._brEndsAt && !this._brTimerId) return false;
+    this._clearBrTimer(true);
+    this.broadcast({ t: "brTimer", endsAt: 0 });
+    this.onEvent("brTimer", { endsAt: 0, cancelled: true });
+    return true;
+  }
+  _clearBrTimer(silent) {
+    if (this._brTimerId) { clearInterval(this._brTimerId); this._brTimerId = null; }
+    this._brEndsAt = 0;
+    this._brWarned = false;
+    void silent;
+  }
+
+  /* Zoom "Save chat" — everything the teacher is allowed to keep, as .txt */
+  exportChatText() {
+    const lines = this.chatLog.map((m) => "[" + (m.at || "") + "] " + m.from + " -> " + m.to + ": " + m.text);
+    return "Class Deck - chat log (" + (this.roomName || this.code) + ", " + nowStamp() + ")\n" +
+           lines.join("\n") + (lines.length ? "\n" : "");
+  }
+
   muteAll() {
     for (const [pid, stu] of this.students) {
       if (stu.micAllowed) this.allowMic(pid, false);
@@ -703,13 +1215,104 @@ class TeacherRoom {
       case "chat": {
         this.stats.chats++;                                      // v3: analytics
         const text = String(d.text).slice(0, 1000);
+        /* r22 completion: chat MODES — Zoom's "Participants can chat with:
+           No one / Host only / Everyone". Enforced here, on the authoritative
+           side; the students' UIs grey out too (honest feedback), but this is
+           the guarantee. Private-to-teacher and permitted DMs are separate
+           channels with their own teacher-granted permissions. */
+        if (this.chatMode === "off") {
+          try { conn.send({ t: "chatDenied", reason: "The teacher has turned chat off." }); } catch {}
+          break;
+        }
         /* v5: private chat — student → teacher only (not relayed to class) */
         if (d.private) {
           this.onEvent("chat", { from: stu.name, text, private: true, peerId: conn.peer });
+          this.chatLog.push({ from: stu.name, to: "teacher (private)", text, at: nowStamp() });
+        } else if (this.chatMode === "host") {
+          /* host-only mode: everyone may still WRITE, but only the teacher
+             and Co-Tutors read it — exactly Zoom's "host only" chat. */
+          this.onEvent("chat", { from: stu.name, text, private: true, peerId: conn.peer, hostOnly: true });
+          this.chatLog.push({ from: stu.name, to: "teacher (host-only chat)", text, at: nowStamp() });
         } else {
           this.onEvent("chat", { from: stu.name, text });
+          this.chatLog.push({ from: stu.name, to: "everyone", text, at: nowStamp() });
           this.broadcast({ t: "chat", from: stu.name, text }, conn.peer);
         }
+        break;
+      }
+      /* ── r22 completion: room-scoped chat — students inside a breakout
+         room chat with their room-mates only; the teacher (and Co-Tutors)
+         keep the log. Zoom parity: in-room chat is its own channel. ── */
+      case "brChat": {
+        const text = String(d.text || "").slice(0, 500);
+        if (!text || !stu.breakout) break;
+        if (this.chatMode === "off") { try { conn.send({ t: "chatDenied", reason: "The teacher has turned chat off." }); } catch {} break; }
+        const room = this.breakouts.get(stu.breakout);
+        if (!room) break;
+        this.stats.chats++;
+        for (const pid of room.members) {
+          const mate = this.students.get(pid);
+          if (mate) { try { mate.conn.send({ t: "brChat", from: stu.name, roomId: room.id, roomName: room.name, text }); } catch {} }
+        }
+        for (const pid of this.coHosts) {           /* co-tutors keep parity: they read room chat too */
+          if (pid === conn.peer || !room.members.has(pid)) continue;
+          const ct = this.students.get(pid);
+          if (ct) { try { ct.conn.send({ t: "brChat", from: stu.name, roomId: room.id, roomName: room.name, text }); } catch {} }
+        }
+        this.chatLog.push({ from: stu.name, to: "room " + room.name, text, at: nowStamp() });
+        this.attendance.push({ name: stu.name, event: "room-chat:" + room.name, time: nowStamp() });
+        this.onEvent("brChat", { from: stu.name, room: room.name, text });
+        break;
+      }
+      /* ── r22 completion: Q&A (Google Meet / Zoho Meeting style) — students
+         ask; the teacher answers live (everyone sees the answered list) or
+         dismisses. ── */
+      case "qaAsk": {
+        if (!this.qaOpen) { try { conn.send({ t: "qaClosed" }); } catch {} break; }
+        const text = String(d.text || "").slice(0, 300);
+        if (!text || this.qa.length >= 200) break;
+        const q = { id: "q" + (++this._qaSeq), from: stu.name, fromPeer: conn.peer,
+                    text, at: nowStamp(), answered: false, answer: "", answeredBy: "" };
+        this.qa.push(q);
+        this.stats.qa++;
+        try { conn.send({ t: "qaAck", id: q.id }); } catch {}
+        this._pushQa();
+        this.onEvent("qa", this.qa.slice());
+        break;
+      }
+      /* ── r22: reactions + nonverbal feedback (Zoom/Meet parity) ── */
+      case "nv": {                                             /* yes / no / slower / faster badges */
+        const kind = ["yes", "no", "slower", "faster"].indexOf(d.kind) > -1 ? d.kind : null;
+        if (!kind) break;
+        stu.nv = { kind, until: Date.now() + 12000 };
+        this.onEvent("nv", { from: stu.name, kind });
+        this._broadcastRoster();
+        break;
+      }
+      /* ── r22 (item 3): student-to-student DMs — routed and PERMITTED here ── */
+      case "dm": {
+        const target = this.students.get(String(d.to || ""));
+        const text = String(d.text || "").slice(0, 500);
+        if (!target || !text || target.peerId === conn.peer) break;
+        if (!stu.dmAllowed || !stu.dmAllowed.has(target.peerId)) {
+          try { conn.send({ t: "dmDenied", to: target.name }); } catch {}
+          this.attendance.push({ name: stu.name, event: "dm-blocked:" + target.name, time: nowStamp() });
+          this.onEvent("dm", { from: stu.name, to: target.name, text, blocked: true });
+          break;
+        }
+        try { target.conn.send({ t: "dm", from: stu.name, fromPeer: conn.peer, text }); } catch {}
+        this.onEvent("dm", { from: stu.name, to: target.name, text });
+        this.chatLog.push({ from: stu.name, to: target.name + " (DM)", text, at: nowStamp() });
+        this.attendance.push({ name: stu.name, event: "dm:" + target.name, time: nowStamp() });
+        break;
+      }
+      /* ── r22: breakout help request (Zoom "Ask for Help") ── */
+      case "brHelp": {
+        if (!stu.breakout) break;
+        stu.brHelp = true;
+        const room = this.breakouts.get(stu.breakout);
+        this.onEvent("brHelp", { from: stu.name, peerId: conn.peer, room: room ? room.name : "?" });
+        this.attendance.push({ name: stu.name, event: "breakout-help", time: nowStamp() });
         break;
       }
       case "quizAnswer": {                                       // v3: quiz engine
@@ -740,10 +1343,13 @@ class TeacherRoom {
         this.onEvent("hand", { peerId: conn.peer, name: stu.name, up: stu.hand });
         this._broadcastRoster();
         break;
-      case "reaction": {  // v4: emoji reactions (👍 ❤ 😂 🎉 😮 👏)
-        const emo = String(d.emoji).slice(0, 4);
+      case "reaction": {  // v4 → r22: emoji reactions (Zoom/Meet parity) + throttle
+        const emo = String(d.emoji || "").slice(0, 8);
+        const nowT = Date.now();
+        if (!emo || (stu._lastReact && nowT - stu._lastReact < 700)) break;   /* r22: flood throttle */
+        stu._lastReact = nowT;
         this.stats.reactions++;
-        this.onEvent("reaction", { name: stu.name, emoji: emo });
+        this.onEvent("reaction", { name: stu.name, from: stu.name, emoji: emo });   /* both keys: v4 + r22 consumers */
         this.broadcast({ t: "reaction", name: stu.name, emoji: emo }, conn.peer);
         break;
       }
@@ -753,6 +1359,8 @@ class TeacherRoom {
           if (i >= 0 && i < this.activePoll.counts.length) {
             this.activePoll.counts[i]++;
             this.activePoll.voted.add(conn.peer);
+            this.activePoll.choices.set(conn.peer, i);   /* r22 completion: per-student choice -> breakout rooms */
+            if (this._lastPoll) this._lastPoll.choices = this.activePoll.choices;
             this.onEvent("poll-update", this.pollResults());
           }
         }
@@ -782,6 +1390,26 @@ class TeacherRoom {
           case "setCoHost":  if (isCoTutor && d.target && d.target !== conn.peer) this.setCoHost(d.target, !!d.on); break;
           case "boardsOn":   if (isCoTutor) this.startBoards(null); break;
           case "boardsOff":  if (isCoTutor) this.stopBoards(); break;
+          /* ── r22: the Co-Tutor gets the SAME new powers (tutor-equal) ── */
+          case "seeEach":    if (isCoTutor) this.setSeeEachOther(!!d.on); break;
+          case "visible":    if (isCoTutor && d.target) this.setStudentVisible(d.target, !!d.on); break;
+          case "dm":         if (isCoTutor && d.target && d.to) this.allowDm(d.target, d.to, !!d.on); break;
+          case "suspend":    if (isCoTutor) this.suspendActivities(); break;
+          case "reaction":   if (isCoTutor && d.emoji) this.sendReaction(String(d.emoji).slice(0, 8)); break;
+          case "brCreate":   if (isCoTutor && Array.isArray(d.defs)) this.createBreakouts(d.defs, d.mode, d.preassign); break;
+          case "brMove":     if (isCoTutor && d.target && typeof d.roomId === "string") this.moveStudent(d.target, d.roomId); break;   /* "" = back to the main class */
+          case "brBroadcast": if (isCoTutor && d.text) this.broadcastToRooms(d.text, d.roomId || null); break;
+          case "brEnd":      if (isCoTutor) this.endBreakouts(); break;
+          /* ── r22 completion: Co-Tutor parity for the new matrix features ── */
+          case "rename":     if (isCoTutor && d.target && d.name) this.renameStudent(d.target, d.name); break;
+          case "chatMode":   if (isCoTutor && ["off","host","class"].indexOf(d.mode) > -1) this.setChatMode(d.mode); break;
+          case "selfUnmute": if (isCoTutor) this.setAllowSelfUnmute(!!d.on); break;
+          case "qaAnswer":   if (isCoTutor && d.id) this.qaAnswer(d.id, String(d.text || "").slice(0, 1000)); break;
+          case "qaDismiss":  if (isCoTutor && d.id) this.qaDismiss(d.id); break;
+          case "qaClear":    if (isCoTutor) this.qaClear(); break;
+          case "qaMode":     if (isCoTutor) this.qaSetOpen(!!d.open); break;
+          case "brTimer":    if (isCoTutor && d.minutes) this.startBrTimer(d.minutes); else if (isCoTutor && d.cancel) this.cancelBrTimer(); break;
+          case "brPollRooms": if (isCoTutor) { const r = this.pollToBreakouts(); if (!r.ok) { try { conn.send({ t: "coErr", error: r.error || "Could not create rooms from the poll." }); } catch (e) {} } } break;
           case "syncRoster": {   /* r21: the co-tutor console asks for the privileged roster + waiting list */
             if (isCoTutor) try { conn.send({ t: "coRoster", students: this._privilegedRoster(), pending: this._pendingList() }); } catch (e) {}
             break;
@@ -875,6 +1503,17 @@ class TeacherRoom {
     try { const c = this.stageCalls.get(peerId); if (c) c.close(); } catch {}
     try { const c = this.camCalls.get(peerId); if (c) c.close(); } catch {}
     this.stageCalls.delete(peerId); this.camCalls.delete(peerId);
+    /* r22: full feature cleanup — breakout membership, gallery relays
+       (both directions), DM permissions pointing at this student. */
+    for (const r of this.breakouts.values()) r.members.delete(peerId);
+    this._stopGalleryFor(peerId);
+    for (const [spid, calls] of this.stuBcastCalls) {
+      const arr = calls.get(peerId);
+      if (arr) { for (const c of arr) { try { c.close(); } catch {} } calls.delete(peerId); }
+    }
+    for (const other of this.students.values()) {
+      if (other.dmAllowed && other.dmAllowed.has(peerId)) { other.dmAllowed.delete(peerId); this._sendDmList(other); }
+    }
     this.attendance.push({ name: stu.name, event: "left", time: nowStamp() });
     this.students.delete(peerId);
     this._broadcastRoster();
@@ -1035,7 +1674,9 @@ class TeacherRoom {
   _privilegedRoster() {
     return Array.from(this.students.values()).map((s) => ({
       peerId: s.peerId || null, name: s.name, hand: !!s.hand,
-      coHost: !!s.coHost, coTutor: !!s.coTutor, micAllowed: !!s.micAllowed
+      coHost: !!s.coHost, coTutor: !!s.coTutor, micAllowed: !!s.micAllowed,
+      visibleToClass: !!s.visibleToClass, breakout: s.breakout || null,
+      dmAllowed: s.dmAllowed ? Array.from(s.dmAllowed) : []
     }));
   }
   _pendingList() {
@@ -1159,10 +1800,6 @@ class TeacherRoom {
     const stu = this.students.get(peerId);
     if (stu) try { stu.conn.send({ t: "camRequest", on }); } catch {}
   }
-  requestStudentScreen(peerId, on) {   // v5: ask a student to share their screen
-    const stu = this.students.get(peerId);
-    if (stu) try { stu.conn.send({ t: "screenRequest", on }); } catch {}
-  }
   allowMic(peerId, on) {
     const stu = this.students.get(peerId);
     if (!stu) return;
@@ -1188,12 +1825,12 @@ class TeacherRoom {
   }
   sendChat(text) {
     const clean = String(text || "").slice(0, 1000);
-    if (clean) this.broadcast({ t: "chat", from: "Teacher", text: clean });
+    if (clean) { this.broadcast({ t: "chat", from: "Teacher", text: clean }); this.chatLog.push({ from: "Teacher", to: "everyone", text: clean, at: nowStamp() }); }
   }
   sendChatTo(peerId, text) {   /* v5: private teacher → one student */
     const stu = this.students.get(peerId);
     const clean = String(text || "").slice(0, 1000);
-    if (stu && clean) try { stu.conn.send({ t: "chat", from: "Teacher (private)", text: clean, private: true }); } catch {}
+    if (stu && clean) { try { stu.conn.send({ t: "chat", from: "Teacher (private)", text: clean, private: true }); } catch {} this.chatLog.push({ from: "Teacher", to: stu.name + " (private)", text: clean, at: nowStamp() }); }
   }
 
   /* ----- polls ----- */
@@ -1204,8 +1841,10 @@ class TeacherRoom {
     this.activePoll = {
       def: { question: cleanQuestion, options: cleanOptions },
       counts: cleanOptions.map(() => 0),
-      voted: new Set()
+      voted: new Set(),
+      choices: new Map()   /* r22 completion: peerId -> option index (for poll->breakout rooms) */
     };
+    this._lastPoll = { question: cleanQuestion, options: cleanOptions, choices: this.activePoll.choices };
     this.broadcast({ t: "poll", poll: this.activePoll.def });
     this.onEvent("poll-update", this.pollResults());
     return true;
@@ -1405,6 +2044,13 @@ class StudentRoom {
   constructor(roomCode, name, opts = {}) {
     this.code = roomCode.toUpperCase().trim();
     this.name = name;
+    /* r22: breakout room mesh state */
+    this._brPeers = null;     /* [{peerId, name}] the teacher assigned me to talk with */
+    this._brCalls = [];       /* my outgoing mesh calls */
+    this._brLocal = null;     /* my mic/cam stream for the room */
+    /* r22 completion: live class-policy state mirrored from the teacher */
+    this.chatMode = "class";  /* 'off' | 'host' | 'class' */
+    this.selfUnmute = true;   /* false = my mic button is locked by the teacher */
     this.pin = opts.pin || "";                       // v3: room PIN
     this.tok = opts.tok || "";                       // v3: secure invite token
     this.onEvent = opts.onEvent || (() => {});
@@ -1503,9 +2149,9 @@ class StudentRoom {
           if (kind === "stage") this._inStage = stream;
           if (kind === "teachercam") this._inTeachercam = stream;
           if (this.relayPeer) this._serveAllChildren();
-          this.onEvent("media", { kind, stream });
+          this.onEvent("media", { kind, stream, name: (call.metadata && call.metadata.name) || "" });   /* r22: br + stu-bcast tiles carry the classmate's name */
         });
-        call.on("close", () => this.onEvent("media-end", { kind }));
+        call.on("close", () => this.onEvent("media-end", { kind, name: (call.metadata && call.metadata.name) || "", srcPid: (call.metadata && call.metadata.srcPid) || call.peer || "" }));   /* r22: identity → precise tile teardown */
       });
     });
   }
@@ -1524,6 +2170,42 @@ class StudentRoom {
       case "quizFeedback": this.onEvent("quizFeedback", d); break;      // v3
       case "quizEnd":   this.onEvent("quizEnd", d.leaderboard); break;  // v3
       case "camRequest":this.onEvent("camRequest", d); break;
+      /* ── r22: platform features ── */
+      case "brState": {
+        if (d && d.on) {
+          this._brPeers = (d.peers || []).filter((pp) => pp && pp.peerId);
+          this._brCallPeers();
+        } else {
+          this._brPeers = null;
+          if (this._brLocal) { try { this._brLocal.getTracks().forEach((t) => t.stop()); } catch (e) {} this._brLocal = null; }
+          for (const c of (this._brCalls || [])) { try { c.close(); } catch (e) {} }
+          this._brCalls = [];
+        }
+        this.onEvent("brState", d);
+        break;
+      }
+      case "brMsg":      this.onEvent("brMsg", d); break;        /* teacher broadcast into the room */
+      case "dm":         this.onEvent("dm", d); break;            /* permitted student-to-student DM */
+      /* ── r22 completion: chat modes, Q&A, self-unmute, rename, room chat,
+         breakout timer (all pushed by the teacher's room object) ── */
+      case "chatMode":   this.chatMode = (["off","host","class"].indexOf(d.mode) > -1) ? d.mode : "class"; this.onEvent("chatMode", d); break;
+      case "chatDenied": this.onEvent("chatDenied", d); break;
+      case "selfUnmute": this.selfUnmute = !!d.on; this.onEvent("selfUnmute", d); break;
+      case "renamed":    this.onEvent("renamed", d); break;
+      case "qaAck":      this.onEvent("qaAck", d); break;
+      case "qaClosed":   this.onEvent("qaClosed", d); break;
+      case "qaState":    this.onEvent("qaState", d); break;
+      case "qaAnswer":   this.onEvent("qaAnswer", d); break;
+      case "qaDismiss":  this.onEvent("qaDismiss", d); break;
+      case "qaClear":    this.onEvent("qaClear", d); break;
+      case "qaMode":     this.onEvent("qaMode", d); break;
+      case "brChat":     this.onEvent("brChat", d); break;
+      case "brTimer":    this.onEvent("brTimer", d); break;
+      case "coErr":      this.onEvent("coErr", d); break;
+      case "dmDenied":   this.onEvent("dmDenied", d); break;      /* teacher has not allowed this pair */
+      case "dmList":     this.onEvent("dmList", d); break;        /* my current DM partners */
+      case "stuBcast":   this.onEvent("stuBcast", d); break;      /* class gallery: a classmate's stream is on/off */
+      case "suspended":  this.onEvent("suspended", d); break;     /* teacher suspended all activities */
       case "screenRequest": this.onEvent("screenRequest", d); break;  // v5
       case "micAllow":  this.onEvent("micAllow", d); break;
       case "teachercam-off": this.onEvent("media-end", { kind: "teachercam" }); break;
@@ -1585,6 +2267,53 @@ class StudentRoom {
 
   send(msg) { try { this.conn && this.conn.send(msg); } catch {} }
   sendChat(text)      { this.send({ t: "chat", text }); }
+  /* ── r22: platform feature sends (plain requests — the teacher's room
+     object authorises everything; none of these can grant a thing) ── */
+  sendNv(kind)        { this.send({ t: "nv", kind: String(kind || "").slice(0, 10) }); }   /* yes/no/slower/faster */
+  askBrHelp()         { this.send({ t: "brHelp" }); }
+  sendDm(toPeerId, text) { this.send({ t: "dm", to: toPeerId, text: String(text || "").slice(0, 500) }); }
+  qaAsk(text)          { this.send({ t: "qaAsk", text: String(text || "").slice(0, 300) }); }      /* r22 completion: Q&A */
+  sendBrChat(text)     { this.send({ t: "brChat", text: String(text || "").slice(0, 500) }); }     /* r22 completion: room-scoped chat */
+
+  /* ── r22: BREAKOUT ROOM TALK — a direct mesh to the room-mates the
+     teacher named. Each member uploads ONE stream (mic, plus camera when
+     chosen before starting) to the room; the teacher's pipes are never
+     involved. Camera toggling mid-room restarts the room calls (rare,
+     honest, and keeps the mesh simple). ── */
+  async brTalk(on, withVideo) {
+    if (!on) {
+      if (this._brLocal) { try { this._brLocal.getTracks().forEach((t) => t.stop()); } catch (e) {} this._brLocal = null; }
+      for (const c of this._brCalls) { try { c.close(); } catch (e) {} }
+      this._brCalls = [];
+      this.onEvent("br-talk", { on: false });
+      return { on: false };
+    }
+    if (!this._brLocal || (withVideo && !this._brLocal.getVideoTracks().length)) {
+      if (this._brLocal) { try { this._brLocal.getTracks().forEach((t) => t.stop()); } catch (e) {} this._brLocal = null; }
+      for (const c of this._brCalls) { try { c.close(); } catch (e) {} this._brCalls = [];
+      }
+      const c = {
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+        video: withVideo ? { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user", frameRate: { ideal: 15 } } : false
+      };
+      this._brLocal = await md().getUserMedia(c);
+    }
+    this._brCallPeers();
+    this.onEvent("br-talk", { on: true });
+    return { on: true };
+  }
+  _brCallPeers() {
+    if (!this._brLocal || !this._brPeers) return;
+    for (const p of this._brPeers) {
+      if (this._brCalls.some((c) => c.peer === p.peerId)) continue;
+      try {
+        const call = this.peer.call(p.peerId, this._brLocal, { metadata: { kind: "br", name: this.name } });
+        this._brCalls.push(call);
+        const gone = () => { const i = this._brCalls.indexOf(call); if (i > -1) this._brCalls.splice(i, 1); };
+        call.on("close", gone); call.on("error", gone);
+      } catch (e) {}
+    }
+  }
   raiseHand(up)       { this.send({ t: "hand", up }); }
   coHostAction(action, target, extra) { this.send(Object.assign({ t: "cohostAction", action, target: target || null }, extra || {})); }   // v14
   answerPoll(index)   { this.send({ t: "pollAnswer", index }); }
@@ -2002,10 +2731,19 @@ window.MicKit = (function () {
       throw Object.assign(new Error(r.title), { name: "mic-unsupported" });
     }
     const attempts = [];
+    /* r22 (item 2 — Meet/Zoom "audio settings" parity): the teacher can
+       switch echo cancellation / noise suppression / auto gain off (some
+       USB mixers and music setups need raw audio). Defaults stay ON. */
+    const pr = (opts && opts.processing) || {};
+    const proc = {
+      echoCancellation: pr.echoCancellation !== false,
+      noiseSuppression: pr.noiseSuppression !== false,
+      autoGainControl: pr.autoGainControl !== false
+    };
     if (opts.deviceId) {
-      attempts.push({ label: "preferred mic", c: { audio: { deviceId: { ideal: opts.deviceId }, echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false } });
+      attempts.push({ label: "preferred mic", c: { audio: Object.assign({ deviceId: { ideal: opts.deviceId } }, proc), video: false } });
     }
-    attempts.push({ label: "default mic", c: { audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false } });
+    attempts.push({ label: "default mic", c: { audio: Object.assign({}, proc), video: false } });
     attempts.push({ label: "plain mic", c: { audio: true, video: false } });
     let lastErr = null;
     for (const a of attempts) {

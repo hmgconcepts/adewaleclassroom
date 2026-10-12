@@ -9,6 +9,11 @@
 let sRoom = null;
 let handUp = false;
 let myCamOn = false, myMicOn = false, micAllowed = false;
+/* r22 completion: live class policy mirrored from the teacher */
+let chatMode = "class";            /* 'off' | 'host' | 'class' */
+let allowSelfUnmute = true;        /* false = my mic button is locked */
+let _brTimerId = null;             /* breakout countdown interval */
+let coQaData = { open: true, questions: [] };   /* Co-Tutor console: the live Q&A list */
 let stageEntered = false;
 
 const qs = new URLSearchParams(location.search);
@@ -621,6 +626,16 @@ $$(".react-emo").forEach((b) => b.addEventListener("click", () => {
   sFlyEmoji(b.textContent.trim(), "You");
   $("#reactBar").classList.add("hide");
 }));
+/* r22: nonverbal feedback (Zoom parity) — 👍/👎/🐢/🐇 shown as a badge
+   beside the student's name on the teacher's roster for 12 seconds. */
+$$(".nv-emo").forEach((b) => b.addEventListener("click", () => {
+  if (!sRoom) return;
+  sRoom.sendNv(b.dataset.kind);
+  const label = b.dataset.kind === "yes" ? "YES 👍 sent" : (b.dataset.kind === "no" ? "NO 👎 sent" : (b.dataset.kind === "slower" ? "SLOWER 🐢 sent" : "FASTER 🐇 sent"));
+  toast(label + " — your teacher can see it", "ok", 3000);
+  $("#reactBar").classList.add("hide");
+}));
+
 function sFlyEmoji(emoji, name) {
   const el = document.createElement("div");
   el.style.cssText = "position:fixed;z-index:9998;font-size:34px;pointer-events:none;left:" +
@@ -649,14 +664,56 @@ function sendChat() {
   const inp = $("#sChatInput");
   const text = inp.value.trim();
   if (!text) return;
+  const toSel = $("#sChatTo");
+  const toPeer = (toSel && toSel.style.display !== "none" && toSel.value) ? toSel.value : "";
+  if (toPeer) {
+    /* r22 (item 3): permitted student-to-student DM — routed through the
+       teacher's device, who decided this pair may message. */
+    _lastChatTs = now;
+    inp.value = "";
+    sRoom.sendDm(toPeer, text);
+    const label = toSel.options[toSel.selectedIndex] ? toSel.options[toSel.selectedIndex].textContent : "classmate";
+    addMsg("You → " + label + " (private)", text, true);
+    return;
+  }
+  /* r22 completion: chat modes — the teacher's room object is the real
+     gate (it never relays what it must not); this keeps the student's
+     feedback honest instead of silently dropping messages. */
+  if (chatMode === "off") { toast("The teacher has turned chat off.", "err", 5000); return; }
   _lastChatTs = now;
   inp.value = "";
   const priv = $("#sChatPriv").checked;       /* v5: private chat */
   sRoom.send({ t: "chat", text, private: priv });
-  addMsg(priv ? "You → teacher (private)" : "You", text, true);
+  if (chatMode === "host" && !priv) addMsg("You → teacher (chat is teacher-only right now)", text, true);
+  else addMsg(priv ? "You → teacher (private)" : "You", text, true);
 }
 $("#sChatSend").addEventListener("click", sendChat);
 $("#sChatInput").addEventListener("keydown", (e) => { if (e.key === "Enter") sendChat(); });
+
+/* ── r22 completion: room-scoped chat (inside a breakout room) — goes ONLY
+   to the room-mates the teacher put me with; the teacher keeps the log. ── */
+function sendBrChat() {
+  const inp = $("#brChatInp");
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text) return;
+  if (!sRoom) { toast("You are not in a room yet."); return; }
+  inp.value = "";
+  sRoom.sendBrChat(text);
+}
+$("#brChatSend") && $("#brChatSend").addEventListener("click", sendBrChat);
+$("#brChatInp") && $("#brChatInp").addEventListener("keydown", (e) => { if (e.key === "Enter") sendBrChat(); });
+
+/* ── r22 completion: Q&A ask (Google Meet / Zoho style) ── */
+$("#sBtnQa") && $("#sBtnQa").addEventListener("click", () => {
+  const q = prompt("Your question for the teacher:");
+  if (q == null) return;
+  const clean = String(q).trim();
+  if (!clean) return;
+  if (!sRoom) { toast("Join the class first.", "err"); return; }
+  sRoom.qaAsk(clean);
+  addMsg("🙋 You asked (Q&A)", clean, true);
+});
 
 
 function showCaption(p) {
@@ -841,6 +898,93 @@ function handleCoTutor(d) {
     else toast("A poll needs at least 2 options.", "err");
   }));
   panel.appendChild(row2);
+  /* r22 (items 2+3): the Co-Tutor gets the SAME new platform powers —
+     class gallery, breakout room broadcast/close, reactions, suspend. */
+  const row3 = document.createElement("div");
+  row3.className = "ct-row";
+  let ctGalleryOn = false;
+  row3.appendChild(mk("\u{1F465} Gallery", "Let students see & hear each other (the teacher can also mark individuals)", () => {
+    ctGalleryOn = !ctGalleryOn;
+    act("seeEach", null, { on: ctGalleryOn });
+    toast(ctGalleryOn ? "\u{1F465} Class gallery ON" : "\u{1F6AB} Class gallery OFF", "ok");
+  }));
+  row3.appendChild(mk("\u{1F4E2} To rooms", "Broadcast a message to every breakout room", () => {
+    const t = prompt("Message to ALL breakout rooms:");
+    if (t && t.trim()) { act("brBroadcast", null, { text: t.trim() }); toast("\u{1F4E2} Sent to all rooms", "ok"); }
+  }));
+  row3.appendChild(mk("\u{23F9} Close rooms", "Close all breakout rooms — everyone returns to the main class", () => {
+    if (confirm("Close all breakout rooms now?")) { act("brEnd"); toast("\u{1F6AA} Rooms closed", "ok"); }
+  }));
+  row3.appendChild(mk("\u{1F44D} React", "Send a reaction to the class", () => {
+    const e = prompt("Reaction emoji (e.g. \u{1F44D}, \u{1F389}, \u{1F44F}):");
+    if (e && e.trim()) act("reaction", null, { emoji: e.trim().slice(0, 8) });
+  }));
+  row3.appendChild(mk("\u{1F6E1} Suspend", "Mute all, lower hands, stop shares, gallery off, close rooms, lock — like Zoom's Suspend Activities", () => {
+    if (confirm("\u{1F6E1} Suspend ALL activities?")) { act("suspend"); toast("\u{1F6E1} Activities suspended", "ok"); }
+  }));
+  /* r22 (item 2, parity completion): the Co-Tutor can also CREATE breakout
+     rooms - the same power as the Tutor's Rooms modal, prompt-driven for
+     the compact console. Moving students is the per-row link button. */
+  row3.appendChild(mk("\u{1F6AA} Rooms", "Create breakout rooms (choose count + auto/manual) - the same power as the Tutor", () => {
+    const nStr = prompt("How many breakout rooms? (2 to 10)");
+    if (!nStr) return;
+    const n = parseInt(nStr, 10);
+    if (!(n >= 2 && n <= 10)) { toast("Enter a number from 2 to 10.", "err"); return; }
+    const auto = confirm("Assignment:\n\nOK = AUTOMATIC (students spread evenly)\nCancel = MANUAL (you move students in afterwards)");
+    const defs = [];
+    for (let i = 0; i < n; i++) defs.push({ name: "Breakout " + (i + 1) });
+    act("brCreate", null, { defs, mode: auto ? "auto" : "manual" });
+    toast("\u{1F6AA} " + n + " breakout rooms created" + (auto ? " - students auto-assigned evenly" : " - now move students with the \u{1F517} button on each student row"), "ok", 8000);
+  }));
+  /* ── r22 completion: Co-Tutor parity for the new matrix features ── */
+  row3.appendChild(mk("\u{1F4CA} Poll rooms", "Create breakout rooms from the last poll - one room per option, everyone who answered lands with their answer (Zoom-style)", () => {
+    act("brPollRooms");
+    toast("\u{1F4CA} Creating rooms from the last poll - students land with their own answer.", "ok", 8000);
+  }));
+  row3.appendChild(mk("\u{23F1} Room timer", "Start (or cancel) the breakout-room countdown - students see it, rooms close automatically at zero", () => {
+    const mStr = prompt("Minutes until the rooms close (1-240). Leave EMPTY to cancel a running timer:", "10");
+    if (mStr === null) return;
+    if (String(mStr).trim() === "") { act("brTimer", null, { cancel: true }); toast("\u{23F1} Room timer cancelled.", "ok", 6000); return; }
+    const mins = parseInt(mStr, 10);
+    if (!(mins >= 1 && mins <= 240)) { toast("Enter 1 to 240 minutes.", "err"); return; }
+    act("brTimer", null, { minutes: mins });
+    toast("\u{23F1} Rooms close automatically in " + mins + " minute(s).", "ok", 8000);
+  }));
+  row3.appendChild(mk("\u{1F4AC} Chat mode", "Who students may chat with: everyone / teacher only / no one (Zoom-style)", () => {
+    const pick = prompt("Student chat mode:\n\n1 = Everyone\n2 = Teacher & Co-Tutors only\n3 = No one (off)\n\nType 1, 2 or 3:", "1");
+    if (!pick) return;
+    const mode = { "1": "class", "2": "host", "3": "off" }[String(pick).trim()];
+    if (!mode) { toast("Type 1, 2 or 3.", "err"); return; }
+    act("chatMode", null, { mode });
+    toast(mode === "off" ? "\u{1F6AB} Student chat OFF" : mode === "host" ? "\u{1F464} Students chat with teacher only" : "\u{1F4AC} Students chat with everyone", "ok", 6000);
+  }));
+  row3.appendChild(mk("\u{1F399} Self-unmute", "Allow or block students unmuting themselves (blocking also mutes everyone, Zoom-style)", () => {
+    const on = confirm("Allow students to unmute themselves?\n\nOK = allow\nCancel = block (mutes everyone and locks their mic buttons)");
+    act("selfUnmute", null, { on });
+    toast(on ? "\u{1F399} Students may unmute themselves." : "\u{1F399} Self-unmute blocked - everyone muted, hands still work.", "ok", 7000);
+  }));
+  row3.appendChild(mk("\u{1F64B} Q&A", "Open/close the Q&A, answer or clear questions (Google Meet / Zoho style)", () => {
+    const open = (coQaData.open !== false);
+    const pick = prompt("Q&A controls:\n\n1 = " + (open ? "close" : "open") + " questions\n2 = answer a question\n3 = clear all questions\n\nType 1, 2 or 3:", "1");
+    if (!pick) return;
+    const c = String(pick).trim();
+    if (c === "1") { act("qaMode", null, { open: !open }); toast(open ? "\u{26D4} Q&A closed." : "\u{2705} Q&A open.", "ok", 5000); }
+    else if (c === "2") {
+      const pending = (coQaData.questions || []).filter((q) => !q.answered);
+      if (!pending.length) { toast("No unanswered questions right now.", ""); return; }
+      const list = pending.map((q, i) => (i + 1) + ". " + q.from + ": " + q.text.slice(0, 60)).join("\n");
+      const num = prompt("Answer which question?\n\n" + list + "\n\nType the number:", "1");
+      const idx = parseInt(num, 10) - 1;
+      if (!(idx >= 0 && idx < pending.length)) { toast("Type a number from the list.", "err"); return; }
+      const ans = prompt("Your answer (everyone in the class will see it):");
+      if (ans == null || !String(ans).trim()) return;
+      act("qaAnswer", null, { id: pending[idx].id, text: String(ans).trim() });
+      toast("\u{2705} Answer sent to the whole class.", "ok", 6000);
+    }
+    else if (c === "3") { if (confirm("Remove every question?")) { act("qaClear"); toast("\u{1F9F9} Q&A cleared.", "ok", 5000); } }
+    else toast("Type 1, 2 or 3.", "err");
+  }));
+  panel.appendChild(row3);
   const rosterBox = document.createElement("div");
   rosterBox.className = "ct-roster";
   panel.appendChild(rosterBox);
@@ -893,7 +1037,48 @@ function handleCoRoster(d) {
       r.appendChild(b);
     };
     mk2("\u{1F3A4}", "Spotlight " + st.name, () => { try { sRoom.coHostAction("spotlight", null, { name: st.name }); } catch (e) {} });
+    /* r22 (item 3): the Co-Tutor also controls class-gallery visibility and
+       student-to-student DM permissions for this student. */
+    mk2("\u{1F517}", st.breakout ? "Move " + st.name + " to another breakout room (or back to the main class)" : "Send " + st.name + " into a breakout room", () => {
+      const rooms = coRosterData.students.map((x) => x.breakout).filter((b, i, a) => b && a.indexOf(b) === i);
+      const opts = ["MAIN (the main class)"].concat(rooms || []);
+      const pick = prompt("Move " + st.name + " where?\n\n" + opts.join("\n") + "\n\nType MAIN for the main class, or the exact room name (rooms must already be open).");
+      if (!pick) return;
+      const p = pick.trim().toUpperCase();
+      if (p === "MAIN") { act("brMove", st.peerId, { roomId: "" }); toast(st.name + " returned to the main class", "ok"); return; }
+      const target = (coRosterData.students.find((x) => x.breakout && x.breakout.toUpperCase() === p) || {}).breakout;
+      if (!target) { toast("No breakout room named \"" + pick + "\" is open. Open rooms first (\u{1F6AA} Rooms).", "err", 8000); return; }
+      act("brMove", st.peerId, { roomId: target });
+      toast("\u{1F500} " + st.name + " moved to " + target, "ok", 6000);
+    });
+    mk2("\u{1F441}", st.visibleToClass ? "Hide " + st.name + " from the class gallery" : "Show " + st.name + " to the class gallery (students see & hear them)", () => {
+      try { sRoom.coHostAction("visible", st.peerId, { on: !st.visibleToClass }); } catch (e) {}
+      toast(st.visibleToClass ? st.name + " hidden from the gallery" : "\u{1F441} " + st.name + " visible to the class", "ok");
+    });
+    mk2("\u{1F4AC}", "Who may " + st.name + " message? (student-to-student DMs)", () => {
+      const others = coRosterData.students.filter((x) => x.peerId !== st.peerId);
+      if (!others.length) { toast("No other students yet.", ""); return; }
+      let msg = "Type the NAMES this student may message, separated by commas.\nLeave empty to allow nobody.\n\nStudents in the class:\n" + others.map((x) => x.name).join(", ");
+      const allowedNames = (st.dmAllowed || []).map((pid) => { const o = others.find((x) => x.peerId === pid); return o ? o.name : null; }).filter(Boolean);
+      const inp = prompt(msg, allowedNames.join(", "));
+      if (inp === null) return;
+      const wantNames = inp.split(",").map((x) => x.trim().toLowerCase()).filter(Boolean);
+      for (const o of others) {
+        const was = (st.dmAllowed || []).indexOf(o.peerId) > -1;
+        const want = wantNames.indexOf(o.name.toLowerCase()) > -1;
+        if (was !== want) { try { sRoom.coHostAction("dm", st.peerId, { to: o.peerId, on: want }); } catch (e) {} }
+      }
+      toast("\u{1F4AC} DM permissions updated for " + st.name, "ok");
+    });
     mk2("\u{1F3A7}", st.micAllowed ? "Revoke mic" : "Allow mic", () => { try { sRoom.coHostAction("allowMic", st.peerId, { on: !st.micAllowed }); } catch (e) {} });
+    /* r22 completion: Zoom "Rename" — the Co-Tutor renames a student too */
+    mk2("\u{270F}\u{FE0F}", "Rename " + st.name + " (everyone's roster switches to the new name)", () => {
+      const nn = prompt("Rename " + st.name + " to:", st.name);
+      if (nn == null) return;
+      const clean = String(nn).trim();
+      if (!clean) { toast("The name cannot be empty.", "err"); return; }
+      act("rename", st.peerId, { name: clean });
+    });
     mk2("\u{1F4F7}", "Ask camera", () => { try { sRoom.coHostAction("requestCam", st.peerId, { on: true }); } catch (e) {} });
     /* r21 (item 4 × item 6): a Co-Tutor has the SAME audience choice as the
        Tutor — "teacher only" or "the whole class" — instead of a hardcoded
@@ -1009,6 +1194,7 @@ document.addEventListener("click", (ev) => {
   }
 });
 async function toggleMyMic() {
+  if (!allowSelfUnmute) { toast("The teacher has locked student mics — raise your hand (✋) and the teacher can unmute you.", "err", 6000); return; }
   if (!micAllowed && !myMicOn) { toast("Raise your hand — the teacher must allow your mic first."); return; }
   try {
     if (!myMicOn) { await sRoom.shareMic(true); myMicOn = true; $("#sBtnMic").classList.add("active"); toast("🎙 You are speaking", "ok"); }
@@ -1445,3 +1631,247 @@ onEvent = function (type, p) {
     }
   }
 };
+
+/* ══════════════════════════════════════════════════════════════════
+   r22 (round 22, items 2+3) — student-side platform features:
+   breakout rooms (bar + talk + camera + ask-for-help + room grid),
+   the class gallery, permitted student-to-student DMs, and the
+   suspended-activities notice.
+   ══════════════════════════════════════════════════════════════════ */
+const _r22OnEvent = onEvent;
+onEvent = function (type, p) {
+  _r22OnEvent(type, p);
+  switch (type) {
+    case "brState":
+      if (p && p.on) {
+        $("#brRoomName").textContent = p.roomName || "Breakout";
+        $("#brPeers").textContent = p.peers && p.peers.length ? ("with " + p.peers.map((x) => x.name).join(", ")) : "you are alone in this room — the teacher can move you";
+        $("#brBar").classList.remove("hide");
+        $("#brGrid").classList.remove("hide");
+        toast("🚪 You are in breakout room " + (p.roomName || "") + " — tap 🎙 Talk to speak with your group", "ok", 7000);
+      } else {
+        $("#brBar").classList.add("hide");
+        $("#brGrid").classList.add("hide");
+        $("#brGrid").innerHTML = "";
+        try { sRoom && sRoom.brTalk(false); } catch (e) {}
+        const tb = $("#sBtnTalk"), cb = $("#sBtnBrCam");
+        if (tb) tb.classList.remove("active");
+        if (cb) cb.classList.remove("active");
+        toast("🚪 Breakout rooms closed — you are back with the whole class.", "ok", 6000);
+      }
+      break;
+    case "brMsg":
+      {
+        const slot = $("#brMsgSlot");
+        if (slot) {
+          slot.textContent = "📢 " + (p.text || "");
+          setTimeout(() => { slot.textContent = ""; }, 12000);
+        }
+        toast("📢 Teacher → " + (p.roomName || "your room") + ": " + (p.text || ""), "ok", 8000);
+      }
+      break;
+    case "br-talk":
+      {
+        const tb = $("#sBtnTalk");
+        if (tb) tb.classList.toggle("active", !!(p && p.on));
+        if (p && p.on) toast("🎙 You are LIVE in your room — your room-mates hear you. Tap again to stop.", "ok", 6000);
+      }
+      break;
+    case "dm":
+      addMsg("✉ " + (p.from || "classmate") + " → you (private)", p.text, false);
+      toast("✉ New private message from " + (p.from || "a classmate"), "ok", 5000);
+      break;
+    /* ── r22 completion: chat modes, self-unmute, rename, Q&A, room chat,
+         breakout timer ── */
+    case "chatMode":
+      chatMode = (["off", "host", "class"].indexOf(p.mode) > -1) ? p.mode : "class";
+      {
+        const inp = $("#sChatInput"), send = $("#sChatSend"), note = $("#sChatModeNote");
+        if (inp && send) {
+          inp.disabled = chatMode === "off";
+          send.disabled = chatMode === "off";
+          inp.placeholder = chatMode === "off" ? "Chat is turned off" : (chatMode === "host" ? "Message goes to the teacher only…" : "Ask a question…");
+        }
+        if (note) note.textContent = chatMode === "off" ? "🚫 The teacher turned chat off for everyone." :
+                                     chatMode === "host" ? "👤 Chat is set to teacher-only — your messages go to the teacher (private messages still work)." : "";
+        toast(chatMode === "off" ? "🚫 The teacher turned chat off." :
+              chatMode === "host" ? "👤 Chat is now teacher-only." :
+              "💬 Chat is open to everyone again.", "", 6000);
+      }
+      break;
+    case "chatDenied":
+      toast(p && p.reason ? p.reason : "The teacher has turned chat off.", "err", 6000);
+      break;
+    case "selfUnmute":
+      allowSelfUnmute = !!p.on;
+      {
+        const b = $("#sBtnMic");
+        if (b && allowSelfUnmute === false) b.disabled = true;   /* stays gated by micAllowed when on */
+        else if (b) b.disabled = !micAllowed;
+        toast(allowSelfUnmute ? "🎙 You may unmute yourself again (when the teacher allows your mic)." :
+              "🎙 The teacher locked student mics — raise your hand to speak.", "", 7000);
+      }
+      break;
+    case "renamed":
+      {
+        const nn = String(p.name || "").trim();
+        if (nn) {
+          Store.set("stuname", nn);
+          toast("✏️ The teacher renamed you to " + nn, "ok", 6000);
+        }
+      }
+      break;
+    case "qaAck":
+      toast("✅ Question sent to the teacher.", "ok", 5000);
+      break;
+    case "qaClosed":
+      toast("The Q&A is closed right now — no new questions.", "", 6000);
+      break;
+    case "qaAnswer":
+      addMsg("❓ Q&A · " + (p.from || "student") + " asked: " + (p.question || ""), "", false);
+      addMsg("✅ " + (p.by || "Teacher") + " answered: " + (p.answer || ""), "", false);
+      toast("🙋 The teacher answered a Q&A question — see the chat.", "ok", 7000);
+      break;
+    case "qaDismiss":
+      break;
+    case "qaClear":
+      break;
+    case "qaMode":
+      toast(p && p.open ? "🙋 Q&A is open — ask with the 🙋 button in the chat drawer." : "⛔ Q&A is closed for new questions.", "", 6000);
+      break;
+    case "qaState":
+      coQaData = { open: !!(p && p.open), questions: (p && p.questions) || [] };
+      break;
+    case "brChat":
+      addMsg("🎨 " + (p.roomName || "room") + " · " + (p.from || "classmate"), p.text, false);
+      break;
+    case "brTimer":
+      {
+        const span = $("#brTimerSpan");
+        if (!p || !p.endsAt) {
+          if (span) span.textContent = "";
+          if (_brTimerId) { clearInterval(_brTimerId); _brTimerId = null; }
+          if (p && p.closed) toast("⏹ Time is up — breakout rooms are closed. You are back with the whole class.", "ok", 8000);
+        } else {
+          const endsAt = p.endsAt;
+          const paint = () => {
+            const rem = Math.max(0, endsAt - Date.now());
+            const m = Math.floor(rem / 60000), sec = Math.floor((rem % 60000) / 1000);
+            if (span) span.textContent = "⏱ " + m + ":" + String(sec).padStart(2, "0");
+          };
+          paint();
+          if (!_brTimerId) _brTimerId = setInterval(paint, 1000);
+          if (p.warn) toast("⏳ ONE MINUTE left in your breakout room — wrap up!", "err", 8000);
+        }
+      }
+      break;
+    case "coErr":
+      toast(p && p.error ? p.error : "That co-tutor action failed.", "err", 7000);
+      break;
+    case "dmDenied":
+      toast("🚫 The teacher has not allowed you to message that classmate. Ask the teacher in the public chat.", "err", 8000);
+      break;
+    case "dmList":
+      {
+        const sel = $("#sChatTo");
+        if (!sel) break;
+        const partners = (p && p.partners) || [];
+        if (!partners.length) { sel.style.display = "none"; sel.value = ""; break; }
+        sel.style.display = "";
+        sel.innerHTML = '<option value="">Everyone (public chat)</option>' +
+          partners.map((x) => '<option value="' + x.peerId + '">' + x.name + "</option>").join("");
+      }
+      break;
+    case "stuBcast":
+      if (p && !p.on) removeBrOrGalleryTile("cdGallery", p.name, p.srcPid);
+      break;
+    case "suspended":
+      toast("🛡 The teacher suspended all activities — mics, hands, shares and rooms are paused. Watch the teacher's stage.", "", 9000);
+      break;
+    case "media":
+      /* r22 media kinds: breakout mesh ("br") + class gallery ("stu-bcast") */
+      if (p.kind === "br") addBrOrGalleryTile("brGrid", p.stream, p.name, p.srcPid);
+      if (p.kind === "stu-bcast") addBrOrGalleryTile("cdGallery", p.stream, p.name, p.srcPid);
+      break;
+    case "media-end":
+      /* r22: precise teardown — ONE classmate stopping removes ONE tile,
+         never the whole gallery */
+      if (p.kind === "br") removeBrOrGalleryTile("brGrid", p.name, p.srcPid);
+      if (p.kind === "stu-bcast") removeBrOrGalleryTile("cdGallery", p.name, p.srcPid);
+      break;
+  }
+};
+
+/* r22: tiles for the room grid / class gallery. The stream may carry
+   audio (room talk) — autoplay with the same policy as the stage. */
+function addBrOrGalleryTile(gridId, stream, name, pid) {
+  const grid = document.getElementById(gridId);
+  if (!grid || !stream) return;
+  if (pid) removeBrOrGalleryTile(gridId, null, pid);   /* replace, never duplicate */
+  const wrap = document.createElement("div");
+  wrap.dataset.tname = String(name || "classmate");
+  if (pid) wrap.dataset.tpid = String(pid);
+  const v = document.createElement("video");
+  v.autoplay = true; v.playsInline = true;
+  v.srcObject = stream;
+  const label = document.createElement("div");
+  label.className = "nv-name";
+  label.textContent = String(name || "classmate");
+  wrap.appendChild(v); wrap.appendChild(label);
+  grid.appendChild(wrap);
+  try { v.play().catch(() => {}); } catch (e) {}
+}
+function removeBrOrGalleryTile(gridId, name, pid) {
+  /* pid wins when known (names can repeat); a missing pid+name clears all */
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  const tName = String(name || "");
+  const tPid = String(pid || "");
+  Array.from(grid.children || grid.childNodes || []).forEach((w) => {
+    if (tPid) { if (w.dataset.tpid === tPid) w.remove(); }
+    else if (tName) { if (w.dataset.tname === tName) w.remove(); }
+    else w.remove();
+  });
+}
+function clearGridKind(gridId) {
+  const grid = document.getElementById(gridId);
+  if (grid) grid.innerHTML = "";
+}
+
+/* r22: breakout room controls */
+$("#sBtnTalk") && $("#sBtnTalk").addEventListener("click", async () => {
+  if (!sRoom) return;
+  const btn = $("#sBtnTalk");
+  const on = !btn.classList.contains("active");
+  const withCam = $("#sBtnBrCam") && $("#sBtnBrCam").classList.contains("active");
+  if (on) btn.textContent = "🎙…";
+  try {
+    await sRoom.brTalk(on, withCam);
+    if (on) toast(withCam ? "🎙📷 You are live in the room with mic + camera" : "🎙 You are live in the room — mic on", "ok", 6000);
+  } catch (e) {
+    btn.classList.remove("active");
+    toast("Could not start room audio: " + ((e && e.message) || "microphone unavailable"), "err", 8000);
+  }
+  if (!on) btn.textContent = "🎙 Talk";
+});
+$("#sBtnBrCam") && $("#sBtnBrCam").addEventListener("click", async () => {
+  if (!sRoom) return;
+  const btn = $("#sBtnBrCam");
+  const on = !btn.classList.contains("active");
+  btn.classList.toggle("active", on);
+  const talking = $("#sBtnTalk") && $("#sBtnTalk").classList.contains("active");
+  if (talking) {
+    /* camera change restarts the room stream so mates get video */
+    try { await sRoom.brTalk(false); } catch (e) {}
+    try { await sRoom.brTalk(true, on); } catch (e) {}
+  }
+  toast(on ? "📷 Your camera will show in the room" : "📷 Camera off for the room", "ok", 4000);
+});
+$("#sBtnBrHelp") && $("#sBtnBrHelp").addEventListener("click", () => {
+  if (!sRoom) return;
+  sRoom.askBrHelp();
+  const b = $("#sBtnBrHelp");
+  b.disabled = true;
+  toast("🙋 The teacher has been told you need help in this room.", "ok", 6000);
+  setTimeout(() => { b.disabled = false; }, 20000);   /* re-ask after 20s */
+});

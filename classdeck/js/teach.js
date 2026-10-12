@@ -1546,6 +1546,51 @@ on("#btnNewRoom", "click", (e) => {
 /* ---- go live / end ---- */
 on("#btnGoLive", "click", goLive);
 on("#btnEndLive", "click", endLive);
+/* r22 (items 2+3): platform feature buttons */
+on("#btnBreakout", "click", openBreakoutModal);
+on("#btnReactT", "click", openReactPicker);
+on("#btnSuspend", "click", suspendFromUI);
+on("#brCreate", "click", createBreakoutsFromSetup);
+/* ── r22 completion: poll -> breakout rooms (Zoom) ── */
+on("#brFromPoll", "click", () => {
+  if (!room) { toast("Go live first"); return; }
+  const res = room.pollToBreakouts();
+  if (!res || !res.ok) { toast(res && res.error ? res.error : "Could not create rooms from the poll.", "err", 7000); return; }
+  let placed = 0; for (const r of res.rooms) placed += r.members.length;
+  toast("📊 Rooms created from the poll — " + placed + " student(s) placed by their answer. Students who did not answer stayed in the main class (move them by hand if you want).", "ok", 10000);
+  renderBreakoutPanel();
+});
+/* ── r22 completion: breakout room timer (Zoom) ── */
+let _brTickId = null;
+function syncBrTimerLeft() {
+  const el = document.getElementById("brTimerLeft");
+  if (!el) return;
+  const dataRoom = room || lastEndedRoom;
+  const endsAt = dataRoom && dataRoom._brEndsAt ? dataRoom._brEndsAt : 0;
+  if (!endsAt) { el.textContent = ""; if (_brTickId) { clearInterval(_brTickId); _brTickId = null; } return; }
+  const rem = Math.max(0, endsAt - Date.now());
+  const m = Math.floor(rem / 60000), sec = Math.floor((rem % 60000) / 1000);
+  el.textContent = "⏱ " + m + ":" + String(sec).padStart(2, "0") + " left";
+}
+on("#brTimerStart", "click", () => {
+  if (!room) { toast("Go live first"); return; }
+  const mins = parseInt(document.getElementById("brTimerMin").value, 10);
+  const res = room.startBrTimer(mins);
+  if (!res || !res.ok) { toast(res && res.error ? res.error : "Could not start the timer.", "err", 7000); return; }
+  toast("⏱ Rooms close automatically in " + res.minutes + " minute(s) — every student sees the countdown. 60-second warning fires automatically.", "ok", 8000);
+  if (!_brTickId) _brTickId = setInterval(syncBrTimerLeft, 1000);
+  syncBrTimerLeft();
+});
+on("#brTimerCancel", "click", () => {
+  if (!room) return;
+  if (room.cancelBrTimer()) toast("⏱ Room timer cancelled — rooms stay open until you close them.", "ok", 6000);
+  else toast("No timer is running.", "");
+  syncBrTimerLeft();
+});
+on("#brCloseNow", "click", () => closeAllBreakouts(false));
+on("#brClose60", "click", () => closeAllBreakouts(true));
+on("#brSendAll", "click", broadcastAllRooms);
+on("#dmPermsSave", "click", saveDmPerms);
 
 async function goLive() {
   if (typeof authEnforce === "function" && !authEnforce()) return;   /* v6: hard gate */
@@ -1828,9 +1873,11 @@ async function ensureMic(on) {
   }
   let saved = "";
   try { saved = localStorage.getItem("cd-mic-device") || ""; } catch {}
+  let proc = {};   /* r22: ⚙ Settings → Audio processing (raw audio for mixers/music) */
+  try { proc = JSON.parse(Store.get("audio_proc", "{}") || "{}") || {}; } catch (e) { proc = {}; }
   let res;
   try {
-    res = await MicKit.acquire({ deviceId: saved });
+    res = await MicKit.acquire({ deviceId: saved, processing: proc });
   } catch (e) {
     const c = window.MicKit.classify(e);
     micDoctorShow(c.title, c.body);
@@ -1909,6 +1956,7 @@ on("#btnCam", "click", async () => {
 
 function endLive(force = false) {
   if (!force && !confirm("End the class for everyone?")) return;
+
   Store.set("wasLive", false);   /* v5: deliberate end — don't auto-resume */
   const endedRoom = room;
   if (endedRoom) { endedRoom.stats.end = Date.now(); endedRoom.end(); lastEndedRoom = endedRoom; }
@@ -1970,6 +2018,7 @@ function onRoomEvent(type, p) {
   switch (type) {
     case "student-joined":
       toast("👋 " + p.name + " joined", "ok");
+      playChime(true);                      /* r22 completion: enter chime */
       renderRoster();
       /* v12: at >12 direct video students a phone/tablet uplink starts to
          struggle — offer the captain relay ONCE, never nag. */
@@ -1994,12 +2043,43 @@ function onRoomEvent(type, p) {
       break;
     case "student-left":
       toast(p.name + " left");
+      playChime(false);                     /* r22 completion: exit chime */
       removeCamTile(p.peerId);
       removeCamTile("scr-" + p.peerId);
       removeStudentAudio(p.peerId);
       renderRoster();
       break;
     case "roster": renderRoster(); break;
+    /* ── r22 completion events ── */
+    case "renamed":
+      toast("✏️ " + p.from + " is now called " + p.to, "ok", 5000);
+      renderRoster(); renderWaiting();
+      break;
+    case "chat-mode":
+      { const sel = document.getElementById("chatModeSel"); if (sel) sel.value = p.mode; }
+      break;
+    case "self-unmute":
+      { const b = document.getElementById("btnSelfUnmute"); if (b) b.classList.toggle("active", !p.on); }
+      break;
+    case "qa":
+      renderQa();
+      if (!$("#drawerQa").classList.contains("open") && p && p.length && !p[p.length - 1].answered)
+        toast("🙋 " + p[p.length - 1].from + " asked: " + String(p[p.length - 1].text).slice(0, 60), "", 6000);
+      break;
+    case "brChat":
+      addChatMsg("🎨 " + p.room + " · " + p.from, p.text, false);
+      break;
+    case "brTimer":
+      {                         /* the countdown text is driven locally */
+        const el = document.getElementById("brTimerLeft");
+        if (el) {
+          if (!p || !p.endsAt) el.textContent = "";
+          else if (p.closed) el.textContent = "⏹ rooms closed";
+        }
+        if (p && p.warn) toast("⏳ Breakout rooms close in ONE minute — rooms have been warned.", "", 8000);
+        if (p && p.closed) toast("⏹ Breakout timer finished — rooms closed, everyone is back in the main class.", "ok", 8000);
+      }
+      break;
     case "cohost":
       renderRoster();
       if (p && p.on !== undefined) toast(p.on ? ("👑 " + p.name + " is now an assistant tutor") : (p.name + " is no longer an assistant tutor"), "ok", 5000);
@@ -2043,6 +2123,26 @@ function onRoomEvent(type, p) {
       if (p.kind === "stumic") removeStudentAudio(p.peerId);
       break;
     case "poll-update": renderPollBars(p); break;
+    /* ── r22 (items 2+3): platform feature events ── */
+    case "reaction": showReactionFloat(p.emoji, p.from); break;
+    case "nv": renderRoster(); break;                       /* yes/no/slower/faster badges (12s) */
+    case "brHelp":
+      toast("🙋 " + p.from + " is asking for help in 🎨 " + p.room + " — open 🚪 Rooms to see it", "err", 10000);
+      renderBreakoutPanel();
+      break;
+    case "breakouts": renderBreakoutPanel(); renderRoster(); break;
+    case "see-each-other":
+      syncSeeEachUI();
+      toast(p ? "👥 Class gallery ON — students can now see and hear the classmates you mark 👁 in the roster (students sharing camera/mic become visible automatically)" : "🚫 Class gallery OFF — students see and hear only you", "ok", 8000);
+      break;
+    case "dm":
+      addChatMsg("📩 " + p.from + " → " + p.to + (p.blocked ? " (blocked — pair not permitted)" : ""), p.text, false);
+      break;
+    case "dm-perms": renderRoster(); break;
+    case "suspended":
+      toast("🛡 ACTIVITIES SUSPENDED — mics muted, hands lowered, student shares stopped, gallery off, breakout rooms closed, room locked.", "ok", 10000);
+      renderRoster(); renderBreakoutPanel();
+      break;
     case "signal":
       $("#sigDot").className = "dot " + (p.state === "reconnecting" ? "off" : "on");
       if (p.state === "reconnecting") toast("Reconnecting to signalling server…", "err");
@@ -2069,6 +2169,214 @@ function rttBadge(stu) {
   if (stu.rtt <= 700) return '<span title="fair connection (' + stu.rtt + 'ms)">📶</span>';
   return '<span title="weak connection (' + stu.rtt + 'ms)">📉</span>';
 }
+/* ════════════════════════════════════════════════════════════════
+   r22 (round 22, items 2+3) — platform feature UI helpers
+   ════════════════════════════════════════════════════════════════ */
+
+/* Nonverbal feedback badge (Zoom parity): 👍 / 👎 / 🐢 slower / 🐇 faster,
+   shown for 12 seconds next to the student's name. */
+function nvBadge(stu) {
+  if (!stu || !stu.nv) return "";
+  if (Date.now() > (stu.nv.until || 0)) return "";
+  const icon = stu.nv.kind === "yes" ? "👍" : (stu.nv.kind === "no" ? "👎" : (stu.nv.kind === "slower" ? "🐢" : "🐇"));
+  const label = stu.nv.kind === "yes" ? "says YES" : (stu.nv.kind === "no" ? "says NO" : (stu.nv.kind === "slower" ? "wants you SLOWER" : "wants you FASTER"));
+  return ' <span title="' + label + '">' + icon + "</span>";
+}
+/* Breakout chip + help badge for the roster row. */
+function brBadge(stu, pid) {
+  if (!stu || !stu.breakout) return "";
+  let chip = "";
+  if (room && room.breakouts) {
+    const r = room.breakouts.get(stu.breakout);
+    if (r) chip = ' <span class="br-chip" title="in breakout room ' + escapeHtml(r.name) + '">🎨 ' + escapeHtml(r.name) + "</span>";
+  }
+  const help = stu.brHelp ? ' <span title="asking for help in their breakout room" style="color:var(--warn)">🙋</span>' : "";
+  return chip + help;
+}
+/* Floating reaction (Zoom/Meet parity): rises near the bottom of the
+   stage for ~2.5s, then removes itself. Teacher's own reactions use the
+   same path. */
+function showReactionFloat(emoji, from) {
+  const host = document.getElementById("reactFloat");
+  if (!host || !emoji) return;
+  const el = document.createElement("div");
+  el.className = "react-float";
+  el.textContent = String(emoji).slice(0, 8) + (from ? "  " + String(from).slice(0, 24) : "");
+  host.appendChild(el);
+  setTimeout(() => { try { el.remove(); } catch (e) {} }, 2600);
+}
+/* The teacher's reaction picker (😊 in the topbar). */
+function openReactPicker() {
+  if (!room) { toast("Start the class first.", "err"); return; }
+  const grid = document.getElementById("reactGrid");
+  if (grid) {
+    grid.innerHTML = "";
+    ["👍", "❤", "🎉", "😂", "😲", "😢", "👏", "🙌"].forEach((e) => {
+      const b = document.createElement("button");
+      b.className = "btn react-emoji";
+      b.textContent = e;
+      b.addEventListener("click", () => { room.sendReaction(e); closeModal("#mReact"); });
+      grid.appendChild(b);
+    });
+  }
+  openModal("#mReact");
+}
+/* ══ BREAKOUT ROOMS (Zoom parity) ══ */
+function openBreakoutModal() {
+  if (!room) { toast("Start the class first.", "err"); return; }
+  renderBreakoutPanel();
+  openModal("#mBreakout");
+}
+function renderBreakoutPanel() {
+  const live = document.getElementById("brLive");
+  const setup = document.getElementById("brSetup");
+  if (!live || !setup) return;
+  const on = room && room.breakoutsOn;
+  live.classList.toggle("hide", !on);
+  setup.classList.toggle("hide", !!on);
+  if (!on || !room) return;
+  const rooms = room.breakoutSummary();
+  const list = document.getElementById("brRooms");
+  if (!list) return;
+  list.innerHTML = "";
+  if (!rooms.length) { list.innerHTML = '<p style="color:var(--text-dim);font-size:13px">No rooms open.</p>'; return; }
+  const allStu = Array.from(room.students.values());
+  for (const r of rooms) {
+    const card = document.createElement("div");
+    card.className = "br-card";
+    const movers = allStu.filter((st) => st.breakout !== r.id);
+    let inner = '<div class="br-head"><input class="input br-name" data-room="' + r.id + '" value="' + escapeHtml(r.name) + '" maxlength="40" title="Rename this room" />' +
+      '<span style="font-size:12px;color:var(--text-dim)">' + r.members.length + " 👥</span></div>";
+    inner += '<div class="br-members">' + (r.members.map((m) =>
+      '<span class="br-chip' + (m.help ? " br-help" : "") + '" data-pid="' + m.peerId + '" title="' + (m.help ? "Asking for help — click to clear" : "Click to return to main room") + '">' + (m.help ? "🙋 " : "") + escapeHtml(m.name) + "</span>").join("") || '<span style="color:var(--text-dim);font-size:12px">empty</span>') + "</div>";
+    inner += '<div class="row" style="margin-top:6px"><select class="input br-move" data-room="' + r.id + '" style="flex:1;min-width:0">' +
+      '<option value="">➕ Move a student in…</option>' +
+      movers.map((st) => '<option value="' + st.peerId + '">' + escapeHtml(st.name) + "</option>").join("") + "</select></div>";
+    inner += '<div class="row" style="margin-top:6px"><input class="input br-msg" data-room="' + r.id + '" placeholder="Broadcast to THIS room…" maxlength="300" style="flex:1;min-width:0" />' +
+      '<button class="btn small br-send" data-room="' + r.id + '">📢</button></div>';
+    card.innerHTML = inner;
+    list.appendChild(card);
+    const nameIn = card.querySelector(".br-name");
+    nameIn.addEventListener("change", () => { room.renameBreakout(r.id, nameIn.value.trim()); toast("Room renamed to " + nameIn.value.trim(), "ok", 4000); });
+    card.querySelectorAll(".br-chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        const pid = chip.dataset.pid;
+        const stu = room.students.get(pid);
+        if (stu && stu.brHelp) { room.clearBrHelp(pid); toast("✅ Help marker cleared for " + stu.name, "ok", 4000); return; }
+        if (confirm("Return " + (stu ? stu.name : "this student") + " to the main room?")) room.moveStudent(pid, "");
+      });
+    });
+    const moveSel = card.querySelector(".br-move");
+    moveSel.addEventListener("change", () => {
+      if (!moveSel.value) return;
+      const stu = room.students.get(moveSel.value);
+      room.moveStudent(moveSel.value, r.id);
+      if (stu) toast("🔀 " + stu.name + " moved into " + r.name, "ok", 5000);
+      moveSel.value = "";
+    });
+    const sendB = card.querySelector(".br-send");
+    sendB.addEventListener("click", () => {
+      const inp = card.querySelector(".br-msg");
+      const n = room.broadcastToRooms(inp.value, r.id);
+      if (n) { toast("📢 Sent to " + n + " student(s) in " + r.name, "ok", 5000); inp.value = ""; }
+      else toast("Type a message first.", "err");
+    });
+  }
+  const helpCount = rooms.reduce((a, r) => a + r.members.filter((m) => m.help).length, 0);
+  const hc = document.getElementById("brHelpCount");
+  if (hc) hc.textContent = helpCount ? ("🙋 " + helpCount + " asking for help") : "";
+}
+function createBreakoutsFromSetup() {
+  if (!room) return;
+  const n = parseInt(document.getElementById("brCount").value, 10) || 4;
+  const mode = document.getElementById("brMode").value;
+  const defs = [];
+  for (let i = 0; i < n; i++) defs.push({ name: "Breakout " + (i + 1) });
+  const res = room.createBreakouts(defs, mode, null);
+  if (!res || !res.ok) { toast(res && res.error ? res.error : "Could not create rooms.", "err"); return; }
+  toast("🚪 " + n + " breakout room" + (n > 1 ? "s" : "") + " created (" + (mode === "manual" ? "move students in from each room's ➕ list" : "students auto-assigned evenly") + "). Students see a room bar with Talk / camera / Ask-for-help.", "ok", 9000);
+  renderBreakoutPanel();
+}
+function closeAllBreakouts(countdown) {
+  if (!room || !room.breakoutsOn) { toast("No rooms are open.", ""); return; }
+  if (countdown) {
+    room.broadcastToRooms("⏳ Rooms close in 60 seconds — wrap up your discussion!");
+    toast("⏰ Rooms close in 60 seconds (students were told).", "ok", 6000);
+    setTimeout(() => { if (room && room.breakoutsOn) { room.endBreakouts(); toast("🚪 All breakout rooms closed — everyone is back in the main class.", "ok", 7000); } }, 60000);
+  } else {
+    room.endBreakouts();
+    toast("🚪 All breakout rooms closed — everyone is back in the main class.", "ok", 7000);
+  }
+}
+function broadcastAllRooms() {
+  if (!room) return;
+  const inp = document.getElementById("brAllMsg");
+  const n = room.broadcastToRooms(inp.value, null);
+  if (n) { toast("📢 Broadcast sent to " + n + " student(s) across all rooms", "ok", 5000); inp.value = ""; }
+  else toast("Type a message first.", "err");
+}
+/* ══ STUDENT-TO-STUDENT DM PERMISSIONS (item 3) ══ */
+let _dmPermsPid = null;
+function openDmPerms(stu, pid) {
+  if (!room) return;
+  _dmPermsPid = pid;
+  const title = document.getElementById("dmPermsTitle");
+  if (title) title.textContent = "💬 Who may " + stu.name + " message?";
+  const list = document.getElementById("dmPermsList");
+  if (!list) return;
+  list.innerHTML = "";
+  const others = Array.from(room.students.values()).filter((st) => st.peerId !== pid);
+  if (!others.length) { list.innerHTML = '<p style="color:var(--text-dim);font-size:13px">No other students in the class yet.</p>'; return; }
+  for (const other of others) {
+    const row = document.createElement("label");
+    row.className = "dm-perm-row";
+    const allowed = !!(stu.dmAllowed && stu.dmAllowed.has(other.peerId));
+    row.innerHTML = '<input type="checkbox" data-to="' + other.peerId + '" ' + (allowed ? "checked" : "") + ' /> <span>' + escapeHtml(other.name) + "</span>";
+    list.appendChild(row);
+  }
+  openModal("#mDm");
+}
+function saveDmPerms() {
+  if (!room || !_dmPermsPid) return;
+  const from = room.students.get(_dmPermsPid);
+  if (!from) { closeModal("#mDm"); return; }
+  document.querySelectorAll("#dmPermsList input[data-to]").forEach((cb) => {
+    const toPid = cb.dataset.to;
+    const allowed = !!(from.dmAllowed && from.dmAllowed.has(toPid));
+    if (cb.checked !== allowed) room.allowDm(_dmPermsPid, toPid, cb.checked);
+  });
+  toast("💬 DM permissions saved for " + from.name + ". Permitted messages route through you (logged in chat + attendance); everything else is refused and the sender is told.", "ok", 8000);
+  closeModal("#mDm");
+}
+/* ══ SUSPEND ACTIVITIES (Zoom host tools parity) ══ */
+function suspendFromUI() {
+  if (!room) { toast("Start the class first.", "err"); return; }
+  if (!confirm("🛡 Suspend ALL activities?\n\nMutes every student, lowers all hands, stops all student screen shares, turns the class gallery off, closes breakout rooms and LOCKS the room. Your broadcast and recording keep running.")) return;
+  room.suspendActivities();
+}
+/* ══ CLASS TIMER: already exists (v5: #timerChip/#timerVal, started at
+   go-live, ticked every second) — r22 adds no duplicate. ══ */
+/* ══ CLASS GALLERY SYNC (item 3) ══ */
+function syncSeeEachUI() {
+  const cb = document.getElementById("setSeeEach");
+  if (cb && room) cb.checked = !!room.seeEachOther;
+  const n = room ? Array.from(room.students.values()).filter((st) => st.visibleToClass).length : 0;
+  const hint = document.getElementById("seeEachHint");
+  if (hint) hint.textContent = room && room.seeEachOther
+    ? ("ON — " + n + " student(s) currently visible to the class. Mark individuals with 👁 in the roster; students sharing a camera become visible automatically.")
+    : "OFF — students see and hear only you (the default).";
+}
+/* Nonverbal badges + help markers expire on their own: re-render the
+   roster periodically so they disappear without another event. */
+setInterval(() => {
+  if (!room || !room.students.size) return;
+  let any = false;
+  for (const stu of room.students.values()) {
+    if (stu.nv || stu.brHelp || stu.breakout) { any = true; break; }
+  }
+  if (any) renderRoster();
+}, 5000);
+
 function renderRosterNow() {
   const list = $("#rosterList");
   const dataRoom = room || lastEndedRoom;
@@ -2084,13 +2392,16 @@ function renderRosterNow() {
     row.dataset.peerId = pid;
     row.innerHTML = `
       <span class="hand">${stu.hand ? "✋" : ""}</span>
-      <span class="name">${escapeHtml(stu.name)}${isCaptain(pid) ? ' <span title="class captain — helps carry the video">🛡</span>' : ""}</span>${rttBadge(stu)}` +
+      <span class="name">${escapeHtml(stu.name)}${isCaptain(pid) ? ' <span title="class captain — helps carry the video">🛡</span>' : ""}${nvBadge(stu)}${brBadge(stu, pid)}</span>${rttBadge(stu)}` +
       (room ? `
       <button class="btn small" data-act="cam" title="Ask/stop camera">📷</button>
       <button class="btn small" data-act="scr" title="Ask student to share their screen — you choose who sees it (just you, or the whole class)">🖥</button>
       <button class="btn small" data-act="mic" title="Allow/revoke mic">🎙</button>
+      <button class="btn small" data-act="eye" title="Class gallery: let students see &amp; hear this student (turns the gallery on if needed)">👁</button>
+      <button class="btn small" data-act="dm" title="Who may this student message? (student-to-student DMs — you permit each pair)">💬</button>
       <button class="btn small" data-act="cohost" title="Make assistant tutor (co-host): can admit, mute all, kick and lock">👑</button>
       <button class="btn small" data-act="cotutor" title="Make CO-TUTOR — the full tutor toolkit (equal to the tutor for everything classroom-side)">🎓</button>
+      <button class="btn small" data-act="rename" title="Rename this student (Zoom-style) — everyone's roster, DM lists and logs switch to the new name instantly">✏️</button>
       <button class="btn small danger" data-act="kick" title="Remove">✕</button>` : "");
     if (room) {
       /* v9: reflect the real state (permission memory + live calls) instead of
@@ -2132,8 +2443,29 @@ function renderRosterNow() {
         room.allowMic(pid, on);
         toast(on ? stu.name + " may now speak" : "Mic permission revoked for " + stu.name);
       });
+      const eyeB = row.querySelector('[data-act="eye"]');
+      if (eyeB) {
+        eyeB.classList.toggle("active", !!stu.visibleToClass);
+        eyeB.addEventListener("click", () => {
+          room.setStudentVisible(pid, !stu.visibleToClass);
+          toast(stu.visibleToClass
+            ? "👁 " + stu.name + " is now VISIBLE to the class gallery (students see & hear them)"
+            : stu.name + " is hidden from the class gallery (only you see them)", "ok", 6000);
+        });
+      }
+      const dmB = row.querySelector('[data-act="dm"]');
+      if (dmB) dmB.addEventListener("click", () => openDmPerms(stu, pid));
       row.querySelector('[data-act="kick"]').addEventListener("click", () => {
         if (confirm("Remove " + stu.name + " from the class?")) room.kick(pid);
+      });
+      /* r22 completion: Zoom "Rename" — teacher/Co-Tutor renames a student */
+      const renB = row.querySelector('[data-act="rename"]');
+      if (renB) renB.addEventListener("click", () => {
+        const nn = prompt("Rename " + stu.name + " to:", stu.name);
+        if (nn == null) return;
+        const clean = String(nn).trim();
+        if (!clean) { toast("The name cannot be empty.", "err"); return; }
+        if (!room.renameStudent(pid, clean)) toast("Could not rename — use 1 to 40 characters.", "err");
       });
       if (chB) chB.addEventListener("click", () => {
         if (stu.coTutor) { toast(stu.name + " is a Co-Tutor already (that includes every assistant-tutor power). Demote 🎓 first if you want them to be a plain assistant tutor.", "", 7000); return; }
@@ -2250,6 +2582,121 @@ function toggleDrawer(id) {
 on("#btnStudents", "click", () => { renderRoster(); renderWaiting(); toggleDrawer("#drawerStudents"); });
 on("#btnChat", "click", () => toggleDrawer("#drawerChat"));
 on("#btnPoll", "click", () => toggleDrawer("#drawerPoll"));
+on("#btnQa", "click", () => { renderQa(); toggleDrawer("#drawerQa"); });   /* r22 completion: Q&A */
+
+/* ── r22 completion: chat MODES (Zoom) — who students may chat with ── */
+on("#chatModeSel", "change", (e) => {
+  if (!room) { toast("Go live first", "err"); e.currentTarget.value = "class"; return; }
+  const mode = e.currentTarget.value;
+  room.setChatMode(mode);
+  toast(mode === "off" ? "🚫 Student chat is now OFF for everyone" :
+        mode === "host" ? "👤 Students can now chat with you and Co-Tutors only" :
+        "💬 Students can chat with everyone again", "ok", 6000);
+});
+/* Zoom "Save chat": the full log (public + private + DMs + room chats) as .txt */
+on("#btnSaveChat", "click", () => {
+  const dataRoom = room || lastEndedRoom;
+  if (!dataRoom) { toast("No class data yet"); return; }
+  const txt = dataRoom.exportChatText ? dataRoom.exportChatText() : "";
+  if (!txt) { toast("No chat messages to save yet."); return; }
+  downloadBlob(new Blob([txt], { type: "text/plain" }), "chat-" + currentRoomCode() + "-" + Date.now() + ".txt");
+  toast("💾 Chat saved (.txt)", "ok");
+});
+/* Zoom "Allow participants to unmute themselves" */
+on("#btnSelfUnmute", "click", (e) => {
+  if (!room) { toast("Go live first"); return; }
+  const onNow = !room.allowSelfUnmute;
+  room.setAllowSelfUnmute(onNow);
+  e.currentTarget.classList.toggle("active", !onNow);
+  toast(onNow ? "🎙 Students may unmute themselves again" :
+        "🎙 Self-unmute OFF — every student mic is muted and their mic buttons are locked (hands still work)", "ok", 7000);
+});
+/* Enter/exit chime (soft two-tone on the teacher device only) */
+let _chimeOn = Store.get("chimeOn", "1") === "1";
+function playChime(entering) {
+  if (!_chimeOn) return;
+  try {
+    const ac = window._chimeCtx || (window._chimeCtx = new (window.AudioContext || window.webkitAudioContext)());
+    const t = ac.currentTime;
+    const notes = entering ? [660, 880] : [440, 330];      /* up = join, down = leave */
+    for (let i = 0; i < notes.length; i++) {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = "sine"; o.frequency.value = notes[i];
+      g.gain.setValueAtTime(0.0001, t + i * 0.14);
+      g.gain.exponentialRampToValueAtTime(0.08, t + i * 0.14 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.14 + 0.13);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t + i * 0.14); o.stop(t + i * 0.14 + 0.15);
+    }
+  } catch (e) { /* no WebAudio: the chime is a nicety, never a blocker */ }
+}
+function syncChimeBtn() {
+  const b = document.getElementById("btnChime");
+  if (b) { b.classList.toggle("active", _chimeOn); b.textContent = _chimeOn ? "🔔 Chime on" : "🔕 Chime off"; }
+}
+on("#btnChime", "click", () => {
+  _chimeOn = !_chimeOn;
+  Store.set("chimeOn", _chimeOn ? "1" : "0");
+  syncChimeBtn();
+  if (_chimeOn) playChime(true);
+});
+syncChimeBtn();
+
+/* ── r22 completion: Q&A panel (Meet/Zoho style) ── */
+function renderQa() {
+  const list = document.getElementById("qaList");
+  if (!list) return;
+  const dataRoom = room || lastEndedRoom;
+  const qs = (dataRoom && dataRoom.qa) ? dataRoom.qa.slice().reverse() : [];
+  const openB = document.getElementById("btnQaOpen");
+  if (openB && dataRoom) {
+    openB.classList.toggle("active", !!dataRoom.qaOpen);
+    openB.textContent = dataRoom.qaOpen ? "✅ Q&A open" : "⛔ Q&A closed";
+  }
+  if (!qs.length) { list.innerHTML = '<p style="color:var(--text-dim);font-size:13px">No questions yet. Students use the 🙋 Ask-the-teacher button in their chat drawer.</p>'; return; }
+  list.innerHTML = "";
+  for (const q of qs) {
+    const card = document.createElement("div");
+    card.className = "qa-card";
+    card.style.cssText = "border:1px solid var(--bd,#2a3350);border-radius:10px;padding:8px 10px;margin-bottom:8px;font-size:13px";
+    const head = document.createElement("div");
+    head.innerHTML = '<b>' + escapeHtml(q.from) + '</b> <span style="color:var(--text-dim);font-size:11.5px">' + escapeHtml(q.at || "") + '</span>';
+    const body = document.createElement("div");
+    body.style.cssText = "margin:4px 0";
+    body.textContent = "❓ " + q.text;
+    card.appendChild(head); card.appendChild(body);
+    if (q.answered) {
+      const ans = document.createElement("div");
+      ans.style.cssText = "color:var(--ok,#15803d);margin-top:4px";
+      ans.textContent = "✅ " + (q.answeredBy || "Teacher") + ": " + q.answer;
+      card.appendChild(ans);
+    } else {
+      const row = document.createElement("div");
+      row.style.cssText = "display:flex;gap:6px;margin-top:6px";
+      const inp = document.createElement("input");
+      inp.className = "input"; inp.maxLength = 1000; inp.placeholder = "Answer — everyone will see it";
+      inp.style.cssText = "flex:1;min-width:0";
+      const send = document.createElement("button");
+      send.className = "btn small primary"; send.textContent = "Answer";
+      send.addEventListener("click", () => { if (inp.value.trim() && room) { room.qaAnswer(q.id, inp.value.trim()); } });
+      const dis = document.createElement("button");
+      dis.className = "btn small ghost"; dis.textContent = "Dismiss";
+      dis.addEventListener("click", () => { if (room) room.qaDismiss(q.id); });
+      row.appendChild(inp); row.appendChild(send); row.appendChild(dis);
+      card.appendChild(row);
+    }
+    list.appendChild(card);
+  }
+}
+on("#btnQaOpen", "click", () => {
+  if (!room) { toast("Go live first"); return; }
+  room.qaSetOpen(!room.qaOpen);
+  toast(room.qaOpen ? "✅ Q&A open — students can ask again" : "⛔ Q&A closed — no new questions", "ok", 5000);
+});
+on("#btnQaClear", "click", () => {
+  if (!room) return;
+  if (confirm("Remove every question from the Q&A list?")) room.qaClear();
+});
 $$(".drawer-close").forEach((b) => b.addEventListener("click", () => b.closest(".drawer").classList.remove("open")));
 
 /* ---- chat ---- */
@@ -2403,6 +2850,14 @@ loadRecLogo();
 /* r21 (item 1): the broadcast-mode chip — one tap switches the live
    broadcast (and the recording source) between the composite workspace and
    a full screen share. Nothing stops: no re-call, no recorder restart. */
+/* r22 (item 1): rescue tool for EXISTING recordings (the laptop library) */
+on("#setRepairRec", "click", () => $("#setRepairFile").click());
+on("#setRepairFile", "change", async (e) => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (f) repairExistingRecording(f);
+});
+
 on("#btnBcastMode", "click", () => {
   if (broadcastMode === "composite") switchBroadcastMode("screen");
   else switchBroadcastMode("composite");
@@ -2574,23 +3029,64 @@ function recLoop(ts) {
    timestamp click. Fixed at stop time, best-effort, never destructive:
    duration first (vendored EBML tool, when present), then the Cues index +
    true segment size (js/webm-cues.js). Returns { blob, cues }. */
+/* r22 (item 1, definitive): the FULL player-compatibility repair, self-
+   contained. Root cause of the persistent VLC "click a timestamp and it
+   stops" field report: a seekable Matroska needs FOUR things together -
+   Info/Duration, a SeekHead that POINTS at the index, a Cues index, and a
+   finite Segment size. The r21 pipeline only guaranteed two of them: the
+   bundled duration tool can silently no-op (it logs "no video, no audio
+   track" and returns the blob unchanged for files it cannot parse), and
+   the whole repair was wrapped in catches that saved the raw file without
+   a word. WebMCues.repair (js/webm-cues.js r22) now writes all four in
+   one pass with zero dependencies, and FAILURES ARE SPOKEN, never silent.
+   Returns { blob, ok, durationMs, cuePoints, alreadyFixed } - never throws. */
 async function repairWebmForPlayers(chunks, outType) {
-  let buf = new Uint8Array(await new Blob(chunks).arrayBuffer());
-  if (window.EBML && window.EBML.default) {
-    try {
-      const fixed = await window.EBML.default(new Blob([buf], { type: outType || "video/webm" }));
-      if (fixed && fixed.size) buf = new Uint8Array(await fixed.arrayBuffer());
-    } catch (e) {}
+  const fallback = { blob: new Blob(chunks, { type: outType || "video/webm" }), ok: false, durationMs: 0, cuePoints: 0, alreadyFixed: false };
+  try {
+    const buf = new Uint8Array(await new Blob(chunks).arrayBuffer());
+    if (!window.WebMCues || typeof window.WebMCues.repair !== "function") return fallback;
+    const r = window.WebMCues.repair(buf);
+    if (!r) return fallback;
+    return { blob: new Blob([r.bytes], { type: outType || "video/webm" }), ok: true,
+             durationMs: r.durationMs || 0, cuePoints: r.cuePoints || 0, alreadyFixed: !!r.alreadyFixed };
+  } catch (e) {
+    return fallback;
   }
-  let cues = false;
-  if (window.WebMCues && window.WebMCues.addCues) {
-    try {
-      const withCues = window.WebMCues.addCues(buf);
-      if (withCues && withCues.length > buf.length) { buf = withCues; cues = true; }
-      else if (withCues && withCues.length === buf.length) { buf = withCues; }
-    } catch (e) {}
+}
+
+/* r22 (item 1): rescue tool for recordings that ALREADY exist on the
+   teacher's laptop - including the pre-r21 generation that was saved as
+   WebM bytes under an .mp4 name. Runs the same full repair on any chosen
+   file and downloads the seekable result. Honest about what it sees:
+   real MP4 (ftyp magic) is left alone with an explanation. */
+async function repairExistingRecording(file) {
+  if (!file) return;
+  toast("\u{1F6E0} Repairing \"" + file.name + "\" - a full seek index (Duration + SeekHead + Cues) is being written so players can jump to any timestamp…", "", 9000);
+  try {
+    const buf = new Uint8Array(await file.arrayBuffer());
+    if (buf.length < 12) { toast("That file is too small to be a recording.", "err"); return; }
+    const isEbml = buf[0] === 0x1A && buf[1] === 0x45 && buf[2] === 0xDF && buf[3] === 0xA3;
+    const isMp4 = buf[4] === 0x66 && buf[5] === 0x74 && buf[6] === 0x79 && buf[7] === 0x70;
+    if (!isEbml) {
+      if (isMp4) toast("\"" + file.name + "\" is a genuine MP4 file - its index is built in, nothing to repair. (Old ClassDeck recordings named .mp4 that VLC struggles to seek are actually WebM - those DO get repaired here.)", "", 10000);
+      else toast("\"" + file.name + "\" is not a WebM/Matroska recording - left unchanged.", "err", 8000);
+      return;
+    }
+    if (!window.WebMCues || typeof window.WebMCues.repair !== "function") {
+      toast("The repair tool is not loaded on this page - reload and try again.", "err");
+      return;
+    }
+    const r = window.WebMCues.repair(buf);
+    if (!r) { toast("\u26A0 Could not parse \"" + file.name + "\" as a repairable recording - the original is untouched.", "err", 9000); return; }
+    if (r.alreadyFixed) { toast("\u2705 \"" + file.name + "\" already carries a full seek index (Duration + SeekHead + Cues) - nothing to do.", "ok", 8000); return; }
+    const base = file.name.replace(/\.[^.]+$/, "");
+    const secs = Math.round((r.durationMs || 0) / 1000);
+    const mm = Math.floor(secs / 60), ss = String(secs % 60).padStart(2, "0");
+    downloadBlob(new Blob([r.bytes], { type: "video/webm" }), base + "-SEEKABLE.webm");
+    toast("\u2705 Saved \"" + base + "-SEEKABLE.webm\" - " + (r.durationMs ? mm + ":" + ss + " of lesson, " : "") + r.cuePoints + " seek points. Click any timestamp in VLC / Windows Media Player: it jumps instead of stopping. Keep the new file; the original is untouched.", "ok", 12000);
+  } catch (e) {
+    toast("\u26A0 The repair failed: " + (e && e.message ? e.message : "unknown error") + ". The original file is untouched.", "err", 9000);
   }
-  return { blob: new Blob([buf], { type: outType || "video/webm" }), cues };
 }
 
 async function startRecording() {
@@ -2653,18 +3149,25 @@ async function startRecording() {
       
       if (chunks.length) {
         if (outType.indexOf("webm") > -1) {
-          /* r21 (item 3): EVERY WebM recording gets the full repair pipeline,
-             unconditionally: (1) the vendored fix-webm-duration (Duration),
-             (2) js/webm-cues.js - a real Cues seek index + true Segment size.
-             Together these are what laptop players need to seek without
-             stopping; the old byte-patch only fixed the segment size and the
-             extension lied about the container. */
+          /* r22 (item 1, definitive): EVERY WebM recording gets the complete
+             repair, unconditionally and self-contained: js/webm-cues.js
+             writes Duration + SeekHead + Cues + a finite Segment size in
+             one pass. That is the full set of four things laptop players
+             (VLC / Windows Media) need to seek without stopping. */
+          toast("\u{1F6E0} Finishing the recording - writing Duration + SeekHead + seek index so it plays and seeks correctly in every player…", "", 6000);
           repairWebmForPlayers(chunks, outType).then(function (res) {
             downloadBlob(res.blob, fname);
-            if (res.cues) toast("\u2705 Recording saved with a full seek index - clicking any timestamp in VLC / Windows Media Player now jumps correctly.", "ok", 8000);
-            else toast("Recording saved. If seeking stumbles in an older player, play it in VLC or Chrome.", "ok", 8000);
-          }).catch(function () {
-            downloadBlob(new Blob(chunks, { type: outType }), fname);
+            if (res.ok) {
+              const secs = Math.round((res.durationMs || 0) / 1000);
+              const mm = Math.floor(secs / 60), ss = String(secs % 60).padStart(2, "0");
+              toast(res.alreadyFixed
+                ? "\u2705 Recording saved (" + mm + ":" + ss + ") - it already carried a full seek index."
+                : "\u2705 Recording saved (" + (res.durationMs ? mm + ":" + ss + ", " : "") + res.cuePoints + " seek points) - clicking any timestamp in VLC / Windows Media Player now jumps correctly.", "ok", 9000);
+            } else {
+              /* r22: NEVER silent. The file still plays start-to-finish, but
+                 the teacher is told the index is missing AND how to fix it. */
+              toast("\u26A0 Recording saved, but the seek-index repair could not run on this device (it plays fine start-to-finish). To make every timestamp clickable in VLC, run ⚙ Settings → \u{1F6E0} Repair a recording on it from a laptop.", "err", 14000);
+            }
           });
         } else {
           downloadBlob(new Blob(chunks, { type: outType || "video/mp4" }), fname);
@@ -2800,7 +3303,27 @@ on("#btnSettings", "click", () => {
                                      saved on the tablet must PRE-FILL here on
                                      any device — pull from the cloud account
                                      when this device has nothing saved. */
+  /* r22 (items 2+3): sync the new settings fields from the live class */
+  const seEl = document.getElementById("setSeeEach");
+  if (seEl) seEl.checked = !!(room && room.seeEachOther);
+  syncSeeEachUI();
+  let ap = {};
+  try { ap = JSON.parse(Store.get("audio_proc", "{}") || "{}") || {}; } catch (e) { ap = {}; }
+  const aecEl = document.getElementById("setAEC"); if (aecEl) aecEl.checked = ap.echoCancellation !== false;
+  const nsEl = document.getElementById("setNS");   if (nsEl) nsEl.checked = ap.noiseSuppression !== false;
+  const agcEl = document.getElementById("setAGC"); if (agcEl) agcEl.checked = ap.autoGainControl !== false;
   openModal("#mSettings");
+});
+/* r22 (items 2+3): apply gallery + audio-processing settings on Save */
+on("#setSave", "click", () => {
+  const seEl = document.getElementById("setSeeEach");
+  if (seEl && room) room.setSeeEachOther(seEl.checked);
+  Store.set("audio_proc", JSON.stringify({
+    echoCancellation: !!(document.getElementById("setAEC") && document.getElementById("setAEC").checked),
+    noiseSuppression: !!(document.getElementById("setNS") && document.getElementById("setNS").checked),
+    autoGainControl: !!(document.getElementById("setAGC") && document.getElementById("setAGC").checked)
+  }));
+  toast("Audio settings apply the next time the mic connects (toggle 🎙 Mic off/on, or restart the class).", "", 6000);
 });
 
 /* ============================================================

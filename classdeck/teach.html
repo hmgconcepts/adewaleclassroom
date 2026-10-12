@@ -67,6 +67,8 @@
     <!-- r21 (item 1): switch the live broadcast (and recording source) between the
          composite workspace and a full screen share MID-CLASS — nothing stops. -->
     <button class="btn small" id="btnBcastMode" title="Switch the live broadcast between the ClassDeck workspace and your shared screen — without stopping the class or the recording">🧩 Composite</button>
+      <button class="btn small" id="btnBreakout" title="Breakout rooms — split the class into small discussion groups (like Zoom): auto or manual assignment, live moves, broadcasts to rooms, ask-for-help, close with a countdown">🚪 Rooms</button>
+      <button class="btn small" id="btnReactT" title="Send a reaction to the class (students can send these too — 👍 in their toolbar)">😊</button>
     <button class="btn small" id="btnCam" title="Toggle your camera">📷 Cam</button>
     <button class="btn small" id="btnMic" title="Toggle your microphone">🎙 Mic</button>
     <button class="btn small" id="btnRec" title="Record the lesson locally">⏺ Rec</button>
@@ -75,6 +77,7 @@
     <button class="btn small" id="btnStudents" title="Students / monitoring">👥</button><span id="joinBlockedBadge" class="chip hide" style="background:var(--warn,#b45309);color:#fff;font-weight:700;font-size:.72em;padding:2px 8px;border-radius:999px;margin-left:4px">📶 0 blocked</span>
     <button class="btn small" id="btnChat" title="Class chat">💬</button>
     <button class="btn small" id="btnPoll" title="Quick poll">📊</button>
+    <button class="btn small" id="btnQa" title="Q&amp;A — students ask, you answer (Google Meet / Zoho style)">🙋</button>
     <button class="btn small" id="btnQuiz" title="Quiz with auto-scoring &amp; leaderboard">🏆</button>
     <button class="btn small" id="btnBoards" title="Student whiteboards — every student gets a board only you can see">🎨</button>
     <button class="btn small" id="btnActivity" title="Activities: open question, word cloud, exit ticket">🧩</button>
@@ -558,10 +561,13 @@
       <button class="btn small" id="btnMuteAll" title="Mute every student mic at once (Zoom-style)">🔇 Mute all</button>
       <button class="btn small" id="btnLowerHands" title="Lower every raised hand">✋ Lower hands</button>
       <button class="btn small" id="btnLock">🔒 Lock room</button>
+      <button class="btn small" id="btnSuspend" title="One tap (like Zoom's Suspend Activities): mute everyone, lower hands, stop all student shares, gallery off, close breakout rooms, lock the room — your broadcast/recording keep running">🛡 Suspend activities</button>
       <button class="btn small" id="btnWaiting" title="Zoom-style waiting room: you admit each student">🚪 Waiting room</button>
       <button class="btn small" id="btnMuteAll" title="Revoke every student's mic at once">🔇 Mute all</button>
       <button class="btn small" id="btnAttendance">📋 Attendance CSV</button>
       <button class="btn small" id="btnAskAllCams">📷 Ask all cams</button>
+      <button class="btn small" id="btnSelfUnmute" title="Zoom-style: when OFF, every student mic is muted and their mic buttons are locked (they can still raise a hand or ask you to unmute them)">🎙 Allow self-unmute</button>
+      <button class="btn small" id="btnChime" title="Enter/exit chime: a soft tone plays on your device whenever a student joins or leaves">🔔 Chime</button>
       <button class="btn small" id="btnReport">📈 Class report</button>
       <button class="btn small" id="btnNoiseMeter" title="Live class-volume gauge using the teacher device microphone">🔊 Noise meter</button>
       <button class="btn small" id="btnGroups" title="Random group maker — students are told their group number">👥 Groups</button>
@@ -588,12 +594,32 @@
       <input class="input" id="chatInput" placeholder="Message the class…" maxlength="500" />
       <button class="btn primary" id="chatSend">➤</button>
     </div>
+    <div class="row" style="margin-top:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <select class="input" id="chatModeSel" style="flex:1;min-width:150px" title="Zoom-style chat control: who students may chat with">
+        <option value="class">💬 Students can chat: Everyone</option>
+        <option value="host">👤 Students can chat: Teacher &amp; Co-Tutors only</option>
+        <option value="off">🚫 Students can chat: No one</option>
+      </select>
+      <button class="btn small" id="btnSaveChat" title="Download the whole class chat (public + private + DMs + room chats) as a .txt file">💾 Save chat</button>
+    </div>
     <button class="btn small ghost" id="btnAnnounce" style="margin-top:8px">📢 Send full-screen announcement</button>
     <div class="row" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
       <button class="btn small" id="btnCaptions" title="Free browser speech-to-text captions; works best in Chrome/Edge">CC Live captions</button>
       <button class="btn small ghost" id="btnTranscript" title="Download caption transcript as a text file">⬇ Transcript</button>
     </div>
     <p id="captionStatus" style="font-size:11.5px;color:var(--text-dim);margin:6px 0 0">Captions use your browser only; no AI/API key is used.</p>
+  </div>
+</aside>
+
+<!-- r22 completion: Q&A drawer (Google Meet / Zoho Meeting style) -->
+<aside class="drawer" id="drawerQa">
+  <div class="drawer-head">🙋 Q&amp;A <button class="btn small ghost drawer-close">✕</button></div>
+  <div class="drawer-body">
+    <div class="row" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+      <button class="btn small active" id="btnQaOpen">✅ Q&amp;A open</button>
+      <button class="btn small" id="btnQaClear" title="Remove every question from the list">🧹 Clear all</button>
+    </div>
+    <div id="qaList"><p style="color:var(--text-dim);font-size:13px">No questions yet. Students use the 🙋 Ask-the-teacher button in their chat drawer.</p></div>
   </div>
 </aside>
 
@@ -737,6 +763,68 @@ Not sure</textarea>
   </div>
 </div>
 
+<div class="modal-back" id="mBreakout">
+  <div class="modal" style="max-width:640px">
+    <h3>🚪 Breakout rooms</h3>
+    <div id="brSetup">
+      <label>How many rooms?</label>
+      <select class="input" id="brCount" style="max-width:200px">
+        <option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option>
+        <option>7</option><option>8</option><option>9</option><option>10</option><option>12</option>
+      </select>
+      <label style="margin-top:10px">Assignment</label>
+      <select class="input" id="brMode" style="max-width:340px">
+        <option value="auto">Automatic — spread students evenly across the rooms</option>
+        <option value="manual">Manual — I will move students into rooms myself</option>
+      </select>
+      <p style="font-size:11.5px;color:var(--text-dim);margin:6px 0 10px">Students get a room bar with the room name, their groupmates, Talk (mic + optional camera) and 🙋 Ask teacher for help. Talking happens directly between the students in the room (peer-to-peer) — it never loads your device. You keep every student's existing camera/mic tiles, so you can watch any room; you can broadcast a message to one room or all rooms, move students live, rename rooms, and close everything with a 60-second countdown.</p>
+      <div class="row" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+        <button class="btn primary" id="brCreate">🚪 Open breakout rooms</button>
+        <button class="btn" id="brFromPoll" title="Zoom-style: one room per poll option — every student who answered lands in that option's room (students who did not answer stay in the main class)">📊 Rooms from last poll</button>
+      </div>
+    </div>
+    <div id="brLive" class="hide">
+      <div class="row" style="align-items:center;gap:10px;flex-wrap:wrap">
+        <b>Rooms are OPEN</b><span id="brHelpCount" style="color:var(--warn);font-size:13px"></span>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <input class="input" id="brAllMsg" placeholder="📢 Broadcast to ALL rooms…" maxlength="300" style="flex:1;min-width:0" />
+        <button class="btn small" id="brSendAll">📢 Send</button>
+      </div>
+      <div id="brRooms" style="margin-top:10px"></div>
+      <div class="row" style="margin-top:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <label style="font-size:13px">⏱ Room timer:</label>
+        <input class="input" id="brTimerMin" type="number" min="1" max="240" value="10" style="width:80px" title="Minutes until the rooms close automatically (students see a countdown; 60-second warning; auto-return to the main class)" />
+        <button class="btn small" id="brTimerStart">Start</button>
+        <button class="btn small ghost" id="brTimerCancel">Cancel</button>
+        <span id="brTimerLeft" style="font-weight:700;color:var(--warn,#b45309)"></span>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" id="brClose60">⏳ Close in 60s</button>
+        <button class="btn danger" id="brCloseNow">⏹ Close all rooms now</button>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px"><button class="btn" onclick="closeModal('#mBreakout')">Done</button></div>
+  </div>
+</div>
+<div class="modal-back" id="mReact">
+  <div class="modal" style="max-width:300px">
+    <h3>😊 Send a reaction</h3>
+    <div id="reactGrid" class="row" style="flex-wrap:wrap;gap:10px"></div>
+    <p style="font-size:11.5px;color:var(--text-dim);margin:8px 0 0">Floats over every student's lesson view.</p>
+  </div>
+</div>
+<div class="modal-back" id="mDm">
+  <div class="modal" style="max-width:440px">
+    <h3 id="dmPermsTitle">💬 Who may this student message?</h3>
+    <p style="font-size:11.5px;color:var(--text-dim);margin:4px 0 8px">Student-to-student messages always route through your device and are logged. Nothing is delivered unless you permit the pair here — refused senders are told "the teacher has not allowed this".</p>
+    <div id="dmPermsList" style="max-height:300px;overflow:auto"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn primary" id="dmPermsSave">Save</button>
+      <button class="btn" onclick="closeModal('#mDm')">Cancel</button>
+    </div>
+  </div>
+</div>
 <div class="modal-back" id="mSettings">
   <div class="modal">
     <h3>⚙ Settings</h3>
@@ -756,6 +844,20 @@ Not sure</textarea>
     <label style="margin-top:10px">Mass Broadcast URL (for 1000+ students)</label>
     <input class="input" id="setMassBroadcastUrl" placeholder="e.g. https://www.youtube.com/embed/XXXXX (optional)" />
     <p style="font-size:11.5px;color:var(--text-dim);margin:4px 0 0">To host 1000+ students smoothly, paste your YouTube/Twitch Live Embed URL here. The WebRTC video will be disabled, and students will watch the live stream while still using the interactive chat and polls.</p>
+    <label style="margin-top:10px">👥 Class gallery — students can see &amp; hear each other</label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px">
+      <input type="checkbox" id="setSeeEach" />
+      Let students see and hear each other (camera + mic)
+    </label>
+    <p id="seeEachHint" style="font-size:11.5px;color:var(--text-dim);margin:4px 0 0">OFF — students see and hear only you (the default).</p>
+    <p style="font-size:11.5px;color:var(--text-dim);margin:4px 0 0">When ON, students who are sharing a camera (or who you mark 👁 in the roster) are relayed to everyone — a gallery like Zoom/Meet. You decide globally here AND per student (👁 in the Students drawer). Note: your device uploads one stream per visible student, so on mobile data keep the visible group small.</p>
+    <label style="margin-top:10px">🎚 Audio processing (mic)</label>
+    <div class="row" style="gap:14px;flex-wrap:wrap;font-size:13px">
+      <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="setAEC" checked /> Echo cancellation</label>
+      <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="setNS" checked /> Noise suppression</label>
+      <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="setAGC" checked /> Auto gain</label>
+    </div>
+    <p style="font-size:11.5px;color:var(--text-dim);margin:4px 0 0">Keep all three ON for normal teaching. Turn them OFF for music lessons or a USB mixer that handles audio itself. Applies the next time your mic connects.</p>
     <label style="margin-top:10px">Broadcast quality</label>
     <select class="input" id="setQuality">
       <option value="1280x720x8">720p @ 8 fps — best for slow networks (default)</option>
@@ -841,6 +943,13 @@ Not sure</textarea>
       <button class="btn small" id="setAccentReset">Reset colour</button>
     </div>
     <hr class="sep" />
+    <label>🛠 Repair a recording (fixes "click a timestamp and it stops" in VLC / Windows Media Player)</label>
+    <div class="row">
+      <button class="btn small" id="setRepairRec">🛠 Repair a recording file</button>
+      <input type="file" id="setRepairFile" class="hide" accept="video/webm,video/mp4,video/*,.webm,.mp4" />
+    </div>
+    <p style="font-size:11.5px;color:var(--text-dim);margin:4px 0 0">New recordings are repaired automatically when you stop them. Use this for OLDER recordings (including ones named <b>.mp4</b> that VLC struggles to seek): pick the file, and a fully indexed <b>-SEEKABLE.webm</b> copy is downloaded. Works fully offline on this device — the original file is never touched.</p>
+    <hr class="sep" />
     <label>💾 Backup &amp; restore (settings, lessons, notes, boards — one file)</label>
     <div class="row">
       <button class="btn small" id="setBackup">⬇ Backup everything</button>
@@ -904,24 +1013,24 @@ Not sure</textarea>
 
 <!-- v6: full-screen teacher auth gate (signup / login / license) -->
 <!-- authGate removed: ADEWALE CLASSROOM DECK uses portal session only -->
-<script src="vendor/peerjs.min.js?v=61"></script>
-<script src="vendor/pdf.min.js?v=61"></script>
-<script src="vendor/qrcode.min.js?v=61"></script>
-<script src="js/common.js?v=61"></script>
-<script src="js/config.js?v=61"></script>
-<script src="js/portal-bridge.js?v=61"></script>
-<script src="js/license.js?v=61"></script>
-<script src="js/whiteboard.js?v=61"></script>
-<script src="js/webcast.js?v=61"></script>
-<script src="js/toolkit.js?v=61"></script>
-<script src="js/toolkit-data.js?v=61"></script>
-<script src="js/toolkit-data2.js?v=61"></script>
-<script src="js/toolkit-data3.js?v=61"></script>
-<script src="js/toolkit-ext.js?v=61"></script>
-<script src="js/security-config.js?v=61"></script>
-<script src="js/auth.js?v=61"></script>
-<script src="js/rtc.js?v=61"></script>
-<script src="js/teach-toolbar-fix.js?v=61"></script>
+<script src="vendor/peerjs.min.js?v=63"></script>
+<script src="vendor/pdf.min.js?v=63"></script>
+<script src="vendor/qrcode.min.js?v=63"></script>
+<script src="js/common.js?v=63"></script>
+<script src="js/config.js?v=63"></script>
+<script src="js/portal-bridge.js?v=63"></script>
+<script src="js/license.js?v=63"></script>
+<script src="js/whiteboard.js?v=63"></script>
+<script src="js/webcast.js?v=63"></script>
+<script src="js/toolkit.js?v=63"></script>
+<script src="js/toolkit-data.js?v=63"></script>
+<script src="js/toolkit-data2.js?v=63"></script>
+<script src="js/toolkit-data3.js?v=63"></script>
+<script src="js/toolkit-ext.js?v=63"></script>
+<script src="js/security-config.js?v=63"></script>
+<script src="js/auth.js?v=63"></script>
+<script src="js/rtc.js?v=63"></script>
+<script src="js/teach-toolbar-fix.js?v=63"></script>
 <div id="mTimer" class="modal-back">
   <div class="modal" style="max-width:360px">
     <h3 style="margin:0 0 10px">⏱ Class countdown</h3>
@@ -1200,15 +1309,16 @@ Not sure</textarea>
     </div>
   </div>
 </div>
-<script src="js/cloud-creds.js?v=61"></script>
-<script src="js/stream-kit.js?v=61"></script>
-<script src="js/fix-webm-duration.js?v=61"></script>
-<script src="js/webm-cues.js?v=61"></script>
-<script src="js/teach.js?v=61"></script>
-<script src="js/cloud-sync-boot.js?v=61"></script>
-<script src="js/enhancements.js?v=61"></script>
-<script src="js/ecosystem-branding.js?v=61"></script>
-<script src="js/enterprise-enhanced.js?v=61"></script>
+<script src="js/cloud-creds.js?v=63"></script>
+<script src="js/stream-kit.js?v=63"></script>
+<script src="js/webm-cues.js?v=63"></script>
+<script src="js/teach.js?v=63"></script>
+<script src="js/cloud-sync-boot.js?v=63"></script>
+<script src="js/enhancements.js?v=63"></script>
+<script src="js/ecosystem-branding.js?v=63"></script>
+<script src="js/enterprise-enhanced.js?v=63"></script>
 <div id="hmgEcosystemFooterCompact" style="max-width:100%;padding:0 14px"></div>
+<!-- r22: floating reactions layer (pointer-transparent) -->
+<div id="reactFloat" style="position:fixed;left:0;right:0;bottom:90px;z-index:9500;pointer-events:none;text-align:center"></div>
 </body>
 </html>

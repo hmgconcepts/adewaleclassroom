@@ -830,13 +830,18 @@ window.CDSecurity = CDSecurity;
                let buf = null;
                try { buf = new Uint8Array(await raw.arrayBuffer()); } catch (e) { buf = null; }
                if (!buf) { doDownload(raw); continue; }
-               if (window.EBML && window.EBML.default) {
+               /* r22 (item 1): the recovered recording gets the SAME complete
+                  repair as a fresh stop - Duration + SeekHead + Cues + finite
+                  Segment, self-contained (js/webm-cues.js r22). The old path
+                  chained a duration tool that can silently no-op with an
+                  index-only patch after it, so recovered files could still
+                  stop at every timestamp click in VLC. */
+               if (window.WebMCues && typeof window.WebMCues.repair === 'function') {
                  try {
-                   const fixed = await window.EBML.default(new Blob([buf], { type: 'video/webm' }));
-                   if (fixed && fixed.size) buf = new Uint8Array(await fixed.arrayBuffer());
+                   const r = window.WebMCues.repair(buf);
+                   if (r && r.bytes && r.bytes.length) buf = r.bytes;
                  } catch (e) {}
-               }
-               if (window.WebMCues && window.WebMCues.addCues) {
+               } else if (window.WebMCues && window.WebMCues.addCues) {
                  try { const c = window.WebMCues.addCues(buf); if (c && c.length) buf = c; } catch (e) {}
                }
                doDownload(new Blob([buf], { type: 'video/webm' }));

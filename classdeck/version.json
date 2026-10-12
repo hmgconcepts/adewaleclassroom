@@ -1,8 +1,8 @@
 {
   "version": "15.1.0",
-  "build": 27,
+  "build": 28,
   "channel": "stable",
-  "released": "2026-10-11",
+  "released": "2026-10-12",
   "features": [
     "custom-room-codes",
     "two-folder-generator",
@@ -95,6 +95,26 @@
     "v15.1.0-screen-share-uncropped-theater",
     "v15.1.0-student-screen-audience",
     "v15.1.0-present-student-board",
-    "v15.1.0-cbt-text-clarity"
+    "v15.1.0-cbt-text-clarity",
+    "15.1.0-webm-complete-remux-seek-fix",
+    "15.1.0-recording-repair-tool",
+    "15.1.0-breakout-rooms",
+    "15.1.0-class-gallery-teacher-controlled",
+    "15.1.0-student-dm-permissions",
+    "15.1.0-reactions-nonverbal-feedback",
+    "15.1.0-suspend-activities",
+    "15.1.0-audio-processing-settings",
+    "15.1.0-cotutor-platform-powers",
+    "15.1.0-privileged-roster-real-peerids",
+    "15.1.0-webm-cuetime-keyframe-pts",
+    "15.1.0-rename-student",
+    "15.1.0-qa-questions-answers",
+    "15.1.0-chat-modes",
+    "15.1.0-allow-self-unmute",
+    "15.1.0-enter-exit-chime",
+    "15.1.0-chat-export-txt",
+    "15.1.0-poll-to-breakout-rooms",
+    "15.1.0-breakout-room-timer",
+    "15.1.0-room-scoped-chat"
   ]
 }
