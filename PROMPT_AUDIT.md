@@ -2021,3 +2021,287 @@ adewaleclassroom_patched.zip (436 files), tutoringconnect_patched.zip
 (466 files), deliverables/tutoring-connect-suite.zip (1034 entries,
 18 MB). Workspace 93 MB persisted (110 MB guard). Both repo trees clean
 after commit.
+
+---
+
+# Round 22 — the complete seek repair + the platform feature set
+
+Date: 2026-10-11 · Deck `15.1.0` build 28 · sw
+`hmg-classdeck-v15.1.0-r22-platform` · deck assets `?v=62` (70 refs).
+
+## Item 1 — the persistent "click a timestamp and it stops" bug, closed
+
+Field report: even after r21, recorded class videos still stopped/crashed
+when the user clicked timestamps in laptop players (VLC / Windows Media).
+
+Root-cause research (bugzilla 1068001/1272371/969290, ffmpeg/addpipe
+canonical fix write-ups, ts-ebml recipes) established that a reliably
+seekable Matroska needs FOUR things at once: **Info/Duration**, a
+**SeekHead at the front that points at the index**, a **Cues index**,
+and a **finite Segment size**. Post-mortem of the r21 pipeline:
+
+1. `fix-webm-duration.js` (the vendored ts-ebml bundle) writes
+   SeekHead + Duration — **but silently no-ops** ("no video, no audio
+   track" → returns the blob unchanged) on files it cannot parse.
+2. `webm-cues.js` r21 appended Cues + a finite Segment size.
+3. The whole chain was wrapped in catches that saved the RAW file with
+   no message at all when anything failed — and nothing ever repaired
+   the user's library of OLD recordings (including pre-r21 files saved
+   as WebM bytes under `.mp4` names).
+
+The r22 fix, `classdeck/js/webm-cues.js` (complete rewrite, ~430 lines,
+zero dependencies, browser + Node):
+
+- `WebMCues.repair(u8)` → `{bytes, alreadyFixed, durationMs,
+  cuePoints, seekHead}` or `null` (unrepairable / MP4 / garbage).
+- Output layout: `[EBMLHeader][Segment ID + 8-byte finite size]
+  [SeekHead at the FRONT — Info/Tracks/Cues at fixed 8-byte positions]
+  [Info with a real float64 Duration][Tracks byte-identical][other
+  children][cluster span byte-identical][Cues — one CuePoint per
+  cluster]`.
+- Duration is computed from cluster timecodes + EVERY SimpleBlock/Block
+  relative timestamp end (float64, TimecodeScale-aware).
+- Idempotent: its own output re-parses as `alreadyFixed`; r21-era files
+  (Duration+Cues but no SeekHead) upgrade to the full layout; raw
+  MediaRecorder output gets the full repair; `addCues()` remains as an
+  r21-compat shim.
+- Smoke-verified in Node: exact duration math, idempotence,
+  cuePositions == clusterPositions, byte-identical cluster spans,
+  SeekHead→Cues position correctness, null on garbage/MP4/empty.
+
+Integration (no silent failures — the standing rule):
+
+- `teach.js repairWebmForPlayers()` — self-contained (no bundle call),
+  returns `{blob, ok, durationMs, cuePoints, alreadyFixed}`, never
+  throws. On stop: honest toasts — success carries duration + seek
+  points; failure SAYS the index is missing and points at the repair
+  tool. `enhancements.js` crash-safe recovery path uses the same
+  repair.
+- `teach.js repairExistingRecording()` + ⚙ Settings → 🛠 Repair a
+  recording: picks ANY old file, detects real MP4 (ftyp) and leaves it
+  alone with an explanation, repairs WebM (whatever its name), and
+  downloads a `-SEEKABLE.webm` copy. Fully offline; original untouched.
+- The dead `fix-webm-duration.js` bundle (its only export was
+  `default`) is removed from the repo and the script tag.
+
+## Item 2 — Zoom / Meet / FreeConference / Zoho feature study → deck
+
+Matrix vs the researched feature sets (deck already had: waiting room,
+admit/deny, lock, mute all, lower hands, spotlight, announcements,
+polls, quizzes, whiteboards, chat + private→teacher, hand raise,
+attendance CSV, recording, Co-Tutor, captains relay, PIN, theater
+view). Gaps implemented this round:
+
+- **Breakout rooms** (Zoom parity, the centrepiece): N rooms, auto or
+  manual assignment, live moves, per-room rename, broadcast to one room
+  or all rooms, per-room "🙋 ask-for-help" badges the teacher clears,
+  close-now or close-with-60-second-countdown. Room media is a direct
+  student↔student mesh (teacher's uplink untouched); late joiners stay
+  in the main room (Zoom behaviour); every join/move/leave/broadcast is
+  stamped in the attendance log.
+- **Reactions + nonverbal feedback**: floating emoji (throttled 700ms,
+  teacher sees them for the first time — v4 had the engine but no
+  teacher-side render), teacher can react too; 👍/👎/🐢/🐇 badges live
+  on the roster for 12 seconds.
+- **Class gallery** (item 3's UI): teacher-controlled "students can see
+  each other" — global toggle + per-student 👁; visible students'
+  camera+mic are relayed (kind `stu-bcast`) into a gallery strip;
+  relays reconcile on every join/leave/camera change; students in
+  breakouts are excluded (their room IS their gallery).
+- **Student-to-student DMs** (item 3's rules): teacher permits pairs
+  (roster 💬, checkbox modal); every message routes through the
+  teacher's room object (logged in chat + attendance); unpermitted
+  sends are refused and the sender is told. Co-Tutor has the same
+  power via a name-list prompt.
+- **Suspend activities** (Zoom host tools): one confirmed tap — mute
+  all, lower hands, stop all student screens, gallery off, rooms
+  closed, room locked; broadcast + recording untouched.
+- **Audio settings** (Meet/Zoom parity): echo cancellation / noise
+  suppression / auto gain toggles in Settings (raw audio for mixers
+  and music lessons), applied through the MicKit ladder.
+- **Co-Tutor parity (complete)**: gallery, room CREATE + live moves +
+  broadcast/close, reactions, suspend, per-student 👁/💬/🔗 in the
+  console — every r22 power the Tutor has.
+
+Bugs found and fixed while implementing (pre-ship, engine-level):
+
+- `_admit` never set `stu.peerId` — the r21 privileged roster carried
+  `null` peerIds, silently breaking every Co-Tutor per-student target.
+  Fixed; roster now also carries `visibleToClass`/`breakout`/`dmAllowed`.
+- rtc.js had a duplicate v5 `requestStudentScreen(peerId, on)` defined
+  AFTER the r21 3-arg version — the later definition won, so the r21
+  audience chooser was dead at runtime. Duplicate removed.
+- The co-tutor `brMove` guard `&& d.roomId` rejected the empty-string
+  roomId, silently breaking "return this student to the main class"
+  from the console. Now `typeof d.roomId === "string"` (caught by the
+  F9 engine check).
+- 14 double-backslash `\u{…}` escapes in the new co-tutor console code
+  rendered as literal text instead of emoji — all repaired and a
+  regression pin added.
+- webm-cues.js writer/reader carried `0x18534067` where real Matroska
+  uses `18538067` — every repaired file would have been unopenable. The
+  independent test builder (which does not share the module's constants)
+  caught it; both fixed and pinned.
+
+## Item 3 — teacher decides who students see and who messages whom
+
+Covered above: `setSeeEachOther(on)` global + `setStudentVisible(pid,
+on)` per student (roster 👁), and `allowDm(fromPid, toPid, on)`
+per-pair DM permissions with hub-side enforcement in the `dm` case
+(`rtc.js`) — a student UI can never grant itself anything.
+
+## Item 4 — every file, both repos
+
+Twin-synced and verified: `classdeck/js/{rtc,teach,join,enhancements,
+webm-cues}.js`, `teach.html`, `join.html`, `css/style.css` (breakout
+cards/chips, reaction float, gallery grids, DM rows), `version.json`
+(b28, ten r22 feature tags), `sw.js` (cache bump, precache list
+unchanged — the removed bundle was never listed), `?v=62` sweep (70
+refs, zero `?v=61` left). PROMPT_AUDIT updated in both repos.
+
+## Versions
+
+Deck `15.1.0` build 28 (released 2026-10-11), sw
+`hmg-classdeck-v15.1.0-r22-platform`, all deck assets `?v=62`
+(70 refs), ten new feature tags in version.json. Portal sw
+`tc-shell-v24-20261010` (unchanged); CBT stylesheets `?v=55`
+(unchanged).
+
+## QA tally (round 22)
+
+Suites: `test_r22_webm_repair.js` (36 EBML unit checks: parse, duration
+math incl. block ends + TimecodeScale, full output layout — front
+SeekHead, float64 Duration in scale units, one CuePoint per cluster
+with positions verified to land on Cluster IDs, finite Segment size,
+byte-identical cluster span, idempotence, hand-built r21-era file
+upgrade, garbage/MP4/empty rejection) and `test_r22_platform_features.js`
+(106 checks: engine battery over the mock-PeerJS VM — breakouts
+create/move/rename/broadcast/help/close + guards, breakout mesh call
+placement and delivery, DM permission allow/revoke/block enforcement,
+gallery state machine incl. precise tile teardown, reaction throttle +
+both event keys, nv badges + invalid-kind rejection, suspend scope,
+co-tutor routing incl. CREATE/MOVE/return-to-main + plain-student
+refusal, leave cleanup, privileged-roster real peerIds, the r21-bug
+regressions, and ~40 source pins over every UI surface + syntax gates).
+
+Battery: **32 suites × 1643 checks per repo, both repos, run twice —
+0 failures, deterministic** (r9_schema 16 with live PostgreSQL; the
+previously hidden r18/r20 portal pin drift was repaired and both suites
+now carry the r22 values). The battery's own runs caught and fixed three
+further defects pre-ship (brMove empty-roomId guard, the 14 escape
+sequences, the stale r21 pipeline comment). Six generator verify
+scripts × both repos green; twins byte-identical after the mirror.
+Zips rebuilt: adewaleclassroom_patched.zip (435 files),
+tutoringconnect_patched.zip (466), deliverables/tutoring-connect-suite
+(1033 entries, 18 MB). Workspace 92 MB persisted (110 MB guard). Both
+repo trees clean after commit.
+
+## Round 22 — completion pass #2 (the real root cause + the missing nine)
+
+The first pass still shipped a seek-dirty repair and left nine researched
+features unimplemented. This pass closed both.
+
+### Item 1 — the ACTUAL seek root cause, found and proven
+
+Independent third-party validation (ffprobe/ffmpeg 7.1.5 on real
+MediaRecorder-style VP9+Opus files generated with `-live 1`, which
+reproduces the field condition) showed my r22-repair-2 file seeking
+DIRTY (VP9 "Not all references are available") while ffmpeg's own
+`-c copy` remux of the same bytes sought clean. Controlled experiments
+(a single-cue file decoded cleanly from zero; a two-cue file failed the
+moment the 2-second cue was used) plus reading ffmpeg's
+`matroskadec.c` (n7.1) found it:
+
+`matroska_read_seek` sets `skip_to_timecode = CueTime`, and
+`matroska_parse_block` DROPS every block with `pts < skip_to_timecode`.
+My CueTime was the cluster TIMECODE (2001), but the video keyframe's
+pts is 2001 + (-1) = 2000 — so the keyframe ITSELF was dropped, ffmpeg
+logged "File is broken, keyframes not correctly marked!", and the VP9
+decoder was handed mid-GOP frames until the next keyframe: exactly the
+19 decode errors, and exactly the laptop "stops/crashes when I click a
+timestamp" bug. ffmpeg's own remux never hit it because it re-clusters
+so CueTime == keyframe pts.
+
+Fix (webm-cues.js, version r22-repair-3): the scanner now returns the
+first video key block's RELATIVE timecode and every CueTime is the
+keyframe's own pts (clusterTC + rel), clamped at 0. Regression-checked
+in the suite with an audio-first fixture (cluster TC 2001, keyframe
+rel -1 → CueTimes 2000/4000, not 2001/4001). Validation on the real
+6-keyframe test file: ffprobe duration 11.981 s, sequential framemd5
+BIT-IDENTICAL to the source, cluster span byte-identical, and the seek
+battery `ffmpeg -ss t` for t = 0…11 s in 0.5 s steps — **22/22 clean,
+zero decoder errors, zero "File is broken" messages** (the pre-fix file
+failed every seek ≥ 3 s with 19 errors). The long-GOP `-live` file
+(single keyframe) also seeks 12/12 clean (decode-from-zero — correct,
+it genuinely has one keyframe).
+
+### A SECOND REAL BUG the new tests caught (pre-existing in the r22 tree)
+
+`rtc.js`'s client switch had an UNTERMINATED block comment on the
+`case "suspended"` line; it ran 754 characters and swallowed EIGHT
+case labels — `screenRequest`, `micAllow`, `teachercam-off`, `kicked`,
+`rejected`, `classEnded`, `waiting`, `admitted` — all dead code since
+the r22 main commit (node parses it silently because a later `*/`
+closes the comment). Students would never have seen mic
+permission changes, kick/reject notices, waiting-room admission, or
+class-ended. The new I10 engine check (micAllow must reach students
+after the self-unmute gate mutes them) caught it; fixed by closing the
+comment, and pinned by a comment-stripping regression check over all
+six case labels. A full comment-balance audit of every patched JS file
+found no other swallow.
+
+### Item 2 — the nine missing matrix features, implemented end to end
+
+Zoom/Meet/Zoho/FreeConference parity completed (engine + teacher UI +
+student UI + Co-Tutor parity + docs + version tags), all enforced on
+the teacher-authoritative side:
+
+1. **Rename student** — ✏️ per roster row (Tutor + Co-Tutor); v9
+   permission memory migrates with the rename; student is notified and
+   its saved name updates.
+2. **Q&A (Meet/Zoho)** — students ask from the chat drawer; teacher
+   drawer lists, one-tap answer broadcast to everyone, dismiss, clear,
+   open/close; Co-Tutors can answer too.
+3. **Chat modes (Zoom)** — Everyone / Teacher & Co-Tutors only / No
+   one; enforced in the hub's `chat` case (never relays what it must
+   not), student UIs grey out honestly, late joiners inherit the mode.
+4. **Allow self-unmute (Zoom)** — turning it off mutes everyone and
+   locks student mic buttons; hands still work.
+5. **Enter/exit chime** — soft two-tone on the teacher device
+   (WebAudio, toggleable, remembered); no-op without WebAudio.
+6. **Chat export (Zoom "Save chat")** — full log (public + private +
+   DMs + room chats, timestamps) as .txt.
+7. **Poll → breakout rooms (Zoom)** — one room per poll option,
+   voters placed by their answer, non-voters stay in the main class;
+   per-student choices now recorded by the poll engine.
+8. **Breakout room timer (Zoom)** — minutes input, per-student
+   countdown in the room bar, automatic 60-second warning broadcast,
+   auto-close with everyone returned to the main class.
+9. **Room-scoped chat** — students chat only with their room-mates
+   (routed by the hub, never leaked to other rooms), teacher and
+   Co-Tutors keep the log.
+
+### QA tally (completion pass #2)
+
+`test_r22_webm_repair.js` 36 → **40** (CueTime-is-keyframe-pts section:
+audio-first fixture, plain-fixture invariance, cue-position re-check).
+`test_r22_platform_features.js` 106 → **158** (35 new engine checks
+I1–I35 over the mock-PeerJS VM: rename, all three chat modes with
+denial/relay/no-leak assertions, self-unmute gate + micAllow delivery,
+Q&A ask/ack/answer/dismiss/closed, chat-log export, poll→rooms
+placement + honest-error paths, room-chat leakage boundaries, timer
+start/cancel/student-countdown, full Co-Tutor parity + plain-student
+refusal; 17 new source pins incl. the comment-swallow regression and
+all nine UIs). r18/r20/r21 portal pins updated to the `?v=63` sweep.
+
+Battery: **32 suites × 1699 checks per repo, both repos, run twice —
+0 failures** (r9_schema 16 with live PostgreSQL re-installed and
+running; per-suite counts grepped, no crashes). Six generator verifiers
+× both repos green (61/90/21/64/117/43); twins byte-identical after
+sync_all.sh; suite zip rebuilt (1033 entries); workspace 93 MB
+(guard 110 MB). Deck assets `?v=63` (70 refs, zero `?v=62` left); sw
+cache `hmg-classdeck-v15.1.0-r22-platform-2`; version.json carries ten
+new feature tags (rename-student, qa-questions-answers, chat-modes,
+allow-self-unmute, enter-exit-chime, chat-export-txt,
+poll-to-breakout-rooms, breakout-room-timer, room-scoped-chat,
+webm-cuetime-keyframe-pts).
