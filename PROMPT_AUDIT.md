@@ -2527,3 +2527,122 @@ fixtures committed to classdeck-qa/fixtures/. Battery: **34 suites ×
 208, mp4-kit 33, realchrome 48). Assets `?v=66` (71 refs), sw
 `hmg-classdeck-v15.1.0-r22-platform-5`, version.json build 29 (117
 feature tags).
+
+## Round 24 — exam replicas, the essay examiner & the visible cursor (build 30)
+
+**Asked:** (1) IGCSE / SAT / Olympiad prompt packs that are EXACT replicas
+of those exams covering ALL question types, plus any other exam body not
+mentioned — researched deeply, NO guessing; (2) an essay CBT pack and an
+all-types-combined pack written as an expert examiner of various exam
+bodies, easily marked/reviewed by the tutor; (3) the teacher's cursor
+made visible in composite broadcast mode ("we may want to point at
+something while teaching them"); (4) a real PDF reader kit — annotations,
+highlight, whatever makes the class engaging; (5) further engaging
+features from expert-educator thinking; (6) a deep audit of the whole
+platform, actual AND potential weaknesses, fixed robustly; (7) every file
+updated across all repos.
+
+**Research (the "no guessing" rule — every structure fact below was
+verified against multiple sources before a single prompt line was
+written):** ~20 pages across 5 searches. Cambridge IGCSE sciences
+(0610/0620/0625 family): Core P1 MCQ 40q/45min/30% + P3 theory 80
+marks/1h15/50% + P5 practical 1h15/40m/20% (or P6 alternative-to-
+practical), Extended swaps P1/P3 for P2/P4; Core caps at C, command
+words are the mark scheme; negatives (NOT/LEAST/EXCEPT) in every
+sitting. IGCSE Maths 0580 (2025+): Core P1 non-calc + P3 calc 1h30
+(56/104 marks), Extended P2+P4 2h (70/130), 3 s.f. answers. Digital
+SAT: Bluebook, 2h14, 98q, 400–1600; R&W 2 adaptive modules × 27q/32min
+all 4-option MCQ, passages 25–150 words, one question per passage,
+domain order fixed; Math 2 × 22q/35min, 33 MCQ + 11 student-produced
+responses (typed equivalents); Desmos on every question. Enhanced ACT
+(Sep 2025): English 50q/35min, Math 45q/50min now FOUR options, Reading
+36q/40min; Science optional and OUT of the 1–36 composite; ~10/4/9/6
+unscored field items embedded. JAMB UTME: CBT, one sitting ~2h, 180q =
+Use of English 60 + 3 subjects × 40, /400, no negative marking. WAEC
+WASSCE: P1 objective + P2 theory/essay + P3 practical/alt-to-practical
+(orals for English); English P1 80 items, P2 essay ≥450 words marked
+Content 10 / Organisation 10 / Expression 20 / Mechanical Accuracy,
+comprehension 40, summary 30; Test of Orals 60 items/45min; A1–C6
+credit. NECO SSCE: same three-paper architecture on the NERDC
+curriculum, A1–F9, objective papers moving to CBT from the 2026 diet.
+NCEE: Paper 1 Achievement (Part A Maths + Basic Science & Tech, Part B
+English + National Values Ed), Paper 2 Aptitude (Part A Quantitative +
+Vocational, Part B Verbal) — per-paper counts not fully published, so
+the pack says so and asks for the past-paper SOURCE. Olympiads: school
+MCQ rounds (SOF IMO L1 50q/60min: LR 15×1 + MR 20×1 + Everyday 10×1 +
+Achievers 5×3; Kangaroo 24–30q; AMC 8 25q/40min, AMC 10/12 25q/75min
+5-option), bridge (AIME 15 integer answers 000–999/3h), elite (IMO/INMO
+6 proofs × 2 days × 4.5h, 0–7 points each).
+
+**Eleven packs added** (28 → 39 keys, every one rendering through the
+real `CBT.promptPack()` with its "…STRUCTURE (VERIFIED)" section and a
+SOURCE override so a tutor's past-paper link beats typical figures):
+igcse_exact, sat_digital, act_enhanced, jamb_utme, waec_wassce,
+neco_ssce, ncee_common_entrance, olympiad, essay_master, grand_mix,
+differentiated. essay_master addresses the tutor as an expert examiner
+of multiple bodies: real genres (letters, speech, debate, article,
+report, narrative), Col14 `{"min_words":N,"keywords":[…]}` marking kit,
+model answer + WAEC-dimension RUBRIC bands in Col7, Type "essay" so it
+lands in the tutor's marking desk (never machine-scored — verified:
+gradeOne returns pending). grand_mix is the all-in-one examiner pack:
+20 question types, minOne distribution, a when-each-type-is-right
+decision table, Bloom tags. differentiated ships the three tiers
+(support/core/stretch ~30/50/20) with objective ids — this also fixes a
+dangling option that promised a pack cbt.js never had. New type rules:
+graph_read, data_interpretation, error_spotting, true_false_justify;
+isMulti extended to jamb_utme + ncee_common_entrance — and the two
+INLINE hardcoded multi-key conditions inside promptPack were rewired to
+isMulti so per-row subject instructions actually emit (grep for stale
+copies after any key-set change). cbt-prompts.html: two new optgroups
+("Exam replicas — verified structure", "Question-type packs"), NEEDS
+extended (source / subjects), 39 options ↔ 39 packs verified both
+directions, cbt.js cache-busted to v54 on that page only.
+
+**The visible cursor (field report):** composite broadcast now tracks
+the teacher's pointer on BOTH panes as pane-fractions (resolution
+independent), and drawComposite renders it after content, before the
+watermark: a soft amber cursor that fades after 1.2 s of stillness, a
+tap ring (700 ms), and the optional 🔴 LASER — a red radial-glow dot
+with a 650 ms trail, unmistakable at low fps. Drawn into the COMP
+canvas, so students see it live AND it lands in recordings.
+
+**PDF reader kit:** per-page annotation overlay (a transparent
+Whiteboard per page, broadcast + recorded), toolbar with pen /
+highlighter (translucent, size 9) / arrow / text / eraser / undo and
+five colours; annotations persist per page while you flip; honest
+refusal if Annotate is armed before a document is loaded.
+
+**Engagement kit (item 5, drawn into the same composite):** 🎡 random
+picker wheel (spins 3.6–4.5 s ease-out, winner held 4.6 s with
+auto-confetti and a room announcement; requires ≥2 live students else
+an honest toast), 🎲 two dice with real pip faces and a sum, 🎊 confetti
+bursts (3 spawn points, gravity 490, capped 500 particles).
+
+**Deep audit (item 6) — two real bugs found and fixed, both verified in
+real Chromium before/after:** (a) stream.html's inline script declared
+`const $` colliding with common.js's top-level `const $` — a SyntaxError
+that silently killed the WHOLE script (openTeach, copyRelay, the
+persisted first-run checklist, the plan download: all dead on the live
+site). The local duplicate removed; all four handlers verified wired
+after the fix. (b) teach.html had TWO different buttons sharing
+id="btnMuteAll" (mute vs revoke) — `on()` binds by selector so the
+revoke button was dead and the mute button fired whichever binding
+loaded last. Split into btnMuteAll + btnRevokeAll with separate
+handlers and honest toasts. Also swept: duplicate ids, missing script/
+link targets, JS syntax, undefined inline handlers — every page of both
+repos; 27 pages loaded in real Chromium with ZERO page errors after the
+fixes (the audit runs permanently as section 6 of test_r24).
+
+**Validation:** new suite test_r24_exampacks_classdeck.js — 127 checks
+(structure pins per exam body, behavioural render of all 11 packs,
+CSV→gradeOne round trip proving essays stay tutor-marked, 39↔39 UI
+sync, ClassDeck source pins, the permanent audit). Real-Chromium
+pixel-sampled proof of the new drawing: amber cursor 21 px at the
+mapped coordinate, laser 55 red px, dice panel 6310 white px on 6842
+panel px, confetti 200 particles / 20 colour buckets; PDF flow mounted
++ honest refusal; zero page errors. Battery: **36 suites × 1833 checks
+× both repos × run twice — 0 failures, 0 crashes.** Assets `?v=67`
+(71 refs) + cbt-prompts cbt.js v54, sw
+`hmg-classdeck-v15.1.0-r22-platform-6`, version.json build 30 (118
+feature tags). Twins byte-identical (only TC-only tools/ + package
+files differ, by design).
