@@ -66,7 +66,7 @@
 <script src="assets/js/insights.js?v=53"></script>
 <script src="assets/js/cbt-richtext.js?v=53"></script>
 <script src="assets/js/cbt-speech.js?v=53"></script>
-<script src="assets/js/cbt.js?v=53"></script>
+<script src="assets/js/cbt.js?v=54"></script>
 <script src="assets/js/cbt-types.js?v=53"></script>
 <script src="assets/js/proctor.js?v=53"></script>
 <script src="assets/js/bookings-engine.js?v=53"></script>
@@ -150,12 +150,31 @@
                 <option value="exam_board">Exam-board paper (WAEC / UTME / IGCSE / SAT…)</option>
               </optgroup>
               <optgroup label="Tutoring Connect extras">
-                <option value="differentiated">Differentiated — Support / Core / Stretch</option>
                 <option value="misconception">Diagnostic misconception set</option>
                 <option value="multi_subject">Multi-subject paper (one CSV, many subjects)</option>
                 <option value="past_paper">From a past paper link</option>
                 <option value="marking_scheme">Mark scheme / rubric (not questions)</option>
                 <option value="oral_practice">Oral / speaking practice</option>
+              </optgroup>
+              <!-- r24 — EXAM REPLICA PACKS: every structure fact verified against
+                   the 2025/26 published formats (Cambridge component tables,
+                   College Board digital-SAT specs, Enhanced ACT rollout,
+                   WAEC/NECO/JAMB/NCEE formats, SOF/IMO competition formats).
+                   Full sources and structure tables: PROMPT_AUDIT.md r24. -->
+              <optgroup label="Exam replicas — verified structure">
+                <option value="igcse_exact">IGCSE — exact paper replica (Cambridge / Edexcel)</option>
+                <option value="sat_digital">Digital SAT — exact test replica (2024+)</option>
+                <option value="act_enhanced">Enhanced ACT — exact test replica (2025+)</option>
+                <option value="jamb_utme">JAMB UTME — exact CBT replica (4 subjects, one sitting)</option>
+                <option value="waec_wassce">WAEC WASSCE — exact paper replica</option>
+                <option value="neco_ssce">NECO SSCE — exact paper replica</option>
+                <option value="ncee_common_entrance">Common Entrance (NCEE) — exact replica</option>
+                <option value="olympiad">Olympiad — exact replica (school, bridge &amp; elite rounds)</option>
+              </optgroup>
+              <optgroup label="Question-type packs">
+                <option value="essay_master">Essay paper — tutor-marked with full rubrics</option>
+                <option value="grand_mix">Grand mix — every type, expertly chosen (MCQ … essay)</option>
+                <option value="differentiated">Differentiated — Support / Core / Stretch</option>
               </optgroup>
             </select></div>
           <div class="form-group" data-hide="subjects"><label>Topic</label><input class="form-input" id="topic" value="Quadratic equations"></div>
@@ -254,7 +273,13 @@ const NEEDS = {
   material_upload:['material_target'],
   material_link:['material_target', 'material_link'],
   multi_link_multi_subject:['multi_links', 'subjects'],
-  multi_upload_multi_subject:['subjects']
+  multi_upload_multi_subject:['subjects'],
+  /* r24: exam replicas prefer a past-paper/syllabus link; JAMB and NCEE
+     additionally need the subject/part list (per-row Section). */
+  igcse_exact:['source'], sat_digital:['source'], act_enhanced:['source'],
+  waec_wassce:['source'], neco_ssce:['source'], olympiad:['source'],
+  jamb_utme:['source', 'subjects'],
+  ncee_common_entrance:['source', 'subjects']
 };
 
 function syncFields(){
