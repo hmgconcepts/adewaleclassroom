@@ -2473,3 +2473,57 @@ version.json tags `universal-mp4-recordings`,
 and R22-DEPLOY-AND-VERIFY.md §4 rewritten around the real root cause.
 Battery: **33 suites × 1775 checks × both repos × run twice — 0
 failures** (webm 47, platform 195, mp4-kit 32).
+
+
+---
+
+## Round 23 — the two field reports (build 29)
+
+**Asked:** after r22, the teacher reported (a) "🎬 Also make a universal
+MP4" failing with "Could not read this recording as WebM/Matroska" on a
+repaired OLD recording, and (b) the repaired video showing only a blank
+coloured screen while the tutor's audio plays — both to be fixed as an
+expert, with real diagnosis, not guesses.
+
+**Diagnosis (real reproduction, not synthetic):** four recordings were
+captured from REAL headless Chromium 154 MediaRecorder (clean /
+SIGKILLed / rAF-frozen / audio-first). All are VP9+Opus with an
+unknown-size Segment AND unknown-size clusters; audio is Xiph/EBML-laced;
+video frames sit in BlockGroups; and video keyframes carry NO container
+keyframe flag (the t=0 keyframe's payload is a genuine VP9 keyframe
+`82 49 83 42` while its block flags are 0x00). Six root causes confirmed
+— the full table is in docs/R23-FIELD-REPORT-FIXES.md. Headlines: the
+r22 extract() could not read the very files repair() writes (finite
+Segment size), repair() returned NULL on every current-Chromium file
+(unknown-size clusters), cues pointed at delta frames (unflagged
+keyframes), and the recorder's rAF loop froze in backgrounded tabs (the
+blank screen — the "frozen" fixture has 30 video frames against 5.2 s of
+audio).
+
+**Fixes:** webm-cues.js r22-repair-6 (segment-level boundary resolution
+for unknown-size clusters; finite+unknown Segment extract; BlockGroup
+descent; Xiph/fixed/EBML lacing; VP8/VP9 BITSTREAM keyframe detection —
+cues are the true keyframes at their own pts; real finite cluster sizes
+written into the copied span; first-cluster span), mp4-kit.js
+r22-universal-mp4-2 (descriptive error pass-through; first-keyframe
+decodability probe + REAL dimensions; timestamp-delta MP4 durations;
+analyzeWebm + firstFramePreview honesty exports), teach.js (rAF-starvation
+recorder watchdog — the blank-video fix for NEW recordings; strictly
+H.264+AAC MP4 candidates; repair-panel per-track diagnostics + first
+decoded frame shown as a picture; videoNote on conversion).
+
+**Validation:** ffprobe/ffmpeg as the independent judge on all four real
+recordings — frame counts, laced-packet counts and keyframe positions
+match EXACTLY; seek batteries clean; in-browser end-to-end in real
+Chromium (repairAsync → extract → 150/150 WebCodecs decodes → a real
+H.264 MP4 validated by ffprobe incl. real-motion content; watchdog
+exercised live with rAF frozen). The judge also caught two defects
+during the fix (cluster size patched with element length instead of
+content length; MP4 durations from the encoder default instead of real
+timestamp deltas — variable-frame-rate recordings would have been
+compressed). New suite test_r22_realchrome.js (48 checks) with the real
+fixtures committed to classdeck-qa/fixtures/. Battery: **34 suites ×
+1837 checks × both repos × run twice — 0 failures** (webm 47, platform
+208, mp4-kit 33, realchrome 48). Assets `?v=66` (71 refs), sw
+`hmg-classdeck-v15.1.0-r22-platform-5`, version.json build 29 (117
+feature tags).
