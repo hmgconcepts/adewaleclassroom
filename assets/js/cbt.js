@@ -968,7 +968,21 @@ const CBT = {
         '  Col14: {"min_words":40,"keywords":["photosynthesis","chlorophyll"]}\n' +
         '  Col7 must say tutor review is recommended.  Col8: essay',
       code: 'code — code, pseudocode or SQL\n' +
-        '  Col14: {"language":"JavaScript","keywords":["function","return"]}\n  Col8: code'
+        '  Col14: {"language":"JavaScript","keywords":["function","return"]}\n  Col8: code',
+      graph_read: 'graph_read — read a graph or chart\n' +
+        '  Col14: {"image":"https://..."} — a public https or Drive LINK to the graph.\n' +
+        '  With no real image, present the data as a small table in Col1 and ask\n' +
+        '  the reading question beneath it.  Col6: the answer.  Col8: graph_read',
+      data_interpretation: 'data_interpretation — reason about a table or data set\n' +
+        '  Col14: {"passage":"the table or data description in full"}\n' +
+        '  Col1: the question.  Col6: the answer.  Col8: data_interpretation',
+      error_spotting: 'error_spotting — find the one wrong step\n' +
+        '  Col1: the statement or worked solution containing EXACTLY one error.\n' +
+        '  Col2-5: options naming which part is wrong (or giving the correction).\n' +
+        '  Col6: the answer.  Col8: error_spotting',
+      true_false_justify: 'true_false_justify — judge the statement AND say why\n' +
+        '  Col1: the statement.  Col2-5: blank.  Col6: True or False.\n' +
+        '  Col14: {"justify":"the reasoning that decides it"}\n  Col8: true_false_justify'
     };
     return types.map(function (t) { return R[t]; }).filter(Boolean).join('\n\n');
   },
@@ -2068,7 +2082,643 @@ const CBT = {
         'Col14 keywords are things an assessor can actually listen for.',
         'No prompt requires the learner to read a long text aloud first.'
       ]
+    },
+
+    /* =====================================================================
+       r24 — EXAM REPLICA PACKS. Every structure fact below was verified
+       against current, citable sources for the 2025/26 sitting year
+       (Cambridge IGCSE component tables, College Board's digital SAT
+       specs, the Enhanced ACT rollout, WAEC/NECO/JAMB/NCEE published
+       formats, SOF and IMO competition formats). Where a number varies
+       by subject or year, the pack SAYS SO and instructs the generator
+       to prefer the tutor's past-paper link over the typical figure —
+       an exact replica must never be built on a guess.
+       ===================================================================== */
+
+    igcse_exact: {
+      label: 'IGCSE — exact paper replica (Cambridge / Edexcel)',
+      role: 'a Cambridge Assessment International Education principal examiner who has set, moderated and marked IGCSE papers across many sittings and now writes exact-replica practice papers',
+      mission: 'Produce a paper that is structurally indistinguishable from a real IGCSE sitting for the subject and tier chosen — same component architecture, same question types, same command words, same mark tariffs.',
+      ref: { mcq: 10, short: 7, numeric: 5, multi_numeric: 3, case_study: 4, graph_read: 3, data_interpretation: 3, matching: 2, cloze: 1, essay: 2 }, dominant: 'short', minOne: false,
+      sections: [
+        ['THE EXACT CAMBRIDGE IGCSE STRUCTURE (VERIFIED)', 'Every candidate sits THREE components. Sciences (e.g. 0610 Biology, 0620 Chemistry, 0625 Physics, 0654 Combined):\\n' +
+         '  - Multiple Choice — 40 four-option questions, 45 minutes, 30% of the grade,\\n' +
+         '    1 mark each, NO negative marking. Paper 1 (Core) or Paper 2 (Extended).\\n' +
+         '  - Theory — 80 marks, 1 h 15 min, 50%. Short answer + structured questions\\n' +
+         '    + data response + extended response. Paper 3 (Core) or Paper 4 (Extended).\\n' +
+         '  - Practical — Paper 5 practical test (1 h 15 min, 40 marks) OR Paper 6\\n' +
+         '    alternative-to-practical written paper (1 h, 40 marks), 20%.\\n' +
+         'Mathematics 0580 (2025 syllabus onward): Paper 1 Core NON-calculator + Paper 3\\n' +
+         'Core calculator, 1 h 30 min each; Paper 2 Extended non-calculator + Paper 4\\n' +
+         'Extended calculator, 2 h each; each paper 50% of the grade; answers to\\n' +
+         '3 significant figures (or 1 d.p. for degrees) unless told otherwise.\\n' +
+         'Edexcel IGCSE: Paper 1 (2 h, 110 marks) + Paper 2 (1 h 15, 70 marks), each a\\n' +
+         'mix of MCQ, short answer, calculation and extended open response.\\n' +
+         'Tier facts: Core papers can only earn grades C-G; Extended assesses A*-G\\n' +
+         'and includes Supplement content. Say in Col16 which tier each item targets.'],
+        ['COMMAND WORDS ARE THE MARK SCHEME', 'Cambridge marks live and die by the command word. Use each one correctly:\\n' +
+         '  state / name / identify / list = recall, one fact, no reasoning.\\n' +
+         '  describe = say WHAT happens; explain = say WHY (a chain with "because").\\n' +
+         '  suggest = apply a principle to an UNFAMILIAR context (no single textbook answer).\\n' +
+         '  calculate / deduce / determine = working expected; measure / draw / label =\\n' +
+         '  practical precision; compare = both sides with a linking point; discuss /\\n' +
+         '  evaluate = balanced argument then judgement; predict / justify = reasoned outcome.\\n' +
+         'The marks shown must match the command word: never a 1-mark "explain" or a\\n' +
+         '6-mark "state". Col7 must mark-scheme the expected answer depth per mark.'],
+        ['STRUCTURED-QUESTION ARCHITECTURE (THEORY PAPER)', 'Real theory questions open with a STIMULUS — diagram, graph, table or scenario —\\n' +
+         'then a ramp of sub-questions from 1-mark recall to the 6-mark extended response.\\n' +
+         'Model this with case_study rows: the full stimulus in Col14 passage/data, the\\n' +
+         'sub-question in Col1. Sub-parts climb difficulty. Use graph_read for\\n' +
+         'read-off-the-graph items and data_interpretation for table-based reasoning.\\n' +
+         'MCQ house style: 4 options of parallel grammar and length; the negative stem\\n' +
+         '("Which statement is NOT correct?") appears in every real sitting — bold the\\n' +
+         'NOT and keep it to a minority of items; distractors are the classic\\n' +
+         'misconceptions (e.g. current "used up" leaving a component).'],
+        ['PRACTICAL-SKILLS ITEMS (PAPER 6 STYLE)', 'Include alternative-to-practical items: naming apparatus from a description,\\n' +
+         'identifying the variable being changed/controlled/measured, completing an\\n' +
+         'observation table, choosing sensible scales, plotting points precisely,\\n' +
+         'drawing a line of best fit or smooth curve, stating one source of error and\\n' +
+         'one precaution, and explaining why a result pattern suggests a conclusion.\\n' +
+         'These are written questions ABOUT practical work — no lab needed.'],
+        ['WHAT A FULL REPLICA LOOKS LIKE', 'Full replica sizes: MCQ component = 40 items; Theory = 80 marks worth of\\n' +
+         'structured items (typically 8-10 question blocks with sub-parts). If the\\n' +
+         'requested count is smaller, produce a PROPORTIONAL MINIATURE: same component\\n' +
+         'mix, same command-word spread, same ramp — fewer of each, never a distorted\\n' +
+         'paper. If the count equals the full number, produce the exact paper.\\n' +
+         'If the tutor gave a past-paper or syllabus link in the SOURCE field, its\\n' +
+         'conventions override every "typical" figure above.']
+      ],
+      quality: [
+        'Component mix matches the real sitting (MCQ + structured theory + practical-skills items).',
+        'Every command word is used at its correct mark tariff.',
+        'Structured blocks ramp from 1-mark recall to extended response.',
+        'MCQ distractors are real documented misconceptions, not filler.',
+        'Difficulty is tiered honestly: Core items are grade C-G demand, Extended reach A*.'
+      ],
+      checks: [
+        'Col16 tags the component (MCQ/Theory/Practical-skills) AND tier for every row.',
+        'At least one negative-stem MCQ, and no more than a fifth of MCQs are negative.',
+        'At least one 6-mark extended response (essay row) is present in a full replica.'
+      ]
+    },
+
+    sat_digital: {
+      label: 'Digital SAT — exact test replica (2024 onward)',
+      role: 'a College Board content developer who writes items for the digital, multistage-adaptive SAT delivered in the Bluebook application',
+      mission: 'Produce a digital SAT module that is structurally indistinguishable from the real test — same domains in the same order, same passage lengths, same item formats, same SPR conventions.',
+      ref: { case_study: 9, mcq: 6, numeric: 4, short: 1 }, dominant: 'case_study', minOne: false,
+      sections: [
+        ['THE EXACT DIGITAL SAT STRUCTURE (VERIFIED)', 'Total test: 2 h 14 min plus a 10-minute break. Two sections, each split into\\n' +
+         'two TIMED modules:\\n' +
+         '  - Reading & Writing: 2 modules x 27 questions (25 scored + 2 unscored\\n' +
+         '    pretest) x 32 minutes. ALL questions are 4-option multiple choice.\\n' +
+         '    Every question hangs on ONE short passage of 25-150 words.\\n' +
+         '  - Math: 2 modules x 22 questions (20 scored + 2 pretest) x 35 minutes.\\n' +
+         '    About 75% are 4-option multiple choice; about 25% are student-produced\\n' +
+         '    response (SPR / grid-in) — the candidate TYPES the answer; decimals,\\n' +
+         '    fractions and negative numbers accepted; equivalent forms (0.5 = 1/2)\\n' +
+         '    all count.\\n' +
+         'Scoring 400-1600 (200-800 per section). NO guessing penalty. The test is\\n' +
+         'section-adaptive: module 1 is the same for everyone; module 2 routes harder\\n' +
+         'or easier based on module 1 performance. A Desmos graphing calculator and a\\n' +
+         'geometry reference sheet are available on EVERY math question.\\n' +
+         'Passages span literature (including poetry and drama), history/social\\n' +
+         'studies, humanities and science, at complexity from grade 6 to early college.'],
+        ['READING & WRITING — THE FOUR DOMAINS, IN ORDER', 'A real module runs the reading-type domains first, then the writing-type:\\n' +
+         '  1. Craft and Structure — Words in Context; Text Structure and Purpose;\\n' +
+         '     Cross-Text Connections (paired passages).\\n' +
+         '  2. Information and Ideas — Central Ideas and Details; Command of Evidence\\n' +
+         '     (textual AND quantitative — pick the option supported by data);\\n' +
+         '     Inferences.\\n' +
+         '  3. Expression of Ideas — Transitions; Rhetorical Synthesis (achieve a goal\\n' +
+         '     in the fewest words / best order).\\n' +
+         '  4. Standard English Conventions — Boundaries (run-ons, fragments,\\n' +
+         '     punctuation); Form, Structure and Sense (agreement, verb forms,\\n' +
+         '     modifiers, pronouns).\\n' +
+         'Write each item as a case_study row: the FULL short passage in Col14\\n' +
+         '({"passage":"..."}), the question in Col1, four parallel options. Passage\\n' +
+         '25-150 words — this brevity is the signature of the digital test. Mark the\\n' +
+         'domain in Col16.'],
+        ['MATH — DOMAIN MAP AND SPR RULES', 'Content domains and their real weightings: Algebra ~35%, Advanced Math ~35%,\\n' +
+         'Problem-Solving and Data Analysis ~15%, Geometry and Trigonometry ~15%.\\n' +
+         'Difficulty ramps within each module. Word problems sit in real contexts\\n' +
+         '(unit conversion, ratio, percentages, scatterplot and two-way-table reading).\\n' +
+         'SPR items: model as numeric rows — Col6 the exact value, Col9 tolerance 0,\\n' +
+         'and Col11 listing the equivalent accepted forms (e.g. ".5|.50|1/2"). Never\\n' +
+         'write an SPR whose answer is not a single number or fraction. Mark each row\\n' +
+         '"Module 1" or "Module 2" in Col16.'],
+        ['ADAPTIVITY AND PACING, HONESTLY MODELLED', 'Do NOT try to simulate the adaptive routing inside one CSV. Instead: module 1\\n' +
+         'rows are mixed difficulty; module 2 rows are written at the harder-module\\n' +
+         'ceiling, tagged so the tutor can assemble either path. State the pacing\\n' +
+         'facts in Col7 where useful: R&W allows about 71 seconds per question, Math\\n' +
+         'about 95 seconds.'],
+        ['WHAT A FULL REPLICA LOOKS LIKE', 'One full R&W module = 27 items; one full Math module = 22 items; the whole\\n' +
+         'test = 98 items across four modules. If the requested count is smaller,\\n' +
+         'produce a proportional module that PRESERVES the domain order and the\\n' +
+         '75/25 MCQ-to-SPR math split. If the tutor gave an official practice-test\\n' +
+         'link in the SOURCE field, its conventions take precedence.']
+      ],
+      quality: [
+        'Every R&W item carries its own complete 25-150 word passage — never a shared stem.',
+        'R&W domain order is preserved: Craft and Structure, then Information and Ideas, then Expression of Ideas, then Standard English Conventions.',
+        'Math keeps roughly 3 MCQ for every 1 SPR, with the verified domain weightings.',
+        'Options are parallel in grammar and length; keys are defensible on evidence alone.',
+        'No item can be answered from general knowledge without the passage or the math.'
+      ],
+      checks: [
+        'Every row names its domain and module in Col16.',
+        'Every passage is within 25-150 words.',
+        'Every SPR (numeric math) row lists equivalent accepted forms in Col11.'
+      ]
+    },
+
+    act_enhanced: {
+      label: 'Enhanced ACT — exact test replica (2025 rollout onward)',
+      role: 'an ACT, Inc. assessment writer producing items for the Enhanced ACT in force since the September 2025 national rollout',
+      mission: 'Produce an Enhanced ACT section that is structurally indistinguishable from the real test — new question counts, new timings, four-option math, and the optional science that no longer feeds the composite.',
+      ref: { case_study: 7, mcq: 9, numeric: 4 }, dominant: 'mcq', minOne: false,
+      sections: [
+        ['THE EXACT ENHANCED ACT STRUCTURE (VERIFIED)', 'Since the 2025 national rollout (April 2025 online, September 2025 paper):\\n' +
+         '  - English: 50 questions, 35 minutes — passage-based rhetoric and mechanics.\\n' +
+         '  - Math: 45 questions, 50 minutes — FOUR answer options now (five on the\\n' +
+         '    legacy test), calculator allowed throughout, prealgebra through trig,\\n' +
+         '    difficulty ramps across the section.\\n' +
+         '  - Reading: 36 questions, 40 minutes — four passages (prose fiction,\\n' +
+         '    social science, humanities, natural science) with questions per passage.\\n' +
+         '  - Science: OPTIONAL, 40 questions, 40 minutes — data representation,\\n' +
+         '    research summaries, conflicting viewpoints; interpretation of graphs,\\n' +
+         '    tables and experiment descriptions; NOT part of the composite.\\n' +
+         '  - Writing: OPTIONAL, one prompt, 40 minutes, scored 2-12 separately.\\n' +
+         'Composite 1-36 = average of English + Math + Reading ONLY. Core test\\n' +
+         'about 2 h 05 min; with Science about 2 h 45. The test is LINEAR, not\\n' +
+         'adaptive. Unsccored field-test items are embedded (about 10 English,\\n' +
+         '4 Math, 9 Reading, 6 Science) — say "unscored" in Col16 if you include any.'],
+        ['ACT HOUSE STYLE — WHAT DISTINGUISHES IT FROM THE SAT', 'English items show a passage with an underlined numbered segment; the FIRST\\n' +
+         'option is very often "NO CHANGE" — reproduce that convention and make\\n' +
+         '"NO CHANGE" correct about a quarter of the time, as on the real test. Stems\\n' +
+         'ask which choice "best accomplishes the goal" or is "most nearly".\\n' +
+         'Reading items cite evidence by line reference and ask for the meaning\\n' +
+         'IN CONTEXT ("as it is used in line 34"). Science items require NO outside\\n' +
+         'science — every needed fact is in the data; the skill is reading the graph\\n' +
+         'and the experimental design. Model all three as case_study rows with the\\n' +
+         'passage/data in Col14.'],
+        ['MATH CONVENTIONS', 'Four options only. Spread across prealgebra/elementary algebra (about a\\n' +
+         'third), intermediate algebra/coordinate geometry (about a third), plane\\n' +
+         'geometry and trigonometry (the rest). Discrete items, not multi-part.\\n' +
+         'Student-produced-response does NOT exist on the ACT — every math item is\\n' +
+         'multiple choice. Model them as mcq rows. (Use the numeric type only if the\\n' +
+         'tutor asks for calculation drill, and say so in Col16.)'],
+        ['WHAT A FULL REPLICA LOOKS LIKE', 'Full replica sizes: English 50, Math 45, Reading 36 (9 per passage), Science\\n' +
+         '40, Writing 1 prompt. Core = 131 items. If the requested count is smaller,\\n' +
+         'produce a proportional miniature of the chosen section that preserves the\\n' +
+         'passage structure and the NO CHANGE convention. Prefer the tutor\\u2019s official\\n' +
+         'practice-test link in the SOURCE field over any typical figure.']
+      ],
+      quality: [
+        'English items keep the underlined-segment + NO CHANGE convention.',
+        'Math items have exactly four options and a calculator-viable path.',
+        'Reading passages come from the four real genres in rotation.',
+        'Science items are answerable from the presented data alone.',
+        'Timings per item match the real section (42 s English, 67 s Math, 67 s Reading).'
+      ],
+      checks: [
+        'Col16 names the section for every row.',
+        'NO CHANGE appears as option A in most English rows and is the key about a quarter of the time.',
+        'No math row has five options.'
+      ]
+    },
+
+    jamb_utme: {
+      label: 'JAMB UTME — exact CBT replica (4 subjects, one sitting)',
+      role: 'a Joint Admissions and Matriculation Board item writer preparing UTME papers under the current CBT format',
+      mission: 'Produce a UTME paper that is structurally indistinguishable from the real exam — four subjects in one sitting, the compulsory Use of English carrying 60 items, every item multiple choice.',
+      ref: { case_study: 7, mcq: 13 }, dominant: 'mcq', minOne: false,
+      sections: [
+        ['THE EXACT UTME STRUCTURE (VERIFIED)', 'One continuous CBT sitting of about 2 hours. 180 questions total, all\\n' +
+         '4-option multiple choice, no essay, no showing of working:\\n' +
+         '  - Use of English — COMPULSORY — 60 questions.\\n' +
+         '  - Three other subjects chosen for the candidate\\u2019s intended course —\\n' +
+         '    40 questions each (25 subjects available).\\n' +
+         'Scored out of 400. NO negative marking. The candidate can move between\\n' +
+         'any question and any subject on screen, flag items for review, and watch\\n' +
+         'the countdown clock. Average pace is about 40 seconds per question.\\n' +
+         'The SUBJECTS field lists the four subjects — Use of English must be one\\n' +
+         'of them. Col17 carries the EXACT subject name on every row.'],
+        ['USE OF ENGLISH ANATOMY (THE 60 ITEMS)', 'Model the real distribution:\\n' +
+         '  - Comprehension: 2-3 passages, each followed by questions on main idea,\\n' +
+         '    inference, phrase meaning and the writer\\u2019s intention — write these as\\n' +
+         '    case_study rows, the FULL passage in Col14, one question per row.\\n' +
+         '  - Cloze: a passage with numbered gaps; each gap is one item.\\n' +
+         '  - Lexis: synonyms, antonyms, idiomatic expressions in context.\\n' +
+         '  - Structure: concord, tense sequence, prepositions, phrasal verbs,\\n' +
+         '    question tags, register.\\n' +
+         '  - Oral forms: vowel and consonant sounds ("which word has the same vowel\\n' +
+         '    sound as..."), word stress, rhymes, emphatic stress.\\n' +
+         'Keep every item short — UTME items are one to three lines of stem.'],
+        ['SUBJECT PAPERS (THE 40s)', 'Each subject paper spreads proportionally across its JAMB syllabus — not\\n' +
+         'evenly by page, but by the syllabus weightings a real paper shows. Include\\n' +
+         'calculation items in science/maths subjects but as MCQ: the options are\\n' +
+         'the answer plus three realistic slips (sign error, unit slip, wrong\\n' +
+         'substitution). Options must be parallel in form — never mix a number, a\\n' +
+         'word and a phrase as options.'],
+        ['WHAT A FULL REPLICA LOOKS LIKE', 'Full replica = 180 items in the 60/40/40/40 proportions. If the requested\\n' +
+         'count is smaller, shrink PROPORTIONALLY (a 30-item miniature of a 4-subject\\n' +
+         'paper = 10 English + 7/7/6 subject items, never 30 English). If the tutor\\n' +
+         'gave a past-question link in the SOURCE field, its year-specific structure\\n' +
+         'overrides these defaults.']
+      ],
+      quality: [
+        'Every row is a genuine 4-option MCQ — the UTME has no other format.',
+        'Use of English keeps its real internal mix: passages, cloze, lexis, structure, orals.',
+        'Subject items sit inside the JAMB syllabus for that subject.',
+        'Stems are compact and unambiguous; exactly one option is defensible.',
+        'Distractors are the errors real candidates make, not random text.'
+      ],
+      checks: [
+        'Col17 names the subject on every row, and the four subjects appear in the requested proportions.',
+        'Passage questions carry the full passage in Col14.',
+        'No row asks the candidate to "show working" — the CBT cannot capture working.'
+      ]
+    },
+
+    waec_wassce: {
+      label: 'WAEC WASSCE — exact paper replica',
+      role: 'a West African Examinations Council chief examiner who sets and marks WASSCE papers and trains markers on the marking scheme',
+      mission: 'Produce a WASSCE paper that is structurally indistinguishable from the real exam for the chosen subject — objective Paper 1, theory/essay Paper 2, and the practical or oral Paper 3 where the subject has one.',
+      ref: { mcq: 14, short: 6, essay: 3, case_study: 3, numeric: 4, multi_numeric: 2, assertion_reason: 2, graph_read: 2, matching: 1 }, dominant: 'mcq', minOne: false,
+      sections: [
+        ['THE EXACT WASSCE STRUCTURE (VERIFIED)', 'Each subject runs two or three papers:\\n' +
+         '  - Paper 1 (Objective): 4-option multiple choice, typically 40-60 items\\n' +
+         '    (subject-dependent), 40-90 minutes, 1 mark each, NO negative marking.\\n' +
+         '  - Paper 2 (Theory/Essay): 2 to 2 h 30 min; organised into sections with\\n' +
+         '    rubric constraints ("Answer any FIVE questions"); questions carry\\n' +
+         '    lettered sub-parts (a)(i)(ii)(iii) with marks shown per part.\\n' +
+         '  - Paper 3: practical or alternative-to-practical for the sciences\\n' +
+         '    (about 1 h 30 min - 2 h); for English Language, the Test of Orals\\n' +
+         '    (60 multiple-choice items, 45 minutes).\\n' +
+         'English Language, verified in full: Paper 1 objective — 80 items, 1 hour,\\n' +
+         '40 marks, on lexis and structure with comprehension; Paper 2 — 2 hours,\\n' +
+         '100 marks: Section A essay (50 marks, ONE question, at least 450 words,\\n' +
+         'from argument/debate, report, article, exposition, letter, speech,\\n' +
+         'narrative/descriptive), Section B comprehension (40), Section C summary\\n' +
+         '    (30); Paper 3 Test of Orals — 60 items, 45 min, 30 marks.\\n' +
+         'Grades A1 (75-100%) through F9; A1-C6 are credit passes.'],
+        ['WAEC MARKING CULTURE — CARRY IT INTO COL7', 'Essays are marked on four dimensions — Content, Organisation, Expression and\\n' +
+         'Mechanical Accuracy — and theory answers earn method as well as accuracy\\n' +
+         'marks. Write Col7 as a WAEC marker would: "1 mark for identifying...,\\n' +
+         '1 mark for the correct unit", and for essays give the band descriptors,\\n' +
+         'not just a model. Penalty culture: mechanical errors cost marks — say so.'],
+        ['PAPER 1 HOUSE STYLE', 'Stems open "Which of the following...", "The...". Negatives (NOT, EXCEPT,\\n' +
+         'LEAST) appear with the negative word emphasised and in a minority of items.\\n' +
+         'Assertion-reason items use the five standard options: A both true, reason\\n' +
+         'explains; B both true, reason does not explain; C assertion true only;\\n' +
+         'D reason true only; E both false. Completion items ("The process by which\\n' +
+         '... is") are common. Options are parallel in grammar and length.'],
+        ['PAPER 2 HOUSE STYLE', 'Questions are built from stimulus + sub-parts: a diagram to label, a table to\\n' +
+         'interpret, a calculation with visible steps (multi_numeric), a structured\\n' +
+         'explanation with marks climbing from (a)(i) 1 mark to (c) 4 marks. Constructions\\n' +
+         'with ruler-and-compasses appear in Maths Paper 2. English essays must state\\n' +
+         'the audience and the expected register in the stem, exactly as WAEC writes\\n' +
+         'them ("Write a letter to your father...").'],
+        ['PAPER 3 — PRACTICAL AND ALTERNATIVE-TO-PRACTICAL', 'Science Paper 3 (or the alternative-to-practical written version) tests:\\n' +
+         'identification of apparatus, titration/measurement readings to correct\\n' +
+         'precision, tabulation, plotting with sensible scales, line/curve of best\\n' +
+         'fit, deduction from the graph, sources of error, and precautions. Write\\n' +
+         'these as case_study or graph_read rows with the data in Col14.'],
+        ['WHAT A FULL REPLICA LOOKS LIKE', 'Full replica sizes: Paper 1 = the subject\\u2019s real item count (50 for\\n' +
+         'Mathematics, 60-80 for English depending on paper); Paper 2 = a complete\\n' +
+         'section-structured theory paper. If the requested count is smaller,\\n' +
+         'produce a proportional miniature preserving the Paper 1 : Paper 2 mix,\\n' +
+         'the sub-part architecture and the rubric wording. If the tutor gave a\\n' +
+         'past-paper link in the SOURCE field, its structure is authoritative.']
+      ],
+      quality: [
+        'The paper mix (objective + theory + practical/oral where applicable) matches the real subject structure.',
+        'Theory questions carry lettered sub-parts with per-part marks.',
+        'Assertion-reason items use the exact five WAEC options.',
+        'Essay stems name audience, purpose and minimum length as WAEC does.',
+        'Col7 reads like a WAEC marking scheme with method and accuracy marks.'
+      ],
+      checks: [
+        'Col16 tags the paper (Paper 1 / Paper 2 / Paper 3) on every row.',
+        'At least one assertion_reason item and one data-interpretation item in a full replica.',
+        'No objective item has more or fewer than four options.'
+      ]
+    },
+
+    neco_ssce: {
+      label: 'NECO SSCE — exact paper replica',
+      role: 'a National Examinations Council item writer and chief examiner preparing SSCE papers on the NERDC national curriculum',
+      mission: 'Produce a NECO SSCE paper that is structurally indistinguishable from the real exam — the objective/essay/practical paper set, the NECO register, and the current CBT transition for objectives.',
+      ref: { mcq: 14, short: 7, essay: 3, case_study: 3, numeric: 4, multi_numeric: 2, assertion_reason: 2, graph_read: 2 }, dominant: 'mcq', minOne: false,
+      sections: [
+        ['THE EXACT NECO SSCE STRUCTURE (VERIFIED)', 'NECO mirrors the WAEC three-paper architecture on the NERDC curriculum:\\n' +
+         '  - Paper 1 (Objective): multiple choice — commonly 50 items (English\\n' +
+         '    Language reduced its objective count to 80 items from the 2026\\n' +
+         '    sitting; verify your subject\\u2019s current count against a recent past\\n' +
+         '    paper). From the 2026 SSCE, NECO is moving objective papers to\\n' +
+         '    COMPUTER-BASED delivery, with essay/theory still written in booklets\\n' +
+         '    during the transition — so objective items must be CBT-friendly.\\n' +
+         '  - Paper 2 (Essay/Theory): typically about 2 h 15 min, sections with\\n' +
+         '    "answer N questions" rubrics, lettered sub-parts, marks per part.\\n' +
+         '  - Paper 3: practical or alternative-to-practical for sciences and\\n' +
+         '    some vocational subjects.\\n' +
+         'Grades A1 (Distinction, 75-100%) through F9; A1-C6 are credit passes —\\n' +
+         'the same scale WAEC uses. Candidates register 7-9 subjects including\\n' +
+         'English, Mathematics and Civic Education.'],
+        ['NECO REGISTER', 'NECO stems are famously direct: "The ... is", "Which of the following\\n' +
+         'best describes". Keep vocabulary at NERDC curriculum level and context\\n' +
+         'Nigerian where a context is needed (naira, markets, local government).\\n' +
+         'Objective items must stand alone — each is answered on screen, in one\\n' +
+         'minute or less. Theory sub-parts ramp marks exactly like WAEC: (a) 2 marks,\\n' +
+         '(b)(i) 1 mark, (b)(ii) 2 marks, and so on.'],
+        ['THEORY AND PRACTICAL HOUSE STYLE', 'Theory questions interleave recall ("list three..."), explanation ("give\\n' +
+         'reasons for...") and application ("a farmer observes... explain").\\n' +
+         'Calculations show working for method marks. Practical/alternative items\\n' +
+         'test apparatus, readings, tables, plotting, errors and precautions with\\n' +
+         'the data supplied in the question (case_study / graph_read rows).'],
+        ['WHAT A FULL REPLICA LOOKS LIKE', 'Full replica = the subject\\u2019s real Paper 1 count + a complete Paper 2 with\\n' +
+         'its section rubrics. Smaller counts produce a proportional miniature\\n' +
+         'that keeps the objective : theory mix and the sub-part architecture.\\n' +
+         'If the tutor gave a NECO past-paper link in the SOURCE field, follow it.']
+      ],
+      quality: [
+        'Structure follows the verified NECO paper set for the subject.',
+        'Objective items are CBT-ready: one screen, self-contained, under a minute.',
+        'Contexts are Nigerian and curriculum-true.',
+        'Theory marks are distributed across lettered sub-parts.',
+        'Col7 marks like a NECO scheme: method marks named, accuracy marks named.'
+      ],
+      checks: [
+        'Col16 tags the paper on every row.',
+        'No objective item depends on another item.',
+        'Practical-style rows carry their data in Col14.'
+      ]
+    },
+
+    ncee_common_entrance: {
+      label: 'Common Entrance (NCEE) — exact replica',
+      role: 'a National Common Entrance Examination setter preparing papers for Primary 6 pupils seeking admission into Federal Unity Colleges (JSS1)',
+      mission: 'Produce an NCEE paper that is structurally indistinguishable from the real examination — the two-paper, four-part architecture, primary-level register, and aptitude item types.',
+      ref: { mcq: 12, short: 4, numeric: 4, cloze: 2, case_study: 2 }, dominant: 'mcq', minOne: false,
+      sections: [
+        ['THE EXACT NCEE STRUCTURE (VERIFIED)', 'The NCEE is a computer-based test for Primary 6 pupils entering JSS1\\n' +
+         '(Federal Government colleges). Two papers, each in two parts:\\n' +
+         '  - PAPER 1 — ACHIEVEMENT TEST:\\n' +
+         '      Part A: Mathematics and Basic Science & Technology.\\n' +
+         '      Part B: English Studies and National Values Education.\\n' +
+         '  - PAPER 2 — APTITUDE TEST:\\n' +
+         '      Part A: Quantitative and Vocational Aptitude.\\n' +
+         '      Part B: Verbal Aptitude.\\n' +
+         'All items are multiple choice. Recent sittings carry the largest share in\\n' +
+         'Mathematics and English Studies (about 60 each) with about 40 each for\\n' +
+         'Basic Science & Technology and National Values Education — treat these as\\n' +
+         'TYPICAL, and let the tutor\\u2019s past-paper link in the SOURCE field override.\\n' +
+         'The SUBJECTS field lists the parts to cover; Col17 carries the part name\\n' +
+         '(e.g. "Mathematics", "Verbal Aptitude") on every row.'],
+        ['PRIMARY-LEVEL REGISTER — THIS IS THE EXAM\\u2019S SOUL', 'The candidate is 10-12 years old. Vocabulary, sentence length and contexts\\n' +
+         'must sit at Primary 4-6 level: money and market scenes, school life, home\\n' +
+         'and family, simple measurement, familiar animals and plants. NO senior\\n' +
+         'secondary terminology. Every stem is one or two short sentences. Options\\n' +
+         'are short. Wrong options are plausible to a child who half-knows.'],
+        ['ACHIEVEMENT ITEM TYPES', 'Mathematics: computation (four operations, fractions, decimals, percentages,\\n' +
+         'simple geometry, measurement, time, money word problems, simple statistics).\\n' +
+         'Basic Science & Technology: living things, the body and health, matter,\\n' +
+         'energy, basic IT awareness. English Studies: comprehension of a short\\n' +
+         'passage (case_study with the passage in Col14), grammar (tenses, articles,\\n' +
+         'prepositions), vocabulary, punctuation. National Values Education: civics,\\n' +
+         'social studies, security and civic duties at primary depth.'],
+        ['APTITUDE ITEM TYPES', 'Verbal: analogies, odd-one-out, letter and word series, sentence completion,\\n' +
+         'opposites, rhymes. Quantitative: number series, missing numbers in simple\\n' +
+         'equations, figure counting, shape patterns. Vocational: matching tools and\\n' +
+         'materials to occupations, simple technical reasoning. These test REASONING,\\n' +
+         'not taught content — keep them self-contained puzzles a bright child can\\n' +
+         'solve in under a minute.'],
+        ['WHAT A FULL REPLICA LOOKS LIKE', 'A full replica covers all four Paper 1 parts (or all four Paper 2 parts for\\n' +
+         'an aptitude paper) in the requested proportions. Smaller counts shrink\\n' +
+         'proportionally across the parts. Tag every row with its part in Col17\\n' +
+         'and Paper 1/Paper 2 in Col16.']
+      ],
+      quality: [
+        'Language is genuinely primary-level — a 10-year-old can read every stem unaided.',
+        'The four-part structure is preserved with parts named in Col17.',
+        'Aptitude items are self-contained reasoning puzzles, not syllabus recall.',
+        'Contexts are Nigerian and child-familiar.',
+        'One mark per item, one defensible key, short parallel options.'
+      ],
+      checks: [
+        'Col17 names the part on every row.',
+        'No item uses vocabulary beyond Primary 6.',
+        'Comprehension items carry their full short passage in Col14.'
+      ]
+    },
+
+    olympiad: {
+      label: 'Olympiad — exact replica (school round & elite proof round)',
+      role: 'an olympiad problem selection committee member who has contributed problems to both school-round MCQ olympiads (SOF IMO/NSO style) and elite proof olympiads (IMO style)',
+      mission: 'Produce an olympiad paper that is structurally indistinguishable from the round the tutor names — the four-section school-round MCQ paper, the integer-answer bridge round, or the six-problem proof paper.',
+      ref: { mcq: 12, numeric: 4, short: 3, essay: 2 }, dominant: 'mcq', minOne: false,
+      sections: [
+        ['THREE REAL OLYMPIAD FORMATS — STATE WHICH YOU ARE WRITING', 'SCHOOL ROUND (SOF IMO/NSO style, the default): 60 minutes, four sections —\\n' +
+         '  Section 1 Logical Reasoning: 15 questions x 1 mark (10 for classes 1-4).\\n' +
+         '  Section 2 Subject Reasoning (Mathematical Reasoning for IMO; Science for\\n' +
+         '    NSO): 20 questions x 1 mark (10 for classes 1-4).\\n' +
+         '  Section 3 Everyday Mathematics / Everyday Science: 10 x 1 mark.\\n' +
+         '  Section 4 Achievers Section: 5 questions x 3 marks (2 marks for classes\\n' +
+         '    1-4) — the hardest items, higher-order.\\n' +
+         '  Classes 5-12: 50 questions, 60 marks. Classes 1-4: 35 questions, 40 marks.\\n' +
+         '  All 4-option MCQ. About 60% of items sit in the current class syllabus\\n' +
+         '  and 40% in the previous class\\u2019s.\\n' +
+         'BRIDGE ROUND (AIME style): 15 questions, 3 hours, every answer an INTEGER\\n' +
+         'from 0 to 999 — model as numeric rows with tolerance 0.\\n' +
+         'ELITE ROUND (IMO style): 6 problems over 2 days x 4.5 hours, 7 points each,\\n' +
+         'full PROOFS required — model as essay rows whose Col7 carries the complete\\n' +
+         'model proof and a 0+1+2 partial-credit guide.\\n' +
+         'Tag every row with its section and format in Col16.'],
+        ['THE FOUR PILLARS — AND THE OLYMPIAD CHARACTER', 'Elite problems draw on exactly four pillars: Algebra, Number Theory, Geometry\\n' +
+         'and Combinatorics (with inequalities inside algebra). The olympiad\\n' +
+         'character, whatever the round: a SYLLABUS FACT, TWISTED. The knowledge\\n' +
+         'needed is school mathematics; the insight is not. No problem may lean on\\n' +
+         'a memorised exotic theorem — an olympiad item is solvable from principles\\n' +
+         'by a creative student in minutes (school round) or hours (elite round).\\n' +
+         'MCQ distractors must reward partial progress toward the wrong answer —\\n' +
+         'the answer a student reaches who spots half the trick.'],
+        ['SECTION FLAVOURS (SCHOOL ROUND)', 'Logical Reasoning: patterns, odd-one-out, analogies, coding-decoding,\\n' +
+         'direction sense, ranking, figure reasoning, blood relations — NO\\n' +
+         'curriculum knowledge. Subject Reasoning: conceptual MCQs at one notch\\n' +
+         'above school demand. Everyday: word problems in daily-life disguise.\\n' +
+         'Achievers: multi-step, multi-concept, 3-mark items that combine at least\\n' +
+         'two ideas.'],
+        ['PROOFS AND PARTIAL CREDIT (ELITE ROUND)', 'Every essay row states the problem EXACTLY as an olympiad paper states it —\\n' +
+         'no hints, no multiple parts unless the proof naturally splits. Col14:\\n' +
+         '{"min_words":60,"keywords":["the key lemma steps"]}. Col7 contains the\\n' +
+         'complete model proof, then "PARTIAL CREDIT:" naming what earns 1-2 points\\n' +
+         'and what earns nothing (a bare example proves nothing; an unproven claim\\n' +
+         'earns nothing; progress on one case earns 1).'],
+        ['WHAT A FULL REPLICA LOOKS LIKE', 'Full replica sizes: school round = 50 items in the 15/20/10x1 + 5x3 section\\n' +
+         'shape (35 for classes 1-4); bridge round = 15 integer items; elite round =\\n' +
+         '6 problems. Smaller counts shrink the section shape proportionally — a\\n' +
+         '20-item school-round miniature keeps the four sections in ratio. If the\\n' +
+         'tutor gave a past-paper link in the SOURCE field, follow it.']
+      ],
+      quality: [
+        'Every item is a twisted syllabus fact, never a memory of an exotic result.',
+        'Section structure and mark tariffs match the named round exactly.',
+        'MCQ distractors are the half-solution answers.',
+        'Integer-answer items have tolerance 0 and answers 0-999.',
+        'Elite problems are stated as olympiad problems are stated: bare and precise.'
+      ],
+      checks: [
+        'Col16 names the round AND section for every row.',
+        'The Achievers Section items are visibly the hardest and carry 3 marks.',
+        'Every proof row\'s Col7 contains a complete model proof plus a partial-credit guide.'
+      ]
+    },
+
+    essay_master: {
+      label: 'Essay paper — tutor-marked, with full rubrics',
+      role: 'an experienced examiner and chief marker who has sat on WAEC, NECO, Cambridge IGCSE, SAT and ACT writing desks and knows exactly what makes an essay prompt markable',
+      mission: 'Produce a CBT of essay questions a tutor can mark quickly, consistently and fairly — every prompt dynamic and self-contained, every row carrying its own marking kit.',
+      ref: { essay: 12, case_study: 4, true_false_justify: 2, short: 2 }, dominant: 'essay', minOne: false,
+      sections: [
+        ['EVERY ESSAY ROW IS A COMPLETE MARKING KIT', 'This platform\\u2019s marking desk shows the tutor: the candidate\\u2019s essay, the word\\n' +
+         'count, which expected points (keywords) appeared, and the model answer from\\n' +
+         'Col7 — then the tutor awards the mark and writes a comment. So every essay\\n' +
+         'row MUST carry:\\n' +
+         '  Col14: {"min_words":N,"keywords":["point 1","point 2","point 3",...]} —\\n' +
+         '          keywords are the SUBSTANTIVE points an examiner ticks, 5-10 of them.\\n' +
+         '  Col7:  the full model answer (for short essays) or a complete bulleted\\n' +
+         '          model with paragraph-by-paragraph coverage (for 400+ word tasks),\\n' +
+         '          followed by "RUBRIC:" with band descriptors and the mark split.\\n' +
+         '  Col12: false. Col6: "Tutor review". Never invent a machine mark.'],
+        ['COVER THE REAL ESSAY GENRES — THE WAY EXAM BODIES SET THEM', 'Spread the paper across the genres each body actually examines:\\n' +
+         '  argumentative / debate (take and defend a position — WAEC/NECO staple),\\n' +
+         '  narrative and descriptive (tell/show with sensory control),\\n' +
+         '  expository (explain a process or concept to a stated audience),\\n' +
+         '  formal letter (official complaint/application — full format),\\n' +
+         '  informal letter (to a friend/relative — register shift),\\n' +
+         '  speech (audience, opening and closing conventions),\\n' +
+         '  article for a school magazine / report (heading, structure),\\n' +
+         '  source-based response (case_study: the passage or data in Col14, the\\n' +
+         '    essay responds to IT — SAT/ACT and IGCSE data-response style),\\n' +
+         '  reflective / personal (IGCSE composition style).\\n' +
+         'Every prompt states audience, purpose, minimum words and (where the genre\\n' +
+         'has one) the expected format — exactly as a real paper does.'],
+        ['DYNAMIC PROMPTS — NEVER ANSWERABLE BY MEMORISED ESSAY', 'A markable prompt is SPECIFIC and two-sided or concrete: "Your school has\\n' +
+         'banned phones..." not "Write an essay on technology". Give the candidate\\n' +
+         'something to argue with: a claim to attack or defend, a scenario with a\\n' +
+         'decision, a data set with a trend, a quotation to respond to. Ban\\n' +
+         'evergreen topics a candidate has pre-memorised ("my best day", "corruption")\\n' +
+         'unless a fresh angle is built in. Min_words: 40-80 for paragraph answers,\\n' +
+         '150-200 for short compositions, 300-450 for full exam essays.'],
+        ['THE RUBRIC IS THE MARKING SCHEME', 'Use the real bodies\\u2019 rubrics where they apply: WAEC/NECO essays — Content\\n' +
+         '(relevance), Organisation (paragraphing, format), Expression (vocabulary,\\n' +
+         'sentence control), Mechanical Accuracy (grammar, spelling, punctuation),\\n' +
+         'with mechanical errors carrying explicit penalties. Cambridge extended\\n' +
+         'response — level of knowledge, coherence, relevance to the question.\\n' +
+         'Argumentative tasks — thesis, counter-argument handled, evidence, conclusion.\\n' +
+         'Narrative — structure, control of tension, language. Write the bands in\\n' +
+         'Col7 so a second marker would award the same mark.'],
+        ['THE TUTOR-MARKED FLOW, STATED IN THE PROMPT', 'Every essay row\\u2019s stem tells the candidate what is expected (task, audience,\\n' +
+         'length) — and Col7 tells the TUTOR how to mark. true_false_justify rows\\n' +
+         'give the quick-write warm-ups: a statement to judge AND justify in 2-3\\n' +
+         'sentences (Col14 {"justify":"the decisive reasoning"}). short rows carry\\n' +
+         'one-line precis / sentence-transform drills with exact answers.']
+      ],
+      quality: [
+        'Every essay row carries min_words AND 5-10 substantive keywords in Col14.',
+        'Every Col7 contains a model answer AND a band rubric a second marker could apply.',
+        'Prompts are specific, fresh and two-sided or concrete — not memorisable.',
+        'Genres span the real bodies\\u2019 essay types, with audience and format stated.',
+        'No essay is auto-marked: Col6 says Tutor review, Col12 is false.'
+      ],
+      checks: [
+        'No two prompts share a genre AND a topic angle.',
+        'Every source-based essay carries its passage or data in Col14.',
+        'Word-count minimums are realistic for the task (never "write 1000 words" in a 20-minute item).'
+      ]
+    },
+
+    grand_mix: {
+      label: 'Grand mix — every type, expertly chosen (MCQ … essay)',
+      role: 'a master assessor who chooses question types the way a craftsman chooses tools — each type only where it is the honest instrument for what is being measured',
+      mission: 'Produce ONE complete assessment that demonstrates expert command of every major question type this platform supports, with each type used where it is genuinely the right instrument.',
+      ref: { mcq: 8, mrq: 3, tf: 2, short: 4, numeric: 3, multi_numeric: 2, matching: 2, ordering: 2, cloze: 2, categorization: 2, matrix: 2, assertion_reason: 2, case_study: 3, essay: 2, code: 1, graph_read: 2, data_interpretation: 2, error_spotting: 2, true_false_justify: 1, hot_text: 1 }, dominant: 'mcq', minOne: true,
+      sections: [
+        ['WHEN EACH TYPE IS THE RIGHT INSTRUMENT — CHOOSE LIKE AN EXAMINER', 'mcq — ONE discrete fact or discrimination; the wrong options must be real\\n' +
+         '  misconceptions. mrq — completeness of understanding (list ALL that apply);\\n' +
+         '  set Col12 honestly: true when partial credit is wrong, false when it is fair.\\n' +
+         '  tf — fast recall checks; 25% guess chance, so use sparingly and pair\\n' +
+         '  important ones with a justify. short — recall WITHOUT the cue options give.\\n' +
+         '  numeric / multi_numeric — measurement and multi-step method with part marks.\\n' +
+         '  matching — paired knowledge (term-definition, cause-effect). ordering —\\n' +
+         '  process and sequence understanding. cloze — terminology IN CONTEXT.\\n' +
+         '  categorization — classification power. matrix — many statements against one\\n' +
+         '  option set; the efficient way to test consistency. assertion_reason —\\n' +
+         '  causal reasoning and the difference between true and explanatory.\\n' +
+         '  case_study — applied judgement on a stimulus. essay — constructed argument\\n' +
+         '  (tutor-marked; never fake a machine mark). code — practical CS. graph_read /\\n' +
+         '  data_interpretation — data literacy. error_spotting — debugging and\\n' +
+         '  correction, the professional skill. true_false_justify — catch the\\n' +
+         '  misconception AND demand the why. hot_text — tap-the-right-parts precision.'],
+        ['BLOOM\u2019S LADDER ACROSS THE PAPER', 'The paper must climb deliberately: roughly a quarter Remember/Understand,\\n' +
+         'a third Apply, a quarter Analyse, the rest Evaluate/Create. Tag each row\\n' +
+         'with its Bloom level in Col16 beside the type name. The essay and\\n' +
+         'error_spotting rows sit at the top of the ladder — do not waste them on recall.'],
+        ['FAIRNESS RULES — THE EXAMINER\u2019S OATH', 'No trick stems; no "all of the above"; no negatives unless bolded and rare;\\n' +
+         'options parallel in grammar, length and register; exactly one defensible\\n' +
+         'key per objective item; every non-objective item lists its accepted\\n' +
+         'alternatives in Col11 and every numeric item its tolerance in Col9;\\n' +
+         'tutor-marked rows say so in Col6 and carry their rubric in Col7.'],
+        ['THE MIXED MARKING MODEL, MADE EXPLICIT', 'The paper interleaves auto-marked and tutor-marked items and SAYS which is\\n' +
+         'which (Col6: "Tutor review" on essays; the marking desk handles them).\\n' +
+         'The essay rows carry min_words and keywords in Col14 exactly like the\\n' +
+         'essay pack. Nothing tutor-marked is silently graded by machine.']
+      ],
+      quality: [
+        'Every type appears where it is the honest instrument — no type used as decoration.',
+        'Bloom levels climb across the paper and are tagged.',
+        'Every distractor is a named misconception in Col7.',
+        'Objective and tutor-marked items are clearly separated.',
+        'The paper would survive a second examiner reviewing it line by line.'
+      ],
+      checks: [
+        'Every type promised in the distribution appears at least once (minOne is ON).',
+        'Col16 carries type-and-Bloom tags on every row.',
+        'No objective item has two defensible keys; no tutor item is machine-marked.'
+      ]
+    },
+
+    differentiated: {
+      label: 'Differentiated — Support / Core / Stretch',
+      role: 'an assessment designer who writes one paper that fairly serves three readiness levels in the same classroom',
+      mission: 'Produce a differentiated paper: every learning objective probed at Support, Core and Stretch demand, so every learner meets success and every learner meets challenge.',
+      ref: { mcq: 8, short: 4, numeric: 3, case_study: 2, essay: 1 }, dominant: 'mcq', minOne: false,
+      sections: [
+        ['THREE TIERS, ONE PAPER', 'Support — foundation scaffolds: concrete contexts, single-step items,\\n' +
+         'worked examples to complete, generous Col11 alternatives. Core — grade-level\\n' +
+         'demand, the tier most rows belong to. Stretch — multi-step, unfamiliar\\n' +
+         'contexts, justify-and-prove demand. Where possible, probe the SAME objective\\n' +
+         'at two or three depths so growth is visible: e.g. Support "State the formula\\n' +
+         'for density", Core "Calculate the density of the block", Stretch "The block\\n' +
+         'floats with a quarter submerged — deduce its density relative to water".'],
+        ['TAG EVERY ROW', 'Col15 (Difficulty) = support / core / stretch on every row, and Col16 carries\\n' +
+         'the learning objective id (e.g. "OBJ-3 density") so the tutor can read\\n' +
+         'growth per objective, not just a total score. Aim for roughly 30% Support,\\n' +
+         '50% Core, 20% Stretch.']
+      ],
+      quality: [
+        'Every row is tagged with tier and objective.',
+        'Support items are genuinely reachable at foundation level — not just easier wording.',
+        'Stretch items require synthesis, not just extra arithmetic.',
+        'At least one objective is probed at all three tiers.'
+      ],
+      checks: [
+        'The tier split is near 30/50/20.',
+        'No objective id appears with only one tier.'
+      ]
     }
+
   },
 
   promptPack(level, topic, count, klass, extra) {
@@ -2081,7 +2731,7 @@ const CBT = {
     const subjects = extra.subjects || subject;
     const n = Number(count) || 20;
     const key = String(level || '').toLowerCase();
-    const isMulti = (key === 'multi_subject' || key === 'multisubject' || key === 'multi_link_multi_subject' || key === 'multi_upload_multi_subject');
+    const isMulti = (key === 'multi_subject' || key === 'multisubject' || key === 'multi_link_multi_subject' || key === 'multi_upload_multi_subject' || key === 'jamb_utme' || key === 'ncee_common_entrance');
     const fname = isMulti ? 'multi-subject-paper' : (topic || 'questions').toString().toLowerCase()
       .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'questions';
 
@@ -2128,7 +2778,7 @@ const CBT = {
       'Type counts match the distribution and sum to ' + n + '.',
       'Every JSON cell has inner quotes doubled ("") and the whole cell quoted.',
       'Every objective row has a non-empty, unambiguous key in Col6.',
-      (key === 'multi_subject' || key === 'multisubject' ? 'Col17 specifies the ACTUAL subject for that row.' : 'Col17 is the subject on every row.'),
+      (isMulti ? 'Col17 specifies the ACTUAL subject for that row.' : 'Col17 is the subject on every row.'),
       /* V39 item 6 — the explanation standard is only real if it is checked. */
       'EVERY row\'s Col7 contains all four moves: verdict in words, numbered',
       '   reasoning, a named misconception for EACH wrong option, and a takeaway.',
@@ -2166,7 +2816,7 @@ rule + '\nOUTPUT CONTRACT — READ TWICE. THIS IS THE MOST IMPORTANT PART.\n' + 
 '4. Wrap EVERY field in double quotes. Escape any inner double quote by\n' +
 '   doubling it (""). This is what lets JSON live inside a CSV cell.\n\n' +
 '5. Use correct UTF-8 for scientific notation: H\u2082O, CO\u2082, \u03c0, \u03a9, \u2264, \u2265, \u00b0C.\n\n' +
-'6. "Section" (Col17) must ' + (key === 'multi_subject' || key === 'multisubject' ? 'contain the EXACT subject name for that specific row (e.g. Mathematics or English).' : 'be exactly: ' + subject) + '\n\n' +
+'6. "Section" (Col17) must ' + (isMulti ? 'contain the EXACT subject name for that specific row (e.g. Mathematics or English).' : 'be exactly: ' + subject) + '\n\n' +
 '7. Never leave "CorrectAnswer" empty on an objective item.\n\n' +
 '8. Any media must be a public https, Google Drive or YouTube LINK. This\n' +
 '   platform NEVER accepts file uploads — links only.\n\n' +
