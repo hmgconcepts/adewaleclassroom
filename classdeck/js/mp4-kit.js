@@ -389,6 +389,126 @@
   }
 
   /* ---------------- 3. WEBCODECS TRANSCODE (WebM -> universal MP4) -------- */
+
+  /* decode one keyframe: decodability proof + the file's real dimensions */
+  function decodeFirstFrame(codec, sample) {
+    return new Promise((resolve) => {
+      let settled = false;
+      let dec = null;
+      const done = (v) => {
+        if (settled) return;
+        settled = true;
+        try { if (dec) dec.close(); } catch (e) {}
+        resolve(v);
+      };
+      try {
+        dec = new window.VideoDecoder({
+          output: (frame) => {
+            const w = frame.displayWidth || frame.codedWidth, h = frame.displayHeight || frame.codedHeight;
+            frame.close();
+            done({ ok: true, width: w, height: h });
+          },
+          error: (e) => done({ ok: false, reason: e && e.message ? e.message : String(e) })
+        });
+        dec.configure({ codec: codec });
+        dec.decode(new window.EncodedVideoChunk({ type: "key", timestamp: 0, data: sample.data }));
+        dec.flush().then(
+          () => done({ ok: false, reason: "the decoder produced no frame" }),
+          (e) => done({ ok: false, reason: e && e.message ? e.message : String(e) }));
+        setTimeout(() => done({ ok: false, reason: "decoding timed out" }), 15000);
+      } catch (e) {
+        done({ ok: false, reason: e && e.message ? e.message : String(e) });
+      }
+    });
+  }
+
+  /* ---- repair-panel diagnostics: honest per-track facts about a recording */
+  function analyzeWebm(buf) {
+    const demux = window.WebMCues.extract(buf);
+    const tScale = demux.timecodeScale;
+    const tracks = [];
+    let durationSec = 0;
+    for (const tr of demux.tracks) {
+      const arr = demux.samples.get(tr.trackNumber) || [];
+      let maxTs = 0;
+      for (const sx of arr) if (sx.ts > maxTs) maxTs = sx.ts;
+      const spanSec = maxTs * tScale / 1e9;
+      if (spanSec > durationSec) durationSec = spanSec;
+      /* the largest gap between consecutive frames — a backgrounded-tab
+         recording shows a HUGE video gap while its audio keeps flowing */
+      let maxGapSec = 0;
+      for (let i = 1; i < arr.length; i++) {
+        const gap = (arr[i].ts - arr[i - 1].ts) * tScale / 1e9;
+        if (gap > maxGapSec) maxGapSec = gap;
+      }
+      tracks.push({ type: tr.type, codec: tr.codec, frames: arr.length,
+                    keyframes: arr.reduce((a, sx) => a + (sx.key ? 1 : 0), 0),
+                    spanSec: spanSec, maxGapSec: maxGapSec });
+    }
+    const v = tracks.find((t) => t.type === 1);
+    const a = tracks.find((t) => t.type === 2);
+    let verdict = "ok";
+    if (!v) verdict = "no-video-track";
+    else if (v.frames === 0) verdict = "empty-video";
+    else {
+      /* a backgrounded-tab recording: the video frames stop early (or gap)
+         while the audio keeps flowing to the end of the lesson */
+      const audioLeadSec = a && a.spanSec > v.spanSec ? a.spanSec - v.spanSec : 0;
+      if (v.maxGapSec > 3 || audioLeadSec > 2 || (v.spanSec > 5 && v.frames / v.spanSec < 2)) verdict = "sparse-video";
+    }
+    return { tracks: tracks, durationSec: durationSec, verdict: verdict };
+  }
+
+  /* ---- visual proof for the teacher: the recording's first decoded frame.
+     Returns a JPEG data URL plus a solid-colour test - the "blank coloured
+     screen" signature of a recording made with the tab in the background. */
+  async function firstFramePreview(buf, maxW) {
+    try {
+      const demux = window.WebMCues.extract(buf);
+      const vTrack = demux.tracks.find((t) => t.type === 1);
+      if (!vTrack) return { ok: false, reason: "no video track" };
+      const arr = demux.samples.get(vTrack.trackNumber) || [];
+      const sx = arr.find((x) => x.key) || arr[0];
+      if (!sx) return { ok: false, reason: "no video frames" };
+      let codec = vTrack.codec === "V_VP8" ? "vp8" : vTrack.codec === "V_VP9" ? "vp09.00.10.08" : null;
+      if (!codec) return { ok: false, reason: "codec " + vTrack.codec + " cannot be previewed" };
+      const fr = await decodeFirstFrame(codec, sx);
+      if (!fr.ok) return { ok: false, reason: fr.reason };
+      const got = await new Promise((resolve) => {
+        let settled2 = false;
+        let dec2 = null;
+        const done2 = (v) => { if (settled2) return; settled2 = true; try { if (dec2) dec2.close(); } catch (e) {} resolve(v); };
+        try {
+          dec2 = new window.VideoDecoder({
+            output: (frame) => done2({ frame: frame }),
+            error: (e) => done2({ err: e && e.message ? e.message : String(e) })
+          });
+          dec2.configure({ codec: codec });
+          dec2.decode(new window.EncodedVideoChunk({ type: "key", timestamp: 0, data: sx.data }));
+          setTimeout(() => done2({ err: "timeout" }), 15000);
+        } catch (e) { done2({ err: e && e.message ? e.message : String(e) }); }
+      });
+      if (!got || got.err || !got.frame) return { ok: false, reason: got && got.err ? got.err : "decode failed" };
+      const vf = got.frame;
+      const w = vf.displayWidth || vf.codedWidth, h = vf.displayHeight || vf.codedHeight;
+      const cw = Math.min(maxW || 320, w), ch = Math.max(1, Math.round(h * cw / w));
+      const cv = document.createElement("canvas");
+      cv.width = cw; cv.height = ch;
+      const c2d = cv.getContext("2d");
+      c2d.drawImage(vf, 0, 0, cw, ch);
+      vf.close();
+      const im = c2d.getImageData(0, 0, cw, ch).data;
+      let solid = true;
+      const r0 = im[0], g0 = im[1], b0 = im[2];
+      for (let i = 4; i < im.length; i += 4) {
+        if (Math.abs(im[i] - r0) > 6 || Math.abs(im[i + 1] - g0) > 6 || Math.abs(im[i + 2] - b0) > 6) { solid = false; break; }
+      }
+      return { ok: true, dataUrl: cv.toDataURL("image/jpeg", 0.72), width: w, height: h, solid: solid };
+    } catch (e) {
+      return { ok: false, reason: e && e.message ? e.message : String(e) };
+    }
+  }
+
   function canTranscode() {
     const g = (typeof window !== "undefined") ? window : globalThis;
     if (!g.VideoDecoder || !g.VideoEncoder) return { ok: false, reason: "This browser cannot convert videos (WebCodecs missing). Use Chrome or Edge on your laptop." };
@@ -403,23 +523,63 @@
     const sleep0 = () => new Promise((r) => setTimeout(r, 0));
 
     tell("demux", 0.02);
-    const demux = window.WebMCues.extract(buf);
-    if (!demux) throw new Error("Could not read this recording as WebM/Matroska.");
+    /* r22-universal-mp4-2: extract() now throws DESCRIPTIVE errors (the
+       r22-repair-5 build returned an anonymous null here, which the teacher
+       saw as "Could not read this recording as WebM/Matroska" on a file VLC
+       played fine — the parser simply could not read the finite-size Segment
+       our own repair writes). Surface the real reason verbatim. */
+    let demux = null;
+    try {
+      demux = window.WebMCues.extract(buf);
+    } catch (e) {
+      throw new Error("Could not read this recording as WebM/Matroska: " + (e && e.message ? e.message : e) + ".");
+    }
     const vTrack = demux.tracks.find((t) => t.type === 1);
     const aTrack = demux.tracks.find((t) => t.type === 2);
-    if (!vTrack) throw new Error("This recording has no video track.");
+    if (!vTrack && !aTrack) throw new Error("This recording has no video or audio tracks at all.");
+    if (!vTrack) throw new Error("This recording has audio only - there is no video track to convert. The repaired WebM (with its audio) stays safe.");
     const vSamples = demux.samples.get(vTrack.trackNumber) || [];
-    if (!vSamples.length) throw new Error("This recording has no video frames.");
-    const vCodec = vTrack.codec === "V_VP8" ? "vp8" : "vp09.00.10.08";
     const scale2us = demux.timecodeScale / 1000;      /* timecode units -> microseconds */
+    const fmtDur = (sec) => { const x = Math.round(sec); return Math.floor(x / 60) + ":" + String(x % 60).padStart(2, "0"); };
+    let videoNote = "";
+    if (!vSamples.length) {
+      /* r22-universal-mp4-2, field report: "video is a blank coloured screen
+         and I can hear the tutor" - a recording whose video track never got
+         frames (the tab was in the background; the mic kept working). Say so
+         honestly instead of a cryptic failure. */
+      throw new Error("This recording's video track has NO frames at all - the picture was never captured (the microphone kept working, which is why you can hear the lesson). The MP4 conversion cannot re-create picture that was never recorded; the repaired WebM stays safe.");
+    }
+    const spanSec = (vSamples[vSamples.length - 1].ts * scale2us) / 1e6;
+    if (spanSec > 5 && vSamples.length / spanSec < 2) {
+      videoNote = "This recording has only " + vSamples.length + " video frames over " + fmtDur(spanSec) + " - the lesson was recorded while the browser tab was in the background, so the picture froze while the audio continued. The MP4 will carry those frames plus the full audio. (New recordings no longer freeze: they keep drawing while the tab is in the background.)";
+    }
+    /* codec + profile: VP9 profile lives in CodecPrivate when present */
+    let vCodec = null;
+    if (vTrack.codec === "V_VP8") vCodec = "vp8";
+    else if (vTrack.codec === "V_VP9") {
+      let profile = 0;
+      if (vTrack.codecPrivate && vTrack.codecPrivate.length >= 1) profile = (vTrack.codecPrivate[0] >> 4) & 0x0F;
+      vCodec = "vp09.0" + profile + ".10.08";
+    }
+    if (!vCodec) throw new Error("This recording's video codec (" + (vTrack.codec || "unknown") + ") cannot be converted to universal MP4 by this tool. The repaired WebM still plays in VLC and Chrome.");
 
-    /* pick an H.264 encode profile the device actually supports */
+    /* decode the FIRST TRUE KEYFRAME before anything else: proves the video
+       decodes on this device and gives the encoder the file's REAL
+       dimensions (the previous build hardcoded 1280x720 - wrong for every
+       other size). Leading delta frames (a recording that starts mid-GOP,
+       e.g. after a crash) are skipped - no decoder can start on them. */
     tell("config", 0.05);
-    const probeW = 1280, probeH = 720;
+    const firstKeyIdx = Math.max(0, vSamples.findIndex((sx) => sx.key));
+    const probe = await decodeFirstFrame(vCodec, vSamples[firstKeyIdx]);
+    if (!probe.ok) throw new Error("The video track could not be decoded on this device (" + probe.reason + "). The repaired WebM stays safe.");
+    const W = (probe.width || 1280) & ~1, H = (probe.height || 720) & ~1;
+    if (firstKeyIdx > 0) videoNote += (videoNote ? " " : "") + "(" + firstKeyIdx + " frames before the first keyframe could not be decoded and were skipped.)";
+
+    /* pick an H.264 encode profile the device actually supports (at the file's real size) */
     let encCodec = null;
     for (const c of ["avc1.42E01E", "avc1.4D401F", "avc1.640028"]) {
       try {
-        const s = await window.VideoEncoder.isConfigSupported({ codec: c, width: probeW, height: probeH, bitrate: 2_500_000, framerate: 30 });
+        const s = await window.VideoEncoder.isConfigSupported({ codec: c, width: W, height: H, bitrate: 2_500_000, framerate: 30 });
         if (s && s.supported) { encCodec = c; break; }
       } catch (e) {}
     }
@@ -450,10 +610,10 @@
       error: (e) => { vErr = e; }
     });
     dec.configure({ codec: vCodec });
-    enc.configure({ codec: encCodec, width: 1280, height: 720, bitrate: 2_500_000, framerate: 30, latencyMode: "quality" });
+    enc.configure({ codec: encCodec, width: W, height: H, bitrate: 2_500_000, framerate: 30, latencyMode: "quality" });
 
     let lastKeyUs = -Infinity;
-    for (let i = 0; i < vSamples.length; i++) {
+    for (let i = firstKeyIdx; i < vSamples.length; i++) {
       if (vErr) throw new Error("Video decode failed: " + (vErr.message || vErr));
       const s = vSamples[i];
       const tsUs = Math.round(s.ts * scale2us);
@@ -527,19 +687,35 @@
     tell("mux", 0.90);
     const mux = Muxer();
     if (!avcC) throw new Error("The encoder did not report its H.264 configuration.");
-    mux.setVideo(avcC, firstW || 1280, firstH || 720);
+    mux.setVideo(avcC, W, H);
     const vBase = vChunks.length ? vChunks[0].ts : 0;
     const V_US = 90000 / 1000000;                        /* microseconds -> 90kHz units */
-    for (const c of vChunks) mux.addVideoSample(c.data, Math.max(1, Math.round((c.dur || 33333) * V_US)), c.key, Math.round((c.ts - vBase) * V_US));
+    /* r22-universal-mp4-2: durations come from the REAL timestamp deltas,
+       not the encoder's default 33.3ms — recordings are variable-frame-rate
+       (a backgrounded tab draws ~1fps via the watchdog; the intro drops
+       frames), and summed default durations would compress a whole lesson
+       into a fraction of its length. Caught by the ffmpeg judge: 150 frames
+       spanning 5.97s produced a 5.0s MP4 before this fix. */
+    for (let i = 0; i < vChunks.length; i++) {
+      const c = vChunks[i];
+      const nx = vChunks[i + 1];
+      const durUs = nx ? Math.max(1, nx.ts - c.ts) : (c.dur || 33333);
+      mux.addVideoSample(c.data, Math.max(1, Math.round(durUs * V_US)), c.key, Math.round((c.ts - vBase) * V_US));
+    }
     if (aAsc && aChunks.length) {
       mux.setAudio(aAsc, aChannels, 48000);
       const aBase = aChunks[0].ts;
       const A_US = 48000 / 1000000;                      /* microseconds -> 48kHz units */
-      for (const c of aChunks) mux.addAudioSample(c.data, Math.max(1, Math.round((c.dur || 21000) * A_US)), Math.round((c.ts - aBase) * A_US));
+      for (let i = 0; i < aChunks.length; i++) {
+        const c = aChunks[i];
+        const nx = aChunks[i + 1];
+        const durUs = nx ? Math.max(1, nx.ts - c.ts) : (c.dur || 21000);
+        mux.addAudioSample(c.data, Math.max(1, Math.round(durUs * A_US)), Math.round((c.ts - aBase) * A_US));
+      }
     }
     const out = mux.finalize();
     tell("done", 1);
-    return { bytes: out.bytes, durationSec: out.durationSec, videoSamples: out.videoSamples, audioSamples: out.audioSamples, audioNote: audioNote || "" };
+    return { bytes: out.bytes, durationSec: out.durationSec, videoSamples: out.videoSamples, audioSamples: out.audioSamples, audioNote: audioNote || "", videoNote: videoNote || "" };
   }
 
   /* ---------------- export ---------------- */
@@ -549,6 +725,8 @@
     Muxer: Muxer,
     transcodeToMp4: transcodeToMp4,
     canTranscode: canTranscode,
-    version: "r22-universal-mp4-1"
+    analyzeWebm: analyzeWebm,
+    firstFramePreview: firstFramePreview,
+    version: "r22-universal-mp4-2"
   };
 })();

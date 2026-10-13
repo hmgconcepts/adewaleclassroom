@@ -3016,11 +3016,39 @@ function drawRecordingFrame() {
 }
 
 let lastRecFrame = 0;
+let recLastDrawAt = 0;             /* r22-repair-6: watchdog bookkeeping */
+let recWatchdog = null;
 function recLoop(ts) {
   recRaf = requestAnimationFrame(recLoop);
   if (ts - lastRecFrame < 1000 / COMP.fps) return;
   lastRecFrame = ts;
   try { drawRecordingFrame(); } catch {}
+  recLastDrawAt = performance.now();
+}
+/* r22-repair-6 (the blank-video field report): requestAnimationFrame STOPS
+   firing when the teacher's tab is in the background or its window is
+   occluded. The recording canvas then froze at its last frame (or frame 1,
+   when the tab was backgrounded during the intro countdown) — the video
+   track went silent while the microphone kept working, producing exactly
+   the reported file: "the video is not showing anything but a blank
+   coloured screen and I can hear the tutor", with working audio and seeks.
+   Verified against a real Chromium recording: a frozen draw loop yields ~1
+   video frame per chunk while audio continues at full rate. The watchdog
+   keeps drawing whenever rAF starves — Chrome throttles background timers
+   to about one per second, which is slow, but the picture stays ALIVE and
+   roughly current for the whole lesson instead of freezing forever. */
+function startRecWatchdog() {
+  if (recWatchdog) return;
+  recLastDrawAt = performance.now();
+  recWatchdog = setInterval(() => {
+    if (performance.now() - recLastDrawAt > 500) {    /* rAF starving = background/occluded tab */
+      try { drawRecordingFrame(); } catch {}
+      recLastDrawAt = performance.now();
+    }
+  }, 250);
+}
+function stopRecWatchdog() {
+  if (recWatchdog) { clearInterval(recWatchdog); recWatchdog = null; }
 }
 
 /* r21 (item 3): the player-compatibility repair pipeline. WebM from
@@ -3189,12 +3217,17 @@ async function convertRepairedToMp4() {
       (secs ? "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>Lesson length</td><td>" + mm + ":" + ss + "</td></tr>" : "") +
       "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>Format</td><td>H.264 + AAC MP4 — the format every player opens (" + res.videoSamples + " video frames" + (res.audioSamples ? ", " + res.audioSamples + " audio frames" : "") + ")</td></tr></table>" +
       (res.audioNote ? "<p style='margin:8px 0 0;color:var(--warn,#b45309)'>\u26A0 " + escapeHtml(res.audioNote) + "</p>" : "") +
+      (res.videoNote ? "<p style='margin:8px 0 0;color:var(--warn,#b45309)'>\u26A0 " + escapeHtml(res.videoNote) + "</p>" : "") +
       "<p style='margin:8px 0 0'>Click any timestamp in ANY player — this file jumps instead of stopping.</p>",
       blob, fname);
     downloadBlob(blob, fname);
     toast("\u2705 Universal MP4 saved (" + fname + ").", "ok", 9000);
   } catch (e) {
-    repairModalError("The MP4 conversion failed: " + (e && e.message ? e.message : "unknown error") + ".<br><br>The repaired WEBM file is safe and already saved — it plays in VLC and Chrome.");
+    /* r22-repair-6: transcodeToMp4 now throws SPECIFIC, actionable reasons
+       (the r22-repair-5 message was a generic "Could not read this recording
+       as WebM/Matroska" that hid the real parser state). Show it verbatim. */
+    const why = String((e && e.message) || "unknown error").replace(/\.+$/, "");
+    repairModalError("The MP4 conversion failed: " + escapeHtml(why) + ".<br><br>The repaired WEBM file is safe and already saved — it plays in VLC and Chrome.");
   } finally {
     _repairConverting = false;
     syncRepairMp4Btn();
@@ -3240,12 +3273,48 @@ async function repairExistingRecording(file) {
     const secs = Math.round((r.durationMs || 0) / 1000);
     const mm = Math.floor(secs / 60), ss = String(secs % 60).padStart(2, "0");
     const wasMp4Named = /\.mp4$/i.test(file.name || "");
+    /* r22-repair-6: honest per-track diagnostics + a VISUAL proof of what the
+       recording contains. The blank-video field report ("a blank coloured
+       screen and I can hear the tutor") is a recording whose video track
+       froze at record time (backgrounded tab) — the frame count and the
+       first-frame picture tell the teacher exactly that, instead of leaving
+       them to wonder whether the repair broke it. */
+    let diagHtml = "";
+    try {
+      if (window.MP4Kit && MP4Kit.analyzeWebm) {
+        const an = MP4Kit.analyzeWebm(r.bytes);
+        const v = an.tracks.find((t) => t.type === 1);
+        const a = an.tracks.find((t) => t.type === 2);
+        let vLine;
+        if (!v) vLine = "<span style='color:var(--warn,#b45309)'>no video track at all</span>";
+        else if (v.frames === 0) vLine = "<span style='color:var(--warn,#b45309)'>⚠ 0 video frames — the picture was never captured</span>";
+        else if (v.maxGapSec > 3 || (a && a.spanSec > v.spanSec + 2) || (v.spanSec > 5 && v.frames / v.spanSec < 2)) {
+          const vEnd = Math.floor(v.spanSec / 60) + ":" + String(Math.round(v.spanSec % 60)).padStart(2, "0");
+          vLine = "<span style='color:var(--warn,#b45309)'>⚠ " + v.frames + " frames, and the video stops at " + vEnd + " while the audio runs the full " + mm + ":" + ss + " — this lesson was recorded with the ClassDeck tab in the background, so the picture froze while the microphone kept working. The video was already blank in the original recording itself — no repair can re-create picture that was never captured. (New recordings no longer freeze: they keep drawing while backgrounded.)</span>";
+        }
+        else vLine = v.frames + " frames (" + v.keyframes + " keyframes)";
+        const aLine = a ? a.frames + " audio packets" : "no audio track";
+        diagHtml = "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>Inside the file</td><td>Video: " + vLine + "<br>Audio: " + aLine + "</td></tr>";
+        if (window.VideoDecoder && MP4Kit.firstFramePreview) {
+          const pv = await MP4Kit.firstFramePreview(r.bytes, 288);
+          if (pv && pv.ok && pv.dataUrl) {
+            diagHtml += "<tr><td style='padding:6px 10px 3px 0;color:var(--text-dim);vertical-align:top'>First frame</td><td><img src=\"" + pv.dataUrl + "\" alt=\"first frame of the recording\" style=\"max-width:288px;border:1px solid var(--border,#d7dced);border-radius:6px;display:block\">" +
+              (pv.solid ? "<span style='color:var(--warn,#b45309)'>⚠ the picture is one flat colour — the video was blank at record time.</span>" : "") + "</td></tr>";
+          } else if (pv && pv.reason) {
+            diagHtml += "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>First frame</td><td style='color:var(--text-dim)'>preview unavailable in this browser (" + escapeHtml(pv.reason) + ")</td></tr>";
+          }
+        }
+      }
+    } catch (e2) {
+      diagHtml = "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>Diagnostics</td><td style='color:var(--text-dim)'>unavailable (" + escapeHtml(e2 && e2.message ? e2.message : "unknown") + ")</td></tr>";
+    }
     let summary = "<div style='color:var(--ok,#15803d);font-weight:700'>✅ Repaired copy ready — a NEW file, separate from the old one</div>" +
       "<table style='margin-top:8px;font-size:13px;border-collapse:collapse'>" +
       "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>New file</td><td><b>" + escapeHtml(fname) + "</b> (" + sizeMB + " MB)</td></tr>" +
       "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>Original</td><td>" + escapeHtml(file.name) + " (" + mb + " MB) — <b>untouched</b></td></tr>" +
       (r.durationMs ? "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>Lesson length</td><td>" + mm + ":" + ss + "</td></tr>" : "") +
-      "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>Seek points</td><td>" + r.cuePoints + " — click any timestamp in VLC / Windows Media Player and it jumps there</td></tr></table>";
+      "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>Seek points</td><td>" + r.cuePoints + " — click any timestamp in VLC or Chrome and it jumps there</td></tr>" +
+      diagHtml + "</table>";
     if (r.alreadyFixed) {
       summary = "<div style='color:var(--ok,#15803d);font-weight:700'>✅ This recording already carries a complete seek index</div>" +
         "<p style='margin:6px 0'>Nothing needed repairing — but a fresh copy is generated anyway so this flow always ends with a file:</p>" + summary;
@@ -3253,7 +3322,7 @@ async function repairExistingRecording(file) {
     if (wasMp4Named) {
       summary += "<p style='margin:8px 0 0;color:var(--warn,#b45309)'>ℹ This file was <b>WebM video saved with an .mp4 name</b> (the old ClassDeck behaviour) — that mismatch alone breaks seeking in laptop players. The repaired copy uses the correct <b>.webm</b> extension.</p>";
     }
-    summary += "<p style='margin:8px 0 0'>Keep the new file; play the NEW file, not the old one. The old file stays exactly as it was on your disk.</p>";
+    summary += "<p style='margin:8px 0 0'>Keep the new file; play the NEW file, not the old one. The old file stays exactly as it was on your disk. WebM plays in VLC and Chrome; for Windows\u2019 built-in players use the \uD83C\uDFAC button to make the universal MP4.</p>";
     repairModalProgress(1, "Done");
     repairModalDone(summary, blob, fname);
     downloadBlob(blob, fname);          /* best-effort auto-download; the Save button is the guaranteed path */
@@ -3278,6 +3347,7 @@ async function startRecording() {
   recCtx = recCanvas.getContext("2d");
   drawRecordingFrame();
   recRaf = requestAnimationFrame(recLoop);
+  startRecWatchdog();               /* r22-repair-6: keep drawing in background tabs */
   recStream = new MediaStream(recCanvas.captureStream(COMP.fps).getVideoTracks());
   await ensureMic(true);
   if (micStream) micStream.getAudioTracks().forEach((t) => recStream.addTrack(t));
@@ -3289,11 +3359,16 @@ async function startRecording() {
      (js/mp4-kit.js) that patches the real durations in — validated with
      ffprobe/ffmpeg in the QA battery. Devices that cannot record MP4
      (Firefox, some Linux/Android) fall back to WebM + the full repair. */
+  /* r22-repair-6: H.264+AAC ONLY for the MP4 path. "avc1,opus" and bare
+     "video/mp4" were removed: they ARE supported by some browsers (verified
+     live on Debian Chromium 154, where avc1,opus records but AAC cannot) and
+     silently produce Opus-in-MP4 or VP9-in-MP4 files — the exact
+     half-universal format Windows' built-in players reject, resurrecting the
+     0xc00d3e8c class of failure. Devices without H.264+AAC get the WebM
+     fallback + repair + the 🎬 conversion, which is fully understood. */
   const candidates = [
     "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
     "video/mp4;codecs=avc1,mp4a.40.2",
-    "video/mp4;codecs=avc1,opus",
-    "video/mp4",
     "video/webm;codecs=vp9,opus",
     "video/webm;codecs=vp8,opus",
     "video/webm"
@@ -3362,7 +3437,7 @@ async function startRecording() {
                 "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>File</td><td><b>" + escapeHtml(fname) + "</b> (" + sizeMB + " MB)</td></tr>" +
                 (res.durationMs ? "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>Lesson length</td><td>" + mm + ":" + ss + "</td></tr>" : "") +
                 "<tr><td style='padding:3px 10px 3px 0;color:var(--text-dim)'>Seek points</td><td>" + (res.alreadyFixed ? "already complete" : res.cuePoints) + "</td></tr></table>" +
-                "<p style='margin:8px 0 0'>Play it in VLC / Windows Media Player and click any timestamp — it jumps there instead of stopping.</p>",
+                "<p style='margin:8px 0 0'>Play it in VLC or Chrome and click any timestamp — it jumps there instead of stopping. (Windows\u2019 built-in players don\u2019t open WebM at all — that\u2019s what the \uD83C\uDFAC \u201Cmake a universal MP4\u201D step is for.)</p>",
                 res.blob, fname);
               toast("\u2705 Recording saved (" + (res.durationMs ? mm + ":" + ss + ", " : "") + (res.alreadyFixed ? "index already complete" : res.cuePoints + " seek points") + ").", "ok", 9000);
             } else {
@@ -3415,6 +3490,7 @@ async function startRecording() {
         }
       }
       stopKeepAlive();
+      stopRecWatchdog();            /* r22-repair-6 */
       if (window.CDCrashSafe && window.CDCrashSafe.clearSession && window.HMG_REC_SESSION) {
         try { CDCrashSafe.clearSession(window.HMG_REC_SESSION.sessionId); } catch {}
       }
@@ -3449,6 +3525,7 @@ async function startRecording() {
     recorder = null;
     try { recStream.getVideoTracks().forEach((t) => t.stop()); } catch {}
     if (recRaf) { cancelAnimationFrame(recRaf); recRaf = null; }
+    stopRecWatchdog();              /* r22-repair-6 */
     recStream = null; recCanvas = null; recCtx = null;
     stopCompositeLoopIfUnused();
     releaseTeacherMicIfUnused();
@@ -3469,6 +3546,7 @@ function stopRecording() {
   } catch {}
   try { if (recStream) recStream.getVideoTracks().forEach((t) => t.stop()); } catch {}
   if (recRaf) { cancelAnimationFrame(recRaf); recRaf = null; }
+  stopRecWatchdog();                /* r22-repair-6 */
   recorder = null;
   recStream = null;
   stopCompositeLoopIfUnused();
