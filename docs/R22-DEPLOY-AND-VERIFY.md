@@ -148,3 +148,33 @@ progress report (read % → scan % → write %) and ALWAYS ends with a NEW
 `<original>-REPAIRED-<date>_<time>.webm` file — auto-downloaded AND
 available from a persistent 💾 Save button. Suites grew to 47 (webm) and
 169 (platform) checks accordingly.
+
+
+---
+
+## 7. Build 29 addendum (2026-10-12, the two field reports)
+
+Deploy exactly as §2 (same Vercel flow; full-site replace recommended as
+before). Changed since build 28: `classdeck/js/webm-cues.js`,
+`classdeck/js/mp4-kit.js`, `classdeck/js/teach.js` (the three engine
+files), `classdeck/sw.js`, `classdeck/version.json`, and the 11 deck HTML
+pages (asset refs only: `?v=65` → `?v=66`).
+
+**Verify in 60 seconds (in this order):**
+1. Hard-reload Teach → DevTools → Application → Service Workers shows
+   `hmg-classdeck-v15.1.0-r22-platform-5` activated.
+2. Settings → Repair: drop an OLD class recording → progress runs →
+   "Inside the file" row shows real frame/packet counts and the First
+   frame thumbnail appears (a real picture — if the recording itself was
+   blank-at-record-time it says so, with the freeze timestamp).
+3. Click 🎬 Also make a universal MP4 → a `.mp4` lands (on Windows
+   Chrome/Edge with audio; on codec-less Linux Chromium the panel says
+   plainly that AAC re-encode is unavailable there — the WebM stays
+   safe). The MP4 plays and seeks in Windows Media Player.
+4. Record 10 s, tab away for 5 s mid-recording, come back and stop: the
+   recording has picture throughout (the watchdog kept drawing while the
+   tab was hidden — slower frames, never a frozen blank).
+
+Root causes, reproduction and evidence: docs/R23-FIELD-REPORT-FIXES.md.
+Quality record: 34 suites × 1837 checks × both repos × 2 runs, 0
+failures, judged by ffprobe/ffmpeg against real Chromium 154 recordings.
