@@ -1,8 +1,8 @@
 {
   "version": "15.1.0",
-  "build": 29,
+  "build": 30,
   "channel": "stable",
-  "released": "2026-10-12",
+  "released": "2026-10-13",
   "features": [
     "custom-room-codes",
     "two-folder-generator",
@@ -120,6 +120,7 @@
     "15.1.0-universal-mp4-recordings",
     "15.1.0-mp4-duration-finisher",
     "15.1.0-webm-to-mp4-transcode",
-    "15.1.0-realchrome-repair-watchdog"
+    "15.1.0-realchrome-repair-watchdog",
+    "15.1.0-exam-replica-packs-engagement-kit"
   ]
 }

@@ -42,11 +42,11 @@
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"SoftwareApplication","name":"ADEWALE CLASSROOM DECK Tablet Social Live","applicationCategory":"EducationalApplication","operatingSystem":"Web","creator":{"@type":"Person","name":"Adewale Samson Adeagbo","url":"https://cssadewale.pages.dev"},"publisher":{"@type":"Organization","name":"ADEWALE CLASSROOM","url":"https://adewaleclassroom.pages.dev"},"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
 </script>
-<script src="js/config.js?v=66"></script>
-<script src="js/cloud-creds.js?v=66"></script>
-<script src="js/cloud-sync-boot.js?v=66"></script>
-<script src="js/portal-bridge.js?v=66"></script>
-<script src="js/common.js?v=66"></script>
+<script src="js/config.js?v=67"></script>
+<script src="js/cloud-creds.js?v=67"></script>
+<script src="js/cloud-sync-boot.js?v=67"></script>
+<script src="js/portal-bridge.js?v=67"></script>
+<script src="js/common.js?v=67"></script>
 </head>
 <body>
 <div class="wrap">
@@ -243,7 +243,11 @@
 </div>
 <script>
 "use strict";
-const $=(s,r=document)=>r.querySelector(s);
+/* r24 audit fix: this inline $ collided with common.js's top-level const $
+   (SyntaxError "Identifier '$' has already been declared") which killed this
+   whole script — openTeach, copyRelay, the first-run checklist and the plan
+   download were all dead on stream.html. common.js already provides the
+   identical $ (sel, root), so the local copy is simply removed. */
 const base=location.href.replace(/stream\.html.*$/,"");
 $("#openTeach").onclick=()=>window.open(base+"teach.html","_blank","noopener");
 $("#copyRelay").onclick=async()=>{const txt="https://YOUR-RELAY-DOMAIN/rtc/v1/whip/?app=live&stream=classdeck"; try{await navigator.clipboard.writeText(txt); alert("Copied: "+txt);}catch{prompt("Copy WHIP endpoint pattern",txt)}};

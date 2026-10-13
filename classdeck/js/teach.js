@@ -655,19 +655,55 @@ function initPdf(side, inst) {
   }
   inst.getAnnotCanvas = () => (annotOn && annotWb ? annotWb.canvas : null);
 
+  /* r24: full annotation kit — pen / highlighter / arrow / text / eraser /
+     undo + colours, on the same per-page overlay (so notes stay glued to the
+     page they were written on and ride the broadcast + the recording). The
+     highlighter draws translucently, exactly like a real highlighter pen —
+     the text underneath stays readable. */
+  let annotTool = "pen", annotColor = "#e02b2b";
+  function applyAnnotTool() {
+    if (!annotWb) return;
+    annotWb.setTool(annotTool);
+    annotWb.setColor(annotColor);
+    annotWb.setSize(annotTool === "highlight" ? 9 : annotTool === "eraser" ? 14 : 3);
+  }
+  el.querySelectorAll(".pdf-atool").forEach((b) => {
+    b.addEventListener("click", () => {
+      const t = b.dataset.atool;
+      el.querySelectorAll(".pdf-atool").forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+      if (t === "undo") { if (annotWb) annotWb.undo(); return; }
+      annotTool = t;
+      applyAnnotTool();
+    });
+  });
+  el.querySelectorAll(".pdf-acolor").forEach((b) => {
+    b.addEventListener("click", () => {
+      el.querySelectorAll(".pdf-acolor").forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+      annotColor = b.dataset.acolor;
+      if (annotTool === "eraser") annotTool = "pen";   /* picking a colour implies drawing */
+      applyAnnotTool();
+    });
+  });
   $(".pdf-annot", el).addEventListener("click", (e) => {
     if (!doc) { toast("Open a PDF first"); return; }
     annotOn = !annotOn;
     e.currentTarget.classList.toggle("active", annotOn);
     $(".pdf-annot-clear", el).classList.toggle("hide", !annotOn);
+    const toolsBar = $(".pdf-annot-tools", el);
+    if (toolsBar) toolsBar.classList.toggle("hide", !annotOn);
     annotStage.classList.toggle("armed", annotOn);
     if (annotOn && !annotWb) {
       annotWb = new Whiteboard(annotStage, { transparent: true, persist: false, color: "#e02b2b", size: 3 });
       annotWb._boundPdfPage = pageNum;
       annotPages[pageNum] = annotWb.pages;
+      applyAnnotTool();
     }
-    if (annotOn) { syncAnnotStage(); toast("✏ Annotating the PDF — drawings stay on this page. Tap again to scroll/zoom.", "ok", 4500); }
-    else toast("Annotation off — you can scroll/zoom again");
+    if (annotOn) {
+      syncAnnotStage();
+      toast("✏ Annotating — pen, highlighter, arrow, text; drawings stay on this page and students see them live. Tap ✏ again to scroll/zoom.", "ok", 5000);
+    } else toast("Annotation off — you can scroll/zoom again");
   });
   $(".pdf-annot-clear", el).addEventListener("click", () => {
     if (annotWb) { annotWb.clearPage(); toast("Annotations cleared on this page"); }
@@ -1137,6 +1173,278 @@ setQuality(Store.get("quality", "1280x720x8"));
 
 let lastComposite = 0;
 let _hbCounter = 0;
+
+/* ============================================================
+   r24 — THE TEACHER'S POINTER, VISIBLE IN COMPOSITE MODE
+   Field report: "In the composite broadcast mode students are not
+   able to see the cursors. Ensure students can see the cursor even
+   in composite broadcast mode because sometimes we may want to point
+   at something while teaching."
+
+   The composite canvas is the single video surface students watch
+   (and the recorder records), so the pointer is DRAWN INTO IT: a soft
+   amber cursor whenever the teacher moves over a pane (fades after
+   1.2 s of stillness), a bright laser dot + trail when laser mode is
+   on, and an expanding "look here" ring on every tap. Position is
+   stored as a FRACTION of the pane element, so the same fraction maps
+   onto the pane's rectangle in the composite at any quality/size.
+   ============================================================ */
+const castPointer = { side: null, fx: 0, fy: 0, t: 0, trail: [], flash: null };
+let laserOn = false;
+(function trackCastPointer() {
+  const panes = [["paneLeft", "L"], ["paneRight", "R"]];
+  panes.forEach(([id, side]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("pointermove", (e) => {
+      const r = el.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      castPointer.side = side;
+      castPointer.fx = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+      castPointer.fy = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
+      castPointer.t = performance.now();
+      if (laserOn && castPointer.trail.length < 64) castPointer.trail.push({ side, fx: castPointer.fx, fy: castPointer.fy, t: castPointer.t });
+    }, { passive: true });
+    el.addEventListener("pointerleave", () => { if (castPointer.side === side) castPointer.t = 0; }, { passive: true });
+    el.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      const r = el.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      castPointer.side = side;
+      castPointer.fx = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+      castPointer.fy = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
+      castPointer.t = performance.now();
+      castPointer.flash = { side, fx: castPointer.fx, fy: castPointer.fy, t: performance.now() };
+    }, { passive: true });
+  });
+})();
+
+/* fraction → composite pixel, mirroring the pane layout math in drawComposite */
+function castPointerXY(side, fx, fy) {
+  const W = COMP.w, H = COMP.h, headH = 34;
+  const showL = layoutMode !== "right";
+  const showR = layoutMode !== "left";
+  if (showL && showR) {
+    const lw = Math.round(W * splitRatio);
+    const isL = side === "L";
+    const x0 = isL ? 0 : lw + 2;
+    const w = isL ? lw - 2 : W - lw - 2;
+    return { x: x0 + fx * w, y: headH + fy * (H - headH) };
+  }
+  return { x: fx * W, y: headH + fy * (H - headH) };
+}
+
+/* ============================================================
+   r24 — ENGAGEMENT KIT (picker wheel / dice / confetti)
+   Drawn into the same composite canvas, so students see them live
+   and they land in the recording. Zero new media paths.
+   ============================================================ */
+const engagement = { picker: null, dice: null, confetti: [] };
+
+function engagementPickerStart() {
+  let names = [];
+  try {
+    if (room && room.students && room.students.size) {
+      names = [...room.students.values()].map((st) => String((st && st.name) || "").trim()).filter(Boolean);
+    }
+  } catch (e) {}
+  if (names.length < 2) { toast("Go live with at least 2 students to spin the picker — it picks from whoever is present.", "err", 5000); return; }
+  engagement.picker = { names, start: performance.now(), spin: 3600 + Math.random() * 900,
+                        chosen: names[Math.floor(Math.random() * names.length)], announced: false };
+  toast("🎪 Spinning the name wheel — the class sees it on the broadcast.", "ok", 4000);
+}
+function engagementDiceRoll() {
+  engagement.dice = { start: performance.now(), roll: 1900 + Math.random() * 500,
+                      a: 1 + Math.floor(Math.random() * 6), b: 1 + Math.floor(Math.random() * 6) };
+  toast("🎲 Rolling the dice for the class…", "ok", 3000);
+}
+function engagementConfettiBurst() {
+  const now = performance.now();
+  const spawn = (x, y, n, dir) => {
+    for (let i = 0; i < n; i++) {
+      const ang = (-Math.PI / 2) + dir + (Math.random() - 0.5) * 1.1;
+      const sp = 260 + Math.random() * 420;
+      engagement.confetti.push({
+        t: now, x, y,
+        vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp,
+        w: 6 + Math.random() * 7, h: 4 + Math.random() * 5,
+        rot: Math.random() * Math.PI, vr: (Math.random() - 0.5) * 9,
+        color: ["#e02b2b", "#2563eb", "#16a34a", "#f59e0b", "#a855f7", "#ec4899", "#0ea5e9"][Math.floor(Math.random() * 7)]
+      });
+    }
+  };
+  spawn(COMP.w * 0.18, COMP.h * 0.92, 70, -0.5);
+  spawn(COMP.w * 0.82, COMP.h * 0.92, 70, 0.5);
+  spawn(COMP.w * 0.5, COMP.h * 0.55, 60, 0);
+  if (engagement.confetti.length > 500) engagement.confetti.splice(0, engagement.confetti.length - 500);
+}
+
+/* dice pips layout (1..6) — pixel offsets in a 1-unit face */
+const DICE_PIPS = { 1: [[0, 0]], 2: [[-1, -1], [1, 1]], 3: [[-1, -1], [0, 0], [1, 1]],
+                    4: [[-1, -1], [1, -1], [-1, 1], [1, 1]],
+                    5: [[-1, -1], [1, -1], [0, 0], [-1, 1], [1, 1]],
+                    6: [[-1, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [1, 1]] };
+function drawEngagement(ctx, W, H, now) {
+  /* ---- confetti (also fired by the picker when it lands) ---- */
+  if (engagement.confetti.length) {
+    const keep = [];
+    for (const c of engagement.confetti) {
+      const el = (now - c.t) / 1000;
+      if (el > 4) continue;
+      const x = c.x + c.vx * el;
+      const y = c.y + c.vy * el + 490 * el * el;      /* gravity */
+      if (y > H + 40) continue;
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(c.rot + c.vr * el);
+      ctx.globalAlpha = Math.max(0, 1 - el / 4);
+      ctx.fillStyle = c.color;
+      ctx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h * (0.4 + Math.abs(Math.cos(el * 6 + c.rot))));
+      ctx.restore();
+      keep.push(c);
+    }
+    engagement.confetti = keep;
+  }
+  /* ---- random picker wheel ---- */
+  const p = engagement.picker;
+  if (p) {
+    const el = now - p.start;
+    if (el > p.spin + 4600) { engagement.picker = null; }
+    else {
+      const cx = W / 2, cy = H / 2, pw = Math.min(W * 0.72, 760), ph = 210;
+      ctx.save();
+      ctx.fillStyle = "rgba(16,20,43,.92)";
+      ctx.strokeStyle = "#f59e0b"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.roundRect(cx - pw / 2, cy - ph / 2, pw, ph, 18); ctx.fill(); ctx.stroke();
+      const spinning = el < p.spin;
+      /* ease-out: name changes fast then slows — the wheel feel */
+      const prog = Math.min(1, el / p.spin);
+      const slow = Math.pow(1 - prog, 2.2);
+      const idx = spinning
+        ? Math.floor((el / 1000) * (2 + 10 * slow)) % p.names.length
+        : p.names.indexOf(p.chosen);
+      const name = p.names[idx < 0 ? 0 : idx];
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = "#fbbf24";
+      ctx.font = "bold 22px system-ui, sans-serif";
+      ctx.fillText("🎪 RANDOM PICKER", cx, cy - ph / 2 + 36);
+      if (spinning) {
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold " + Math.min(44, pw / Math.max(9, name.length + 2)) + "px system-ui, sans-serif";
+        ctx.fillText(name.slice(0, 28), cx, cy + 12);
+      } else {
+        if (!p.announced) {
+          p.announced = true;
+          engagementConfettiBurst();
+          try { if (room) room.sendAnnouncement("🎪 The wheel picked " + p.chosen + "!"); } catch (e) {}
+        }
+        ctx.fillStyle = "#34d399";
+        ctx.font = "bold 16px system-ui, sans-serif";
+        ctx.fillText("THE WHEEL CHOSE", cx, cy - 26);
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold " + Math.min(56, pw / Math.max(9, p.chosen.length + 2)) + "px system-ui, sans-serif";
+        ctx.fillText(p.chosen.slice(0, 28), cx, cy + 34);
+      }
+      ctx.restore();
+    }
+  }
+  /* ---- dice ---- */
+  const d = engagement.dice;
+  if (d) {
+    const el = now - d.start;
+    if (el > d.roll + 3200) { engagement.dice = null; }
+    else {
+      const cx = W / 2, cy = H / 2, size = Math.min(110, H * 0.16);
+      ctx.save();
+      ctx.fillStyle = "rgba(16,20,43,.92)";
+      ctx.strokeStyle = "#f59e0b"; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.roundRect(cx - size * 2.6, cy - size * 1.05, size * 5.2, size * 2.1, 18); ctx.fill(); ctx.stroke();
+      const tumbling = el < d.roll;
+      const prog = Math.min(1, el / d.roll);
+      const slow = Math.pow(1 - prog, 2);
+      const faceA = tumbling ? 1 + Math.floor((el / 130) * (1 + 6 * slow)) % 6 : d.a;
+      const faceB = tumbling ? 1 + Math.floor((el / 90) * (1 + 6 * slow)) % 6 : d.b;
+      const drawDie = (x, face) => {
+        ctx.save();
+        ctx.translate(x, cy);
+        if (tumbling) ctx.rotate((el / 130) % (Math.PI * 2) * 0.4);
+        ctx.fillStyle = "#fff";
+        ctx.strokeStyle = "#c7d2ef"; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.roundRect(-size * 0.5, -size * 0.5, size, size, size * 0.18); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "#10142b";
+        for (const [px, py] of DICE_PIPS[face]) {
+          ctx.beginPath();
+          ctx.arc(px * size * 0.26, py * size * 0.26, size * 0.075, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      };
+      drawDie(cx - size * 0.75, faceA);
+      drawDie(cx + size * 0.75, faceB);
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = tumbling ? "#fbbf24" : "#34d399";
+      ctx.font = "bold " + Math.round(size * 0.34) + "px system-ui, sans-serif";
+      ctx.fillText(tumbling ? "ROLLING…" : faceA + " + " + faceB + " = " + (faceA + faceB), cx, cy - size * 0.85);
+      ctx.restore();
+    }
+  }
+}
+
+/* the pointer + laser + tap-ring, drawn LAST over the panes */
+function drawCastPointer(ctx, W, H, now) {
+  const live = castPointer.t && (now - castPointer.t) < (laserOn ? 2000 : 1200);
+  if (laserOn) {
+    /* fading trail — last 650 ms */
+    for (const tr of castPointer.trail) {
+      const age = now - tr.t;
+      if (age > 650) continue;
+      const pt = castPointerXY(tr.side, tr.fx, tr.fy);
+      const a = (1 - age / 650) * 0.5;
+      ctx.beginPath();
+      ctx.fillStyle = "rgba(255,40,40," + a.toFixed(3) + ")";
+      ctx.arc(pt.x, pt.y, 7 * (1 - age / 650) + 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    castPointer.trail = castPointer.trail.filter((tr) => (now - tr.t) <= 650);
+  }
+  if (live && castPointer.side) {
+    const pt = castPointerXY(castPointer.side, castPointer.fx, castPointer.fy);
+    if (laserOn) {
+      /* the laser: glowing red dot, unmistakable at 8 fps */
+      const g = ctx.createRadialGradient(pt.x, pt.y, 0, pt.x, pt.y, 26);
+      g.addColorStop(0, "rgba(255,64,64,.95)");
+      g.addColorStop(0.35, "rgba(255,32,32,.55)");
+      g.addColorStop(1, "rgba(255,0,0,0)");
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, 26, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, 4.5, 0, Math.PI * 2); ctx.fill();
+    } else {
+      /* the soft always-on cursor: amber ring + white core */
+      ctx.beginPath();
+      ctx.fillStyle = "rgba(255,183,77,.92)";
+      ctx.arc(pt.x, pt.y, 9, 0, Math.PI * 2); ctx.fill();
+      ctx.lineWidth = 3; ctx.strokeStyle = "rgba(16,20,43,.85)";
+      ctx.stroke();
+      ctx.fillStyle = "#fff";
+      ctx.beginPath(); ctx.arc(pt.x, pt.y, 3.5, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  /* tap ring: "look here" — 700 ms expanding ring */
+  if (castPointer.flash) {
+    const age = now - castPointer.flash.t;
+    if (age > 700) castPointer.flash = null;
+    else {
+      const pt = castPointerXY(castPointer.flash.side, castPointer.flash.fx, castPointer.flash.fy);
+      const r = 10 + (age / 700) * 46;
+      ctx.beginPath();
+      ctx.lineWidth = 5 * (1 - age / 700) + 1.5;
+      ctx.strokeStyle = laserOn ? "rgba(255,80,80," + (1 - age / 700).toFixed(3) + ")" : "rgba(255,183,77," + (1 - age / 700).toFixed(3) + ")";
+      ctx.arc(pt.x, pt.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+}
 /* v7: fix — prevent a null room from crashing the compositeLoop auth check */
 function compositeLoop(ts) {
   COMP.raf = requestAnimationFrame(compositeLoop);
@@ -1204,6 +1512,12 @@ function drawComposite() {
   /* v6 (issue 6): when the floating calculator is open, draw it into the
      broadcast so students see every keystroke of the working. */
   drawCalcIntoBroadcast(ctx, W, H);
+
+  /* r24: engagement overlays (picker / dice / confetti), then the teacher's
+     pointer — pointer LAST so it always sits above the content. */
+  const _now = performance.now();
+  drawEngagement(ctx, W, H, _now);
+  drawCastPointer(ctx, W, H, _now);
 
   // LIVE watermark + clock
   ctx.fillStyle = "rgba(16,20,43,.78)";
@@ -2788,6 +3102,22 @@ function renderPollBars(res) {
 /* ---- countdown timer ---- */
 let cdInt = null, cdEnd = 0;
 on("#btnTimer", "click", () => openModal("#mTimer"));
+/* r24: laser pointer + engagement kit */
+on("#btnLaser", "click", () => {
+  laserOn = !laserOn;
+  $("#btnLaser").classList.toggle("active", laserOn);
+  castPointer.trail = [];
+  document.querySelectorAll(".pane").forEach((p) => { p.style.cursor = laserOn ? "crosshair" : ""; });
+  toast(laserOn
+    ? "🔴 Laser on — move over the workspace and students see exactly what you point at. Tap again to turn it off."
+    : "Laser off — the soft cursor still shows briefly while you move.", "ok", laserOn ? 5000 : 3500);
+});
+on("#btnPicker", "click", engagementPickerStart);
+on("#btnDice", "click", engagementDiceRoll);
+on("#btnConfetti", "click", () => {
+  engagementConfettiBurst();
+  toast("🎉 Celebrating with the class!", "ok", 2500);
+});
 $$("#mTimer [data-min]").forEach((b) => b.addEventListener("click", () => startCountdown(Number(b.dataset.min))));
 on("#timerStartCustom", "click", () => {
   const m = Number($("#timerCustom").value);
@@ -4831,11 +5161,11 @@ on("#btnWaiting", "click", () => {
     ? "🚪 Waiting room ON — new students will stay in the lobby until you admit them."
     : "✅ Waiting room OFF — students will join directly.");
 });
-on("#btnMuteAll", "click", () => {
+on("#btnRevokeAll", "click", () => {
   if (!room) return;
   room.muteAllStudents();
   $$('#rosterList [data-act="mic"]').forEach((b) => b.classList.remove("active"));
-  toast("🔇 All student mics revoked");
+  toast("🚫 All student mics revoked — ask a student to re-request if they need to speak.");
 });
 
 function renderWaiting() {

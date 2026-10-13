@@ -83,6 +83,15 @@
     <button class="btn small" id="btnActivity" title="Activities: open question, word cloud, exit ticket">🧩</button>
     <button class="btn small" id="btnCalc" title="Floating calculator">🧮</button>
     <button class="btn small" id="btnTimer" title="Countdown timer">⏱</button>
+    <!-- r24: the teacher's pointer, VISIBLE to students in composite mode (the
+         field report: "students are not able to see the cursors... we may want
+         to point at something while teaching"). Laser = strong pointer+trail. -->
+    <button class="btn small" id="btnLaser" title="Laser pointer — students see a bright pointer on the broadcast while you point. Tap again to hide it.">🔴 Laser</button>
+    <!-- r24 engagement kit: picker / dice / celebration, drawn into the live
+         broadcast and the recording (same composite canvas, zero new media). -->
+    <button class="btn small" id="btnPicker" title="Random student picker — spins the names of everyone present and lands on one (like a classroom wheel)">🎪</button>
+    <button class="btn small" id="btnDice" title="Roll two dice — for class games and random prompts">🎲</button>
+    <button class="btn small" id="btnConfetti" title="Celebrate — a confetti burst on everyone's screen">🎉</button>
 
     <button class="btn small" id="btnLayout" title="Cycle layout: split / left only / right only">◫</button>
     <button class="btn small" id="btnSwap" title="Swap panes">⇄</button>
@@ -216,6 +225,25 @@
       <input type="number" class="input pdf-goto" placeholder="pg" style="width:64px;padding:5px 8px" min="1" />
       <button class="btn small pdf-annot" title="Draw on top of this PDF page">✏ Annotate</button>
       <button class="btn small pdf-annot-clear hide" title="Clear annotations on this page">🧹</button>
+    </div>
+    <!-- r24: real PDF-reader annotation kit (pen / highlighter / arrow / text /
+         eraser / undo + colours). Highlights are translucent so the text stays
+         readable underneath; everything rides the broadcast + recording via the
+         annotation overlay the composite already draws. -->
+    <div class="pdf-annot-tools hide" style="display:flex;gap:6px;align-items:center;padding:6px 10px;background:#f1f5ff;border-bottom:1px solid #dbe3f5;flex-wrap:wrap">
+      <button class="btn small pdf-atool active" data-atool="pen" title="Pen (opaque ink)">✏️</button>
+      <button class="btn small pdf-atool" data-atool="highlight" title="Highlighter — translucent, the text stays readable">🖍️</button>
+      <button class="btn small pdf-atool" data-atool="arrow" title="Arrow — point at the thing you are explaining">➤</button>
+      <button class="btn small pdf-atool" data-atool="text" title="Text note">T</button>
+      <button class="btn small pdf-atool" data-atool="eraser" title="Eraser">🧽</button>
+      <button class="btn small pdf-atool" data-atool="undo" title="Undo last stroke">↩</button>
+      <span style="width:1px;height:22px;background:#c7d2ef;margin:0 2px"></span>
+      <button class="btn small pdf-acolor active" data-acolor="#e02b2b" style="background:#e02b2b;width:26px;height:26px;padding:0;border:2px solid #10142b" title="Red"></button>
+      <button class="btn small pdf-acolor" data-acolor="#2563eb" style="background:#2563eb;width:26px;height:26px;padding:0" title="Blue"></button>
+      <button class="btn small pdf-acolor" data-acolor="#16a34a" style="background:#16a34a;width:26px;height:26px;padding:0" title="Green"></button>
+      <button class="btn small pdf-acolor" data-acolor="#f59e0b" style="background:#f59e0b;width:26px;height:26px;padding:0" title="Amber"></button>
+      <button class="btn small pdf-acolor" data-acolor="#111111" style="background:#111111;width:26px;height:26px;padding:0" title="Black"></button>
+      <span style="font-size:11.5px;color:#475596;margin-left:auto">Annotations stay on this page — students see them live</span>
     </div>
     <div class="pdf-scroll">
       <div class="pdf-pagewrap" style="position:relative;margin:14px">
@@ -563,7 +591,7 @@
       <button class="btn small" id="btnLock">🔒 Lock room</button>
       <button class="btn small" id="btnSuspend" title="One tap (like Zoom's Suspend Activities): mute everyone, lower hands, stop all student shares, gallery off, close breakout rooms, lock the room — your broadcast/recording keep running">🛡 Suspend activities</button>
       <button class="btn small" id="btnWaiting" title="Zoom-style waiting room: you admit each student">🚪 Waiting room</button>
-      <button class="btn small" id="btnMuteAll" title="Revoke every student's mic at once">🔇 Mute all</button>
+      <button class="btn small" id="btnRevokeAll" title="Revoke every student's mic at once">🚫 Revoke mics</button>
       <button class="btn small" id="btnAttendance">📋 Attendance CSV</button>
       <button class="btn small" id="btnAskAllCams">📷 Ask all cams</button>
       <button class="btn small" id="btnSelfUnmute" title="Zoom-style: when OFF, every student mic is muted and their mic buttons are locked (they can still raise a hand or ask you to unmute them)">🎙 Allow self-unmute</button>
@@ -1034,24 +1062,24 @@ Not sure</textarea>
 
 <!-- v6: full-screen teacher auth gate (signup / login / license) -->
 <!-- authGate removed: ADEWALE CLASSROOM DECK uses portal session only -->
-<script src="vendor/peerjs.min.js?v=66"></script>
-<script src="vendor/pdf.min.js?v=66"></script>
-<script src="vendor/qrcode.min.js?v=66"></script>
-<script src="js/common.js?v=66"></script>
-<script src="js/config.js?v=66"></script>
-<script src="js/portal-bridge.js?v=66"></script>
-<script src="js/license.js?v=66"></script>
-<script src="js/whiteboard.js?v=66"></script>
-<script src="js/webcast.js?v=66"></script>
-<script src="js/toolkit.js?v=66"></script>
-<script src="js/toolkit-data.js?v=66"></script>
-<script src="js/toolkit-data2.js?v=66"></script>
-<script src="js/toolkit-data3.js?v=66"></script>
-<script src="js/toolkit-ext.js?v=66"></script>
-<script src="js/security-config.js?v=66"></script>
-<script src="js/auth.js?v=66"></script>
-<script src="js/rtc.js?v=66"></script>
-<script src="js/teach-toolbar-fix.js?v=66"></script>
+<script src="vendor/peerjs.min.js?v=67"></script>
+<script src="vendor/pdf.min.js?v=67"></script>
+<script src="vendor/qrcode.min.js?v=67"></script>
+<script src="js/common.js?v=67"></script>
+<script src="js/config.js?v=67"></script>
+<script src="js/portal-bridge.js?v=67"></script>
+<script src="js/license.js?v=67"></script>
+<script src="js/whiteboard.js?v=67"></script>
+<script src="js/webcast.js?v=67"></script>
+<script src="js/toolkit.js?v=67"></script>
+<script src="js/toolkit-data.js?v=67"></script>
+<script src="js/toolkit-data2.js?v=67"></script>
+<script src="js/toolkit-data3.js?v=67"></script>
+<script src="js/toolkit-ext.js?v=67"></script>
+<script src="js/security-config.js?v=67"></script>
+<script src="js/auth.js?v=67"></script>
+<script src="js/rtc.js?v=67"></script>
+<script src="js/teach-toolbar-fix.js?v=67"></script>
 <div id="mTimer" class="modal-back">
   <div class="modal" style="max-width:360px">
     <h3 style="margin:0 0 10px">⏱ Class countdown</h3>
@@ -1330,15 +1358,15 @@ Not sure</textarea>
     </div>
   </div>
 </div>
-<script src="js/cloud-creds.js?v=66"></script>
-<script src="js/stream-kit.js?v=66"></script>
-<script src="js/webm-cues.js?v=66"></script>
-<script src="js/mp4-kit.js?v=66"></script>   <!-- r22-universal: MP4 finisher + muxer + WebCodecs transcode (Windows players don't play WebM: 0xc00d3e8c) -->
-<script src="js/teach.js?v=66"></script>
-<script src="js/cloud-sync-boot.js?v=66"></script>
-<script src="js/enhancements.js?v=66"></script>
-<script src="js/ecosystem-branding.js?v=66"></script>
-<script src="js/enterprise-enhanced.js?v=66"></script>
+<script src="js/cloud-creds.js?v=67"></script>
+<script src="js/stream-kit.js?v=67"></script>
+<script src="js/webm-cues.js?v=67"></script>
+<script src="js/mp4-kit.js?v=67"></script>   <!-- r22-universal: MP4 finisher + muxer + WebCodecs transcode (Windows players don't play WebM: 0xc00d3e8c) -->
+<script src="js/teach.js?v=67"></script>
+<script src="js/cloud-sync-boot.js?v=67"></script>
+<script src="js/enhancements.js?v=67"></script>
+<script src="js/ecosystem-branding.js?v=67"></script>
+<script src="js/enterprise-enhanced.js?v=67"></script>
 <div id="hmgEcosystemFooterCompact" style="max-width:100%;padding:0 14px"></div>
 <!-- r22: floating reactions layer (pointer-transparent) -->
 <div id="reactFloat" style="position:fixed;left:0;right:0;bottom:90px;z-index:9500;pointer-events:none;text-align:center"></div>
