@@ -404,6 +404,15 @@ var spkBoostGain = null, spkBoostCtx = null, spkBoostEl = null;
 var spkChain = null;   /* {src, hp, comp, mk, lim} on spkBoostCtx */
 function autoLevelIn() { return String(Store.get("autolevel_in", 1)) === "1"; }
 function spkVolume() { const v = Number(Store.get("spk_volume", 100)); return Number.isFinite(v) ? Math.max(0, Math.min(200, v)) : 100; }
+/* r27: route the teacher's voice to the chosen output device. */
+function applyStudentSink() {
+  const id = String(Store.get("spk_device", "") || "");
+  ["stageVideo", "teacherVideo"].forEach((k) => {
+    const el = document.getElementById(k);
+    try { if (el && el.setSinkId) el.setSinkId(id || "").catch(() => {}); } catch (e) {}
+  });
+  try { if (spkBoostCtx && spkBoostCtx.setSinkId) spkBoostCtx.setSinkId(id || "").catch(() => {}); } catch (e) {}
+}
 function applySpkVolume() {
   const v = spkVolume();
   const els = [document.getElementById("stageVideo"), document.getElementById("teacherVideo")].filter(Boolean);
@@ -469,10 +478,28 @@ function applySpkVolume() {
     pop.id = "sVolPop";
     pop.style.cssText = "position:fixed;right:12px;bottom:74px;z-index:80;background:#fff;color:#111;border:1px solid #d7dced;border-radius:14px;box-shadow:0 10px 30px rgba(16,20,43,.22);padding:12px 14px;font-size:13px;min-width:220px";
     const cur = spkVolume();
-    pop.innerHTML = "<b>🔊 Teacher volume</b><div style='display:flex;gap:8px;align-items:center;margin-top:8px'><input type='range' min='0' max='200' step='10' value='" + cur + "' style='flex:1'><b style='min-width:42px;text-align:right'>" + cur + "%</b></div><label style='display:flex;gap:7px;align-items:center;margin-top:9px;font-weight:500'><input type='checkbox' id='sAutoLevel'" + (autoLevelIn() ? " checked" : "") + ">🎚 Auto-level the teacher's voice</label><div style='font-size:11px;opacity:.7;margin-top:6px'>Above 100% is a clean boost. Auto-level lifts a quiet teacher into a comfortable band — even from an older app version.</div>";
+    pop.innerHTML = "<b>🔊 Teacher volume</b><div style='display:flex;gap:8px;align-items:center;margin-top:8px'><input type='range' min='0' max='200' step='10' value='" + cur + "' style='flex:1'><b style='min-width:42px;text-align:right'>" + cur + "%</b></div><label style='display:flex;gap:7px;align-items:center;margin-top:9px;font-weight:500'><input type='checkbox' id='sAutoLevel'" + (autoLevelIn() ? " checked" : "") + ">🎚 Auto-level the teacher's voice</label><select id='sSpkSel' style='width:100%;margin-top:9px;padding:7px 8px;border:1px solid #d7dced;border-radius:9px;font-size:12.5px'></select><div style='font-size:11px;opacity:.7;margin-top:6px'>Above 100% is a clean boost. Auto-level lifts a quiet teacher into a comfortable band — even from an older app version.</div>";
     const rng = pop.querySelector("input[type=range]"), lab = pop.querySelector("div b b, b:last-of-type");
     const al = pop.querySelector("#sAutoLevel");
     if (al) al.addEventListener("change", () => { Store.set("autolevel_in", al.checked ? 1 : 0); applySpkVolume(); toast(al.checked ? "🎚 Auto-level ON — the teacher's voice is lifted as it arrives." : "Auto-level OFF.", "", 3000); });
+    /* r27: speaker device picker (Meet parity) — setSinkId on the stage
+       element and the levelling context. */
+    (async () => {
+      try {
+        const sel = pop.querySelector("#sSpkSel");
+        if (!sel || !navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+        const devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "audiooutput");
+        if (!devs.length) { sel.remove(); return; }
+        const cur = String(Store.get("spk_device", "") || "");
+        sel.innerHTML = "<option value=\"\">🔊 Default speakers</option>" + devs.map((d) => "<option value=\"" + d.deviceId + "\">" + (d.label || "Speakers") + "</option>").join("");
+        sel.value = devs.some((d) => d.deviceId === cur) ? cur : "";
+        sel.addEventListener("change", () => {
+          Store.set("spk_device", sel.value || "");
+          applyStudentSink();
+          toast(sel.value ? "🔊 Speaker output switched." : "🔊 Back to the default speakers.", "ok", 3500);
+        });
+      } catch (e) {}
+    })();
     const label = pop.querySelectorAll("b")[2];
     rng.addEventListener("input", () => {
       if (label) label.textContent = rng.value + "%";
@@ -586,6 +613,70 @@ function applySpkVolume() {
       tuneBtn.textContent = oldTxt;
     }
   });
+  /* r27: Meet-style CONNECTION CHECK — an ACTIVE probe, not just static
+     facts: STUN reachability (the UDP route to the internet), microphone
+     permission state, and honest advice per verdict. */
+  const netBtn = document.getElementById("btnGreenNet");
+  if (netBtn) netBtn.addEventListener("click", async () => {
+    const lines = [];
+    netBtn.disabled = true;
+    const oldTxt = netBtn.textContent;
+    netBtn.textContent = "📶 Checking…";
+    try {
+      lines.push((navigator.onLine ? "✅" : "❌") + " Online: " + (navigator.onLine ? "yes" : "NO — connect to the internet first"));
+      let stunList = [];
+      try { if (typeof cdCollectIceServers === "function") stunList = cdCollectIceServers().filter((x) => (x.urls || []).some((u) => /^stun:/.test(u))); } catch (e) {}
+      const stunUrl = (stunList[0] && stunList[0].urls[0]) || "stun:stun.l.google.com:19302";
+      const rtt = await new Promise((res) => {
+        let done = false, pc = null;
+        try { pc = new RTCPeerConnection({ iceServers: [{ urls: stunUrl }] }); } catch (e) { res(-1); return; }
+        const t0 = Date.now();
+        try { pc.createDataChannel("cd"); pc.createOffer().then((o) => pc.setLocalDescription(o)).catch(() => {}); } catch (e) {}
+        const to = setTimeout(() => { if (!done) { done = true; try { pc.close(); } catch (e) {} res(-1); } }, 5000);
+        pc.onicecandidate = (ev) => {
+          if (done || !ev.candidate) return;
+          if (/typ srflx|typ prflx/.test(ev.candidate.candidate || "")) {
+            done = true; clearTimeout(to);
+            try { pc.close(); } catch (e) {}
+            res(Date.now() - t0);
+          }
+        };
+      });
+      if (rtt >= 0) lines.push("✅ Internet route: reachable (" + rtt + " ms to the nearest relay) — " + (rtt < 150 ? "excellent" : rtt < 400 ? "good" : "slow but usable — the class adapts automatically"));
+      else lines.push("⚠️ Direct UDP route not reachable — common on office/school Wi-Fi. The class will try TCP paths automatically, and mobile data almost always works.");
+      try {
+        const pm = await navigator.permissions.query({ name: "microphone" });
+        lines.push((pm.state === "granted" ? "✅" : pm.state === "denied" ? "❌" : "ℹ️") + " Microphone permission: " + pm.state + (pm.state === "denied" ? " — tap the 🔒 icon in the address bar and allow the microphone, or the teacher cannot hear you" : ""));
+      } catch (e) {}
+      lines.push(rtt >= 0 && rtt < 400 ? "✅ Everything checks out — ready to join." : "ℹ️ You can still join — the class keeps retrying and adapting either way.");
+    } finally {
+      const box = document.getElementById("joinDiag");
+      if (box) box.innerHTML = lines.map(escapeHtml).join("<br>");
+      netBtn.disabled = false;
+      netBtn.textContent = oldTxt;
+    }
+  });
+  /* r27: Meet-style device dropdown — pick your mic BEFORE joining. */
+  const micSel = document.getElementById("greenMicSel");
+  if (micSel) {
+    const fill = async () => {
+      try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+        const devs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "audioinput");
+        if (!devs.length) return;
+        let cur = ""; try { cur = localStorage.getItem("cd-mic-device") || ""; } catch (e) {}
+        micSel.innerHTML = "<option value=\"\">🎤 Default microphone</option>" + devs.map((d) => "<option value=\"" + d.deviceId + "\">" + (d.label || "Microphone") + "</option>").join("");
+        micSel.value = devs.some((d) => d.deviceId === cur) ? cur : "";
+        micSel.classList.remove("hide");
+      } catch (e) {}
+    };
+    fill();
+    try { if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener("devicechange", fill); } catch (e) {}
+    micSel.addEventListener("change", () => {
+      try { localStorage.setItem("cd-mic-device", micSel.value || ""); } catch (e) {}
+      toast(micSel.value ? "🎤 Microphone saved — the class will use it." : "🎤 Back to the default microphone.", "ok", 4000);
+    });
+  }
 })();
 var greenMicStop = null;
 /* r26: the calibration ladder (kept pure — the QA suite exercises it):
@@ -681,6 +772,7 @@ function onEvent(type, p) {
       try { sRoom && sRoom.requestPermSync(); } catch {}   /* v9: teacher re-applies mic permission if it was granted */
       try { sRoom && sRoom.startQualityMonitor(); } catch {}   /* r25: 📶 connection bars */
       applySpkVolume();                                        /* r25: saved hearing volume from the first second */
+      applyStudentSink();                                      /* r27: the chosen speaker device, from the first second */
       restoreJoinButton();
       Store.set("joined_" + (sRoom ? sRoom.code : normaliseRoomCode($("#inRoom").value)), true);
       closeModal("#mWaiting");

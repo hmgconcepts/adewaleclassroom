@@ -29,6 +29,16 @@ document.addEventListener("click", (e) => {
     e.target.classList.remove("open");
   }
 });
+/* r27: [data-close] buttons ("Done", "Cancel") close their modal. The
+   r25 modals shipped such buttons but NOTHING delegated the attribute —
+   clicking Done/Cancel did nothing (the field report). One delegated
+   listener fixes every modal on every deck, present and future. */
+document.addEventListener("click", (e) => {
+  const b = e.target.closest && e.target.closest("[data-close]");
+  if (!b) return;
+  const m = b.closest && b.closest(".modal-back");
+  if (m) m.classList.remove("open");
+});
 
 /* ---------- persistent settings (localStorage) ---------- */
 const Store = {

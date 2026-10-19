@@ -898,9 +898,10 @@ Not sure</textarea>
     <label>What do you want to share?</label>
     <select class="input" id="shareSurface">
       <option value="browser">One browser tab (recommended — the picker opens on your Chrome tabs)</option>
-      <option value="monitor">Whole screen / a window</option>
+      <option value="window">One app window — any open app, file, or folder window (Word, a PDF viewer, File Explorer…)</option>
+      <option value="monitor">Whole screen (all windows, taskbar, notifications)</option>
     </select>
-    <p style="font-size:11.5px;color:var(--text-dim);margin:6px 0 0">Chrome shows its own picker — you pick the exact tab. Your own ClassDeck tab is never offered, and Chrome's <b>“Share this tab instead”</b> button lets you swap tabs mid-lesson without stopping.</p>
+    <p style="font-size:11.5px;color:var(--text-dim);margin:6px 0 0">Chrome shows its own picker — you pick the exact tab, <b>window</b>, or screen, and can swap surfaces mid-lesson without stopping. Your own ClassDeck tab is never offered (no mirror loops). Ticking the audio box shares that surface's own sound — a window shares only that app's sound, never the whole system.</p>
     <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px">
       <input type="checkbox" id="shareAudio" />
       Also share that tab's audio (videos, sound — students hear it WITH your voice)
@@ -942,6 +943,10 @@ Not sure</textarea>
       <option value="off">Off — raw mic level (headphone users avoid echo)</option>
     </select>
     <p style="font-size:11.5px;color:var(--text-dim);margin:4px 0 0">Applies live. Every voice is also limited so boosted audio cannot distort. Music/raw mode in ⚙ Settings bypasses all of it.</p>
+    <label style="margin-top:10px">Microphone</label>
+    <select class="input" id="micDevSel"><option value="">Default microphone</option></select>
+    <label style="margin-top:8px">Speakers (where you hear the class)</label>
+    <select class="input" id="spkDevSel"><option value="">Default speakers</option></select>
     <div class="row" style="margin-top:12px">
       <button class="btn small" id="btnMicDoctor">🩺 Auto-tune my mic</button>
       <button class="btn small" id="btnTestTone">🔔 Test my speakers</button>
@@ -1168,24 +1173,24 @@ Not sure</textarea>
 
 <!-- v6: full-screen teacher auth gate (signup / login / license) -->
 <!-- authGate removed: ADEWALE CLASSROOM DECK uses portal session only -->
-<script src="vendor/peerjs.min.js?v=69"></script>
-<script src="vendor/pdf.min.js?v=69"></script>
-<script src="vendor/qrcode.min.js?v=69"></script>
-<script src="js/common.js?v=69"></script>
-<script src="js/config.js?v=69"></script>
-<script src="js/portal-bridge.js?v=69"></script>
-<script src="js/license.js?v=69"></script>
-<script src="js/whiteboard.js?v=69"></script>
-<script src="js/webcast.js?v=69"></script>
-<script src="js/toolkit.js?v=69"></script>
-<script src="js/toolkit-data.js?v=69"></script>
-<script src="js/toolkit-data2.js?v=69"></script>
-<script src="js/toolkit-data3.js?v=69"></script>
-<script src="js/toolkit-ext.js?v=69"></script>
-<script src="js/security-config.js?v=69"></script>
-<script src="js/auth.js?v=69"></script>
-<script src="js/rtc.js?v=69"></script>
-<script src="js/teach-toolbar-fix.js?v=69"></script>
+<script src="vendor/peerjs.min.js?v=70"></script>
+<script src="vendor/pdf.min.js?v=70"></script>
+<script src="vendor/qrcode.min.js?v=70"></script>
+<script src="js/common.js?v=70"></script>
+<script src="js/config.js?v=70"></script>
+<script src="js/portal-bridge.js?v=70"></script>
+<script src="js/license.js?v=70"></script>
+<script src="js/whiteboard.js?v=70"></script>
+<script src="js/webcast.js?v=70"></script>
+<script src="js/toolkit.js?v=70"></script>
+<script src="js/toolkit-data.js?v=70"></script>
+<script src="js/toolkit-data2.js?v=70"></script>
+<script src="js/toolkit-data3.js?v=70"></script>
+<script src="js/toolkit-ext.js?v=70"></script>
+<script src="js/security-config.js?v=70"></script>
+<script src="js/auth.js?v=70"></script>
+<script src="js/rtc.js?v=70"></script>
+<script src="js/teach-toolbar-fix.js?v=70"></script>
 <div id="mTimer" class="modal-back">
   <div class="modal" style="max-width:360px">
     <h3 style="margin:0 0 10px">⏱ Class countdown</h3>
@@ -1464,15 +1469,15 @@ Not sure</textarea>
     </div>
   </div>
 </div>
-<script src="js/cloud-creds.js?v=69"></script>
-<script src="js/stream-kit.js?v=69"></script>
-<script src="js/webm-cues.js?v=69"></script>
-<script src="js/mp4-kit.js?v=69"></script>   <!-- r22-universal: MP4 finisher + muxer + WebCodecs transcode (Windows players don't play WebM: 0xc00d3e8c) -->
-<script src="js/teach.js?v=69"></script>
-<script src="js/cloud-sync-boot.js?v=69"></script>
-<script src="js/enhancements.js?v=69"></script>
-<script src="js/ecosystem-branding.js?v=69"></script>
-<script src="js/enterprise-enhanced.js?v=69"></script>
+<script src="js/cloud-creds.js?v=70"></script>
+<script src="js/stream-kit.js?v=70"></script>
+<script src="js/webm-cues.js?v=70"></script>
+<script src="js/mp4-kit.js?v=70"></script>   <!-- r22-universal: MP4 finisher + muxer + WebCodecs transcode (Windows players don't play WebM: 0xc00d3e8c) -->
+<script src="js/teach.js?v=70"></script>
+<script src="js/cloud-sync-boot.js?v=70"></script>
+<script src="js/enhancements.js?v=70"></script>
+<script src="js/ecosystem-branding.js?v=70"></script>
+<script src="js/enterprise-enhanced.js?v=70"></script>
 <div id="hmgEcosystemFooterCompact" style="max-width:100%;padding:0 14px"></div>
 <!-- r22: floating reactions layer (pointer-transparent) -->
 <div id="reactFloat" style="position:fixed;left:0;right:0;bottom:90px;z-index:9500;pointer-events:none;text-align:center"></div>

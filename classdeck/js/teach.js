@@ -2097,7 +2097,11 @@ async function share2Request(prefs) {
     monitorTypeSurfaces: "include",
     audio: wantAudio                     /* tab/system audio where the platform allows */
   };
-  if (wantAudio) { req.systemAudio = "include"; req.audio = { echoCancellation: false, noiseSuppression: false, autoGainControl: false }; }
+  if (wantAudio) {
+    req.systemAudio = "include";
+    req.windowAudio = "window";   /* r27: a WINDOW share offers THAT APP's own sound only (Chrome 141+; echo-safe — never the whole system) */
+    req.audio = { echoCancellation: false, noiseSuppression: false, autoGainControl: false };
+  }
   return await navigator.mediaDevices.getDisplayMedia(req);
 }
 function shareSurfaceLabel(track) {
@@ -3113,6 +3117,7 @@ function playStudentAudio(pid, stream) {
   }
   a.srcObject = stream;
   applyStuVolume(pid);            /* r25: master × per-student volume */
+  applySpeakerDevice();           /* r27: the chosen output device, from the first sample */
   /* r25: active-speaker glow (Zoom/Meet parity) — the roster row lights
      up while this student is actually talking. */
   stopStuMeter(pid);
@@ -3763,12 +3768,67 @@ on("#btnFocusCls", "click", () => {
   toast(focusOn ? "🎯 Focus mode ON — students see only you (their mics to you keep working)." : "Focus mode OFF — the class gallery is back.", "ok", 7000);
 });
 
+/* r27: THE ANNOTATE BUTTON — r25 shipped toggleBroadcastAnnot() but never
+   wired the button itself (the "A" shortcut even called .click() on a
+   handler-less button). Now the button, the shortcut, and the overlay
+   all work: ink over ANY workspace content (whiteboard, PDF, slides)
+   is drawn into the live broadcast and the recording. */
+on("#btnAnnotate", "click", () => toggleBroadcastAnnot());
+
 /* ── r25: the 🎚 quick AUDIO panel (master volume + mic boost + test tone) ── */
+/* r27: Meet-style DEVICE PICKERS — choose the mic and the speakers
+   mid-class. The mic switch re-acquires through the studio chain and
+   swaps the live senders (no reconnect); the speaker switch applies
+   setSinkId to every student voice (and the levelling context). */
+var audioDevsWired = false;
+async function refreshAudioDevices() {
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+    const devs = await navigator.mediaDevices.enumerateDevices();
+    const mics = devs.filter((d) => d.kind === "audioinput");
+    const spks = devs.filter((d) => d.kind === "audiooutput");
+    let curMic = ""; try { curMic = localStorage.getItem("cd-mic-device") || ""; } catch (e) {}
+    const curSpk = String(Store.get("spk_device", "") || "");
+    const ms = document.getElementById("micDevSel");
+    const ss = document.getElementById("spkDevSel");
+    if (ms) {
+      ms.innerHTML = "<option value=\"\">Default microphone</option>" + mics.map((d) => "<option value=\"" + d.deviceId + "\">" + (d.label || "Microphone") + "</option>").join("");
+      ms.value = mics.some((d) => d.deviceId === curMic) ? curMic : "";
+    }
+    if (ss) {
+      ss.innerHTML = "<option value=\"\">Default speakers</option>" + spks.map((d) => "<option value=\"" + d.deviceId + "\">" + (d.label || "Speakers") + "</option>").join("");
+      ss.value = spks.some((d) => d.deviceId === curSpk) ? curSpk : "";
+    }
+  } catch (e) {}
+}
+function applySpeakerDevice() {
+  const id = String(Store.get("spk_device", "") || "");
+  for (const a of stuAudio.values()) {
+    try { if (a.setSinkId) a.setSinkId(id || "").catch(() => {}); } catch (e) {}
+  }
+  try { if (remoteAudioCtx && remoteAudioCtx.setSinkId) remoteAudioCtx.setSinkId(id || "").catch(() => {}); } catch (e) {}
+}
 on("#btnAudio", "click", () => {
   const mv = document.getElementById("masterVol");
   const bs = document.getElementById("boostSel");
   if (mv) { mv.value = String(masterVolume()); const l = document.getElementById("masterVolLabel"); if (l) l.textContent = masterVolume() + "%"; }
   if (bs) bs.value = Store.get("audio_boost", "standard");
+  refreshAudioDevices();
+  if (!audioDevsWired) {
+    audioDevsWired = true;
+    on("#micDevSel", "change", () => {
+      const v = document.getElementById("micDevSel").value || "";
+      try { localStorage.setItem("cd-mic-device", v); } catch (e) {}
+      if (micOn && micStream) {
+        rebuildMicBoostLive().then((ok) => toast(ok ? "🎤 Microphone switched live — speak to check." : "Microphone saved — it connects with your mic.", "ok", 5000));
+      } else toast("Microphone saved — it connects with your mic.", "ok", 4000);
+    });
+    on("#spkDevSel", "change", () => {
+      Store.set("spk_device", document.getElementById("spkDevSel").value || "");
+      applySpeakerDevice();
+      toast("🔊 Speaker output switched — student voices now play there.", "ok", 4000);
+    });
+  }
   openModal("#mAudio");
 });
 on("#masterVol", "input", () => {

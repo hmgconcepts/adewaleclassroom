@@ -45,6 +45,11 @@ class Whiteboard {
     this.drawing = false;
     this.cur = null; // current stroke
 
+    /* r27: transparent overlays (broadcast annotate, PDF annotate) can live
+       inside pointer-events:none hosts — the drawing canvas must opt back
+       in or every stroke passes straight through (the annotate-button fix's
+       hidden twin). */
+    if (this.transparent) this.overlay.style.pointerEvents = "auto";
     this._bindPointer();
     if (!this.transparent) this._makeScrollbars();   /* v14 */
     this._observeResize();
@@ -455,6 +460,11 @@ class Whiteboard {
           const my = (Y(s.pts[i]) + Y(s.pts[i + 1])) / 2;
           ctx.quadraticCurveTo(X(s.pts[i]), Y(s.pts[i]), mx, my);
         }
+        /* r27: the tail was never drawn — the path ended at the midpoint
+           of the last two points, so quick taps and short strokes (2
+           points: moveTo + nothing) rendered NOTHING. Found while
+           verifying the annotate fix with real pointer events. */
+        ctx.lineTo(X(s.pts[s.pts.length - 1]), Y(s.pts[s.pts.length - 1]));
         ctx.stroke();
       }
     }

@@ -72,11 +72,13 @@
       <button class="btn small ghost" id="btnGreenMic" type="button" title="Check your microphone level before joining">🎤 Test my mic</button>
       <button class="btn small ghost" id="btnGreenSpk" type="button" title="Play a chime to check your speakers/headphones">🔔 Test my speakers</button>
       <button class="btn small ghost" id="btnGreenTune" type="button" title="The doctor listens for 3 seconds and sets the right mic boost for your device">🩺 Auto-tune mic</button>
+      <button class="btn small ghost" id="btnGreenNet" type="button" title="Check your internet route and permissions before joining">📶 Check connection</button>
     </div>
     <div id="greenMicMeter" class="hide" style="width:100%;margin-top:8px">
       <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-dim)"><span>Speak normally — the bar should climb into the green</span><span id="greenMicTip"></span></div>
       <div style="height:10px;border-radius:999px;background:var(--bg-3);overflow:hidden;margin-top:4px"><div id="greenMicBar" style="height:100%;width:0%;background:#84cc16;transition:width .1s linear"></div></div>
     </div>
+    <select class="input hide" id="greenMicSel" style="margin-top:8px" title="Choose the microphone you will speak with"></select>
     <button class="btn ghost hide" id="btnOpenBrowser" type="button" style="margin-top:8px">🌐 Open this class in Chrome / Safari</button>
     <p class="sub" id="joinStatus"></p>
     <div id="joinDiag" class="sub" style="text-align:left;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:11.8px"></div>
@@ -309,13 +311,13 @@
   </div>
 </div>
 
-<script src="vendor/peerjs.min.js?v=69"></script>
-<script src="js/common.js?v=69"></script>
-<script src="js/config.js?v=69"></script>
-<script src="js/portal-bridge.js?v=69"></script>
-<script src="js/license.js?v=69"></script>
-<script src="js/rtc.js?v=69"></script>
-<script src="js/join.js?v=69"></script>
+<script src="vendor/peerjs.min.js?v=70"></script>
+<script src="js/common.js?v=70"></script>
+<script src="js/config.js?v=70"></script>
+<script src="js/portal-bridge.js?v=70"></script>
+<script src="js/license.js?v=70"></script>
+<script src="js/rtc.js?v=70"></script>
+<script src="js/join.js?v=70"></script>
 <script>
 /* Issue #9: force install banner on the join page (re-appears until installed). */
 function joinInstall() {
