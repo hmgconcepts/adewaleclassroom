@@ -2845,3 +2845,82 @@ crashes** (r18/r20/r21/r22 pins re-based to v69/b32/platform-8); the
 27-page real-Chromium load audit is clean. Assets `?v=69`, sw
 `hmg-classdeck-v15.1.0-r22-platform-8`, version.json build 32. Twins
 byte-identical.
+
+## Round 27 — the dead-button field round: annotate, modal closes, one-app-window share, device pickers (build 33)
+
+**Asked:** (1) still enhance seamless/robust student joining; (2+3)
+re-study Zoom/Meet/FreeConference/Zoho/Teams and the wider web and
+implement more; (4) **the Annotate button does nothing — make it work
+perfectly on PDF etc.;** (5) **Audio → Done does nothing;** (6)
+**Composite → Cancel does nothing;** (7) share OTHER OPEN WINDOWS —
+apps, files, folders like Zoom/Meet/Teams; (8) update every file across
+all repos.
+
+**The three dead buttons — root causes (all three reproduced BEFORE the
+fix by clicking in real Chromium, all three verified fixed the same
+way):** (4) r25 shipped `toggleBroadcastAnnot()` but NEVER wired a click
+handler to `#btnAnnotate` — the keyboard shortcut even called `.click()`
+on a handler-less button, and the r25 verification had driven the
+function directly instead of the button; the overlay also could not
+receive pointer events inside its `pointer-events:none` host, so even a
+wired button would not have drawn; and the pen renderer never drew its
+final path segment, so 2-point strokes (quick taps, short strokes)
+rendered NOTHING on the whiteboard too. All three fixed: the button is
+wired, the Whiteboard's transparent canvas opts back into pointer
+events, and the pen path now ends at its last point. Click-verified:
+the button opens/closes the overlay, a real pointer drag leaves 1,600
+ink pixels on the board and 2,550 in the LIVE broadcast composite (the
+overlay is fixed inset-0 z-800 — it sits above the PDF viewer, the
+whiteboard, slides, everything). (5+6) `[data-close]` had NO delegation
+anywhere — common.js only closed modals on backdrop clicks, so the
+Audio panel's Done and the share chooser's Cancel (both r25-added
+`data-close` buttons) were dead. One delegated listener in common.js
+now closes every such modal on every deck; click-verified for both.
+
+**(7) One app window:** the engine already spoke `displaySurface:
+"window"` but the UI never offered it — the chooser's single "Whole
+screen / a window" option conflated the two. The chooser now has three
+explicit surfaces (one browser tab / **one app window — any open app,
+file, or folder window** / whole screen) and window shares request
+`windowAudio: "window"` (Chrome 141+): a WINDOW share offers only THAT
+APP's own sound, never the whole system — echo-safe, verified against
+MDN + the W3C screen-capture spec + Chrome's release notes. The E2E
+captured the live request object: `displaySurface: "window",
+windowAudio: "window", systemAudio: "include"`, audio constraints with
+EC/NS/AGC off, and the mode switching to screen.
+
+**(1+2+3) Join robustness + the re-study:** research confirmed Meet's
+green room carries device dropdowns and an active self-check, and that
+Zoom's test meeting checks the connection. Shipped: a green-room
+**connection check** (an ACTIVE STUN probe measuring the real route —
+8-10 ms in the verifier — plus microphone permission state, plus honest
+advice when UDP is blocked: TCP paths, mobile data); **Meet-style
+device pickers** — microphone + speakers in the teacher's Audio panel
+(the mic switch re-acquires through the studio chain and swaps the live
+senders with no reconnect; the speaker switch applies `setSinkId` to
+every student voice AND the levelling AudioContext), a mic picker in
+the join green room (stores the device the live class uses), and a
+speaker picker in the student's volume popup. Virtual backgrounds were
+considered and honestly skipped: real segmentation needs an ML model,
+and a self-contained app does not ship a fake blur.
+
+**Test-harness notes:** the environment lost root this session —
+Chromium and ffmpeg were rebuilt user-local (puppeteer's bundled
+Chrome-for-Testing + locally-extracted X11/NSS debs on LD_LIBRARY_PATH;
+a static ffmpeg build on PATH) with zero changes to the suites. The
+E2E also learned that synthetic PointerEvents return EMPTY
+`getCoalescedEvents()` (real ones don't) and that a never-painted
+canvas stream produces no frames (so `play()` stalls) — both are
+test-side realities, now handled in the harness.
+
+**Validation:** r27 click-test ALL GREEN (17 checks: every dead button
+clicked and verified, window-share request object captured, device
+pickers populated with 4 options each, connection check verdict, zero
+page errors both decks); new suite `test_r27_clickfixes_deviceshare`
+(41 checks); battery **41 suites × 2144 checks × both repos × run
+twice — 0 failures, 0 crashes** (r18/r20/r21/r22/r24/r25/r26 pins
+re-based to v70/b33/platform-9, the `v=6\d` regexes widened for v70+);
+27-page real-Chromium load audit clean. Assets `?v=70`, sw
+`hmg-classdeck-v15.1.0-r22-platform-9`, version.json build 33. Twins
+byte-identical. DEPLOY: the live site is build 32 — build 33 carries
+these three bug fixes and must be deployed for the field to see them.
