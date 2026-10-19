@@ -2646,3 +2646,202 @@ panel px, confetti 200 particles / 20 colour buckets; PDF flow mounted
 `hmg-classdeck-v15.1.0-r22-platform-6`, version.json build 30 (118
 feature tags). Twins byte-identical (only TC-only tools/ + package
 files differ, by design).
+
+## Round 25 — studio sound, one-tab sharing, seamless joins (build 31)
+
+**Asked:** (1) a live class where BOTH sides were "not loudly audible" —
+greatly enhance the microphone and sound system, robustly and seamlessly;
+(2) share ONE Chrome tab (not the whole browser) plus advanced share
+features; (3) enhance "students joining live class seamlessly" — implement
+whatever is yet missing; (4) research Zoom / Google Meet / FreeConference /
+Zoho deeply and implement their features; (5) research further features to
+implement; (6) update every file across all repos.
+
+**Research (the no-guessing rule):** Zoom's feature matrix (multi-spotlight
+up to 9, focus mode — participants see only the host, push-to-talk = hold
+spacebar, pause share, annotate on shared screen, per-participant volume,
+automated captions + transcript, share device audio, breakout rooms with
+timers and auto/manual assignment); Google Meet (live captions + caption
+font size, green room preflight — mic waveform + speaker test tone,
+push-to-talk setting, connection indicator, portrait touch-up, mirror my
+video, breakout rooms with countdown, polls/Q&A, adaptive audio); Zoho
+Meeting ("share your entire screen, a particular application, or just a
+chrome tab"; annotation, pin video, join-before-host on paid tiers);
+FreeConference (screen share, whiteboard, chat, document sharing,
+annotation). API verification: MDN getDisplayMedia + the W3C screen-capture
+spec + Chrome's privacy-preserving screen-sharing controls page —
+displaySurface "browser" pre-selects the TAB pane (the spec forbids a page
+picking the tab for the user), selfBrowserSurface "exclude" hides our own
+tab, surfaceSwitching "include" enables Chrome's "Share this tab instead"
+button mid-share, systemAudio "include" + audio:true captures tab/system
+audio (platform-dependent, may still return no track). Web Speech API
+(captions): continuous+interimResults, restart in onend (Chrome ends
+sessions on its own), resultIndex iteration — already shipped in v9 and
+kept. Web Audio boost chain: MediaStreamAudioSourceNode → filters →
+GainNode → MediaStreamAudioDestinationNode → sender (MDN WebRTC
+integration; DynamicsCompressorNode defaults -24dB/30knee; gain above ~5
+distorts — our max is 2.8×).
+
+**Studio sound (item 1) — the root cause was real:** the raw getUserMedia
+track went straight to the PeerConnection, so whatever level the OS gave
+(laptop mics default to 60-75% input) was exactly what the other side
+received — quiet in BOTH directions. Fix at the root, both ends: every
+captured mic now runs through a verified Web Audio chain — 85 Hz highpass
+(rumble) → compressor (threshold -28 dB, knee 24, ratio 4:1 — lifts quiet
+speech) → makeup gain (standard ×1.6 / strong ×2.2 / max ×2.8) → limiter
+(threshold -3 dB, ratio 20:1 — no clipping) → MediaStreamDestination, and
+THAT track replaces the raw one in the call. Measured in real Chromium on
+a controlled quiet tone: level 8 → 34 (standard) → 58 (max, still under
+the limiter). The chain is bypassed honestly for "off" and for the r22
+raw/music mode (a compressor would flatten music dynamics). Hearing side:
+master volume 0–200% (teacher AND student — above 100% through a clean
+Web Audio gain, since element.volume physically caps at 1.0), per-student
+volume in the roster (Zoom parity, 0–200%), live mic level bar with clip
+colouring, speaker test chime, and a Meet-style green room on the join
+gate (mic meter + speaker chime BEFORE joining). Full lifecycle teardown
+at every mic stop path (chain + the raw stream beneath it).
+
+**Share 2.0 (item 2):** the 🧩 chip now opens a share chooser — ONE BROWSER
+TAB is the default (the picker opens on Chrome's tab list), screen/window
+one tap away; "share that tab's audio" mixes tab/system audio UNDER the
+teacher's voice via the new updateStageAudio() (replaceTrack on the live
+audio senders — no renegotiation, no reconnect blink; the recording
+captures the mix when started during the share); sharp-text vs
+smooth-motion quality presets; ⏸ pause share (honest: a disabled track
+sends black, not Zoom's frozen frame — the toast says so); after the
+picker closes, getSettings().displaySurface drives an honest toast naming
+exactly what the class can see; surface switching means Chrome's own
+"Share this tab instead" button swaps tabs mid-lesson; the ClassDeck's own
+tab is never offered (no mirror loops). The student share path got the
+same exclude/switching options.
+
+**Joining seamlessly (item 3):** the green-room preflight above; live
+connection bars (📶, Meet/Zoom-style) driven by a smoothed RTT from a new
+student-side tping/tpong round trip (the teacher echoes — one new case in
+TeacherRoom); signalling-layer auto-reconnect — peer.on("disconnected") →
+peer.reconnect() with capped backoff, same peer id (previously a
+signalling drop left the student unable to receive NEW calls until a full
+rejoin); "online" event and tab-visibility return trigger an instant
+rejoin of a dead connection instead of waiting for the next retry tick.
+(The lobby auto-retry, TCP/TLS escalation, 10-minute rejoin banner and
+transport memory from earlier rounds remain.)
+
+**Parity features (items 4+5):** 🌟 VIDEO spotlight — the roster's old
+name-only banner became a real spotlight: the student's camera is drawn
+big on the composite broadcast (and the recording) for the whole class,
+with an honest refusal if their camera is off; ✏️ annotate over the live
+broadcast — a transparent whiteboard above the workspace, stamped into
+the outgoing canvas by drawComposite so students AND recordings see the
+ink (honestly composite-mode only: a web page cannot annotate the OS
+desktop like Zoom's native client); 🎯 Focus class (Zoom focus mode) —
+one tap on the gallery engine + an announcement; push-to-talk (hold
+SPACE; never fires while typing or on a focused button); 🪞 mirror
+self-view (students' view never mirrored); ✨ portrait touch-up (canvas
+soften/brighten pipeline, off by default); keyboard shortcuts (M/V/S/L/A/
+D/P/C, Alt+M mute-all, ? help) — which surfaced a REAL latent bug: the
+v3.6 whiteboard shortcut handler owned overlapping keys (p/l/a) and
+crashed on non-element event targets ("e.target.matches is not a
+function", reproduced in Chromium); the conflict is resolved (global
+shortcuts yield while a board is active), the crash is hardened away, and
+board Ctrl+Z/Y undo still works (a regression my first fix introduced,
+caught and corrected before ship).
+
+**Also found and fixed while testing:** the QA battery's runner list had
+never been extended with the r24 suite (it passed standalone but was not
+in the battery) — the runner now carries every suite; the stale r21
+webm-cues synthetic suite (written against the pre-r22 addCues) was
+retired into an explicit contract check with its history documented (the
+real coverage is test_r22_webm_repair's ffprobe-judged fixtures); the VM
+harness caught my TeacherRoom tping echo calling this.send before any
+student could ever hit it (replies go over conn).
+
+**Validation:** real-Chromium behavioral proof with the fake media device:
+quiet tone 8 → 34 → 58 through the chain (limiter < 100); share2Request
+captured object-for-object (displaySurface browser/monitor,
+selfBrowserSurface exclude, surfaceSwitching include, monitorTypeSurfaces
+include, preferCurrentTab false, systemAudio include + raw-audio
+constraints when ticked); spotlight panel 5,931 px and annotation ink 221
+red px drawn into the composite at the mapped coordinates; PTT
+enable/restore + chip; per-student + master + student-side volumes;
+captions off/size; green-room meter; zero page errors on BOTH decks, and
+the full 27-page load audit clean. New suite test_r25_av_share_join (80
+checks: engine pins, VM unit tests of the boost routing incl. the
+no-AudioContext honest bypass, share option pins, join resilience pins,
+parity pins, versions). Battery: **39 suites × 2046 checks × both repos ×
+run twice — 0 failures, 0 crashes.** Assets `?v=68` (71 refs), sw
+`hmg-classdeck-v15.1.0-r22-platform-7`, version.json build 31 (119
+feature tags). Twins byte-identical.
+
+## Round 26 — the deployment finding, E2E WebRTC proof, receive-side auto-level (build 32)
+
+**Why this round exists:** the same live-class report came back — both
+directions "not loudly audible" — AFTER Round 25 had shipped the studio
+chain. The investigation found the root cause was never in the code:
+**the live site was still running build 30** (checked live:
+`adewaleclassroom.vercel.app/classdeck/version.json` = build 30, assets
+?v=67, sw platform-6 — the r24 state). Build 31 had been committed and
+packed but never deployed, so the teacher and student were both on the
+old audio path. THE FIX MUST BE DEPLOYED (build 32 zips are ready).
+
+**The missing gold-standard proof (now done):** r25 verified the boost
+chain in isolation, never actual loudness over a real WebRTC connection.
+r26 built that proof: a real PeerJS server on 127.0.0.1:9001, the real
+teach.html and join.html in real Chromium with real getUserMedia, a real
+class (Go Live → join → allow mic → speak), and RMS measurement of the
+RECEIVED streams at both ends. Results: a quiet voice (-34dBFS stand-in)
+swapped onto the live stage through the product's own updateStageAudio
+path measured **0.0135 raw → 0.0573 with the standard chain (4.26×) →
+0.1002 at max (1.75× further)** at the student's receiver; the student's
+own mic arrived at the teacher at a strong 0.0253 RMS (student-side
+standard boost); zero page errors on both decks for the whole class.
+
+**A real bug the E2E caught (in shipped code):** switching mic boost
+OFF→ON mid-live did NOTHING (setBoost only works when a chain exists;
+from "off" there is no chain — the UI just said "connects with your
+mic"), and ON→OFF kept the compressor in the path while labelling the
+output "raw". Fixed honestly with `rebuildMicBoostLive()`: re-acquire
+the mic through the right path, swap the LIVE senders via
+updateStageAudio (replaceTrack — no reconnect, no blink), re-arm the
+silence watchdog, retire the old capture. The boostSel UI and the mic
+doctor both use it; the E2E drives the real UI switch on a live
+connection and proves audio continuity.
+
+**Receive-side auto-level (the robustness half):** the sender-side chain
+only helps when the SENDER has the new build — exactly the mixed-version
+reality of a redeploy (teacher updated, students on cached old clients,
+or vice versa). r26 adds a levelling chain on ARRIVAL on BOTH decks
+(every student voice at the teacher; the teacher's voice at every
+student): 95Hz highpass → compressor (−50dB, knee 10, 4:1) → +10dB
+makeup → −3dB limiter → volume (0–200%, master × per-student). Default
+ON, toggle in ⚙ Audio and in the student's volume popup. Measured in
+real Chromium: a −40dBFS voice is lifted **23.6×** by the shipped
+parameters. Even an old-build sender now arrives loud and capped.
+
+**Also shipped:** the mic doctor (auto-calibration — 3-second raw
+measurement → the honest preset, on the teacher audio panel AND in the
+join green room; writes audio_boost / cd-audio-boost so the class starts
+right with zero fiddling); per-student volume is REMEMBERED per student
+name across classes (roster 🔊 persists to stu_vol_mem, recalled on
+join); Alt+↑/↓ nudges hearing volume ±10% on both decks (help text
+updated).
+
+**Test-harness lessons (recorded so they are not re-learned):** PeerJS's
+constructor swaps (id, options) when the first argument is an object —
+a wrapper that merges into `opts` silently discards the merge for
+`new Peer(config)` calls and sends the student to the cloud while the
+teacher sits on the local server; the service worker cache-served
+unpatched scripts to the second page of the same origin (sw.js must be
+blocked in two-page tests); the fake media device's tone is LOUD
+(−29dBFS RMS) — correct behaviour there is capping, so uplift must be
+measured with a controlled quiet source fed through the REAL chain and
+the REAL swap path, not the fake mic.
+
+**Validation:** E2E sound verdict ALL GREEN (13 measured checks); new
+suite `test_r26_autolevel_doctor` (57 checks: chain topology + params
+byte-pinned on both decks, honest fallbacks, doctor ladder VM-tested
+from both files, live-rebuild path, version pins); battery is now
+**40 suites × 2103 checks × both repos × run twice — 0 failures, 0
+crashes** (r18/r20/r21/r22 pins re-based to v69/b32/platform-8); the
+27-page real-Chromium load audit is clean. Assets `?v=69`, sw
+`hmg-classdeck-v15.1.0-r22-platform-8`, version.json build 32. Twins
+byte-identical.
