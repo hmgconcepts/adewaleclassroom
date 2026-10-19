@@ -1,8 +1,8 @@
 {
   "version": "15.1.0",
-  "build": 30,
+  "build": 32,
   "channel": "stable",
-  "released": "2026-10-13",
+  "released": "2026-10-18",
   "features": [
     "custom-room-codes",
     "two-folder-generator",
@@ -121,6 +121,8 @@
     "15.1.0-mp4-duration-finisher",
     "15.1.0-webm-to-mp4-transcode",
     "15.1.0-realchrome-repair-watchdog",
-    "15.1.0-exam-replica-packs-engagement-kit"
+    "15.1.0-exam-replica-packs-engagement-kit",
+    "15.1.0-studio-sound-share2-join-resilience",
+    "15.1.0-autolevel-micdoctor-e2e-verified"
   ]
 }

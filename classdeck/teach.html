@@ -70,7 +70,11 @@
       <button class="btn small" id="btnBreakout" title="Breakout rooms — split the class into small discussion groups (like Zoom): auto or manual assignment, live moves, broadcasts to rooms, ask-for-help, close with a countdown">🚪 Rooms</button>
       <button class="btn small" id="btnReactT" title="Send a reaction to the class (students can send these too — 👍 in their toolbar)">😊</button>
     <button class="btn small" id="btnCam" title="Toggle your camera">📷 Cam</button>
-    <button class="btn small" id="btnMic" title="Toggle your microphone">🎙 Mic</button>
+    <button class="btn small" id="btnMic" title="Toggle your microphone (hold SPACE for push-to-talk while muted)">🎙 Mic</button>
+    <span id="micLevelWrap" class="hide" style="display:inline-flex;align-items:center;gap:4px;width:74px;height:22px;border:1px solid var(--line,#d7dced);border-radius:999px;padding:2px 6px;background:rgba(255,255,255,.65);vertical-align:middle">
+      <span id="micLevelBar" style="display:block;height:100%;width:0%;min-width:2px;border-radius:999px;background:#84cc16;transition:width .1s linear"></span>
+    </span>
+    <span id="pttChip" class="chip hide" style="background:#16a34a;color:#fff;font-weight:700;font-size:.72em;padding:2px 8px;border-radius:999px">🎙 PTT</span>
     <button class="btn small" id="btnRec" title="Record the lesson locally">⏺ Rec</button>
     <button class="btn small" id="btnPiP" title="Picture-in-picture: keep a small live preview when you minimise/switch apps">▣ PiP</button>
 
@@ -92,6 +96,17 @@
     <button class="btn small" id="btnPicker" title="Random student picker — spins the names of everyone present and lands on one (like a classroom wheel)">🎪</button>
     <button class="btn small" id="btnDice" title="Roll two dice — for class games and random prompts">🎲</button>
     <button class="btn small" id="btnConfetti" title="Celebrate — a confetti burst on everyone's screen">🎉</button>
+    <!-- r25 (item 1): studio sound — quick audio panel: master hearing volume,
+         mic boost preset, speaker test. The mic itself runs through a
+         boost + compressor + limiter chain by default now. -->
+    <button class="btn small" id="btnAudio" title="Audio — master volume for every voice you hear, mic boost preset, speaker test">🎚 Audio</button>
+    <!-- r25 (item 2): share 2.0 — pause a live share (Zoom parity) -->
+    <button class="btn small hide" id="btnSharePause" title="Pause the live share — students see black until you resume (your mic keeps running)">⏸ Pause share</button>
+    <!-- r25 (item 4): live annotations over the broadcast (Zoom/Meet parity) -->
+    <button class="btn small" id="btnAnnotate" title="Annotate over the LIVE broadcast — students and the recording see your ink (A)">✏️ Annotate</button>
+    <!-- r25 (item 4): Zoom-parity controls -->
+    <button class="btn small" id="btnMirror" title="Mirror / unmirror your self-view (students' view is never mirrored)">🪞</button>
+    <button class="btn small" id="btnFocusCls" title="Focus mode (Zoom-style): students stop seeing/hearing each other — only you. Great for exams and quiet work.">🎯 Focus class</button>
 
     <button class="btn small" id="btnLayout" title="Cycle layout: split / left only / right only">◫</button>
     <button class="btn small" id="btnSwap" title="Swap panes">⇄</button>
@@ -873,6 +888,91 @@ Not sure</textarea>
     </div>
   </div>
 </div>
+<!-- ═══ r25 (item 2): the SHARE CHOOSER — one browser tab first (the field
+     request: "share my chrome browser but not all the tabs, only one tab"),
+     screen/window one tap away, tab audio + quality explicit. Verified
+     options land in getDisplayMedia (see teach.js share2Request). ═══ -->
+<div class="modal-back" id="mShare">
+  <div class="modal">
+    <h3>📺 Share with the class</h3>
+    <label>What do you want to share?</label>
+    <select class="input" id="shareSurface">
+      <option value="browser">One browser tab (recommended — the picker opens on your Chrome tabs)</option>
+      <option value="monitor">Whole screen / a window</option>
+    </select>
+    <p style="font-size:11.5px;color:var(--text-dim);margin:6px 0 0">Chrome shows its own picker — you pick the exact tab. Your own ClassDeck tab is never offered, and Chrome's <b>“Share this tab instead”</b> button lets you swap tabs mid-lesson without stopping.</p>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px">
+      <input type="checkbox" id="shareAudio" />
+      Also share that tab's audio (videos, sound — students hear it WITH your voice)
+    </label>
+    <label style="margin-top:10px">Quality</label>
+    <select class="input" id="shareQuality">
+      <option value="sharp">Sharp text (1080p, lower fps) — slides, documents, code</option>
+      <option value="motion">Smooth motion (720p @ 30fps) — videos, animations, demos</option>
+    </select>
+    <div class="row end" style="margin-top:14px">
+      <button class="btn ghost" data-close>Cancel</button>
+      <button class="btn primary" id="shareGo">Start sharing</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ r25 (item 1): quick AUDIO panel — master hearing volume, mic boost,
+     speaker test. The capture side already runs the boost + compressor +
+     limiter chain (see MicKit in rtc.js). ═══ -->
+<div class="modal-back" id="mAudio">
+  <div class="modal">
+    <h3>🎚 Audio</h3>
+    <label>Hearing volume (every student voice, 0–200%)</label>
+    <div class="row" style="gap:10px;align-items:center">
+      <input type="range" id="masterVol" min="0" max="200" step="10" value="100" style="flex:1" />
+      <b id="masterVolLabel" style="min-width:44px;text-align:right">100%</b>
+    </div>
+    <p style="font-size:11.5px;color:var(--text-dim);margin:4px 0 0">Above 100% uses a clean Web Audio boost. Per-student volume lives in the roster (🔊 on each student) and is remembered per student.</p>
+    <label style="margin-top:10px;display:flex;gap:8px;align-items:flex-start">
+      <input type="checkbox" id="chkAutoLevel" checked style="margin-top:2px" />
+      <span>🎚 Auto-level incoming voices <i style="color:var(--text-dim)">(recommended)</i></span>
+    </label>
+    <p style="font-size:11.5px;color:var(--text-dim);margin:4px 0 0">Lifts quiet student voices into a comfortable band as they arrive — even when a student's app is outdated or their mic is far away. A limiter keeps loud voices distortion-free.</p>
+    <label style="margin-top:10px">My microphone boost</label>
+    <select class="input" id="boostSel">
+      <option value="standard">Standard (×1.6 + levelling) — default, fixes “not loudly audible”</option>
+      <option value="strong">Strong (×2.2) — soft speakers, distant mics</option>
+      <option value="max">Maximum (×2.8) — very quiet setups only</option>
+      <option value="off">Off — raw mic level (headphone users avoid echo)</option>
+    </select>
+    <p style="font-size:11.5px;color:var(--text-dim);margin:4px 0 0">Applies live. Every voice is also limited so boosted audio cannot distort. Music/raw mode in ⚙ Settings bypasses all of it.</p>
+    <div class="row" style="margin-top:12px">
+      <button class="btn small" id="btnMicDoctor">🩺 Auto-tune my mic</button>
+      <button class="btn small" id="btnTestTone">🔔 Test my speakers</button>
+    </div>
+    <p style="font-size:11.5px;color:var(--text-dim);margin:4px 0 0">The doctor listens for 3 seconds, measures your raw mic, and picks the right boost — fixes "not loudly audible" for good.</p>
+    <div class="row end" style="margin-top:14px">
+      <button class="btn ghost" data-close>Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ r25 (item 4): ANNOTATE over the live broadcast — a transparent
+     whiteboard above the workspace; drawComposite stamps the ink onto the
+     outgoing canvas, so students AND the recording see it. ═══ -->
+<div id="bcastAnnot" class="hide" style="position:fixed;inset:0;z-index:800;pointer-events:none">
+  <div id="bcastAnnotStage" style="position:absolute;inset:0"></div>
+  <div id="bcastAnnotBar" class="row" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:810;pointer-events:auto;background:#fff;border:1px solid #d7dced;border-radius:12px;padding:6px 10px;gap:6px;box-shadow:0 8px 22px rgba(16,20,43,.18);flex-wrap:wrap;justify-content:center;max-width:94vw">
+    <button class="btn small active" data-atool="pen" title="Pen">✏️</button>
+    <button class="btn small" data-atool="highlighter" title="Highlighter">🖍️</button>
+    <button class="btn small" data-atool="eraser" title="Eraser">🧽</button>
+    <button class="btn small" data-atool="undo" title="Undo">↩</button>
+    <button class="btn small" data-atool="clear" title="Clear the ink">🗑</button>
+    <span style="width:1px;background:#d7dced;margin:0 2px"></span>
+    <button class="btn small active" data-acolor="#dc2626" title="Red" style="background:#dc2626;width:26px;height:26px;padding:0;border-color:#991b1b"></button>
+    <button class="btn small" data-acolor="#2563eb" title="Blue" style="background:#2563eb;width:26px;height:26px;padding:0;border-color:#1e3a8a"></button>
+    <button class="btn small" data-acolor="#16a34a" title="Green" style="background:#16a34a;width:26px;height:26px;padding:0;border-color:#14532d"></button>
+    <button class="btn small" data-acolor="#111827" title="Black" style="background:#111827;width:26px;height:26px;padding:0;border-color:#000"></button>
+    <span style="font-size:11.5px;color:#64748b;align-self:center">✏️ live on the broadcast</span>
+  </div>
+</div>
+
 <div class="modal-back" id="mSettings">
   <div class="modal">
     <h3>⚙ Settings</h3>
@@ -899,6 +999,12 @@ Not sure</textarea>
     </label>
     <p id="seeEachHint" style="font-size:11.5px;color:var(--text-dim);margin:4px 0 0">OFF — students see and hear only you (the default).</p>
     <p style="font-size:11.5px;color:var(--text-dim);margin:4px 0 0">When ON, students who are sharing a camera (or who you mark 👁 in the roster) are relayed to everyone — a gallery like Zoom/Meet. You decide globally here AND per student (👁 in the Students drawer). Note: your device uploads one stream per visible student, so on mobile data keep the visible group small.</p>
+    <label style="margin-top:10px">✨ Camera</label>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px">
+      <input type="checkbox" id="setTouchUp" />
+      Touch up my appearance (softened, brightened camera — like Meet's portrait touch-up)
+    </label>
+    <p style="font-size:11.5px;color:var(--text-dim);margin:4px 0 0">Applies the moment you save if your camera is on. Costs a little CPU on old tablets — keep it off there.</p>
     <label style="margin-top:10px">🎚 Audio processing (mic)</label>
     <div class="row" style="gap:14px;flex-wrap:wrap;font-size:13px">
       <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="setAEC" checked /> Echo cancellation</label>
@@ -1062,24 +1168,24 @@ Not sure</textarea>
 
 <!-- v6: full-screen teacher auth gate (signup / login / license) -->
 <!-- authGate removed: ADEWALE CLASSROOM DECK uses portal session only -->
-<script src="vendor/peerjs.min.js?v=67"></script>
-<script src="vendor/pdf.min.js?v=67"></script>
-<script src="vendor/qrcode.min.js?v=67"></script>
-<script src="js/common.js?v=67"></script>
-<script src="js/config.js?v=67"></script>
-<script src="js/portal-bridge.js?v=67"></script>
-<script src="js/license.js?v=67"></script>
-<script src="js/whiteboard.js?v=67"></script>
-<script src="js/webcast.js?v=67"></script>
-<script src="js/toolkit.js?v=67"></script>
-<script src="js/toolkit-data.js?v=67"></script>
-<script src="js/toolkit-data2.js?v=67"></script>
-<script src="js/toolkit-data3.js?v=67"></script>
-<script src="js/toolkit-ext.js?v=67"></script>
-<script src="js/security-config.js?v=67"></script>
-<script src="js/auth.js?v=67"></script>
-<script src="js/rtc.js?v=67"></script>
-<script src="js/teach-toolbar-fix.js?v=67"></script>
+<script src="vendor/peerjs.min.js?v=69"></script>
+<script src="vendor/pdf.min.js?v=69"></script>
+<script src="vendor/qrcode.min.js?v=69"></script>
+<script src="js/common.js?v=69"></script>
+<script src="js/config.js?v=69"></script>
+<script src="js/portal-bridge.js?v=69"></script>
+<script src="js/license.js?v=69"></script>
+<script src="js/whiteboard.js?v=69"></script>
+<script src="js/webcast.js?v=69"></script>
+<script src="js/toolkit.js?v=69"></script>
+<script src="js/toolkit-data.js?v=69"></script>
+<script src="js/toolkit-data2.js?v=69"></script>
+<script src="js/toolkit-data3.js?v=69"></script>
+<script src="js/toolkit-ext.js?v=69"></script>
+<script src="js/security-config.js?v=69"></script>
+<script src="js/auth.js?v=69"></script>
+<script src="js/rtc.js?v=69"></script>
+<script src="js/teach-toolbar-fix.js?v=69"></script>
 <div id="mTimer" class="modal-back">
   <div class="modal" style="max-width:360px">
     <h3 style="margin:0 0 10px">⏱ Class countdown</h3>
@@ -1358,15 +1464,15 @@ Not sure</textarea>
     </div>
   </div>
 </div>
-<script src="js/cloud-creds.js?v=67"></script>
-<script src="js/stream-kit.js?v=67"></script>
-<script src="js/webm-cues.js?v=67"></script>
-<script src="js/mp4-kit.js?v=67"></script>   <!-- r22-universal: MP4 finisher + muxer + WebCodecs transcode (Windows players don't play WebM: 0xc00d3e8c) -->
-<script src="js/teach.js?v=67"></script>
-<script src="js/cloud-sync-boot.js?v=67"></script>
-<script src="js/enhancements.js?v=67"></script>
-<script src="js/ecosystem-branding.js?v=67"></script>
-<script src="js/enterprise-enhanced.js?v=67"></script>
+<script src="js/cloud-creds.js?v=69"></script>
+<script src="js/stream-kit.js?v=69"></script>
+<script src="js/webm-cues.js?v=69"></script>
+<script src="js/mp4-kit.js?v=69"></script>   <!-- r22-universal: MP4 finisher + muxer + WebCodecs transcode (Windows players don't play WebM: 0xc00d3e8c) -->
+<script src="js/teach.js?v=69"></script>
+<script src="js/cloud-sync-boot.js?v=69"></script>
+<script src="js/enhancements.js?v=69"></script>
+<script src="js/ecosystem-branding.js?v=69"></script>
+<script src="js/enterprise-enhanced.js?v=69"></script>
 <div id="hmgEcosystemFooterCompact" style="max-width:100%;padding:0 14px"></div>
 <!-- r22: floating reactions layer (pointer-transparent) -->
 <div id="reactFloat" style="position:fixed;left:0;right:0;bottom:90px;z-index:9500;pointer-events:none;text-align:center"></div>

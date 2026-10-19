@@ -65,6 +65,18 @@
       <input class="input" id="inPin" placeholder="e.g. 2468" maxlength="8" inputmode="numeric" />
     </div>
     <button class="btn primary" id="btnJoin" style="padding:12px">Join class ➜</button>
+    <!-- r25 (item 3): the GREEN ROOM — Meet-style preflight. Test mic level and
+         speakers BEFORE joining, so nobody spends the first five minutes of
+         class discovering a dead mic. -->
+    <div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap;justify-content:center">
+      <button class="btn small ghost" id="btnGreenMic" type="button" title="Check your microphone level before joining">🎤 Test my mic</button>
+      <button class="btn small ghost" id="btnGreenSpk" type="button" title="Play a chime to check your speakers/headphones">🔔 Test my speakers</button>
+      <button class="btn small ghost" id="btnGreenTune" type="button" title="The doctor listens for 3 seconds and sets the right mic boost for your device">🩺 Auto-tune mic</button>
+    </div>
+    <div id="greenMicMeter" class="hide" style="width:100%;margin-top:8px">
+      <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-dim)"><span>Speak normally — the bar should climb into the green</span><span id="greenMicTip"></span></div>
+      <div style="height:10px;border-radius:999px;background:var(--bg-3);overflow:hidden;margin-top:4px"><div id="greenMicBar" style="height:100%;width:0%;background:#84cc16;transition:width .1s linear"></div></div>
+    </div>
     <button class="btn ghost hide" id="btnOpenBrowser" type="button" style="margin-top:8px">🌐 Open this class in Chrome / Safari</button>
     <p class="sub" id="joinStatus"></p>
     <div id="joinDiag" class="sub" style="text-align:left;background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:10px;font-size:11.8px"></div>
@@ -92,6 +104,14 @@
   <span class="badge live">● LIVE</span>
   <span class="badge" id="roomNameChip"></span>
   <span class="badge" id="countChip">👥 1</span>
+  <!-- r25: live connection quality (like Meet/Zoom) — 4 bars from the
+       smoothed round-trip time to the teacher -->
+  <span class="badge" id="sNet" title="Connection quality" style="display:inline-flex;align-items:flex-end;gap:2px;height:14px">
+    <i style="width:3px;height:4px;background:#9ca3af;display:block;border-radius:1px"></i>
+    <i style="width:3px;height:7px;background:#9ca3af;display:block;border-radius:1px"></i>
+    <i style="width:3px;height:10px;background:#9ca3af;display:block;border-radius:1px"></i>
+    <i style="width:3px;height:14px;background:#9ca3af;display:block;border-radius:1px"></i>
+  </span>
 </div>
 
 <!-- r22: breakout room bar + room grid (visible when the teacher opens rooms) -->
@@ -132,6 +152,8 @@
   <button class="btn icon" id="sBtnScreen" title="Share my screen with the teacher">🖥</button>
   <button class="btn icon hide" id="sBtnFlip" title="Switch front/back camera">🔄</button>
   <button class="btn icon" id="sBtnMic" title="My mic (teacher must allow)" disabled>🎙</button>
+  <button class="btn icon" id="sVolBtn" title="Volume — how loud the teacher sounds (0–200%)">🔊</button>
+  <button class="btn icon" id="sCCBtn" title="Captions on/off (when the teacher runs live captions)">CC</button>
   <button class="btn icon" id="sBtnFull" title="Fullscreen">⛶</button>
   <button class="btn icon danger" id="sBtnLeave" title="Leave">🚪</button>
 </div>
@@ -180,7 +202,7 @@
 <div id="sGroupBanner" class="hide" style="position:fixed;top:0;left:0;right:0;z-index:65;background:#1d6f42;color:#fff;text-align:center;padding:7px;font-weight:700;font-size:15px"></div>
 
 <!-- Enterprise accessibility: live caption banner sent by the teacher's browser speech recognition -->
-<div id="sCaptionBanner" class="hide" aria-live="polite" style="position:fixed;left:50%;bottom:92px;transform:translateX(-50%);z-index:66;max-width:min(92vw,900px);background:rgba(0,0,0,.78);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:10px 14px;font-size:clamp(15px,2.5vw,22px);line-height:1.35;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.35)"></div>
+<div id="sCaptionBanner" class="hide" aria-live="polite" style="position:fixed;left:50%;bottom:92px;transform:translateX(-50%);z-index:66;max-width:min(92vw,900px);background:rgba(0,0,0,.78);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:10px 14px;font-size:var(--cap-size,clamp(15px,2.5vw,22px));line-height:1.35;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.35)"><span id="sCaptionText" style="display:inline"></span> <button id="sCapSize" title="Caption text size" style="background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:8px;padding:2px 8px;font-size:.75em;cursor:pointer;vertical-align:middle">Aa</button></div>
 
 <!-- v8: activity modal -->
 <div class="modal-back" id="mActivity">
@@ -287,13 +309,13 @@
   </div>
 </div>
 
-<script src="vendor/peerjs.min.js?v=67"></script>
-<script src="js/common.js?v=67"></script>
-<script src="js/config.js?v=67"></script>
-<script src="js/portal-bridge.js?v=67"></script>
-<script src="js/license.js?v=67"></script>
-<script src="js/rtc.js?v=67"></script>
-<script src="js/join.js?v=67"></script>
+<script src="vendor/peerjs.min.js?v=69"></script>
+<script src="js/common.js?v=69"></script>
+<script src="js/config.js?v=69"></script>
+<script src="js/portal-bridge.js?v=69"></script>
+<script src="js/license.js?v=69"></script>
+<script src="js/rtc.js?v=69"></script>
+<script src="js/join.js?v=69"></script>
 <script>
 /* Issue #9: force install banner on the join page (re-appears until installed). */
 function joinInstall() {

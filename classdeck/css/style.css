@@ -710,3 +710,17 @@ hr.sep { border: none; border-top: 1px solid var(--line); margin: 10px 0; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+
+/* ═══ r25 — studio sound, spotlight, per-student volume, speaking glow ═══ */
+/* active-speaker glow: the roster row lights while the student talks */
+.stu-row.speaking {
+  background: linear-gradient(90deg, rgba(22,163,74,.14), rgba(22,163,74,.04));
+  box-shadow: inset 3px 0 0 #16a34a;
+}
+/* spotlight button live state */
+.stu-row [data-act="spot"].active { background: #f59e0b; color: #fff; border-color: #b45309; }
+/* the share-pause + focus-class live states */
+#btnSharePause.active { background: #b45309; color: #fff; }
+#btnFocusCls.active { background: #7c3aed; color: #fff; border-color: #5b21b6; }
+#btnAnnotate.active { background: #dc2626; color: #fff; border-color: #991b1b; }

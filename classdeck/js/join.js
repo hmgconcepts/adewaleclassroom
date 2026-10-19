@@ -386,6 +386,274 @@ function runConnectionDoctor() {
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   r25 (items 1+3) — STUDIO SOUND on the student side + the GREEN ROOM.
+   Hearing: the 🔊 button sets how loud the teacher sounds, 0-200%
+   (persisted). Above 100% runs a clean Web Audio gain (an element's own
+   .volume physically stops at 1.0); below it, plain element volume.
+   Speaking: shareMic already runs the boost/compressor/limiter chain
+   (rtc.js MicKit) — the teacher hears you loud too.
+   Preflight: Meet-style mic + speaker tests BEFORE joining.
+   ═══════════════════════════════════════════════════════════════════ */
+var spkBoostGain = null, spkBoostCtx = null, spkBoostEl = null;
+/* r26: AUTO-LEVEL — the receive-side sound system on the student deck.
+   The teacher's voice is lifted into a comfortable band as it arrives
+   (low-threshold compressor + +10 dB makeup, −3 dB limiter cap), so the
+   class is loud & clear EVEN IF the teacher's app is an older build
+   without the sender-side studio chain. */
+var spkChain = null;   /* {src, hp, comp, mk, lim} on spkBoostCtx */
+function autoLevelIn() { return String(Store.get("autolevel_in", 1)) === "1"; }
+function spkVolume() { const v = Number(Store.get("spk_volume", 100)); return Number.isFinite(v) ? Math.max(0, Math.min(200, v)) : 100; }
+function applySpkVolume() {
+  const v = spkVolume();
+  const els = [document.getElementById("stageVideo"), document.getElementById("teacherVideo")].filter(Boolean);
+  const on = autoLevelIn();
+  if (!on && v <= 100) {
+    /* plain element volume — the exact pre-r26 path */
+    if (spkChain) { try { spkChain.src.disconnect(); } catch (e) {} try { spkChain.src.connect(spkBoostGain); } catch (e) {} }
+    try { if (spkBoostGain) spkBoostGain.gain.value = 1; } catch (e) {}
+    els.forEach((el) => { try { el.volume = v / 100; } catch (e) {} });
+    return;
+  }
+  const main = els[0];
+  if (!main) return;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) { els.forEach((el) => { try { el.volume = Math.min(1, v / 100); } catch (e) {} }); return; }
+  try {
+    if (!spkBoostCtx || spkBoostEl !== main) {
+      spkBoostCtx = new AC();
+      const src = spkBoostCtx.createMediaElementSource(main);   /* one per element, kept forever */
+      spkBoostGain = spkBoostCtx.createGain();
+      const c = { src: src, hp: spkBoostCtx.createBiquadFilter(), comp: spkBoostCtx.createDynamicsCompressor(), mk: spkBoostCtx.createGain(), lim: spkBoostCtx.createDynamicsCompressor() };
+      c.hp.type = "highpass"; c.hp.frequency.value = 95;
+      c.comp.threshold.value = -50; c.comp.knee.value = 10; c.comp.ratio.value = 4; c.comp.attack.value = 0.008; c.comp.release.value = 0.25;
+      c.mk.gain.value = 3.2;                            /* +10 dB makeup — lifts a quiet teacher */
+      c.lim.threshold.value = -3; c.lim.knee.value = 1; c.lim.ratio.value = 20; c.lim.attack.value = 0.001; c.lim.release.value = 0.1;
+      src.connect(c.hp); c.hp.connect(c.comp); c.comp.connect(c.mk); c.mk.connect(c.lim); c.lim.connect(spkBoostGain); spkBoostGain.connect(spkBoostCtx.destination);
+      spkChain = c;
+      spkBoostEl = main;
+    }
+    if (spkBoostCtx.state === "suspended") spkBoostCtx.resume().catch(() => {});
+    els.forEach((el) => { try { el.volume = 1; } catch (e) {} });
+    try { spkChain.src.disconnect(); } catch (e) {}
+    try { spkChain.src.connect(on ? spkChain.hp : spkBoostGain); } catch (e) {}
+    spkBoostGain.gain.value = v / 100;
+  } catch (e) {
+    els.forEach((el) => { try { el.volume = Math.min(1, v / 100); } catch (e2) {} });
+  }
+}
+/* r26: Alt+↑/↓ nudges the teacher's hearing volume ±10% — works even
+   while typing is NOT focused; yields to inputs and OS combos. */
+(function initVolKeys() {
+  if (typeof document === "undefined" || !document.addEventListener) return;
+  document.addEventListener("keydown", (e) => {
+    if (!e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+    const cur = spkVolume();
+    const nv = Math.max(0, Math.min(200, cur + (e.key === "ArrowUp" ? 10 : -10)));
+    Store.set("spk_volume", nv);
+    applySpkVolume();
+    toast("🔊 Teacher volume " + nv + "%", "", 1600);
+    e.preventDefault();
+  });
+})();
+(function initVolBtn() {
+  const btn = document.getElementById("sVolBtn");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    let pop = document.getElementById("sVolPop");
+    if (pop) { pop.remove(); return; }
+    pop = document.createElement("div");
+    pop.id = "sVolPop";
+    pop.style.cssText = "position:fixed;right:12px;bottom:74px;z-index:80;background:#fff;color:#111;border:1px solid #d7dced;border-radius:14px;box-shadow:0 10px 30px rgba(16,20,43,.22);padding:12px 14px;font-size:13px;min-width:220px";
+    const cur = spkVolume();
+    pop.innerHTML = "<b>🔊 Teacher volume</b><div style='display:flex;gap:8px;align-items:center;margin-top:8px'><input type='range' min='0' max='200' step='10' value='" + cur + "' style='flex:1'><b style='min-width:42px;text-align:right'>" + cur + "%</b></div><label style='display:flex;gap:7px;align-items:center;margin-top:9px;font-weight:500'><input type='checkbox' id='sAutoLevel'" + (autoLevelIn() ? " checked" : "") + ">🎚 Auto-level the teacher's voice</label><div style='font-size:11px;opacity:.7;margin-top:6px'>Above 100% is a clean boost. Auto-level lifts a quiet teacher into a comfortable band — even from an older app version.</div>";
+    const rng = pop.querySelector("input[type=range]"), lab = pop.querySelector("div b b, b:last-of-type");
+    const al = pop.querySelector("#sAutoLevel");
+    if (al) al.addEventListener("change", () => { Store.set("autolevel_in", al.checked ? 1 : 0); applySpkVolume(); toast(al.checked ? "🎚 Auto-level ON — the teacher's voice is lifted as it arrives." : "Auto-level OFF.", "", 3000); });
+    const label = pop.querySelectorAll("b")[2];
+    rng.addEventListener("input", () => {
+      if (label) label.textContent = rng.value + "%";
+      Store.set("spk_volume", Number(rng.value));
+      applySpkVolume();
+    });
+    document.body.appendChild(pop);
+    setTimeout(() => {
+      const close = (ev) => { if (!pop.contains(ev.target) && ev.target !== btn) { pop.remove(); document.removeEventListener("click", close); } };
+      document.addEventListener("click", close);
+    }, 30);
+  });
+})();
+
+/* r25: the GREEN ROOM tests (join gate). */
+(function initGreenRoom() {
+  const micBtn = document.getElementById("btnGreenMic");
+  const spkBtn = document.getElementById("btnGreenSpk");
+  if (micBtn) micBtn.addEventListener("click", async () => {
+    const wrap = document.getElementById("greenMicMeter");
+    const bar = document.getElementById("greenMicBar");
+    const tip = document.getElementById("greenMicTip");
+    if (!window.MicKit || !MicKit.available()) {
+      if (tip) tip.textContent = "Mic test unavailable in this browser";
+      if (wrap) wrap.classList.remove("hide");
+      return;
+    }
+    if (micBtn.dataset.on === "1") {   /* toggle off */
+      micBtn.dataset.on = "0";
+      micBtn.classList.remove("active");
+      if (greenMicStop) { greenMicStop(); greenMicStop = null; }
+      return;
+    }
+    micBtn.dataset.on = "1";
+    micBtn.classList.add("active");
+    if (wrap) wrap.classList.remove("hide");
+    try {
+      const acq = await MicKit.acquire({ boost: "standard" });
+      const meter = MicKit.meter(acq.stream, (lv) => {
+        if (bar) { bar.style.width = Math.min(100, lv) + "%"; bar.style.background = lv >= 90 ? "#dc2626" : (lv >= 30 ? "#16a34a" : "#84cc16"); }
+        if (tip) tip.textContent = lv < 8 ? "…silence — check the OS mic switch" : (lv >= 90 ? "very loud — a boost preset is enough" : "good level 👍");
+      });
+      greenMicStop = () => {
+        try { meter.stop(); } catch (e) {}
+        try { acq.stream.getTracks().forEach((t) => t.stop()); } catch (e) {}
+        try { acq._rawHandle && acq._rawHandle.getTracks().forEach((t) => t.stop()); } catch (e) {}
+        try { acq.chain && acq.chain.stop(); } catch (e) {}
+        if (bar) bar.style.width = "0%";
+      };
+    } catch (e) {
+      const c = window.MicKit ? MicKit.classify(e) : { title: "Microphone error", body: "" };
+      if (tip) tip.textContent = c.title;
+      micBtn.dataset.on = "0";
+      micBtn.classList.remove("active");
+    }
+  });
+  if (spkBtn) spkBtn.addEventListener("click", () => {
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) { toast("Speaker test unavailable in this browser.", "err"); return; }
+      const ctx = spkBoostCtx && spkBoostCtx.state !== "closed" ? spkBoostCtx : new AC();
+      if (ctx.state === "suspended") ctx.resume().catch(() => {});
+      [523, 659, 784].forEach((f, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.type = "sine"; o.frequency.value = f;
+        o.connect(g); g.connect(ctx.destination);
+        const t0 = ctx.currentTime + i * 0.22;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.28, t0 + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.2);
+        o.start(t0); o.stop(t0 + 0.22);
+      });
+      toast("🔔 Did you hear the chime? If not, turn the device volume up before joining.", "ok", 6000);
+    } catch (e) { toast("Could not play the test tone.", "err"); }
+  });
+  /* r26: the mic doctor — auto-calibration in the green room. Listens
+     3 seconds, measures the RAW mic, picks the right boost for THIS
+     device, and stores it (cd-audio-boost) so the live class starts
+     loud & clear with zero fiddling. */
+  const tuneBtn = document.getElementById("btnGreenTune");
+  if (tuneBtn) tuneBtn.addEventListener("click", async () => {
+    if (!window.MicKit || !MicKit.available()) { toast("Mic calibration is unavailable in this browser.", "err"); return; }
+    const tip = document.getElementById("greenMicTip");
+    const wrap = document.getElementById("greenMicMeter");
+    const bar = document.getElementById("greenMicBar");
+    if (wrap) wrap.classList.remove("hide");
+    tuneBtn.disabled = true;
+    const oldTxt = tuneBtn.textContent;
+    tuneBtn.textContent = "🩺 Listening…";
+    let acq = null, meter = null;
+    try {
+      acq = await MicKit.acquire({ boost: "off" });
+      const raw = acq._rawHandle || acq.stream;
+      const avg = await new Promise((res) => {
+        let sum = 0, n = 0;
+        meter = MicKit.meter(raw, (lv) => { sum += lv; n++; if (bar) { bar.style.width = Math.min(100, lv) + "%"; bar.style.background = lv >= 90 ? "#dc2626" : (lv >= 30 ? "#16a34a" : "#84cc16"); } });
+        setTimeout(() => { try { meter.stop(); } catch (e) {} res(n ? sum / n : 0); }, 3000);
+      });
+      const pick = micDoctorPick(avg);
+      try { localStorage.setItem("cd-audio-boost", pick); } catch (e2) {}
+      if (tip) tip.textContent = pick === "off" ? "already loud — boost OFF" : "boost set: " + pick.toUpperCase();
+      toast("🩺 Mic doctor: raw level " + Math.round(avg) + "/100 → boost " + (pick === "off" ? "OFF (already loud)" : pick.toUpperCase()) + ". You are ready to be heard.", "ok", 8000);
+    } catch (e) {
+      const c = window.MicKit ? MicKit.classify(e) : { title: "Microphone error", body: "" };
+      if (tip) tip.textContent = c.title;
+      toast("Mic doctor could not read your mic — check the OS mic switch.", "err", 6000);
+    } finally {
+      if (meter) { try { meter.stop(); } catch (e) {} }
+      if (acq) { try { acq.stream.getTracks().forEach((t) => t.stop()); } catch (e) {} try { acq._rawHandle && acq._rawHandle.getTracks().forEach((t) => t.stop()); } catch (e) {} }
+      tuneBtn.disabled = false;
+      tuneBtn.textContent = oldTxt;
+    }
+  });
+})();
+var greenMicStop = null;
+/* r26: the calibration ladder (kept pure — the QA suite exercises it):
+   raw 0-100 meter scale → the honest preset. Never over-drives a mic
+   that is already loud, never leaves a whisper at "standard". */
+function micDoctorPick(rawAvg) {
+  if (!Number.isFinite(rawAvg)) return "standard";
+  if (rawAvg < 5) return "max";
+  if (rawAvg < 10) return "strong";
+  if (rawAvg < 18) return "standard";
+  return "off";
+}
+
+/* r25: connection bars (Meet/Zoom-style 📶 for the student). */
+function updateNetBars(rtt) {
+  const el = document.getElementById("sNet");
+  if (!el) return;
+  const bars = el.querySelectorAll("i");
+  let n = 1, color = "#dc2626", label = rtt + "ms";
+  if (rtt <= 180) { n = 4; color = "#16a34a"; label = "excellent (" + rtt + "ms)"; }
+  else if (rtt <= 450) { n = 3; color = "#16a34a"; label = "good (" + rtt + "ms)"; }
+  else if (rtt <= 900) { n = 2; color = "#f59e0b"; label = "fair (" + rtt + "ms)"; }
+  bars.forEach((b, i) => { b.style.background = i < n ? color : "#9ca3af"; });
+  el.title = "Connection to your teacher: " + label;
+}
+
+/* r25: captions — student toggle + text size. */
+var ccOff = false;
+(function initCC() {
+  const b = document.getElementById("sCCBtn");
+  if (b) b.addEventListener("click", () => {
+    ccOff = !ccOff;
+    b.classList.toggle("active", !ccOff);
+    const el = document.getElementById("sCaptionBanner");
+    if (ccOff && el) el.classList.add("hide");
+    toast(ccOff ? "Captions hidden (the teacher's captions keep running — CC shows them again)" : "Captions will show when the teacher speaks", "ok", 5000);
+  });
+  const sz = document.getElementById("sCapSize");
+  if (sz) sz.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const sizes = ["clamp(15px,2.5vw,22px)", "clamp(18px,3vw,28px)", "clamp(22px,3.8vw,36px)"];
+    const cur = Number(Store.get("cap_size_idx", 0)) || 0;
+    const next = (cur + 1) % sizes.length;
+    Store.set("cap_size_idx", next);
+    document.documentElement.style.setProperty("--cap-size", sizes[next]);
+    try { e.stopPropagation(); } catch (err) {}
+  });
+  try { const sizes2 = ["clamp(15px,2.5vw,22px)", "clamp(18px,3vw,28px)", "clamp(22px,3.8vw,36px)"]; document.documentElement.style.setProperty("--cap-size", sizes2[Number(Store.get("cap_size_idx", 0)) || 0]); } catch (e) {}
+})();
+
+/* r25 (item 3): instant recovery hooks — the moment the browser regains
+   the network (or the student returns to the tab), a dead connection is
+   rejoined IMMEDIATELY instead of waiting for the next retry tick. */
+/* feature-detected: bare VM test sandboxes may not implement these */
+if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+  window.addEventListener("online", () => {
+    if (stageEntered && !lobbyOn && rejoinBanner) attemptRejoin();
+  });
+}
+if (typeof document !== "undefined" && typeof document.addEventListener === "function") {
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && stageEntered && !lobbyOn) {
+      const alive = sRoom && sRoom.conn && sRoom.conn.open;
+      if (!alive) attemptRejoin();
+    }
+  });
+}
+
 function enterStage() {
   if (stageEntered) return;
   stageEntered = true;
@@ -411,6 +679,8 @@ function onEvent(type, p) {
       rejoinTries = 0;
       lobbyAttempt = 0;
       try { sRoom && sRoom.requestPermSync(); } catch {}   /* v9: teacher re-applies mic permission if it was granted */
+      try { sRoom && sRoom.startQualityMonitor(); } catch {}   /* r25: 📶 connection bars */
+      applySpkVolume();                                        /* r25: saved hearing volume from the first second */
       restoreJoinButton();
       Store.set("joined_" + (sRoom ? sRoom.code : normaliseRoomCode($("#inRoom").value)), true);
       closeModal("#mWaiting");
@@ -491,8 +761,18 @@ function onEvent(type, p) {
     case "reaction":                                  // v4
       sFlyEmoji(p.emoji, p.name);
       break;
-    case "spotlight":                                 // v4
-      toast("🌟 " + p.name + ", it's your turn!", "ok", 6000);
+    case "spotlight":                                 // v4 → r25: real video spotlight rides the teacher's broadcast
+      if (p && p.peerId) toast("🌟 " + p.name + " is in the spotlight!", "ok", 6000);
+      else if (p && p.name) toast("🌟 " + p.name + ", it's your turn!", "ok", 6000);
+      break;
+    case "quality":                                   /* r25: 📶 bars */
+      if (p && typeof p.rtt === "number") updateNetBars(p.rtt);
+      break;
+    case "signal-reconnecting":                       /* r25: signalling drop — transparent auto-reconnect */
+      toast("📡 Reconnecting to the classroom service…", "", 4000);
+      break;
+    case "signal-back":
+      toast("✅ Back on the classroom service.", "ok", 3000);
       break;
     case "camRequest": handleCamRequest(p.on); break;
     case "screenRequest":                              /* v5 → r21 chooser + audience */
@@ -563,6 +843,7 @@ let pendingStream = null;
 function attachStage(stream) {
   const v = $("#stageVideo");
   v.srcObject = stream;
+  applySpkVolume();   /* r25: the saved 0-200% hearing volume, on every stage attach */
   v.play().catch(() => {
     pendingStream = stream;
     openModal("#mUnmute");
@@ -573,6 +854,7 @@ $("#btnUnmute").addEventListener("click", () => {
   const v = $("#stageVideo");
   if (pendingStream) v.srcObject = pendingStream;
   v.muted = false;
+  applySpkVolume();   /* r25: keep the chosen hearing volume after the unmute gate */
   v.play().catch(() => {});
   $("#teacherVideo").play().catch(() => {});
 });
@@ -717,11 +999,13 @@ $("#sBtnQa") && $("#sBtnQa").addEventListener("click", () => {
 
 
 function showCaption(p) {
+  if (ccOff) return;   /* r25: the student chose to hide captions */
   const el = $("#sCaptionBanner");
-  if (!el) return;
+  const txt = $("#sCaptionText");
+  if (!el || !txt) return;
   const text = String((p && p.text) || "").trim();
   if (!text) return;
-  el.textContent = text;
+  txt.textContent = text;
   el.classList.remove("hide");
   clearTimeout(showCaption._t);
   showCaption._t = setTimeout(() => el.classList.add("hide"), p && p.final ? 7000 : 3500);

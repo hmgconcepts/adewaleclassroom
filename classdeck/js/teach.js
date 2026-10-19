@@ -87,6 +87,19 @@ var room = null;
 var lastEndedRoom = null;
 var micStream = null, camStream = null;
 var micOn = false, camOn = false;
+/* ── r25 studio sound ──
+   micChain: the boost/compressor/limiter handle from MicKit.acquire
+   micRawStream: the untouched capture UNDER the chain (stopping it kills the chain source)
+   remoteAudioCtx: one shared Web Audio context for all remote playback
+   stuVol: per-student volume (0-200) — Zoom's per-participant volume
+   stuMeter: active-speaker level meters per student mic stream
+   spotlightPid / spotVideo: Zoom-style VIDEO spotlight drawn into the broadcast */
+var micChain = null, micRawStream = null;
+var remoteAudioCtx = null;
+var stuVol = new Map();
+var stuMeter = new Map();
+var micMeterTimer = null;
+var spotlightPid = null, spotVideo = null, spotName = "";
 var stageStream = null;
 var classStartTs = 0, classTickInt = null;
 var recorder = null, recChunks = [], recStream = null;
@@ -1517,6 +1530,9 @@ function drawComposite() {
      pointer — pointer LAST so it always sits above the content. */
   const _now = performance.now();
   drawEngagement(ctx, W, H, _now);
+  /* r25: spotlight panel + live annotation ink, above content, below pointer */
+  drawSpotlight(ctx, W, H);
+  drawBroadcastAnnot(ctx, W, H);
   drawCastPointer(ctx, W, H, _now);
 
   // LIVE watermark + clock
@@ -1940,12 +1956,16 @@ async function goLive() {
     broadcastMode = "composite";
     if (mode === "screen" && navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
       try {
-        const s = await navigator.mediaDevices.getDisplayMedia({
-          video: { frameRate: { ideal: Math.max(COMP.fps, 10), max: 15 }, width: { ideal: 1920 }, height: { ideal: 1080 } },
-          audio: true   // captures tab/system audio where the browser/OS permits it
+        /* r25 share 2.0: same verified path as the mid-class switch —
+           tab-first picker, own tab excluded, mid-share tab switching. */
+        const s = await share2Request({
+          surface: Store.get("share_surface", "browser"),
+          audio: true,   /* a class that STARTS in screen mode keeps tab/system audio when offered */
+          quality: Store.get("share_quality", "sharp")
         });
         const track = s.getVideoTracks()[0];
-        if (track.contentHint !== undefined) { try { track.contentHint = "detail"; } catch (e) {} }
+        if (track.contentHint !== undefined) { try { track.contentHint = (Store.get("share_quality", "sharp") === "motion") ? "motion" : "detail"; } catch (e) {} }
+        toast("📺 Sharing " + shareSurfaceLabel(track) + ".", "ok", 8000);
         if (!screenMirrorEl) {
           screenMirrorEl = document.createElement("video");
           screenMirrorEl.muted = true; screenMirrorEl.playsInline = true;
@@ -2005,9 +2025,7 @@ async function goLive() {
     if (COMP.raf) { cancelAnimationFrame(COMP.raf); COMP.raf = null; }
     try { stageStream && stageStream.getTracks().forEach((t) => t.stop()); } catch {}
     stageStream = null;
-    stopMicWatch();
-  try { micStream && micStream.getTracks().forEach((t) => t.stop()); } catch {}
-    micStream = null; micOn = false; $("#btnMic").classList.remove("active");
+    stopMicCompletely();
     refreshPendingBadge();
     syncWaitingRoomUI();
     toast(e.message || "Could not start class", "err", 6000);
@@ -2042,7 +2060,96 @@ function startCompositeStage() {
 /* r21 (item 1): THE MID-CLASS SWITCHER. Returns true when the mode changed.
    Works while live AND while only recording (the recording follows the
    active source either way). Audio never changes (teacher mic). */
-async function switchBroadcastMode(mode) {
+/* ── r25 (item 2): SCREEN SHARE 2.0 ──────────────────────────────────
+   The field ask: "I want to share my Chrome browser but not all the
+   tabs — only ONE tab." The verified options (MDN getDisplayMedia + W3C
+   screen-capture + Chrome's privacy-preserving screen-sharing controls):
+     surface "browser" → the picker OPENS on the Chrome Tab list, so one
+       tab is the natural choice (the user still picks the exact tab —
+       the W3C spec FORBIDS a page from choosing it for them);
+     surface "monitor" → picker opens on Entire Screen (window still listed);
+     selfBrowserSurface "exclude" → the ClassDeck's own tab is never offered
+       (kills the infinite-mirror accident);
+     surfaceSwitching "include" → Chrome's "Share this tab instead" button —
+       swap tabs MID-CLASS without stopping the share;
+     monitorTypeSurfaces "include" → screens stay available when wanted;
+     systemAudio "include" + audio:true → tab/system audio rides the share
+       (Chrome offers it when the surface has audio; Linux/macOS: tab audio
+       only, Windows: whole system — platform-honest).
+   Quality presets: "sharp" (1080p@12, contentHint detail — text stays
+   readable) / "motion" (720p@30, contentHint motion — videos & demos). */
+function shareQualityConstraints(q) {
+  if (q === "motion") return { frameRate: { ideal: 24, max: 30 }, width: { ideal: 1280 }, height: { ideal: 720 } };
+  return { frameRate: { ideal: 12, max: 15 }, width: { ideal: 1920 }, height: { ideal: 1080 } };
+}
+async function share2Request(prefs) {
+  prefs = prefs || {};
+  const surface = (prefs.surface === "monitor" || prefs.surface === "window") ? prefs.surface : "browser";
+  const wantAudio = !!prefs.audio;
+  const quality = prefs.quality === "motion" ? "motion" : "sharp";
+  const video = shareQualityConstraints(quality);
+  video.displaySurface = surface;
+  const req = {
+    video: video,
+    preferCurrentTab: false,
+    selfBrowserSurface: "exclude",       /* never offer OUR tab — no mirror loops */
+    surfaceSwitching: "include",         /* Chrome's "Share this tab instead" button */
+    monitorTypeSurfaces: "include",
+    audio: wantAudio                     /* tab/system audio where the platform allows */
+  };
+  if (wantAudio) { req.systemAudio = "include"; req.audio = { echoCancellation: false, noiseSuppression: false, autoGainControl: false }; }
+  return await navigator.mediaDevices.getDisplayMedia(req);
+}
+function shareSurfaceLabel(track) {
+  /* getSettings().displaySurface: "browser" | "monitor" | "window" (MDN).
+     Where the browser does not report it, we honestly say "your choice". */
+  try {
+    const st = track && track.getSettings && track.getSettings();
+    const d = st && st.displaySurface;
+    if (d === "browser") return "ONE BROWSER TAB — only that tab is visible to the class";
+    if (d === "monitor") return "your WHOLE SCREEN — everything on it is visible";
+    if (d === "window") return "ONE WINDOW — only that window is visible";
+  } catch (e) {}
+  return "the surface you picked";
+}
+/* ── tab/system audio under the mic: one mixed track replaces the stage
+   audio sender (updateStageAudio → replaceTrack, no renegotiation).
+   The recording prefers the same mix when it starts during the share. */
+var shareAudioMix = null, shareMixTrack = null;
+function startShareAudioMix(tabStream) {
+  const tabTracks = tabStream && tabStream.getAudioTracks ? tabStream.getAudioTracks() : [];
+  if (!tabTracks.length) return false;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC) return false;
+  try {
+    const ctx = new AC();
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+    const dest = ctx.createMediaStreamDestination();
+    if (micStream && micStream.getAudioTracks().length) {
+      ctx.createMediaStreamSource(micStream).connect(dest);   /* teacher voice */
+    }
+    ctx.createMediaStreamSource(new MediaStream(tabTracks)).connect(dest);   /* tab audio */
+    shareAudioMix = ctx;
+    shareMixTrack = dest.stream.getAudioTracks()[0] || null;
+    if (shareMixTrack && room && room.updateStageAudio) {
+      room.updateStageAudio(shareMixTrack);
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+function stopShareAudioMix() {
+  if (shareAudioMix) { try { shareAudioMix.close(); } catch (e) {} shareAudioMix = null; }
+  shareMixTrack = null;
+  /* restore the plain (studio-boosted) mic track */
+  try {
+    if (room && room.updateStageAudio && micStream && micStream.getAudioTracks().length) {
+      room.updateStageAudio(micStream.getAudioTracks()[0]);
+    }
+  } catch (e) {}
+}
+
+async function switchBroadcastMode(mode, sharePrefsArg) {
   if (mode !== "screen" && mode !== "composite") mode = "composite";
   if (mode === broadcastMode) { toast("Already in " + (mode === "screen" ? "screen share" : "composite") + " mode."); return false; }
   if (mode === "screen") {
@@ -2050,19 +2157,32 @@ async function switchBroadcastMode(mode) {
       toast("This browser cannot share the screen - staying on the composite workspace.", "err", 7000);
       return false;
     }
+    /* r25 share 2.0: prefs come from the 📺 share chooser (surface / tab
+       audio / quality); older callers keep the stored defaults. */
+    const prefs = Object.assign({
+      surface: Store.get("share_surface", "browser"),
+      audio: Store.get("share_audio", false),
+      quality: Store.get("share_quality", "sharp")
+    }, sharePrefsArg || {});
     let s;
     try {
-      s = await navigator.mediaDevices.getDisplayMedia({
-        video: { frameRate: { ideal: Math.max(COMP.fps, 10), max: 15 }, width: { ideal: 1920 }, height: { ideal: 1080 } },
-        audio: false   /* classroom audio stays the teacher mic - predictable, no double audio */
-      });
+      s = await share2Request(prefs);
     } catch (e) {
       toast("Screen share cancelled - still on the composite workspace.", "", 5000);
       return false;
     }
     const track = s.getVideoTracks()[0];
     if (!track) { try { s.getTracks().forEach((t) => t.stop()); } catch (e) {} return false; }
-    if (track.contentHint !== undefined) { try { track.contentHint = "detail"; } catch (e) {} }
+    if (track.contentHint !== undefined) { try { track.contentHint = (prefs.quality === "motion") ? "motion" : "detail"; } catch (e) {} }
+    /* honest, specific confirmation of WHAT is now visible */
+    toast("📺 Sharing " + shareSurfaceLabel(track) + ".", "ok", 8000);
+    /* tab/system audio mixed under the mic when the teacher asked for it */
+    if (prefs.audio) {
+      const mixed = startShareAudioMix(s);
+      toast(mixed
+        ? "🔊 Tab/system audio is live with your voice — students hear both. (A recording started NOW captures both too; a recording already running keeps your mic.)"
+        : "No audio came with that surface (the platform did not offer it) — your mic stays as the class audio.", mixed ? "ok" : "", 9000);
+    }
     if (!screenMirrorEl) {
       screenMirrorEl = document.createElement("video");
       screenMirrorEl.muted = true; screenMirrorEl.playsInline = true;
@@ -2075,6 +2195,7 @@ async function switchBroadcastMode(mode) {
       toast("Screen share ended - back to the composite workspace. Nothing was interrupted.", "ok", 6000);
       switchBroadcastMode("composite");
     });
+    sharePaused = false; updateSharePauseUI();
     broadcastMode = "screen";
     stageScreenStream = s;
     if (COMP.raf) { cancelAnimationFrame(COMP.raf); COMP.raf = null; }   /* save CPU; COMP.track is never stopped */
@@ -2089,6 +2210,8 @@ async function switchBroadcastMode(mode) {
     return true;
   }
   broadcastMode = "composite";
+  stopShareAudioMix();
+  sharePaused = false; updateSharePauseUI();
   if (stageScreenStream) { try { stageScreenStream.getTracks().forEach((t) => t.stop()); } catch (e) {} stageScreenStream = null; }
   if (screenMirrorEl) { try { screenMirrorEl.srcObject = null; } catch (e) {} }
   if (!COMP.raf) { drawComposite(); COMP.raf = requestAnimationFrame(compositeLoop); }
@@ -2100,11 +2223,35 @@ async function switchBroadcastMode(mode) {
   audit("broadcast-switch", "screen to composite");
   return true;
 }
+/* ── r25: PAUSE share (Zoom parity). A disabled video track sends black
+   frames (a web page cannot freeze the last frame like Zoom's native
+   client) — the toast says exactly that, no surprises. */
+var sharePaused = false;
+function updateSharePauseUI() {
+  const b = document.getElementById("btnSharePause");
+  if (!b) return;
+  const sharing = broadcastMode === "screen" && stageScreenStream;
+  b.classList.toggle("hide", !sharing);
+  b.textContent = sharePaused ? "▶ Resume share" : "⏸ Pause share";
+  b.classList.toggle("active", sharePaused);
+}
+function toggleSharePause() {
+  if (broadcastMode !== "screen" || !stageScreenStream) return;
+  const vt = stageScreenStream.getVideoTracks()[0];
+  if (!vt) return;
+  sharePaused = !sharePaused;
+  try { vt.enabled = !sharePaused; } catch (e) {}
+  updateSharePauseUI();
+  toast(sharePaused
+    ? "⏸ Share PAUSED — students see a black screen until you resume (your mic stays live)."
+    : "▶ Share resumed — students see your screen again.", "ok", 6000);
+}
 function updateBcastModeChip() {
   const chip = $("#btnBcastMode");
   if (!chip) return;
   chip.textContent = broadcastMode === "screen" ? "\u{1F5A5} Screen" : "\u{1F9E9} Composite";
   chip.classList.toggle("active", broadcastMode === "screen");
+  updateSharePauseUI();
   chip.title = broadcastMode === "screen"
     ? "Broadcasting your shared screen. Click to return to the composite workspace - nothing stops."
     : "Broadcasting the ClassDeck workspace. Click to share your screen instead - nothing stops.";
@@ -2129,6 +2276,47 @@ function updateBcastModeChip() {
    ───────────────────────────────────────────────────────────────────── */
 let micWatch = null;
 function stopMicWatch() { if (micWatch) { try { micWatch.stop(); } catch {} micWatch = null; } }
+/* r25: full teardown of the studio chain + the raw capture beneath it. */
+function stopMicCompletely() {
+  stopMicWatch();
+  stopMicLevelBar();
+  try { if (micStream) micStream.getTracks().forEach((t) => t.stop()); } catch {}
+  try { if (micChain) micChain.stop(); } catch {}
+  try { if (micRawStream) micRawStream.getTracks().forEach((t) => t.stop()); } catch {}
+  micStream = null; micChain = null; micRawStream = null; micOn = false;
+  const b = $("#btnMic"); if (b) b.classList.remove("active");
+}
+/* r25: the live mic level bar next to 🎙 Mic — the teacher sees the boost
+   working and gets a red flash when the limiter is catching peaks. */
+function startMicLevelBar() {
+  stopMicLevelBar();
+  const bar = $("#micLevelBar");
+  if (!bar) return;
+  bar.parentElement.classList.remove("hide");
+  /* raw mode (boost off / music) has no chain — meter the raw stream */
+  if ((!micChain || micChain.bypassed) && micStream && window.MicKit) {
+    try {
+      micRawMeter = MicKit.meter(micStream, (lv) => { micRawLevel = lv; });
+    } catch (e) {}
+  }
+  micMeterTimer = setInterval(() => {
+    let lv = 0;
+    if (micChain && !micChain.bypassed) lv = micChain.level();
+    else lv = micRawLevel || 0;
+    bar.style.width = Math.min(100, lv) + "%";
+    bar.style.background = lv >= 96 ? "#dc2626" : (lv >= 55 ? "#16a34a" : "#84cc16");
+  }, 150);
+}
+function stopMicLevelBar() {
+  clearInterval(micMeterTimer); micMeterTimer = null;
+  if (micRawMeter) { try { micRawMeter.stop(); } catch (e) {} micRawMeter = null; }
+  micRawLevel = 0;
+  const bar = $("#micLevelBar");
+  if (bar) { bar.style.width = "0%"; }
+  const wrap = document.getElementById("micLevelWrap");
+  if (wrap) wrap.classList.add("hide");
+}
+var micRawMeter = null, micRawLevel = 0;
 
 function micDoctorShow(title, body) {
   let el = $("#micDoctor");
@@ -2164,10 +2352,8 @@ function micDoctorShow(title, body) {
 
 async function micDoctorFix(deviceId) {
   stopMicWatch();
-  stopMicWatch();
-  if (micStream) { try { micStream.getTracks().forEach((t) => t.stop()); } catch {} }
+  stopMicCompletely();
   if (stageStream) stageStream.getAudioTracks().forEach((t) => { try { stageStream.removeTrack(t); } catch {} });
-  micStream = null;
   if (deviceId) { try { localStorage.setItem("cd-mic-device", deviceId); } catch {} }
   await ensureMic(true);
   if (micStream) {
@@ -2191,7 +2377,10 @@ async function ensureMic(on) {
   try { proc = JSON.parse(Store.get("audio_proc", "{}") || "{}") || {}; } catch (e) { proc = {}; }
   let res;
   try {
-    res = await MicKit.acquire({ deviceId: saved, processing: proc });
+    /* r25 studio sound: default "standard" (1.6× + compressor + limiter) —
+       fixes "my voice is not loudly audible" at the root. ⚙ Settings →
+       Audio changes it; music/raw mode bypasses the chain entirely. */
+    res = await MicKit.acquire({ deviceId: saved, processing: proc, boost: Store.get("audio_boost", "standard") });
   } catch (e) {
     const c = window.MicKit.classify(e);
     micDoctorShow(c.title, c.body);
@@ -2199,7 +2388,11 @@ async function ensureMic(on) {
     return;
   }
   micStream = res.stream;
+  micChain = res.chain || null;
+  micRawStream = res._rawHandle || null;
   if (res.attempt === "plain mic") toast("Mic connected with basic settings (this device rejected audio processing).", "", 5000);
+  if (res.boosted) toast("🎙 Studio sound ON — your voice is boosted and levelled for the class. Change it in ⚙ Settings → Audio.", "ok", 6000);
+  startMicLevelBar();
   const micTrack = micStream.getAudioTracks()[0];
   if (micTrack) {
     micTrack.addEventListener("ended", () => {
@@ -2253,9 +2446,11 @@ on("#btnCam", "click", async () => {
       });
       $("#selfVideo").srcObject = camStream;
       $("#selfView").classList.add("show");
+      applyCamMirror();
       camOn = true;
       $("#btnCam").classList.add("active");
       if (room) room.setCamStream(camStream);
+      if (touchUpOn()) applyCamTouchUp();   /* r25: soften pipeline in front of the raw track */
       toast("Camera on — students can now see you", "ok");
     } catch { toast("Camera blocked. Allow camera access in browser settings.", "err"); }
   } else {
@@ -2275,6 +2470,13 @@ function endLive(force = false) {
   const endedRoom = room;
   if (endedRoom) { endedRoom.stats.end = Date.now(); endedRoom.end(); lastEndedRoom = endedRoom; }
   if (typeof stopCaptions === "function") stopCaptions(true);
+  /* r25: unwind the share-audio mix, spotlight and annotation before the
+     stage stream goes away, so nothing dangles into the next class. */
+  stopShareAudioMix();
+  spotlightPid = null; spotName = "";
+  if (annotOn) toggleBroadcastAnnot();
+  sharePaused = false; updateSharePauseUI();
+  for (const pid of Array.from(stuMeter.keys())) stopStuMeter(pid);
   // Stop an active recording before releasing its shared microphone track so
   // the final MediaRecorder data is flushed cleanly.
   if (recorder && recorder.state !== "inactive") stopRecording();
@@ -2287,9 +2489,8 @@ function endLive(force = false) {
   if (COMP.raf) { cancelAnimationFrame(COMP.raf); COMP.raf = null; }
   try { if (stageStream) stageStream.getTracks().forEach((t) => t.stop()); } catch {}
   stageStream = null;
-  stopMicWatch();
-  try { if (micStream) micStream.getTracks().forEach((t) => t.stop()); } catch {}
-  micStream = null; micOn = false; $("#btnMic").classList.remove("active");
+  stopMicCompletely();
+  stopCamPipe();
   try { if (camStream) camStream.getTracks().forEach((t) => t.stop()); } catch {}
   camStream = null; camOn = false; $("#selfVideo").srcObject = null; $("#selfView").classList.remove("show"); $("#btnCam").classList.remove("active");
   clearInterval(classTickInt); classTickInt = null;
@@ -2331,6 +2532,7 @@ function onRoomEvent(type, p) {
   if (type === "join-blocked") handleJoinBlocked(p);
   switch (type) {
     case "student-joined":
+      recallStuVol(p.name, p.peerId);          /* r26: their saved volume, remembered from last class */
       toast("👋 " + p.name + " joined", "ok");
       playChime(true);                      /* r22 completion: enter chime */
       renderRoster();
@@ -2453,6 +2655,10 @@ function onRoomEvent(type, p) {
       addChatMsg("📩 " + p.from + " → " + p.to + (p.blocked ? " (blocked — pair not permitted)" : ""), p.text, false);
       break;
     case "dm-perms": renderRoster(); break;
+    case "see-each-other":
+      syncFocusClsBtn();
+      if (typeof p === "boolean" && !p) { /* gallery just went off — if that was focus mode, say so once */ }
+      break;
     case "suspended":
       toast("🛡 ACTIVITIES SUSPENDED — mics muted, hands lowered, student shares stopped, gallery off, breakout rooms closed, room locked.", "ok", 10000);
       renderRoster(); renderBreakoutPanel();
@@ -2464,6 +2670,7 @@ function onRoomEvent(type, p) {
   }
   $("#stuCount").textContent = (room ? room.students.size : 0) + " 👥";
   refreshPendingBadge();
+  syncFocusClsBtn();
 }
 
 let _rosterRenderTimer = null;   /* v12: batch renders during join storms */
@@ -2716,6 +2923,8 @@ function renderRosterNow() {
       <button class="btn small" data-act="cohost" title="Make assistant tutor (co-host): can admit, mute all, kick and lock">👑</button>
       <button class="btn small" data-act="cotutor" title="Make CO-TUTOR — the full tutor toolkit (equal to the tutor for everything classroom-side)">🎓</button>
       <button class="btn small" data-act="rename" title="Rename this student (Zoom-style) — everyone's roster, DM lists and logs switch to the new name instantly">✏️</button>
+      <button class="btn small" data-act="spot" title="Spotlight — show this student's camera BIG on everyone's broadcast (Zoom spotlight). Tap again to end.">🌟</button>
+      <button class="btn small" data-act="vol" title="This student's volume (0-200%) — Zoom's per-participant volume">🔊</button>
       <button class="btn small danger" data-act="kick" title="Remove">✕</button>` : "");
     if (room) {
       /* v9: reflect the real state (permission memory + live calls) instead of
@@ -2727,6 +2936,11 @@ function renderRosterNow() {
       if (micB) micB.classList.toggle("active", !!stu.micAllowed);
       const chB = row.querySelector('[data-act="cohost"]');
       if (chB) chB.classList.toggle("active", !!stu.coHost);
+      /* r25: spotlight + speaking states survive re-renders */
+      const spB = row.querySelector('[data-act="spot"]');
+      if (spB) spB.classList.toggle("active", spotlightPid === pid);
+      const lv = stuLevels.get(pid);
+      if (lv && lv.lv > 14 && Date.now() - lv.at < 900) row.classList.add("speaking");
       const ctB = row.querySelector('[data-act="cotutor"]');
       if (ctB) ctB.classList.toggle("active", !!stu.coTutor);
       if (camB) camB.classList.toggle("active", stu.mediaCalls.some((c) => c._hmgKind === "stucam"));
@@ -2742,6 +2956,36 @@ function renderRosterNow() {
         b.classList.toggle("active", on);
         room.requestStudentCam(pid, on);
         toast(on ? "Asked " + stu.name + " to turn camera on" : "Asked " + stu.name + " to turn camera off");
+      });
+      /* r25: 🌟 video spotlight (see setSpotlight — draws the student's
+         camera big on the composite for the whole class + recording). */
+      const spotBtn = row.querySelector('[data-act="spot"]');
+      if (spotBtn) spotBtn.addEventListener("click", () => {
+        setSpotlight(spotlightPid === pid ? null : pid, stu.name);
+      });
+      /* r25: 🔊 per-student volume — a tiny slider pops inside the row. */
+      const volBtn = row.querySelector('[data-act="vol"]');
+      if (volBtn) volBtn.addEventListener("click", () => {
+        let pop = row.querySelector(".vol-pop");
+        if (pop) { pop.remove(); return; }
+        pop = document.createElement("div");
+        pop.className = "vol-pop";
+        pop.style.cssText = "position:absolute;right:8px;top:calc(100% - 4px);z-index:30;background:#fff;border:1px solid #d7dced;border-radius:10px;box-shadow:0 8px 22px rgba(16,20,43,.18);padding:8px 10px;display:flex;gap:8px;align-items:center;font-size:12px";
+        const cur = stuVol.get(pid) || 100;
+        pop.innerHTML = '<span>🔈</span><input type="range" min="0" max="200" step="10" value="' + cur + '" style="width:120px"><b style="min-width:38px;text-align:right">' + cur + '%</b>';
+        const rng = pop.querySelector("input"), lab = pop.querySelector("b");
+        rng.addEventListener("input", () => {
+          lab.textContent = rng.value + "%";
+          stuVol.set(pid, Number(rng.value));
+          rememberStuVol(row.querySelector(".stu-name") ? row.querySelector(".stu-name").textContent : (room && room.students.get(pid) || {}).name, Number(rng.value));
+          applyStuVolume(pid);
+        });
+        row.style.position = "relative";
+        row.appendChild(pop);
+        setTimeout(() => {
+          const close = (ev) => { if (!pop.contains(ev.target) && ev.target !== volBtn) { pop.remove(); document.removeEventListener("click", close); } };
+          document.addEventListener("click", close);
+        }, 30);
       });
       row.querySelector('[data-act="scr"]').addEventListener("click", (e) => {
         /* r21 (item 6): the teacher DECIDES the audience — "just me" or the
@@ -2868,6 +3112,19 @@ function playStudentAudio(pid, stream) {
     document.body.appendChild(a); stuAudio.set(pid, a);
   }
   a.srcObject = stream;
+  applyStuVolume(pid);            /* r25: master × per-student volume */
+  /* r25: active-speaker glow (Zoom/Meet parity) — the roster row lights
+     up while this student is actually talking. */
+  stopStuMeter(pid);
+  if (window.MicKit) {
+    try {
+      stuMeter.set(pid, MicKit.meter(stream, (lv) => {
+        stuLevels.set(pid, { lv: lv, at: Date.now() });
+        const row = document.querySelector('.stu-row[data-peer-id="' + pid + '"]');
+        if (row) row.classList.toggle("speaking", lv > 14);
+      }));
+    } catch (e) {}
+  }
   const started = a.play();
   /* v9: if the browser's autoplay policy defers playback, retry on the
      teacher's very next click/tap — never leave a student unheard. */
@@ -2884,6 +3141,213 @@ function removeStudentAudio(pid) {
   try { a.pause(); a.srcObject = null; } catch {}
   a.remove();
   stuAudio.delete(pid);
+  stopStuMeter(pid);
+  stuLevels.delete(pid);
+}
+/* ── r25 studio sound: the hearing side ─────────────────────────────
+   masterVolume() — one slider for every remote voice (Settings → Audio).
+   stuVol — Zoom-style PER-STUDENT volume (roster 🔊), 0-200%.
+   Above 100% the element routes through a Web Audio GainNode (element
+   .volume physically caps at 1.0); below, plain element volume.      */
+var stuGain = new Map();
+var stuLevels = new Map();
+function masterVolume() { const v = Number(Store.get("master_volume", 100)); return Number.isFinite(v) ? Math.max(0, Math.min(200, v)) : 100; }
+function ensureRemoteAudioCtx() {
+  if (!remoteAudioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    try { remoteAudioCtx = new AC(); } catch (e) { return null; }
+  }
+  if (remoteAudioCtx.state === "suspended") { try { remoteAudioCtx.resume().catch(() => {}); } catch (e) {} }
+  return remoteAudioCtx;
+}
+/* r26: AUTO-LEVEL — the receive-side sound system. Even a sender on an
+   OLD build (or a far-from-the-mic laptop) arrives loud & clear: a low
+   threshold compressor + +10 dB makeup lands quiet and normal voices in
+   the same comfortable band, and the −3 dB limiter caps the rest. This
+   is what makes the fix robust when only ONE side of the class has the
+   new build — the receiving side lifts whatever arrives. */
+var stuChain = new Map();            /* pid -> {src, hp, comp, mk, lim, g} */
+function autoLevelIn() { return String(Store.get("autolevel_in", 1)) === "1"; }
+function stuVolMemory() { try { const m = JSON.parse(Store.get("stu_vol_mem", "{}")); return (m && typeof m === "object") ? m : {}; } catch (e) { return {}; } }
+function rememberStuVol(name, v) {
+  if (!name) return;
+  const m = stuVolMemory();
+  m[String(name).trim().toLowerCase()] = Math.max(0, Math.min(200, Math.round(v)));
+  Store.set("stu_vol_mem", JSON.stringify(m));
+}
+function recallStuVol(name, pid) {
+  try {
+    const m = stuVolMemory();
+    const v = Number(m[String(name || "").trim().toLowerCase()]);
+    if (Number.isFinite(v) && !stuVol.has(pid)) stuVol.set(pid, Math.max(0, Math.min(200, v)));
+  } catch (e) {}
+}
+function buildStuChain(ctx, a, pid) {
+  let c = stuChain.get(pid);
+  if (c) return c;
+  try {
+    const src = ctx.createMediaElementSource(a);   /* one per element, kept forever */
+    c = { src: src, hp: ctx.createBiquadFilter(), comp: ctx.createDynamicsCompressor(), mk: ctx.createGain(), lim: ctx.createDynamicsCompressor(), g: ctx.createGain() };
+    c.hp.type = "highpass"; c.hp.frequency.value = 95;
+    c.comp.threshold.value = -50; c.comp.knee.value = 10; c.comp.ratio.value = 4; c.comp.attack.value = 0.008; c.comp.release.value = 0.25;
+    c.mk.gain.value = 3.2;                            /* +10 dB makeup — lifts quiet talkers */
+    c.lim.threshold.value = -3; c.lim.knee.value = 1; c.lim.ratio.value = 20; c.lim.attack.value = 0.001; c.lim.release.value = 0.1;
+    c.g.gain.value = 1;
+    c.src.connect(c.hp); c.hp.connect(c.comp); c.comp.connect(c.mk); c.mk.connect(c.lim); c.lim.connect(c.g); c.g.connect(ctx.destination);
+    stuChain.set(pid, c); stuGain.set(pid, c.g);
+    return c;
+  } catch (e) { return null; }
+}
+function applyStuVolume(pid) {
+  const a = stuAudio.get(pid);
+  if (!a) return;
+  const per = Math.max(0, Math.min(200, stuVol.get(pid) || 100));
+  const eff = Math.max(0, Math.min(200, Math.round(per * (masterVolume() / 100))));
+  const want = autoLevelIn() || eff > 100;
+  if (!want) {
+    /* plain element volume — the exact pre-r26 path */
+    try { const c = stuChain.get(pid); if (c) { try { c.src.disconnect(); } catch (e) {} c.src.connect(c.g); c.g.gain.value = 1; } } catch (e) {}
+    a.volume = Math.min(1, eff / 100);
+    return;
+  }
+  const ctx = ensureRemoteAudioCtx();
+  if (!ctx) { a.volume = Math.min(1, eff / 100); return; }
+  const c = buildStuChain(ctx, a, pid);
+  if (!c) { a.volume = Math.min(1, eff / 100); return; }
+  try { c.src.disconnect(); } catch (e) {}
+  try { c.src.connect(autoLevelIn() ? c.hp : c.g); } catch (e) {}
+  a.volume = 1;
+  c.g.gain.value = eff / 100;
+}
+function applyAllStuVolumes() { for (const pid of stuAudio.keys()) applyStuVolume(pid); }
+function stopStuMeter(pid) {
+  const m = stuMeter.get(pid);
+  if (m) { try { m.stop(); } catch (e) {} }
+  stuMeter.delete(pid);
+  const row = document.querySelector('.stu-row[data-peer-id="' + pid + '"]');
+  if (row) row.classList.remove("speaking");
+}
+/* ── r25: VIDEO spotlight (Zoom parity) — the roster's old 🌟 was a name
+   banner only. Now the student's CAMERA is drawn big on the composite
+   broadcast (and the recording) for the whole class.                 */
+function ensureSpotVideo(stu) {
+  if (!stu || !stu.camStream || !stu.camStream.getVideoTracks().length) return false;
+  if (!spotVideo) {
+    spotVideo = document.createElement("video");
+    spotVideo.muted = true; spotVideo.playsInline = true; spotVideo.autoplay = true;
+    spotVideo.style.cssText = "position:fixed;width:2px;height:2px;opacity:0;pointer-events:none;left:-10px;top:-10px;";
+    document.body.appendChild(spotVideo);
+  }
+  try {
+    spotVideo.srcObject = new MediaStream(stu.camStream.getVideoTracks());
+    spotVideo.play().catch(() => {});
+  } catch (e) {}
+  return true;
+}
+function setSpotlight(pid, name) {
+  const on = pid && pid !== spotlightPid;
+  spotlightPid = on ? pid : null;
+  spotName = on ? String(name || "").slice(0, 40) : "";
+  if (on) {
+    const stu = room && room.students.get(pid);
+    if (!stu || !ensureSpotVideo(stu)) {
+      toast(name + " has no camera on — spotlight needs their camera (📷 in the roster asks for it).", "err", 7000);
+      spotlightPid = null; spotName = "";
+      return;
+    }
+  } else { try { spotVideo && (spotVideo.srcObject = null); } catch (e) {} }
+  if (room) room.spotlight(on ? pid : null, spotName);
+  renderRoster();
+  toast(on ? "🌟 " + spotName + " is spotlighted — their camera is big on everyone's screen (and the recording). Tap 🌟 again to end."
+           : "Spotlight off — back to the normal broadcast.", "ok", 6000);
+}
+function drawSpotlight(ctx, W, H) {
+  if (!spotlightPid) return;
+  const vw = spotVideo && spotVideo.videoWidth ? spotVideo.videoWidth : 0;
+  const vh = spotVideo && spotVideo.videoHeight ? spotVideo.videoHeight : 0;
+  const pw = Math.round(W * 0.62), ph = Math.round(H * 0.56);
+  const px = Math.round((W - pw) / 2), py = Math.round((H - ph) / 2);
+  ctx.save();
+  ctx.fillStyle = "rgba(10,12,26,.88)";
+  ctx.fillRect(px - 12, py - 12, pw + 24, ph + 24);
+  ctx.strokeStyle = "#f59e0b"; ctx.lineWidth = 4;
+  ctx.strokeRect(px - 12, py - 12, pw + 24, ph + 24);
+  if (vw && vh) {
+    const s = Math.max(pw / vw, ph / vh);
+    const dw = vw * s, dh = vh * s;
+    ctx.save(); ctx.beginPath(); ctx.rect(px, py, pw, ph); ctx.clip();
+    ctx.drawImage(spotVideo, px + (pw - dw) / 2, py + (ph - dh) / 2, dw, dh);
+    ctx.restore();
+  } else {
+    ctx.fillStyle = "#1f2440"; ctx.fillRect(px, py, pw, ph);
+    ctx.fillStyle = "#9aa3cf"; ctx.font = "600 20px system-ui, sans-serif"; ctx.textAlign = "center";
+    ctx.fillText("connecting to " + spotName + "…", px + pw / 2, py + ph / 2);
+    ctx.textAlign = "left";
+  }
+  /* name + SPOTLIGHT chip */
+  ctx.fillStyle = "rgba(0,0,0,.72)";
+  ctx.fillRect(px, py + ph, pw, 40);
+  ctx.fillStyle = "#fff"; ctx.font = "700 20px system-ui, sans-serif";
+  ctx.fillText("🌟 " + spotName, px + 16, py + ph + 26);
+  ctx.fillStyle = "#f59e0b"; ctx.font = "700 13px system-ui, sans-serif";
+  ctx.fillText("SPOTLIGHT", px + pw - 110, py + ph + 25);
+  ctx.restore();
+}
+/* ── r25: ANNOTATE over the whole broadcast (Zoom/Meet live annotations).
+   A transparent Whiteboard floats above the workspace; drawComposite
+   stamps it onto the outgoing canvas, so students AND the recording see
+   the ink. Composite mode only — in raw screen-share mode the browser
+   hands over the unmodified screen (a web page cannot annotate the OS
+   desktop like Zoom's native app can; the button says so honestly). */
+var annotOn = false, annotWb = null;
+function toggleBroadcastAnnot() {
+  const host = document.getElementById("bcastAnnot");
+  if (!host) return;
+  if (annotOn) {
+    annotOn = false;
+    host.classList.add("hide");
+    const b = $("#btnAnnotate"); if (b) b.classList.remove("active");
+    return;
+  }
+  if (broadcastMode !== "composite") { toast("Annotate works on the ClassDeck broadcast (composite mode). Switch back from raw screen share first — a web page cannot draw on the OS desktop.", "err", 8000); return; }
+  if (!annotWb) {
+    const stage = document.getElementById("bcastAnnotStage");
+    try {
+      annotWb = new Whiteboard(stage, { transparent: true, persist: false, color: "#dc2626", size: 4 });
+    } catch (e) { toast("Could not start the annotation layer.", "err"); return; }
+    /* mini toolbar (own pointer events, does not draw through) */
+    const bar = document.getElementById("bcastAnnotBar");
+    bar.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-atool]");
+      if (!b) return;
+      const tool = b.dataset.atool;
+      if (tool === "undo") { annotWb.undo(); return; }
+      if (tool === "clear") { annotWb.clearPage(); return; }
+      bar.querySelectorAll("[data-atool]").forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+      annotWb.setTool(tool);
+    });
+    bar.addEventListener("click", (e) => {
+      const c = e.target.closest("[data-acolor]");
+      if (!c) return;
+      annotWb.setColor(c.dataset.acolor);
+      bar.querySelectorAll("[data-acolor]").forEach((x) => x.classList.remove("active"));
+      c.classList.add("active");
+    });
+  }
+  annotOn = true;
+  host.classList.remove("hide");
+  const b = $("#btnAnnotate"); if (b) b.classList.add("active");
+  toast("✏️ Annotating the LIVE broadcast — students and the recording see your ink. Tap ✏️ again to stop.", "ok", 6000);
+}
+function drawBroadcastAnnot(ctx, W, H) {
+  if (!annotOn || !annotWb) return;
+  try {
+    const c = annotWb.canvas, oc = annotWb.overlay;
+    if (c && c.width) ctx.drawImage(c, 0, 0, W, H);
+    if (oc && oc.width) ctx.drawImage(oc, 0, 0, W, H);
+  } catch (e) {}
 }
 
 /* ---- drawers ---- */
@@ -3188,10 +3652,355 @@ on("#setRepairFile", "change", async (e) => {
   if (f) repairExistingRecording(f);
 });
 
-on("#btnBcastMode", "click", () => {
-  if (broadcastMode === "composite") switchBroadcastMode("screen");
-  else switchBroadcastMode("composite");
+/* ── r25 (item 4 — Zoom/Meet parity): keyboard shortcuts + PUSH-TO-TALK.
+   Hold SPACE to speak (mic must be armed but muted) — release to re-mute,
+   exactly like Zoom/Meet. Single keys act only when you are NOT typing:
+     M mic · V camera · S share · L laser · A annotate · D dice · P picker
+     C captions · Alt+M mute all · Alt+↑↓ hearing volume · ? this list. */
+var pttActive = false;
+(function initTeacherShortcuts() {
+  const SHORTCUT_HELP = "⌨️ Shortcuts — hold SPACE: push-to-talk · M: mic · V: camera · S: share · L: laser · A: annotate · D: dice · P: picker · C: captions · Alt+M: mute all · Alt+↑↓: hearing volume · ?: this list";
+  document.addEventListener("keydown", (e) => {
+    const t = e.target;
+    const typing = !!(t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable));
+    /* Alt+M works even while focused elsewhere (Zoom behaviour) */
+    if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === "m" || e.key === "M")) {
+      if (room) { room.muteAll(); toast("🔇 All student mics muted (Alt+M)"); }
+      e.preventDefault();
+      return;
+    }
+    /* r26: Alt+↑/↓ nudges the hearing volume ±10% (Zoom's output-volume
+       keyboard parity) — works even while a board is active. */
+    if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+      const cur = masterVolume();
+      const nv = Math.max(0, Math.min(200, cur + (e.key === "ArrowUp" ? 10 : -10)));
+      Store.set("master_volume", nv);
+      applyAllStuVolumes();
+      const mv = document.getElementById("masterVol"), ml = document.getElementById("masterVolLabel");
+      if (mv) mv.value = String(nv);
+      if (ml) ml.textContent = nv + "%";
+      toast("🔊 Hearing volume " + nv + "%", "", 1600);
+      e.preventDefault();
+      return;
+    }
+    if (typing || e.ctrlKey || e.metaKey || e.altKey) return;
+    /* r25 conflict rule: when a whiteboard is the active tool, the board's
+       own single-key tools (p/h/e/l/r/o/a/t) own those keys — the class
+       shortcuts fall back to their unconflicted keys or the buttons. */
+    let boardOwns = null;
+    try { boardOwns = (typeof activeBoards === "function" && activeBoards()[0]) ? { p: 1, h: 1, e: 1, l: 1, r: 1, o: 1, a: 1, t: 1 } : null; } catch (err) {}
+    if (boardOwns) {
+      const k = (e.key || "").toLowerCase();
+      if (boardOwns[k]) return;
+    }
+    if (e.code === "Space" || e.key === " ") {
+      /* Space on a focused button must still press the button */
+      if (e.repeat || (t && t.tagName === "BUTTON")) return;
+      if (micStream && !micOn && !pttActive) {
+        pttActive = true;
+        try { micStream.getAudioTracks().forEach((tr) => (tr.enabled = true)); } catch (err) {}
+        const b = $("#btnMic"); if (b) b.classList.add("active");
+        const chip = document.getElementById("pttChip"); if (chip) chip.classList.remove("hide");
+        e.preventDefault();
+      }
+      return;
+    }
+    switch ((e.key || "").toLowerCase()) {
+      case "m": { const b = $("#btnMic"); if (b) b.click(); break; }
+      case "v": { const b = $("#btnCam"); if (b) b.click(); break; }
+      case "s": { const b = $("#btnBcastMode"); if (b) b.click(); break; }
+      case "l": { const b = $("#btnLaser"); if (b) b.click(); break; }
+      case "a": { const b = $("#btnAnnotate"); if (b) b.click(); break; }
+      case "d": { const b = $("#btnDice"); if (b) b.click(); break; }
+      case "p": { const b = $("#btnPicker"); if (b) b.click(); break; }
+      case "c": { const b = $("#btnCaptions"); if (b) b.click(); break; }
+      case "?": toast(SHORTCUT_HELP, "", 12000); break;
+    }
+  });
+  document.addEventListener("keyup", (e) => {
+    if ((e.code === "Space" || e.key === " ") && pttActive) {
+      pttActive = false;
+      try { if (micStream) micStream.getAudioTracks().forEach((tr) => (tr.enabled = false)); } catch (err) {}
+      const b = $("#btnMic"); if (b) b.classList.remove("active");
+      const chip = document.getElementById("pttChip"); if (chip) chip.classList.add("hide");
+    }
+  });
+})();
+
+/* ── r25: MIRROR my video — the self-view is mirrored by default (like a
+   camera app / Zoom). Teachers holding up written work sometimes need the
+   TRUE orientation; this flips ONLY the local preview — what students see
+   is never mirrored (Zoom semantics). */
+function applyCamMirror() {
+  const v = document.getElementById("selfVideo");
+  if (v) v.style.transform = Store.get("cam_mirror", true) ? "scaleX(-1)" : "none";
+}
+on("#btnMirror", "click", () => {
+  Store.set("cam_mirror", !Store.get("cam_mirror", true));
+  applyCamMirror();
+  toast(Store.get("cam_mirror", true) ? "🪞 Self-view mirrored (like a camera app)" : "🪞 Self-view shows the true orientation (students' view is never mirrored)", "ok");
 });
+
+/* ── r25: FOCUS CLASS (Zoom "Focus mode"): students see and hear only the
+   teacher, not each other — the exam/quiet-work setting. One tap, fully
+   reversible; it drives the existing gallery engine (seeEachOther). */
+function syncFocusClsBtn() {
+  const b = document.getElementById("btnFocusCls");
+  if (!b) return;
+  const focusOn = room ? !room.seeEachOther : false;
+  b.classList.toggle("active", focusOn);
+  b.title = focusOn
+    ? "Focus mode ON — students see and hear only you. Tap to let students see each other again (gallery)."
+    : "Focus mode (Zoom-style): students stop seeing/hearing each other — only you. Great for exams and quiet work.";
+}
+on("#btnFocusCls", "click", () => {
+  if (!room) { toast("Start the class first.", "err"); return; }
+  const focusOn = room.seeEachOther;   /* gallery on now → turning focus ON */
+  room.setSeeEachOther(!focusOn);
+  if (focusOn) { try { room.sendAnnouncement("🎯 Focus mode ON — you see and hear only your teacher. Raise a hand if you need anything."); } catch (e) {} }
+  else { try { room.sendAnnouncement("🧑‍🤝‍🧑 Focus mode OFF — you can see and hear classmates who share."); } catch (e) {} }
+  syncFocusClsBtn();
+  toast(focusOn ? "🎯 Focus mode ON — students see only you (their mics to you keep working)." : "Focus mode OFF — the class gallery is back.", "ok", 7000);
+});
+
+/* ── r25: the 🎚 quick AUDIO panel (master volume + mic boost + test tone) ── */
+on("#btnAudio", "click", () => {
+  const mv = document.getElementById("masterVol");
+  const bs = document.getElementById("boostSel");
+  if (mv) { mv.value = String(masterVolume()); const l = document.getElementById("masterVolLabel"); if (l) l.textContent = masterVolume() + "%"; }
+  if (bs) bs.value = Store.get("audio_boost", "standard");
+  openModal("#mAudio");
+});
+on("#masterVol", "input", () => {
+  const mv = document.getElementById("masterVol");
+  const l = document.getElementById("masterVolLabel");
+  const v = Number(mv && mv.value) || 100;
+  if (l) l.textContent = v + "%";
+  Store.set("master_volume", v);
+  applyAllStuVolumes();
+});
+/* r26: the boost is switched MID-LIVE between raw and processed. When a
+   chain exists, setBoost() is a smooth gain change. But OFF -> boost had
+   NO chain to change (boost off = the raw track), and boost -> OFF kept
+   the compressor in the path while calling itself "raw" — both are now
+   fixed honestly: re-acquire the mic through the right path and swap the
+   live senders via updateStageAudio (replaceTrack — no reconnect, no
+   blink; the class hears the change within a second). Found by the r26
+   end-to-end WebRTC test, which switched presets on a LIVE connection
+   and measured the wire. */
+async function rebuildMicBoostLive() {
+  if (!micStream || !micOn) return false;
+  let proc = {};
+  try { proc = JSON.parse(Store.get("audio_proc", "{}") || "{}") || {}; } catch (e) { proc = {}; }
+  let saved = "";
+  try { saved = localStorage.getItem("cd-mic-device") || ""; } catch {}
+  let res = null;
+  try { res = await MicKit.acquire({ deviceId: saved, processing: proc, boost: Store.get("audio_boost", "standard") }); }
+  catch (e) { return false; }
+  if (!res || !res.stream || !res.stream.getAudioTracks().length) return false;
+  const oldStream = micStream, oldRaw = micRawStream;
+  micStream = res.stream;
+  micChain = res.chain || null;
+  micRawStream = res._rawHandle || null;
+  startMicLevelBar();
+  try { if (stageStream) stageStream.getAudioTracks().forEach((t) => stageStream.removeTrack(t)); } catch (e) {}
+  try { if (stageStream) micStream.getAudioTracks().forEach((t) => stageStream.addTrack(t)); } catch (e) {}
+  if (room) { try { room.updateStageAudio(micStream.getAudioTracks()[0]); } catch (e) {} }
+  /* re-arm the silence watchdog on the new capture */
+  stopMicWatch();
+  if (window.MicKit) {
+    try {
+      micWatch = MicKit.monitor(micStream, (ev) => {
+        if (ev.type === "silence") {
+          micDoctorShow("Your mic is open but silent",
+            "The class cannot hear you. On laptops this is usually the mic-mute key (often F4/F8 — look for an LED on the key), system input volume at zero, or the wrong input device. Speak once: if the level stays empty, pick another mic here.");
+        } else if (ev.type === "mute") {
+          micDoctorShow("The system muted your microphone", "A privacy setting or hardware mute key muted the device. Unmute it, then press Fix mic.");
+        } else if (ev.type === "heard") {
+          const lv = $("#micDrLevel"); if (lv) lv.textContent = "● hearing you";
+        }
+      });
+    } catch (e) {}
+  }
+  /* retire the old capture — stop() does not fire the disconnect path */
+  try { oldStream.getTracks().forEach((t) => t.stop()); } catch (e) {}
+  if (oldRaw && oldRaw !== oldStream) { try { oldRaw.getTracks().forEach((t) => t.stop()); } catch (e) {} }
+  return true;
+}
+on("#boostSel", "change", () => {
+  const bs = document.getElementById("boostSel");
+  const v = (bs && bs.value) || "standard";
+  Store.set("audio_boost", v);
+  const chainLive = micChain && !micChain.bypassed;
+  if (chainLive && v !== "off") {
+    try { micChain.setBoost(v); } catch (e) {}
+    toast("🎙 Mic boost set to " + v.toUpperCase() + " — applied live.", "ok", 6000);
+    return;
+  }
+  if (micOn && micStream && (v === "off" || !chainLive)) {
+    rebuildMicBoostLive().then((ok) => {
+      toast(ok
+        ? (v === "off"
+            ? "Mic boost OFF — the class now hears your raw mic level (applied live, no reconnect)."
+            : "🎙 Mic boost set to " + v.toUpperCase() + " — applied live (your mic was rebuilt through the studio chain, no reconnect).")
+        : "Boost saved — it connects with your mic.", "ok", 6000);
+    });
+    return;
+  }
+  toast(v === "off"
+    ? "Mic boost OFF — your raw mic level goes to the class. Turn it back on if students say you are quiet."
+    : "🎙 Mic boost set to " + v.toUpperCase() + " — connects with your mic.", "ok", 6000);
+});
+on("#btnTestTone", "click", () => {
+  /* a short two-note chime through the SAME output path students use */
+  try {
+    const ctx = ensureRemoteAudioCtx();
+    if (!ctx) { toast("Audio output test is unavailable in this browser.", "err"); return; }
+    [660, 880].forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = f; o.type = "sine";
+      g.gain.value = 0.0001;
+      o.connect(g); g.connect(ctx.destination);
+      const t0 = ctx.currentTime + i * 0.28;
+      g.gain.exponentialRampToValueAtTime(0.25, t0 + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.24);
+      o.start(t0); o.stop(t0 + 0.26);
+    });
+    toast("🔔 If you heard the chime, your speakers work.", "ok", 5000);
+  } catch (e) { toast("Could not play the test tone.", "err"); }
+});
+
+/* ── r26: auto-level toggle + the mic doctor (auto-calibration) ────── */
+on("#chkAutoLevel", "change", () => {
+  const cb = document.getElementById("chkAutoLevel");
+  Store.set("autolevel_in", cb && cb.checked ? 1 : 0);
+  applyAllStuVolumes();
+  toast(cb && cb.checked
+    ? "🎚 Auto-level ON — quiet student voices are lifted into a comfortable band as they arrive (works even if a student's app is outdated)."
+    : "Auto-level OFF — raw incoming levels with your volume sliders only.", "ok", 6000);
+});
+function micDoctorPick(rawAvg) {
+  /* ladder on the RAW mic level (0-100 meter scale): wide bands, honest
+     advice — never over-drives an already-loud mic. */
+  if (!Number.isFinite(rawAvg)) return "standard";
+  if (rawAvg < 5) return "max";
+  if (rawAvg < 10) return "strong";
+  if (rawAvg < 18) return "standard";
+  return "off";
+}
+on("#btnMicDoctor", "click", async () => {
+  if (!window.MicKit || !MicKit.available()) { toast("Mic calibration is unavailable in this browser.", "err"); return; }
+  const btn = document.getElementById("btnMicDoctor");
+  const oldTxt = btn ? btn.textContent : "";
+  if (btn) { btn.disabled = true; btn.textContent = "🩺 Listening — speak normally…"; }
+  toast("🩺 Mic doctor: speak normally for 3 seconds…", "", 4000);
+  let acq = null, meter = null, own = false;
+  try {
+    let rawStream = micRawStream || null;              /* live class: the raw handle the r25 chain keeps */
+    if (!rawStream) {
+      if (micStream) rawStream = micStream;            /* raw/music mode: the live stream IS raw */
+      else { acq = await MicKit.acquire({ boost: "off" }); rawStream = acq._rawHandle || acq.stream; own = true; }
+    }
+    if (!rawStream) throw new Error("no mic");
+    const avg = await new Promise((res) => {
+      let sum = 0, n = 0;
+      meter = MicKit.meter(rawStream, (lv) => { sum += lv; n++; });
+      setTimeout(() => { try { meter.stop(); } catch (e) {} res(n ? sum / n : 0); }, 3000);
+    });
+    const pick = micDoctorPick(avg);
+    Store.set("audio_boost", pick);
+    const bs = document.getElementById("boostSel");
+    if (bs) bs.value = pick;
+    const chainLive2 = micChain && !micChain.bypassed;
+    if (chainLive2 && pick !== "off") { try { micChain.setBoost(pick); } catch (e) {} }
+    else if (micOn && micStream) { try { await rebuildMicBoostLive(); } catch (e) {} }
+    const label = pick === "off" ? "OFF (your mic is already loud enough)" : pick.toUpperCase();
+    toast("🩺 Mic doctor: raw level " + Math.round(avg) + "/100 → boost set to " + label + ". Watch the mic bar — retune anytime.", "ok", 8000);
+  } catch (e) {
+    toast("Mic doctor could not read your mic — check the OS mic switch.", "err", 6000);
+  } finally {
+    if (meter) { try { meter.stop(); } catch (e) {} }
+    if (own && acq) { try { acq.stream.getTracks().forEach((t) => t.stop()); } catch (e) {} try { acq._rawHandle && acq._rawHandle.getTracks().forEach((t) => t.stop()); } catch (e) {} }
+    if (btn) { btn.disabled = false; btn.textContent = oldTxt; }
+  }
+});
+
+/* ── r25: "Touch up my appearance" (Meet portrait touch-up parity) — a
+   gentle soften/brighten canvas pipeline in front of the camera track.
+   OFF by default (it costs a little CPU); needs a camera restart to
+   apply, exactly like Zoom's background settings. */
+var camPipe = null;
+function stopCamPipe() {
+  if (!camPipe) return;
+  try { cancelAnimationFrame(camPipe.raf); } catch (e) {}
+  try { camPipe.stream.getTracks().forEach((t) => t.stop()); } catch (e) {}
+  camPipe = null;
+}
+function buildCamPipe() {
+  if (!camStream || !camStream.getVideoTracks().length) return null;
+  const src = new MediaStream(camStream.getVideoTracks());
+  const v = document.createElement("video");
+  v.muted = true; v.playsInline = true; v.srcObject = src;
+  const st = (camStream.getVideoTracks()[0].getSettings && camStream.getVideoTracks()[0].getSettings()) || {};
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.min(640, st.width || 640);
+  canvas.height = Math.round(canvas.width * ((st.height || 480) / (st.width || 640)));
+  const c2 = canvas.getContext("2d");
+  const stream = canvas.captureStream(15);
+  const pipe = { v: v, canvas: canvas, stream: stream, raf: 0 };
+  const draw = () => {
+    if (!camPipe || camPipe !== pipe) return;
+    try { c2.filter = "blur(0.7px) brightness(1.04) contrast(1.03)"; c2.drawImage(v, 0, 0, canvas.width, canvas.height); } catch (e) {}
+    pipe.raf = requestAnimationFrame(draw);
+  };
+  v.play().catch(() => {});
+  camPipe = pipe;
+  pipe.raf = requestAnimationFrame(draw);
+  return pipe;
+}
+function touchUpOn() { return !!Store.get("cam_touchup", false); }
+function applyCamTouchUp() {
+  if (!camStream) return;
+  if (touchUpOn()) {
+    const pipe = buildCamPipe();
+    if (pipe && room) { try { room.setCamStream(new MediaStream(pipe.stream.getVideoTracks())); } catch (e) {} }
+  } else {
+    stopCamPipe();
+    if (room) { try { room.setCamStream(camStream); } catch (e) {} }
+  }
+}
+
+on("#btnBcastMode", "click", () => {
+  if (broadcastMode === "composite") {
+    /* r25: the share CHOOSER — one tab first (the field request), screen/
+       window still one tap away, tab audio + quality explicit. */
+    const surf = document.getElementById("shareSurface");
+    const aud = document.getElementById("shareAudio");
+    const q = document.getElementById("shareQuality");
+    if (surf) surf.value = Store.get("share_surface", "browser");
+    if (aud) aud.checked = Store.get("share_audio", false);
+    if (q) q.value = Store.get("share_quality", "sharp");
+    openModal("#mShare");
+    return;
+  }
+  switchBroadcastMode("composite");
+});
+on("#shareGo", "click", () => {
+  const surf = document.getElementById("shareSurface");
+  const aud = document.getElementById("shareAudio");
+  const q = document.getElementById("shareQuality");
+  const prefs = {
+    surface: surf ? surf.value : "browser",
+    audio: !!(aud && aud.checked),
+    quality: q ? q.value : "sharp"
+  };
+  Store.set("share_surface", prefs.surface);
+  Store.set("share_audio", prefs.audio);
+  Store.set("share_quality", prefs.quality);
+  closeModal("#mShare");
+  switchBroadcastMode("screen", prefs);
+});
+on("#btnSharePause", "click", () => toggleSharePause());
 
 on("#btnRec", "click", () => {
   if (recorder && recorder.state === "recording") { stopRecording(); return; }
@@ -3680,7 +4489,10 @@ async function startRecording() {
   startRecWatchdog();               /* r22-repair-6: keep drawing in background tabs */
   recStream = new MediaStream(recCanvas.captureStream(COMP.fps).getVideoTracks());
   await ensureMic(true);
-  if (micStream) micStream.getAudioTracks().forEach((t) => recStream.addTrack(t));
+  /* r25: when tab/system share audio is being mixed, record the MIX (voice
+     + tab) — same thing the students are hearing. */
+  if (shareMixTrack) { try { recStream.addTrack(shareMixTrack); } catch (e) {} }
+  else if (micStream) micStream.getAudioTracks().forEach((t) => recStream.addTrack(t));
   /* r22-universal: MP4 FIRST. Windows' built-in players (Windows Media Player,
      Movies & TV) do not play WebM AT ALL — error 0xc00d3e8c "format isn't
      supported" — no matter how valid the file is. Chrome 126+/Edge/Safari can
@@ -3961,6 +4773,7 @@ on("#btnSettings", "click", () => {
   const aecEl = document.getElementById("setAEC"); if (aecEl) aecEl.checked = ap.echoCancellation !== false;
   const nsEl = document.getElementById("setNS");   if (nsEl) nsEl.checked = ap.noiseSuppression !== false;
   const agcEl = document.getElementById("setAGC"); if (agcEl) agcEl.checked = ap.autoGainControl !== false;
+  const tuEl2 = document.getElementById("setTouchUp"); if (tuEl2) tuEl2.checked = touchUpOn();
   openModal("#mSettings");
 });
 /* r22 (items 2+3): apply gallery + audio-processing settings on Save */
@@ -3972,6 +4785,15 @@ on("#setSave", "click", () => {
     noiseSuppression: !!(document.getElementById("setNS") && document.getElementById("setNS").checked),
     autoGainControl: !!(document.getElementById("setAGC") && document.getElementById("setAGC").checked)
   }));
+  const tuEl = document.getElementById("setTouchUp");
+  if (tuEl) {
+    const was = touchUpOn(), now = !!tuEl.checked;
+    Store.set("cam_touchup", now);
+    if (was !== now && camOn) {
+      applyCamTouchUp();
+      toast(now ? "✨ Touch-up ON — the class sees the softened camera now." : "Touch-up OFF — the raw camera is back.", "ok");
+    }
+  }
   toast("Audio settings apply the next time the mic connects (toggle 🎙 Mic off/on, or restart the class).", "", 6000);
 });
 
@@ -5986,11 +6808,7 @@ if ($("#btnTryScreenShare")) on("#btnTryScreenShare", "click", tryFullTabletScre
 /* captions hoisted */
 function releaseTeacherMicIfUnused() {
   if (room || recorder || capOn || (tabletLive && tabletLive.pc)) return;
-  stopMicWatch();
-  try { if (micStream) micStream.getTracks().forEach((t) => t.stop()); } catch {}
-  micStream = null;
-  micOn = false;
-  $("#btnMic")?.classList.remove("active");
+  stopMicCompletely();
 }
 function captionEngine() { return window.SpeechRecognition || window.webkitSpeechRecognition || null; }
 function captionLog(text, final) {
@@ -6165,14 +6983,18 @@ onRoomEvent = function (type, p) {
    v3.6 Keyboard shortcuts (USB/Bluetooth keyboard friendly)
    ------------------------------------------------------------ */
 document.addEventListener("keydown", (e) => {
-  if (e.target.matches("input, textarea, select")) return;
+  /* r25 hardening: e.target can be document (synthetic events, some
+     browser dispatch paths) — .matches only exists on Elements. */
+  if (e.target && e.target.matches && e.target.matches("input, textarea, select")) return;
   const board = activeBoards()[0];
   const map = {
     "p": "pen", "h": "highlight", "e": "eraser", "l": "laser",
     "r": "rect", "o": "ellipse", "a": "arrow", "t": "text"
   };
+  /* undo/redo stay FIRST — they are modifier combos, not tool keys */
   if (e.ctrlKey && e.key.toLowerCase() === "z") { board && board.wb.undo(); e.preventDefault(); return; }
   if (e.ctrlKey && e.key.toLowerCase() === "y") { board && board.wb.redo(); e.preventDefault(); return; }
+  if (e.ctrlKey || e.metaKey || e.altKey) return;   /* r25: other OS/app combos are not board tools */
   if (!e.ctrlKey && !e.altKey && map[e.key.toLowerCase()] && board) {
     board.wb.setTool(map[e.key.toLowerCase()]);
     $$('.tool[data-tool]', board.el).forEach((t) => t.classList.toggle("active", t.dataset.tool === map[e.key.toLowerCase()]));

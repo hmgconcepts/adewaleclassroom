@@ -1204,8 +1204,11 @@ class TeacherRoom {
       try { stu.conn.send({ t: "micAllow", on: false }); } catch {}
     }
   }
-  spotlight(peerId, name) {     // tell everyone whose turn it is (shows banner)
-    this.broadcast({ t: "spotlight", name });
+  spotlight(peerId, name) {     // v4 banner → r25 REAL video spotlight
+    /* r25: peerId rides along so the teacher's composite can draw the
+       student's camera big for the whole class (Zoom spotlight). The name
+       keeps the old banner behaviour on older clients. null clears it. */
+    this.broadcast({ t: "spotlight", name, peerId: peerId || null });
   }
 
   _onData(conn, d) {
@@ -1420,6 +1423,9 @@ class TeacherRoom {
       }
       case "ping":
         conn.send({ t: "pong", time: Date.now() });
+        break;
+      case "tping":                   /* r25: students measure their own 📶 too — echo */
+        try { conn.send({ t: "tpong", t0: d.t0 }); } catch (e) {}
         break;
       case "tpong": {   /* v12: rtt for 📶 badges + captain selection */
         const rtt = Date.now() - Number(d.t0);
@@ -1767,6 +1773,39 @@ class TeacherRoom {
     return ok;
   }
 
+  /* ── r25 (share 2.0): swap the STAGE AUDIO sender the same way
+     updateStageVideo swaps video — replaceTrack() on the live senders, no
+     re-negotiation, no reconnect blink. Used to mix shared tab/system
+     audio under the teacher mic (one mixed track keeps the call simple),
+     and to restore the plain mic track when sharing ends.             */
+  updateStageAudio(newTrack) {
+    if (!newTrack) return 0;
+    if (this.stageStream) {
+      try {
+        const keepVideo = this.stageStream.getVideoTracks();
+        const next = new MediaStream(keepVideo);
+        next.addTrack(newTrack);
+        this.stageStream = next;
+      } catch (e) {}
+    }
+    let ok = 0;
+    for (const [pid, call] of this.stageCalls) {
+      try {
+        const pc = call.peerConnection;
+        if (!pc) throw new Error("no pc");
+        const sender = pc.getSenders().find((s) => s.track && s.track.kind === "audio");
+        if (!sender || !sender.replaceTrack) throw new Error("no replaceTrack");
+        sender.replaceTrack(newTrack).then(
+          () => {},
+          () => { try { this._callStudent(pid, this.stageStream, "stage"); } catch (e) {} }
+        );
+        ok++;
+      } catch (e) {
+        try { this._callStudent(pid, this.stageStream, "stage"); } catch (e2) {}
+      }
+    }
+    return ok;
+  }
   setCamStream(stream) {
     this.camStream = stream;
     if (stream) {
@@ -2139,6 +2178,24 @@ class StudentRoom {
         if (err && err.type === "peer-unavailable") this._failJoin("Class not found. The teacher may not be live yet.", true);
         else if (!this._joinSettled) this._failJoin((err && err.message) || "Could not connect to the classroom service.", true);
       });
+      /* r25 (item 3 — seamless joins): the signalling websocket could drop
+         while the teacher connection itself is still alive (mobile networks
+         do this constantly). Until now that left the student unable to
+         receive NEW calls (stage restarts, camera, rooms) until a full
+         rejoin. peer.reconnect() re-attaches the SAME id — transparent. */
+      this.peer.on("disconnected", () => {
+        if (this._closedByUs) return;
+        this.onEvent("signal-reconnecting");
+        clearTimeout(this._sigReconnectTimer);
+        const tryReconnect = (attempt) => {
+          if (this._closedByUs || !this.peer || this.peer.destroyed) return;
+          if (this.peer.connected) { this.onEvent("signal-back"); return; }
+          if (attempt > 6) return;   /* the conn-level rejoin machinery takes over */
+          try { this.peer.reconnect(); } catch (e) {}
+          this._sigReconnectTimer = setTimeout(() => tryReconnect(attempt + 1), Math.min(15000, 1500 * attempt));
+        };
+        tryReconnect(1);
+      });
       // teacher (or a class captain) calls us with stage / teacher cam
       this.peer.on("call", (call) => {
         const kind = (call.metadata && call.metadata.kind) || "stage";
@@ -2239,6 +2296,12 @@ class StudentRoom {
         break;
       case "tping":                   // teacher health ping — echo for rtt
         this.send({ t: "tpong", t0: d.t0 });
+        break;
+      case "tpong":                   // r25: OUR ping came back — feed the 📶 meter
+        try {
+          const rtt = Date.now() - Number(d.t0);
+          if (Number.isFinite(rtt) && rtt >= 0) this._qualitySample(rtt);
+        } catch (e) {}
         break;
       case "classfull":               // v12: honest, retryable class-full answer
         this._failJoin("The class is full (" + (d.max || "many") + " students). A place frees up when someone leaves — this page keeps checking automatically.", true);
@@ -2369,8 +2432,16 @@ class StudentRoom {
        teacher saw a small screen they had to zoom out for. 1080p ideal +
        contentHint "detail" tells the encoder to protect resolution (text)
        over framerate. */
+    /* r25 (share 2.0): verified options (MDN getDisplayMedia + W3C
+       screen-capture + Chrome's privacy-preserving screen-sharing controls):
+         selfBrowserSurface "exclude" — the picker never offers THIS tab
+           (no hall-of-mirror loops while we share);
+         surfaceSwitching "include" — Chrome's own "Share this tab instead"
+           button lets the student swap tabs mid-share, no restart.
+       Browsers that don't know the keys ignore them gracefully. */
     const stream = await navigator.mediaDevices.getDisplayMedia({
-      video: { frameRate: { ideal: 12, max: 15 }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false
+      video: { frameRate: { ideal: 12, max: 15 }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false,
+      selfBrowserSurface: "exclude", surfaceSwitching: "include"
     });
     this._screenStream = stream;
     try { const vt = stream.getVideoTracks()[0]; if (vt && vt.contentHint !== undefined) vt.contentHint = "detail"; } catch (e) {}
@@ -2559,6 +2630,8 @@ class StudentRoom {
       if (this.micCall) { try { this.micCall.close(); } catch {} this.micCall = null; }
       try { if (this._micWatch) { this._micWatch.stop(); this._micWatch = null; } } catch {}
       if (this._micStream) { this._micStream.getTracks().forEach((t) => t.stop()); this._micStream = null; }
+      try { if (this._micChain) { this._micChain.stop(); this._micChain = null; } } catch {}
+      try { if (this._micRaw) { this._micRaw.getTracks().forEach((t) => t.stop()); this._micRaw = null; } } catch {}
       return;
     }
     if (!this.peer || !this.conn) throw new Error("You are not connected to the class yet — join first, then speak.");
@@ -2573,12 +2646,20 @@ class StudentRoom {
     }
     let acquired;
     try {
-      acquired = await MicKit.acquire();
+      /* r25 studio sound: the student's voice runs through the same
+         boost/compressor/limiter chain as the teacher's (the field report
+         was quiet audio in BOTH directions). Preset remembered per device,
+         default "standard" (1.6×). */
+      let boost = "standard";
+      try { boost = localStorage.getItem("cd-audio-boost") || "standard"; } catch (e2) {}
+      acquired = await MicKit.acquire({ boost: boost });
     } catch (e) {
       const c = MicKit.classify(e);
       throw new Error(c.title + " — " + c.body);
     }
     const stream = acquired.stream;
+    this._micChain = acquired.chain || null;
+    this._micRaw = acquired._rawHandle || null;
     this._micStream = stream;
     this.micCall = this.peer.call(RTC_PREFIX + this.code + "-host", stream, { metadata: { kind: "stumic" } });
     const micCallRef = this.micCall;
@@ -2588,6 +2669,8 @@ class StudentRoom {
       if (this.micCall === micCallRef) this.micCall = null;
       try { if (this._micWatch) { this._micWatch.stop(); this._micWatch = null; } } catch {}
       try { if (this._micStream) { this._micStream.getTracks().forEach((t) => t.stop()); this._micStream = null; } } catch {}
+      try { if (this._micChain) { this._micChain.stop(); this._micChain = null; } } catch {}
+      try { if (this._micRaw) { this._micRaw.getTracks().forEach((t) => t.stop()); this._micRaw = null; } } catch {}
       this.onEvent("micEnded");
     });
     /* v14.1: open-but-silent detection (hardware mute key, zero input
@@ -2601,6 +2684,30 @@ class StudentRoom {
     } catch {}
   }
 
+  /* ── r25 (item 3): the student measures their OWN connection quality —
+     a 📶 indicator like Meet/Zoom show. RTT comes from the existing
+     teacher ping echo (tping→tpong, no new protocol), smoothed over the
+     last 3 samples; the UI maps it to 4 bars. */
+  startQualityMonitor() {
+    this.stopQualityMonitor();
+    const samples = [];
+    this._qualityTimer = setInterval(() => {
+      if (!this.conn || this._closedByUs) return;
+      try { this.send({ t: "tping", t0: Date.now() }); } catch (e) {}
+    }, 6000);
+    this._qualityRtt = null;
+  }
+  stopQualityMonitor() {
+    clearInterval(this._qualityTimer);
+    this._qualityTimer = null;
+  }
+  _qualitySample(rtt) {
+    if (!this._qualitySamples) this._qualitySamples = [];
+    this._qualitySamples.push(rtt);
+    if (this._qualitySamples.length > 3) this._qualitySamples.shift();
+    this._qualityRtt = Math.round(this._qualitySamples.reduce((a, b) => a + b, 0) / this._qualitySamples.length);
+    this.onEvent("quality", { rtt: this._qualityRtt });
+  }
   leave() {
     this._closedByUs = true;
     this._failJoin("Connection closed.", false);
@@ -2611,6 +2718,9 @@ class StudentRoom {
     try { this.shareCamera(false); } catch {}
     try { this.shareMic(false); } catch {}
     try { this.shareScreen(false); } catch {}
+    try { this.stopQualityMonitor(); } catch {}
+    clearTimeout(this._sigReconnectTimer);
+    this._sigReconnectTimer = null;
     try { this.conn && this.conn.close(); } catch {}
     try { this.peer && this.peer.destroy(); } catch {}
   }
@@ -2718,6 +2828,115 @@ window.MicKit = (function () {
     return { title: "Microphone error", body: msg || "Unknown error — press the mic button again." };
   }
 
+  /* ── r25 STUDIO SOUND ────────────────────────────────────────────────
+     FIELD REPORT (round 25, item 1): "my student is not loudly audible
+     and my students complained my voice is not loudly audible at their
+     end — we can hear each other but the sound is not really loud."
+     Root cause: the raw getUserMedia track goes straight to the
+     PeerConnection. Whatever level the OS gives — and laptop mics on
+     their default 60-75% input level are quiet — is exactly what the
+     other side receives. Browser AGC (autoGainControl) is conservative
+     and frequently disabled by OEM audio drivers.
+
+     Fix at the ROOT, on BOTH ends: every captured mic now runs through a
+     Web Audio broadcast chain before it is sent —
+        highpass 85 Hz (rumble/hum cut)
+        → compressor (threshold -28 dB, ratio 4:1 — lifts quiet speech)
+        → makeup gain (user preset: standard 1.6× / strong 2.2× / max 2.8×)
+        → limiter (threshold -3 dB, ratio 20:1 — no clipping distortion)
+        → MediaStreamAudioDestinationNode (this track replaces the raw one)
+     The result: quiet talkers become clearly audible, loud talkers do
+     not distort, and nothing depends on OS mixer settings. "off" bypasses
+     the chain (raw mode); the r22 music/raw setting ALSO bypasses it —
+     compressing a music lesson destroys its dynamics.
+     Verified technique: MediaStreamAudioSourceNode → nodes →
+     MediaStreamAudioDestinationNode → sender (MDN Web Audio + WebRTC
+     integration; the standard gain-chain pattern).                    */
+  const BOOST_PRESETS = { off: 0, standard: 1.6, strong: 2.2, max: 2.8 };
+  function boostGain(name) {
+    const v = BOOST_PRESETS[name];
+    return (typeof v === "number" && v > 0) ? v : 0;
+  }
+  /* Build the studio chain around a captured stream. Returns
+     { stream, setBoost, level, stop, raw }. Falls back to the RAW stream
+     (never a hard failure) when Web Audio is unavailable. */
+  function process(stream, opts) {
+    opts = opts || {};
+    const rawTrack = stream && stream.getAudioTracks && stream.getAudioTracks()[0];
+    const AC = (typeof window !== "undefined") && (window.AudioContext || window.webkitAudioContext);
+    if (!rawTrack || !AC) return { stream: stream, setBoost: function () {}, level: function () { return 0; }, stop: function () {}, raw: stream, bypassed: true };
+    let ctx = null, src = null, hp = null, comp = null, gain = null, lim = null, dest = null, an = null, stopped = false;
+    try {
+      ctx = new AC();
+      if (ctx.state === "suspended") { try { ctx.resume(); } catch (e) {} }
+      src = ctx.createMediaStreamSource(stream);
+      hp = ctx.createBiquadFilter();
+      hp.type = "highpass"; hp.frequency.value = 85; hp.Q.value = 0.71;
+      comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -28; comp.knee.value = 24; comp.ratio.value = 4;
+      comp.attack.value = 0.004; comp.release.value = 0.22;
+      gain = ctx.createGain();
+      gain.gain.value = boostGain(opts.boost) || BOOST_PRESETS.standard;
+      lim = ctx.createDynamicsCompressor();
+      lim.threshold.value = -3; lim.knee.value = 0; lim.ratio.value = 20;
+      lim.attack.value = 0.001; lim.release.value = 0.1;
+      dest = ctx.createMediaStreamDestination();
+      an = ctx.createAnalyser(); an.fftSize = 512;
+      src.connect(hp); hp.connect(comp); comp.connect(gain); gain.connect(lim);
+      lim.connect(dest); lim.connect(an);
+      const buf = new Uint8Array(an.frequencyBinCount);
+      return {
+        stream: dest.stream,
+        setBoost: function (name2) { const g = boostGain(name2); if (gain) gain.gain.value = g || BOOST_PRESETS.standard; },
+        level: function () {
+          try {
+            an.getByteTimeDomainData(buf);
+            let peak = 0;
+            for (let i = 0; i < buf.length; i++) { const v = Math.abs(buf[i] - 128); if (v > peak) peak = v; }
+            return Math.min(100, Math.round((peak / 128) * 165));
+          } catch (e) { return 0; }
+        },
+        stop: function () {
+          if (stopped) return; stopped = true;
+          try { if (ctx && ctx.state !== "closed") ctx.close(); } catch (e) {}
+        },
+        raw: stream,
+        bypassed: false
+      };
+    } catch (e) {
+      try { if (ctx && ctx.state !== "closed") ctx.close(); } catch (e2) {}
+      return { stream: stream, setBoost: function () {}, level: function () { return 0; }, stop: function () {}, raw: stream, bypassed: true };
+    }
+  }
+  /* Live output level meter for ANY audio stream (local or remote) —
+     powers the teacher mic bar, the join green-room test and the
+     active-speaker roster glow. cb(level 0-100) fires ~10×/s. */
+  function meter(stream, cb) {
+    const track = stream && stream.getAudioTracks && stream.getAudioTracks()[0];
+    if (!track || typeof cb !== "function") return { stop: function () {} };
+    const AC = (typeof window !== "undefined") && (window.AudioContext || window.webkitAudioContext);
+    if (!AC) return { stop: function () {} };
+    let ctx = null, an = null, timer = null, stopped = false;
+    try {
+      ctx = new AC();
+      if (ctx.state === "suspended") { try { ctx.resume(); } catch (e) {} }
+      const src = ctx.createMediaStreamSource(stream);
+      an = ctx.createAnalyser(); an.fftSize = 512;
+      src.connect(an);
+      const buf = new Uint8Array(an.frequencyBinCount);
+      timer = setInterval(function () {
+        if (stopped) return;
+        try {
+          an.getByteTimeDomainData(buf);
+          let peak = 0;
+          for (let i = 0; i < buf.length; i++) { const v = Math.abs(buf[i] - 128); if (v > peak) peak = v; }
+          cb(Math.min(100, Math.round((peak / 128) * 130)));
+        } catch (e) {}
+      }, 100);
+    } catch (e) { return { stop: function () {} }; }
+    return { stop: function () { stopped = true; clearInterval(timer); try { if (ctx && ctx.state !== "closed") ctx.close(); } catch (e) {} } };
+  }
+
   /* Constraint LADDER — nothing exact, ever:
        1. preferred device (if the user picked one) + standard processing
        2. default device + echoCancellation/noiseSuppression/autoGainControl
@@ -2748,8 +2967,20 @@ window.MicKit = (function () {
     let lastErr = null;
     for (const a of attempts) {
       try {
-        const stream = await md().getUserMedia(a.c);
-        return { stream, attempt: a.label };
+        const raw = await md().getUserMedia(a.c);
+        /* r25 studio chain. Rules:
+           - "off" → send the raw track (nothing added, nothing to break)
+           - raw/music mode (all processing flags off) → bypass too:
+             a compressor would flatten a music lesson's dynamics
+           - otherwise → the boost/compressor/limiter chain, default "standard" */
+        const boostName = (opts && opts.boost) || "standard";
+        const wantsRaw = boostName === "off" || (proc.echoCancellation === false && proc.noiseSuppression === false && proc.autoGainControl === false);
+        if (wantsRaw) return { stream: raw, attempt: a.label, boosted: false };
+        const chain = process(raw, { boost: boostName });
+        if (chain.bypassed || !chain.stream || !chain.stream.getAudioTracks().length) return { stream: raw, attempt: a.label, boosted: false };
+        /* keep the RAW stream alive underneath: stopping it kills the
+           source feeding the chain. _rawHandle lets the caller stop both. */
+        return { stream: chain.stream, attempt: a.label, boosted: true, chain: chain, _rawHandle: raw };
       } catch (e) {
         lastErr = e;
         if (String((e && e.name) || "").toLowerCase().indexOf("notallowed") > -1) break;
@@ -2830,5 +3061,7 @@ window.MicKit = (function () {
   }
 
   return { available: available, blockedReason: blockedReason, classify: classify,
-           acquire: acquire, monitor: monitor, listInputs: listInputs };
+           acquire: acquire, monitor: monitor, listInputs: listInputs,
+           /* r25 studio sound + level metering */
+           process: process, meter: meter, boostPresets: BOOST_PRESETS };
 })();
